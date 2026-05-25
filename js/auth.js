@@ -1,60 +1,65 @@
-
 import { auth, db } from './firebase.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const $ = (s)=>document.querySelector(s);
-const authModal = $('#authModal');
-const authOpen = $('#authOpen');
-const authText = $('#authText');
-const authMsg = $('#authMsg');
+const authBtn = document.getElementById('authBtn');
+const modal = document.getElementById('authModal');
+const closeAuth = document.getElementById('closeAuth');
+const loginTab = document.getElementById('loginTab');
+const registerTab = document.getElementById('registerTab');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const msg = document.getElementById('authMsg');
+const userChip = document.getElementById('userChip');
+const setMsg = t => { if(msg) msg.textContent = t; };
 
-authOpen?.addEventListener('click', ()=> authModal.classList.add('open'));
-document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).classList.remove('open'));
-document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById(btn.dataset.tab).classList.add('active');
-});
+function openAuth(){ modal?.classList.add('show'); setMsg(''); }
+function close(){ modal?.classList.remove('show'); }
+function mode(m){
+  loginForm?.classList.toggle('hide', m!=='login'); registerForm?.classList.toggle('hide', m!=='register');
+  loginTab?.classList.toggle('active', m==='login'); registerTab?.classList.toggle('active', m==='register'); setMsg('');
+}
+authBtn?.addEventListener('click', async()=>{ if(auth.currentUser){ await signOut(auth); location.reload(); } else openAuth(); });
+closeAuth?.addEventListener('click', close); modal?.addEventListener('click',e=>{ if(e.target===modal) close(); });
+loginTab?.addEventListener('click',()=>mode('login')); registerTab?.addEventListener('click',()=>mode('register'));
 
-function message(t){ if(authMsg) authMsg.textContent=t; }
-async function roleOf(user){ const s=await getDoc(doc(db,'users',user.uid)); return s.exists()?s.data().role:'user'; }
-
-$('#modalRegister')?.addEventListener('submit', async e=>{
+registerForm?.addEventListener('submit', async e=>{
   e.preventDefault();
-  const name=$('#regName').value.trim(), email=$('#regEmail').value.trim(), password=$('#regPassword').value;
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
   try{
-    message('Создаём аккаунт...');
-    const r=await createUserWithEmailAndPassword(auth,email,password);
-    await setDoc(doc(db,'users',r.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()});
-    await sendEmailVerification(r.user);
-    message('Аккаунт создан. Подтвердите email по ссылке в письме, затем войдите.');
-  }catch(err){ message(err.code==='auth/email-already-in-use'?'Этот email уже зарегистрирован.':('Ошибка: '+err.message));}
-});
-$('#modalLogin')?.addEventListener('submit', async e=>{
-  e.preventDefault();
-  try{
-    message('Выполняется вход...');
-    const r=await signInWithEmailAndPassword(auth,$('#loginEmail').value.trim(),$('#loginPassword').value);
-    if(!r.user.emailVerified){ message('Подтвердите email. Письмо отправлено повторно.'); await sendEmailVerification(r.user); return; }
-    authModal.classList.remove('open'); message('');
-  }catch(err){ message('Ошибка входа: '+err.message);}
-});
-$('#logoutBtn')?.addEventListener('click', async()=>{ await signOut(auth); location.href='index.html'; });
-
-onAuthStateChanged(auth, async user=>{
-  if(user){
-    authText.textContent='Профиль';
-    $('#authGuest')?.classList.add('hidden'); $('#authUser')?.classList.remove('hidden');
-    if($('#userEmail')) $('#userEmail').textContent=user.email;
-    const role=await roleOf(user).catch(()=> 'user');
-    $('#adminLink')?.classList.toggle('hidden', role!=='admin');
-    $('#modalAdmin')?.classList.toggle('hidden', role!=='admin');
-  }else{
-    authText.textContent='Войти';
-    $('#authGuest')?.classList.remove('hidden'); $('#authUser')?.classList.add('hidden');
-    $('#adminLink')?.classList.add('hidden');
+    setMsg('Создаём аккаунт...');
+    const res = await createUserWithEmailAndPassword(auth,email,password);
+    await setDoc(doc(db,'users',res.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()});
+    await sendEmailVerification(res.user);
+    await signOut(auth);
+    setMsg('Мы отправили письмо подтверждения. Проверьте почту и папку Спам, потом войдите.');
+    mode('login');
+  }catch(err){
+    if(err.code==='auth/email-already-in-use') setMsg('Этот email уже зарегистрирован. Войдите в аккаунт.');
+    else setMsg('Ошибка: '+err.message);
   }
 });
-export { roleOf };
+loginForm?.addEventListener('submit', async e=>{
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  try{
+    setMsg('Входим...');
+    const res = await signInWithEmailAndPassword(auth,email,password);
+    await res.user.reload();
+    if(!res.user.emailVerified){ await signOut(auth); setMsg('Сначала подтвердите email. Проверьте почту и папку Спам.'); return; }
+    close(); location.reload();
+  }catch(err){ setMsg('Ошибка входа: '+err.message); }
+});
+
+onAuthStateChanged(auth, async user=>{
+  if(!authBtn) return;
+  if(user){
+    let label = user.email;
+    try{ const s = await getDoc(doc(db,'users',user.uid)); if(s.exists() && s.data().name) label = s.data().name; }catch(e){}
+    if(userChip) userChip.textContent = label;
+    authBtn.textContent = 'Выйти';
+  }else{ if(userChip) userChip.textContent=''; authBtn.textContent='Войти'; }
+});

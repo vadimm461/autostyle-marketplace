@@ -1,7 +1,47 @@
 import { db } from './firebase.js';
 import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const productGrid=document.getElementById('products'), categoryList=document.getElementById('categoryList'), chips=document.getElementById('chips');
-function productCard(p){return `<article class="product-card"><div class="img-wrap">${p.imageUrl?`<img src="${p.imageUrl}" alt="${p.title||''}">`:'<div class="empty-img">AUTO STYLE</div>'}</div><h3>${p.title||p.name||'Товар'}</h3><p>${p.description||p.category||''}</p><div class="price">${Number(p.price||0).toLocaleString('ru-RU')} ₽</div><button class="buy">В корзину</button></article>`}
-async function load(){try{const cats=await getDocs(collection(db,'categories')); if(categoryList){categoryList.innerHTML=cats.empty?'<div class="empty-note">Категории появятся после добавления в админке.</div>':''; cats.forEach(d=>{const c=d.data();categoryList.insertAdjacentHTML('beforeend',`<a href="#products">${c.icon||'•'} ${c.title||c.name||'Категория'}</a>`); chips?.insertAdjacentHTML('beforeend',`<button>${c.title||c.name}</button>`);});}
-const snap=await getDocs(collection(db,'products')); if(productGrid){productGrid.innerHTML=snap.empty?'<div class="empty-note wide">Товары пока не добавлены. Добавьте товары через админку.</div>':''; snap.forEach(d=>productGrid.insertAdjacentHTML('beforeend',productCard(d.data())))} }catch(e){console.error(e); if(productGrid) productGrid.innerHTML='<div class="empty-note wide">Не удалось загрузить товары. Проверьте Firebase config и Rules.</div>';}}
-load();
+
+const $ = s => document.querySelector(s);
+const money = n => (Number(n)||0).toLocaleString('ru-RU') + ' ₽';
+let banners = [], current = 0;
+
+async function getList(name){
+  const snap = await getDocs(collection(db, name));
+  return snap.docs.map(d => ({id:d.id, ...d.data()}));
+}
+
+function renderCategories(items){
+  const box = $('#categoryList'); if(!box) return;
+  if(!items.length){ box.innerHTML = '<div class="catItem">Категории появятся после добавления</div>'; return; }
+  box.innerHTML = items.map(c => `<a class="catItem" href="catalog.html?cat=${encodeURIComponent(c.name||'')}"><span>${c.name||'Категория'}</span><b>›</b></a>`).join('');
+  const tabs = $('#tabs'); if(tabs) tabs.innerHTML = '<button class="tab active">ТОП товары</button>' + items.map(c=>`<button class="tab">${c.name}</button>`).join('');
+}
+
+function renderBanners(items){
+  banners = items.length ? items : [{title:'Главный баннер',subtitle:'Добавьте баннеры через админку.',label:'AUTO STYLE',image:''}];
+  const slides = $('#slides'); if(!slides) return;
+  slides.innerHTML = banners.map((b,i)=>`<article class="slide ${i===0?'active':''}">${b.image?`<img src="${b.image}" alt="">`:''}<small>${b.label||'AUTO STYLE'}</small><h1>${b.title||'Баннер'}</h1><p>${b.subtitle||''}</p></article>`).join('');
+  const mini = $('#miniBanners'); if(mini) mini.innerHTML = banners.slice(0,4).map(b=>`<div class="miniBanner">${b.title||'Акция'}</div>`).join('');
+}
+function showSlide(n){
+  const all = document.querySelectorAll('.slide'); if(!all.length) return;
+  current = (n + all.length) % all.length;
+  all.forEach((s,i)=>s.classList.toggle('active', i===current));
+}
+$('#prev')?.addEventListener('click',()=>showSlide(current-1));
+$('#next')?.addEventListener('click',()=>showSlide(current+1));
+setInterval(()=>showSlide(current+1),5000);
+
+function renderProducts(items){
+  const box = $('#products'); if(!box) return;
+  if(!items.length){ box.innerHTML = '<div class="empty">Товары пока не добавлены. Добавьте товары через админку.</div>'; return; }
+  box.innerHTML = items.map(p=>`<article class="product"><span class="badge">${p.category||'AutoStyle'}</span><div class="productImg">${p.image?`<img src="${p.image}" alt="${p.name||''}">`:''}</div><div class="pname">${p.name||'Товар'}</div><div class="price">${money(p.price)}</div><button class="buy">В корзину</button></article>`).join('');
+}
+
+async function init(){
+  try{
+    const [cats,bans,prods] = await Promise.all([getList('categories'), getList('banners'), getList('products')]);
+    renderCategories(cats); renderBanners(bans); renderProducts(prods);
+  }catch(e){ console.error(e); }
+}
+init();

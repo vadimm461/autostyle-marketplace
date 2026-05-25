@@ -1,21 +1,37 @@
-
 import { auth, db } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const $=s=>document.querySelector(s);
-async function isAdmin(user){const s=await getDoc(doc(db,'users',user.uid)); return s.exists()&&s.data().role==='admin';}
-onAuthStateChanged(auth, async user=>{
-  if(!user){$('#adminGuard').textContent='Войдите в аккаунт администратора.'; return}
-  if(!(await isAdmin(user))){$('#adminGuard').textContent='Нет доступа. В Firestore → users → ваш UID поставьте role: admin'; return}
-  $('#adminGuard').classList.add('hidden'); $('#adminPanel').classList.remove('hidden'); initAdmin();
-});
-function item(title,id,coll){return `<div class="admin-item"><span>${title}</span><button class="danger" data-del="${id}" data-coll="${coll}">Удалить</button></div>`}
-function bindDelete(){document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteDoc(doc(db,b.dataset.coll,b.dataset.del)));}
-function initAdmin(){
-  $('#categoryForm').onsubmit=async e=>{e.preventDefault();await addDoc(collection(db,'categories'),{name:$('#catName').value,icon:$('#catIcon').value});e.target.reset();}
-  $('#bannerForm').onsubmit=async e=>{e.preventDefault();await addDoc(collection(db,'banners'),{title:$('#bannerTitle').value,text:$('#bannerText').value,image:$('#bannerImage').value,link:$('#bannerLink').value});e.target.reset();}
-  $('#productForm').onsubmit=async e=>{e.preventDefault();await addDoc(collection(db,'products'),{name:$('#pName').value,price:Number($('#pPrice').value),oldPrice:Number($('#pOldPrice').value||0),category:$('#pCategory').value,image:$('#pImage').value,description:$('#pDescription').value});e.target.reset();}
-  onSnapshot(collection(db,'categories'),s=>{$('#adminCategories').innerHTML=s.docs.map(d=>item(d.data().name,d.id,'categories')).join('');bindDelete();});
-  onSnapshot(collection(db,'banners'),s=>{$('#adminBanners').innerHTML=s.docs.map(d=>item(d.data().title,d.id,'banners')).join('');bindDelete();});
-  onSnapshot(collection(db,'products'),s=>{$('#adminProducts').innerHTML=s.docs.map(d=>item(d.data().name,d.id,'products')).join('');bindDelete();});
+import { collection, addDoc, getDocs, deleteDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+let active = 'products';
+const fields = ['name','price','category','image','subtitle'];
+const $ = s => document.querySelector(s);
+const list = $('#adminList');
+const msg = $('#adminMsg');
+const form = $('#itemForm');
+const title = $('#formTitle');
+const tabs = document.querySelectorAll('.adminNav button');
+const show = t => msg.textContent = t || '';
+
+function configure(){
+  title.textContent = active==='products'?'Добавить товар':active==='categories'?'Добавить категорию':'Добавить баннер';
+  document.getElementById('price').closest('.field').style.display = active==='products'?'block':'none';
+  document.getElementById('category').closest('.field').style.display = active==='products'?'block':'none';
+  document.getElementById('subtitle').closest('.field').style.display = active==='banners'?'block':'none';
+  document.getElementById('image').closest('.field').style.display = active==='products'||active==='banners'?'block':'none';
 }
+async function load(){
+  configure(); list.innerHTML='Загрузка...';
+  const snap = await getDocs(collection(db, active));
+  if(snap.empty){ list.innerHTML='<p class="muted">Пока пусто</p>'; return; }
+  list.innerHTML = snap.docs.map(d=>{const x=d.data();return `<div class="listItem"><div><b>${x.name||x.title||'Без названия'}</b><br><small>${x.category||x.subtitle||''}</small></div><button class="danger" data-id="${d.id}">Удалить</button></div>`}).join('');
+  list.querySelectorAll('.danger').forEach(b=>b.onclick=async()=>{await deleteDoc(doc(db,active,b.dataset.id));load();});
+}
+tabs.forEach(b=>b.onclick=()=>{tabs.forEach(x=>x.classList.remove('active')); b.classList.add('active'); active=b.dataset.tab; form.reset(); load();});
+form.addEventListener('submit',async e=>{e.preventDefault(); const data={}; fields.forEach(f=>{const el=document.getElementById(f); if(el && el.value.trim()) data[f]=el.value.trim();}); if(active==='banners'){data.title=data.name; data.label='AUTO STYLE'} if(active==='categories') data.name=data.name||'Категория'; data.createdAt=new Date().toISOString(); await addDoc(collection(db,active),data); show('Сохранено'); form.reset(); load();});
+
+onAuthStateChanged(auth, async user=>{
+  if(!user){ $('#adminContent').classList.add('hide'); $('#noAccess').classList.remove('hide'); return; }
+  const s = await getDoc(doc(db,'users',user.uid));
+  if(!s.exists() || s.data().role !== 'admin'){ $('#adminContent').classList.add('hide'); $('#noAccess').classList.remove('hide'); return; }
+  load();
+});
