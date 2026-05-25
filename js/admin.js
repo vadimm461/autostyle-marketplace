@@ -1,11 +1,134 @@
 import { auth, db } from './firebase.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, addDoc, getDocs, deleteDoc, doc, getDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const $=s=>document.querySelector(s); let active='products';
-const schemas={products:['title','price','oldPrice','category','image','rating'],categories:['title'],banners:['title','subtitle','text','image']};
-function formHtml(type){return `<h2>${type==='products'?'Товары':type==='categories'?'Категории':'Баннеры'}</h2><form id="adminForm" class="admin-grid">${schemas[type].map(f=>`<label class="field">${f}<input id="${f}" ${f==='price'||f==='oldPrice'?'type="number"':''}></label>`).join('')}<button class="primary">Добавить</button></form><div id="list"></div>`}
-async function load(type=active){ active=type; document.querySelectorAll('.admin-side button').forEach(b=>b.classList.toggle('active',b.dataset.type===type)); $('#panel').innerHTML=formHtml(type); $('#adminForm').onsubmit=save; const snap=await getDocs(query(collection(db,type), orderBy('createdAt','desc'))).catch(()=>null); const items=snap?snap.docs.map(d=>({id:d.id,...d.data()})):[]; $('#list').innerHTML=items.map(x=>`<div class="list-item"><div><b>${x.title||x.name}</b><p class="muted">${x.category||x.subtitle||x.text||''}</p></div><button class="danger" onclick="removeItem('${type}','${x.id}')">Удалить</button></div>`).join('')||'<p class="muted">Пока пусто</p>'}
-async function save(e){e.preventDefault(); const data={createdAt:serverTimestamp()}; schemas[active].forEach(f=>data[f]=$('#'+f).value); await addDoc(collection(db,active),data); load(active)}
-window.removeItem=async(t,id)=>{await deleteDoc(doc(db,t,id));load(t)}; window.load=load;
-onAuthStateChanged(auth, async user=>{ if(!user){location.href='login.html';return} const snap=await getDoc(doc(db,'users',user.uid)); if(!snap.exists() || snap.data().role!=='admin'){ $('#panel').innerHTML='<h2>Нет доступа</h2><p>Для админки нужен role: admin в Firestore → users → ваш UID.</p>'; return;} $('#adminEmail').textContent=user.email; load('products')});
-window.logout=()=>signOut(auth).then(()=>location.href='index.html');
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  query,
+  orderBy
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const $ = s => document.querySelector(s);
+let active = 'products';
+let editId = null;
+
+const schemas = {
+  products: [
+    ['title','Название товара'],
+    ['price','Цена'],
+    ['oldPrice','Старая цена'],
+    ['category','Категория'],
+    ['image','Ссылка на фото'],
+    ['rating','Рейтинг']
+  ],
+  categories: [
+    ['title','Название категории']
+  ],
+  banners: [
+    ['title','Заголовок'],
+    ['subtitle','Подзаголовок'],
+    ['text','Текст'],
+    ['image','Ссылка на картинку']
+  ]
+};
+
+function title(type){
+  return type === 'products' ? 'Товары' : type === 'categories' ? 'Категории' : 'Баннеры';
+}
+
+function formHtml(type, data={}){
+  return `<h2>${title(type)}</h2>
+  <p class="muted">Здесь можно добавлять, редактировать и удалять всё, что отображается на главной странице.</p>
+  <form id="adminForm" class="admin-grid">
+    ${schemas[type].map(([field,label])=>`<label class="field">${label}<input id="${field}" value="${data[field]||''}" ${field==='price'||field==='oldPrice'?'type="number"':''}></label>`).join('')}
+    <button class="primary">${editId ? 'Сохранить изменения' : 'Добавить'}</button>
+    ${editId ? '<button type="button" class="danger" onclick="cancelEdit()">Отмена</button>' : ''}
+  </form>
+  <div id="list"></div>`;
+}
+
+async function getItems(type){
+  const snap = await getDocs(query(collection(db,type), orderBy('createdAt','desc'))).catch(async()=>{
+    return await getDocs(collection(db,type)).catch(()=>null);
+  });
+  return snap ? snap.docs.map(d=>({id:d.id,...d.data()})) : [];
+}
+
+async function load(type=active){
+  active = type;
+  editId = null;
+  document.querySelectorAll('.admin-side button[data-type]').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
+  $('#panel').innerHTML = formHtml(type);
+  $('#adminForm').onsubmit = save;
+  await renderList();
+}
+
+async function renderList(){
+  const items = await getItems(active);
+  $('#list').innerHTML = items.length ? items.map(x=>`
+    <div class="list-item">
+      <div>
+        <b>${x.title || x.name || 'Без названия'}</b>
+        <p class="muted">${x.category || x.subtitle || x.text || x.price || ''}</p>
+      </div>
+      <div class="list-actions">
+        <button onclick="editItem('${active}','${x.id}')">Редактировать</button>
+        <button class="danger" onclick="removeItem('${active}','${x.id}')">Удалить</button>
+      </div>
+    </div>`).join('') : '<p class="muted">Пока пусто. Добавьте первый элемент.</p>';
+}
+
+async function save(e){
+  e.preventDefault();
+  const data = { updatedAt: serverTimestamp() };
+  schemas[active].forEach(([field])=>{
+    const el = $('#'+field);
+    data[field] = el ? el.value.trim() : '';
+  });
+  if (!data.createdAt) data.createdAt = serverTimestamp();
+
+  if (editId) {
+    await updateDoc(doc(db, active, editId), data);
+  } else {
+    await addDoc(collection(db, active), { ...data, createdAt: serverTimestamp() });
+  }
+  editId = null;
+  await load(active);
+}
+
+window.editItem = async (type,id) => {
+  active = type;
+  editId = id;
+  const snap = await getDoc(doc(db,type,id));
+  if (!snap.exists()) return;
+  $('#panel').innerHTML = formHtml(type, snap.data());
+  $('#adminForm').onsubmit = save;
+  await renderList();
+};
+
+window.cancelEdit = () => load(active);
+
+window.removeItem = async (type,id) => {
+  if (!confirm('Удалить элемент?')) return;
+  await deleteDoc(doc(db,type,id));
+  await load(type);
+};
+
+window.load = load;
+window.logout = () => signOut(auth).then(()=>location.href='index.html');
+
+onAuthStateChanged(auth, async user=>{
+  if(!user){ location.href='login.html'; return; }
+  const snap = await getDoc(doc(db,'users',user.uid)).catch(()=>null);
+  if(!snap || !snap.exists() || snap.data().role !== 'admin'){
+    $('#panel').innerHTML='<h2>Нет доступа</h2><p>Для админки нужен role: admin в Firestore → users → ваш UID.</p>';
+    return;
+  }
+  $('#adminEmail').textContent = user.email;
+  load('products');
+});
