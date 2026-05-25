@@ -1,0 +1,9 @@
+import { auth, db, storage } from './firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getDownloadURL, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+const form=document.getElementById('productForm'), msg=document.getElementById('message'), list=document.getElementById('adminProducts');
+onAuthStateChanged(auth,u=>{if(!u) location.href='login.html'; else loadProducts()});
+document.getElementById('logout')?.addEventListener('click',()=>signOut(auth));
+form?.addEventListener('submit',async e=>{e.preventDefault();try{let imageUrl='';const file=image.files[0];if(file){const r=ref(storage,`products/${Date.now()}-${file.name}`);await uploadBytes(r,file);imageUrl=await getDownloadURL(r)}await addDoc(collection(db,'products'),{title:title.value,price:Number(price.value),category:category.value,description:description.value,imageUrl,inStock:inStock.checked,createdAt:serverTimestamp()});msg.textContent='Товар добавлен';form.reset();loadProducts()}catch(err){msg.textContent=err.message}});
+async function loadProducts(){if(!list)return;const snap=await getDocs(query(collection(db,'products'),orderBy('createdAt','desc')));list.innerHTML='';snap.forEach(d=>{const p=d.data();list.innerHTML+=`<article class="product-card"><img src="${p.imageUrl||''}"><h3>${p.title}</h3><div class="price">${p.price} ₽</div><button class="btn" data-id="${d.id}">Удалить</button></article>`});list.querySelectorAll('button[data-id]').forEach(b=>b.onclick=async()=>{await deleteDoc(doc(db,'products',b.dataset.id));loadProducts()})}
