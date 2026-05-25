@@ -1,1 +1,57 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Каталог AutoStyle</title><link rel="stylesheet" href="css/style.css"></head><body><div id="siteHeader"></div><main id="home" class="container"><section><div class="section-head"><h2>Каталог товаров</h2></div><div id="chips" class="chips"></div><div id="products" class="products-grid"></div></section><div style="display:none"><div id="sideCats"></div><div id="slider"></div><div id="miniBanners"></div></div></main><div id="cartRoot"></div><script type="module" src="js/app.js"></script></body></html>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/style.css"><title>Каталог AutoStyle</title></head><body><header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="index.html"><img src="assets/logo.jpeg" alt="AutoStyle"><span>AUTO<span>STYLE</span></span></a>
+    <button class="catalog-btn" id="catalogToggle">☰ Каталог</button>
+    <form class="search" id="searchForm"><input id="searchInput" placeholder="Я ищу автотовары..."><button>Найти</button></form>
+    <nav class="header-actions">
+      <button class="icon-btn" id="authOpen">👤 <span id="authText">Войти</span></button>
+      <a class="icon-btn" href="admin.html" id="adminLink">⚙️ <span>Админка</span></a>
+      <button class="icon-btn">♡ <span>Избранное</span></button>
+      <button class="cart-btn" id="cartOpen">🛒<b>Корзина</b><em id="cartCount">0</em></button>
+    </nav>
+  </div>
+</header>
+<div class="modal" id="authModal">
+  <div class="modal-card">
+    <button class="modal-close" data-close="authModal">×</button>
+    <div id="authGuest">
+      <h2>Вход в AutoStyle</h2>
+      <p class="muted">Войдите или создайте аккаунт прямо здесь.</p>
+      <div class="tabs"><button class="tab active" data-tab="loginPane">Вход</button><button class="tab" data-tab="registerPane">Регистрация</button></div>
+      <form id="modalLogin" class="pane active">
+        <label>Email<input id="loginEmail" type="email" required></label>
+        <label>Пароль<input id="loginPassword" type="password" required></label>
+        <button class="primary">Войти</button>
+      </form>
+      <form id="modalRegister" class="pane">
+        <label>Имя<input id="regName" required></label>
+        <label>Email<input id="regEmail" type="email" required></label>
+        <label>Пароль<input id="regPassword" type="password" minlength="6" required></label>
+        <button class="primary">Создать аккаунт</button>
+      </form>
+    </div>
+    <div id="authUser" class="hidden">
+      <h2>Мой аккаунт</h2>
+      <p class="user-email" id="userEmail"></p>
+      <p class="muted">Вы авторизованы на сайте.</p>
+      <a class="primary link-btn" href="admin.html" id="modalAdmin">Перейти в админку</a>
+      <button class="secondary" id="logoutBtn">Выйти</button>
+    </div>
+    <p id="authMsg" class="msg"></p>
+  </div>
+</div>
+<div class="modal" id="cartModal"><div class="modal-card"><button class="modal-close" data-close="cartModal">×</button><h2>Корзина</h2><div id="cartItems" class="cart-list"></div><button class="primary">Оформить заказ</button></div></div>
+<main class="container">
+  <section class="market-grid">
+    <aside class="category-card"><h3>Категории</h3><div id="categoriesList"><p class="empty">Категории появятся после добавления в админке.</p></div></aside>
+    <section class="hero-carousel">
+      <div id="bannerTrack" class="banner-track"></div>
+      <button class="slide prev" id="prevBanner">‹</button><button class="slide next" id="nextBanner">›</button>
+    </section>
+    <aside class="side-promo"><h2>Баннеры редактируются в админке</h2><p>Добавьте акции, фото и ссылки.</p></aside>
+  </section>
+  <section class="section-head"><h1>🔥 Горячие предложения</h1><a href="catalog.html">Все товары</a></section>
+  <div class="chips" id="categoryChips"><button class="chip active" data-category="">ТОП товары</button></div>
+  <section class="product-grid" id="productsGrid"></section>
+</main>
+<script type="module" src="js/firebase.js"></script><script type="module" src="js/auth.js"></script><script type="module" src="js/app.js"></script></body></html>

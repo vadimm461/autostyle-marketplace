@@ -1,1 +1,43 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Регистрация</title><link rel="stylesheet" href="css/style.css"></head><body><div class="page-card"><a class="brand" href="index.html"><span>AUTO</span>STYLE</a><h1>Регистрация</h1><form id="registerForm"><label class="field">Имя<input id="name" required></label><label class="field">Email<input id="email" type="email" required></label><label class="field">Пароль<input id="password" type="password" minlength="6" required></label><button class="primary">Создать аккаунт</button></form><p id="msg" class="muted"></p><p>Уже есть аккаунт? <a href="login.html">Войти</a></p></div><script type="module" src="js/auth.js"></script></body></html>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/style.css"><title>Регистрация</title></head><body><header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="index.html"><img src="assets/logo.jpeg" alt="AutoStyle"><span>AUTO<span>STYLE</span></span></a>
+    <button class="catalog-btn" id="catalogToggle">☰ Каталог</button>
+    <form class="search" id="searchForm"><input id="searchInput" placeholder="Я ищу автотовары..."><button>Найти</button></form>
+    <nav class="header-actions">
+      <button class="icon-btn" id="authOpen">👤 <span id="authText">Войти</span></button>
+      <a class="icon-btn" href="admin.html" id="adminLink">⚙️ <span>Админка</span></a>
+      <button class="icon-btn">♡ <span>Избранное</span></button>
+      <button class="cart-btn" id="cartOpen">🛒<b>Корзина</b><em id="cartCount">0</em></button>
+    </nav>
+  </div>
+</header>
+<div class="modal" id="authModal">
+  <div class="modal-card">
+    <button class="modal-close" data-close="authModal">×</button>
+    <div id="authGuest">
+      <h2>Вход в AutoStyle</h2>
+      <p class="muted">Войдите или создайте аккаунт прямо здесь.</p>
+      <div class="tabs"><button class="tab active" data-tab="loginPane">Вход</button><button class="tab" data-tab="registerPane">Регистрация</button></div>
+      <form id="modalLogin" class="pane active">
+        <label>Email<input id="loginEmail" type="email" required></label>
+        <label>Пароль<input id="loginPassword" type="password" required></label>
+        <button class="primary">Войти</button>
+      </form>
+      <form id="modalRegister" class="pane">
+        <label>Имя<input id="regName" required></label>
+        <label>Email<input id="regEmail" type="email" required></label>
+        <label>Пароль<input id="regPassword" type="password" minlength="6" required></label>
+        <button class="primary">Создать аккаунт</button>
+      </form>
+    </div>
+    <div id="authUser" class="hidden">
+      <h2>Мой аккаунт</h2>
+      <p class="user-email" id="userEmail"></p>
+      <p class="muted">Вы авторизованы на сайте.</p>
+      <a class="primary link-btn" href="admin.html" id="modalAdmin">Перейти в админку</a>
+      <button class="secondary" id="logoutBtn">Выйти</button>
+    </div>
+    <p id="authMsg" class="msg"></p>
+  </div>
+</div>
+<div class="modal" id="cartModal"><div class="modal-card"><button class="modal-close" data-close="cartModal">×</button><h2>Корзина</h2><div id="cartItems" class="cart-list"></div><button class="primary">Оформить заказ</button></div></div><main class="page-card"><h1>Регистрация</h1><p>Вход теперь открывается во всплывающем окне.</p><button class="primary" id="openLoginPage">Открыть регистрацию</button></main><script type="module" src="js/firebase.js"></script><script type="module" src="js/auth.js"></script><script>document.getElementById('openLoginPage').onclick=()=>document.getElementById('authModal').classList.add('open')</script></body></html>
