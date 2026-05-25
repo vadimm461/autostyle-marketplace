@@ -1,1 +1,117 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin AutoStyle</title><link rel="stylesheet" href="css/style.css"></head><body><div class="admin-layout"><aside class="admin-side"><a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a><nav class="admin-nav"><button class="active" data-section="products">Товары</button><button data-section="categories">Категории</button><button data-section="banners">Баннеры</button><a href="index.html"><button>На сайт</button></a></nav></aside><main class="admin-main"><button id="logout" class="icon-btn" style="float:right">Выйти</button><h1>Панель управления</h1><p class="muted">Mini CMS: добавление, редактирование и удаление.</p><section id="products" class="admin-section active"><div class="admin-card"><h2>Товар</h2><form id="productForm" class="grid2"><label class="field">Название<input id="pTitle" required></label><label class="field">Цена<input id="pPrice" type="number" required></label><label class="field">Категория<input id="pCategory"></label><label class="field">Фото URL<input id="pImage"></label><label class="field" style="grid-column:1/-1">Описание<textarea id="pDesc"></textarea></label><button class="primary">Сохранить товар</button></form><div id="productList" class="list"></div></div></section><section id="categories" class="admin-section"><div class="admin-card"><h2>Категория</h2><form id="catForm"><label class="field">Название<input id="cTitle" required></label><button class="primary">Сохранить категорию</button></form><div id="catList" class="list"></div></div></section><section id="banners" class="admin-section"><div class="admin-card"><h2>Баннер</h2><form id="bannerForm" class="grid2"><label class="field">Заголовок<input id="bTitle" required></label><label class="field">Фото URL<input id="bImage"></label><label class="field" style="grid-column:1/-1">Текст<textarea id="bText"></textarea></label><button class="primary">Сохранить баннер</button></form><div id="bannerList" class="list"></div></div></section></main></div><script type="module" src="js/admin.js"></script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin AutoStyle</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="admin-layout">
+  <aside class="admin-side">
+    <a class="logo" href="index.html">
+      <div class="logo-mark">AS</div>
+      AUTO<span>STYLE</span>
+    </a>
+
+    <nav class="admin-nav">
+      <button class="active" data-section="products">Товары</button>
+      <button data-section="categories">Категории</button>
+      <button data-section="banners">Баннеры</button>
+      <a href="index.html"><button>На сайт</button></a>
+    </nav>
+  </aside>
+
+  <main class="admin-main">
+    <button id="logout" class="icon-btn" style="float:right">Выйти</button>
+
+    <h1>Панель управления</h1>
+    <p class="muted">Mini CMS: добавление, редактирование и удаление.</p>
+
+    <section id="products" class="admin-section active">
+      <div class="admin-card">
+        <h2>Товар</h2>
+
+        <form id="productForm" class="grid2">
+          <label class="field">
+            Название
+            <input id="pTitle" required>
+          </label>
+
+          <label class="field">
+            Цена
+            <input id="pPrice" type="number" required>
+          </label>
+
+          <label class="field">
+            Категория
+            <input id="pCategory">
+          </label>
+
+          <label class="field">
+            Фото URL
+            <input id="pImage">
+          </label>
+
+          <label class="field" style="grid-column:1/-1">
+            Описание
+            <textarea id="pDesc"></textarea>
+          </label>
+
+          <button class="primary">Сохранить товар</button>
+        </form>
+
+        <div id="productList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="categories" class="admin-section">
+      <div class="admin-card">
+        <h2>Категория</h2>
+
+        <form id="catForm">
+          <label class="field">
+            Название
+            <input id="cTitle" required>
+          </label>
+
+          <button class="primary">Сохранить категорию</button>
+        </form>
+
+        <div id="catList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="banners" class="admin-section">
+      <div class="admin-card">
+        <h2>Баннер</h2>
+
+        <form id="bannerForm" class="grid2">
+          <label class="field">
+            Заголовок
+            <input id="bTitle" required>
+          </label>
+
+          <label class="field">
+            Фото URL
+            <input id="bImage">
+          </label>
+
+          <label class="field" style="grid-column:1/-1">
+            Текст
+            <textarea id="bText"></textarea>
+          </label>
+
+          <button class="primary">Сохранить баннер</button>
+        </form>
+
+        <div id="bannerList" class="list"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
