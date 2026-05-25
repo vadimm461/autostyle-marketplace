@@ -16,9 +16,9 @@ function defaultData(){
   ];
 }
 async function loadPublic(){
-  try{ categories=(await getDocs(collection(db,'categories'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
-  try{ banners=(await getDocs(collection(db,'banners'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
-  try{ products=(await getDocs(collection(db,'products'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
+  try{ categories=(await getDocs(collection(db,'autostyle_categories'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
+  try{ banners=(await getDocs(collection(db,'autostyle_banners'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
+  try{ products=(await getDocs(collection(db,'autostyle_products'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
   defaultData(); renderAll();
 }
 function renderAll(){ renderCategories(); renderBanners(); renderProducts(); }
@@ -47,9 +47,9 @@ function bindUI(){
 }
 function openAuth(){ $('#authModal')?.classList.add('open'); }
 async function handleAuth(){
-  $('#registerForm')?.addEventListener('submit',async e=>{e.preventDefault(); const name=$('#regName').value.trim(), email=$('#regEmail').value.trim(), pass=$('#regPassword').value; try{const r=await createUserWithEmailAndPassword(auth,email,pass); await setDoc(doc(db,'users',r.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(r.user); $('#authMsg').textContent='Аккаунт создан. Проверьте почту для подтверждения.';}catch(err){$('#authMsg').textContent='Ошибка: '+err.message}});
+  $('#registerForm')?.addEventListener('submit',async e=>{e.preventDefault(); const name=$('#regName').value.trim(), email=$('#regEmail').value.trim(), pass=$('#regPassword').value; try{const r=await createUserWithEmailAndPassword(auth,email,pass); await setDoc(doc(db,'autostyle_users',r.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(r.user); $('#authMsg').textContent='Аккаунт создан. Проверьте почту для подтверждения.';}catch(err){$('#authMsg').textContent='Ошибка: '+err.message}});
   $('#loginForm')?.addEventListener('submit',async e=>{e.preventDefault(); const email=$('#loginEmail').value.trim(), pass=$('#loginPassword').value; try{const r=await signInWithEmailAndPassword(auth,email,pass); if(!r.user.emailVerified){$('#authMsg').textContent='Подтвердите email. Письмо отправлено на почту.'; await sendEmailVerification(r.user); return;} $('#authModal').classList.remove('open');}catch(err){$('#authMsg').textContent='Ошибка: '+err.message}});
 }
-onAuthStateChanged(auth, async user=>{ currentUser=user; const btn=$('#accountBtn'), email=$('#userEmail'), admin=$('#adminLink'); if(user){ let snap; try{snap=await getDoc(doc(db,'users',user.uid)); currentRole=snap.exists()?snap.data().role:'user'}catch(e){} btn.innerHTML='Аккаунт'; email.textContent=user.email; if(admin) admin.style.display=currentRole==='admin'?'block':'none'; }else{ btn.innerHTML='Войти'; if(admin)admin.style.display='none'; }});
+onAuthStateChanged(auth, async user=>{ currentUser=user; const btn=$('#accountBtn'), email=$('#userEmail'), admin=$('#adminLink'); if(user){ let snap; try{snap=await getDoc(doc(db,'autostyle_users',user.uid)); currentRole=snap.exists()?snap.data().role:'user'}catch(e){} btn.innerHTML='Аккаунт'; email.textContent=user.email; if(admin) admin.style.display=currentRole==='admin'?'block':'none'; }else{ btn.innerHTML='Войти'; if(admin)admin.style.display='none'; }});
 
 bindUI(); handleAuth(); loadPublic();
