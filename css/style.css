@@ -1,6 +1,220 @@
 :root{--green:#34e21f;--dark:#111318;--text:#101217;--muted:#667085;--line:#e8ebef;--bg:#f7f8fa;--card:#fff;--shadow:0 18px 50px rgba(16,18,23,.08);--r:24px}*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--text);background:var(--bg)}a{text-decoration:none;color:inherit}.topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}.bar{max-width:1280px;margin:auto;display:flex;align-items:center;gap:18px;padding:14px 20px}.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:24px}.logo-mark{width:40px;height:40px;border-radius:12px;background:#111;display:grid;place-items:center;color:var(--green);font-weight:900}.logo span{color:var(--green)}.catalog-btn,.search button,.primary{border:0;border-radius:16px;background:var(--green);font-weight:800;padding:14px 22px;cursor:pointer}.search{flex:1;display:flex;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:white}.search input{flex:1;border:0;padding:0 18px;font-size:15px;outline:0}.icon-btn{border:1px solid var(--line);background:white;border-radius:16px;padding:12px 16px;cursor:pointer}.container{max-width:1280px;margin:22px auto;padding:0 20px}.hero-grid{display:grid;grid-template-columns:260px 1fr 300px;gap:18px}.panel,.hero,.side-card,.product-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}.panel{padding:18px}.cat-list{display:grid;gap:8px}.cat-item{padding:12px;border-radius:14px;border:1px solid transparent}.cat-item:hover{border-color:var(--line);background:#fafafa}.hero{min-height:330px;padding:46px;background:linear-gradient(135deg,#f9fff8,#fff)}.hero h1{font-size:54px;line-height:.95;margin:0 0 16px}.hero .accent{color:var(--green)}.hero p{font-size:18px;color:var(--muted);max-width:540px}.banner-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}.mini-banner{padding:24px;border-radius:22px;background:white;border:1px solid var(--line);min-height:120px}.section-head{display:flex;justify-content:space-between;align-items:center;margin:34px 0 14px}.products{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.product-card{padding:14px;transition:.2s}.product-card:hover{transform:translateY(-4px);box-shadow:0 24px 60px rgba(16,18,23,.12)}.product-img{height:170px;border-radius:18px;background:#f1f3f5;display:grid;place-items:center;overflow:hidden}.product-img img{max-width:100%;max-height:100%;object-fit:contain}.product-title{min-height:42px;margin:13px 0 6px;font-weight:700}.price{font-size:22px;font-weight:900}.muted{color:var(--muted)}.cart{margin-top:12px;width:100%;border:0;border-radius:14px;padding:12px;background:#111;color:white;font-weight:800}.modal{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:50}.modal.open{display:flex}.modal-card{width:min(440px,92vw);background:white;border-radius:28px;padding:26px;box-shadow:0 30px 90px rgba(0,0,0,.25)}.tabs{display:flex;background:#f2f4f7;border-radius:16px;padding:4px}.tabs button{flex:1;border:0;background:transparent;border-radius:13px;padding:12px;cursor:pointer}.tabs button.active{background:white;box-shadow:0 2px 10px rgba(0,0,0,.08)}.field{display:block;margin:12px 0;color:#475467}.field input,.field textarea,.field select{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:14px;padding:13px;outline:0}.dropdown{position:relative}.drop{display:none;position:absolute;right:0;top:52px;background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);width:240px;padding:12px}.dropdown.open .drop{display:block}.admin-layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}.admin-side{background:#111318;color:white;padding:22px;position:sticky;top:0;height:100vh}.admin-side .logo{margin-bottom:28px}.admin-nav button{display:block;width:100%;text-align:left;border:0;border-radius:14px;padding:14px 16px;background:transparent;color:white;cursor:pointer;margin-bottom:8px}.admin-nav button.active{background:#242832}.admin-main{padding:36px;background:#fbfcfd}.admin-section{display:none}.admin-section.active{display:block}.admin-card{background:white;border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:var(--shadow);margin-top:18px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.list{display:grid;gap:10px;margin-top:18px}.row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:16px;padding:12px}.danger{border:0;border-radius:12px;padding:10px 12px;background:#ffe8e8;color:#b00020;cursor:pointer}.edit{border:0;border-radius:12px;padding:10px 12px;background:#eef2ff;color:#1d4ed8;cursor:pointer}@media(max-width:980px){.hero-grid{grid-template-columns:1fr}.products{grid-template-columns:repeat(2,1fr)}.banner-row{grid-template-columns:1fr}.admin-layout{grid-template-columns:1fr}.admin-side{height:auto;position:relative}.bar{flex-wrap:wrap}.search{order:3;flex-basis:100%}}
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AutoStyle</title><link rel="stylesheet" href="css/style.css"></head><body>
-<header class="topbar"><div class="bar"><a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a><button class="catalog-btn">☰ Каталог</button><form class="search"><input placeholder="Я ищу автотовары..."><button type="button">Найти</button></form><button id="openAuth" class="icon-btn">Войти</button><div id="accountDrop" class="dropdown" style="display:none"><button id="accountBtn" class="icon-btn">Аккаунт</button><div class="drop"><b id="userEmail"></b><p class="muted">Вы авторизованы</p><a href="admin.html">Админка</a><hr><button id="logout" class="icon-btn">Выйти</button></div></div><button class="icon-btn">Избранное</button><button class="icon-btn">Корзина <b id="cartCount">0</b></button></div></header>
-<main class="container"><section class="hero-grid"><aside class="panel"><h3>Категории</h3><div id="categories" class="cat-list"></div></aside><div id="hero" class="hero"></div><aside class="side-card panel"><h2>Баннеры</h2><p class="muted">Управляются в админке.</p></aside></section><div id="banners" class="banner-row"></div><section><div class="section-head"><h2>Горячие предложения</h2><a href="catalog.html">Все товары</a></div><div id="productsGrid" class="products"></div></section></main>
-<div id="authModal" class="modal"><div class="modal-card"><button id="closeAuth" style="float:right;border:0;background:#f2f4f7;border-radius:99px;width:34px;height:34px">×</button><h2>Вход в AutoStyle</h2><p class="muted">Войдите или создайте аккаунт.</p><div class="tabs"><button class="tab active" data-tab="login">Вход</button><button class="tab" data-tab="register">Регистрация</button></div><form id="loginForm"><label class="field">Email<input id="loginEmail" type="email" required></label><label class="field">Пароль<input id="loginPass" type="password" required></label><button class="primary" style="width:100%">Войти</button></form><form id="registerForm" style="display:none"><label class="field">Имя<input id="regName" required></label><label class="field">Email<input id="regEmail" type="email" required></label><label class="field">Пароль<input id="regPass" type="password" minlength="6" required></label><button class="primary" style="width:100%">Создать</button></form></div></div>
-<script type="module" src="js/app.js"></script></body></html>
+html { scroll-behavior: smooth; }
+
+body {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(52,226,31,.12), transparent 28%),
+    radial-gradient(circle at 90% 20%, rgba(17,19,24,.08), transparent 24%),
+    var(--bg);
+}
+
+.topbar {
+  animation: slideDown .7s ease both;
+}
+
+.logo-mark {
+  box-shadow: 0 0 0 rgba(52,226,31,.4);
+  animation: pulseLogo 2.4s infinite;
+}
+
+.catalog-btn,
+.search button,
+.primary {
+  transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+}
+
+.catalog-btn:hover,
+.search button:hover,
+.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(52,226,31,.28);
+  filter: saturate(1.1);
+}
+
+.icon-btn,
+.mini-banner,
+.panel,
+.hero,
+.side-card,
+.product-card {
+  transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+}
+
+.icon-btn:hover,
+.mini-banner:hover,
+.panel:hover,
+.side-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 60px rgba(16,18,23,.12);
+  border-color: rgba(52,226,31,.35);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(249,255,248,.96), rgba(255,255,255,.92)),
+    linear-gradient(120deg, rgba(52,226,31,.18), transparent);
+  animation: fadeUp .8s ease both;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -70px;
+  top: -70px;
+  border-radius: 50%;
+  background: rgba(52,226,31,.22);
+  filter: blur(8px);
+  z-index: -1;
+  animation: floatBlob 6s ease-in-out infinite;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.55) 45%, transparent 70%);
+  transform: translateX(-120%);
+  animation: shine 4s ease-in-out infinite;
+  z-index: -1;
+}
+
+.hero h1,
+.hero p {
+  animation: fadeUp .9s ease both;
+}
+
+.hero p {
+  animation-delay: .12s;
+}
+
+.cat-item {
+  transition: transform .22s ease, background .22s ease, border-color .22s ease, color .22s ease;
+}
+
+.cat-item:hover {
+  transform: translateX(6px);
+  color: #111;
+  background: linear-gradient(90deg, rgba(52,226,31,.12), #fff);
+}
+
+.banner-row,
+.products {
+  animation: fadeUp .85s ease both;
+}
+
+.mini-banner {
+  position: relative;
+  overflow: hidden;
+}
+
+.mini-banner::before {
+  content: "";
+  position: absolute;
+  inset: auto -30% -60% auto;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(52,226,31,.16);
+  transition: transform .35s ease;
+}
+
+.mini-banner:hover::before {
+  transform: scale(1.35);
+}
+
+.product-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(52,226,31,.12), transparent 40%);
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+}
+
+.product-card:hover::before {
+  opacity: 1;
+}
+
+.product-card:hover {
+  transform: translateY(-7px) scale(1.015);
+}
+
+.product-img img {
+  transition: transform .35s ease;
+}
+
+.product-card:hover .product-img img {
+  transform: scale(1.08) rotate(-1deg);
+}
+
+.cart {
+  transition: transform .24s ease, box-shadow .24s ease, background .24s ease;
+}
+
+.cart:hover {
+  transform: translateY(-2px);
+  background: #1a1d24;
+  box-shadow: 0 14px 28px rgba(17,19,24,.22);
+}
+
+.modal.open .modal-card {
+  animation: popIn .28s ease both;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.search:focus-within {
+  border-color: rgba(52,226,31,.7);
+  box-shadow: 0 0 0 4px rgba(52,226,31,.12);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseLogo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52,226,31,.32); }
+  50% { box-shadow: 0 0 0 10px rgba(52,226,31,0); }
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-18px,24px) scale(1.08); }
+}
+
+@keyframes shine {
+  0%, 55% { transform: translateX(-120%); }
+  75%, 100% { transform: translateX(120%); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(18px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
