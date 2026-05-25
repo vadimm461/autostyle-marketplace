@@ -1,55 +1,40 @@
-import { auth, db } from './firebase.js';
-import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { auth, db, COLLECTIONS } from './firebase.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { collection, getDocs, addDoc, setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const $ = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
-const money = n => `${Number(n || 0).toLocaleString('ru-RU')} ₽`;
-let currentUser=null, currentRole='user', products=[], categories=[], banners=[];
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
-function defaultData(){
-  categories = categories.length ? categories : ['Автохимия','Масла','Аксессуары','Инструменты','Автосвет','Фильтры','Ароматизаторы'].map((name,i)=>({id:'local'+i,name}));
-  banners = banners.length ? banners : [
-    {title:'Автотовары нового уровня',subtitle:'Минималистичный маркетплейс AUTO STYLE',tag:'AUTO STYLE',link:'#products'},
-    {title:'Химия, масла и аксессуары',subtitle:'Добавляйте баннеры и акции из админки',tag:'АКЦИИ',link:'#products'},
-    {title:'Всё для ухода за авто',subtitle:'Каталог, товары, категории — всё управляется вами',tag:'SHOP',link:'#products'}
-  ];
-}
-async function loadPublic(){
-  try{ categories=(await getDocs(collection(db,'autostyle_categories'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
-  try{ banners=(await getDocs(collection(db,'autostyle_banners'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
-  try{ products=(await getDocs(collection(db,'autostyle_products'))).docs.map(d=>({id:d.id,...d.data()})); }catch(e){}
-  defaultData(); renderAll();
-}
-function renderAll(){ renderCategories(); renderBanners(); renderProducts(); }
-function renderCategories(){
-  const list=$('#categoryList'), tabs=$('#categoryTabs'); if(!list||!tabs) return;
-  list.innerHTML=categories.map(c=>`<button class="catItem" data-cat="${c.name}"><span>${c.name}</span><b>›</b></button>`).join('') || '<div class="empty">Категории появятся после добавления.</div>';
-  tabs.innerHTML='<button class="tab active" data-cat="all">ТОП товары</button>'+categories.map(c=>`<button class="tab" data-cat="${c.name}">${c.name}</button>`).join('');
-  $$('.tab,.catItem').forEach(b=>b.onclick=()=>filterProducts(b.dataset.cat));
-}
-function renderBanners(){
-  const hero=$('#heroSlides'); if(!hero) return;
-  hero.innerHTML=banners.map((b,i)=>`<article class="slide ${i?'':'active'}"><small>${b.tag||'AUTO STYLE'}</small><h1>${b.title||'Главный баннер'}</h1><p>${b.subtitle||''}</p><a class="primary" href="${b.link||'#products'}" style="width:max-content;margin-top:18px">Смотреть</a></article>`).join('');
-  $('#heroDots').innerHTML=banners.map((_,i)=>`<button class="dot ${i?'':'active'}" data-i="${i}"></button>`).join('');
-  let idx=0; const show=i=>{$$('.slide').forEach((s,k)=>s.classList.toggle('active',k===i));$$('.dot').forEach((d,k)=>d.classList.toggle('active',k===i));idx=i};
-  $$('.dot').forEach(d=>d.onclick=()=>show(+d.dataset.i)); setInterval(()=>show((idx+1)%banners.length),5000);
-}
-function productCard(p){return `<article class="product"><div class="badge">${p.category||'AUTO'}</div><div class="pic">${p.imageUrl?`<img src="${p.imageUrl}" alt="">`:'<span class="muted">Фото товара</span>'}</div><h3>${p.title||p.name||'Товар'}</h3><p class="meta">${p.description||'В наличии'}</p><div class="priceRow"><div class="price">${money(p.price)}</div><button class="addCart" data-add="${p.id}">+</button></div></article>`}
-function renderProducts(list=products){ const grid=$('#productGrid'); if(!grid) return; grid.innerHTML=list.length?list.map(productCard).join(''):'<div class="empty">Товары пока не добавлены. Добавьте товары через админку.</div>'; }
-function filterProducts(cat){ $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.cat===cat)); renderProducts(cat==='all'?products:products.filter(p=>(p.category||p.group)===cat)); }
-function bindUI(){
-  $('#accountBtn')?.addEventListener('click',()=> currentUser ? $('#accountMenu').classList.toggle('open') : openAuth());
-  $('#loginOpen')?.addEventListener('click',openAuth); $('#authClose')?.addEventListener('click',()=>$('#authModal').classList.remove('open'));
-  $$('.authTab').forEach(b=>b.onclick=()=>{ $$('.authTab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); $('#loginForm').style.display=b.dataset.tab==='login'?'grid':'none'; $('#registerForm').style.display=b.dataset.tab==='register'?'grid':'none'; });
-  $('#logoutBtn')?.addEventListener('click',()=>signOut(auth));
-  $('#searchInput')?.addEventListener('input',e=>{const q=e.target.value.toLowerCase(); renderProducts(products.filter(p=>(p.title||p.name||'').toLowerCase().includes(q))) });
-}
-function openAuth(){ $('#authModal')?.classList.add('open'); }
-async function handleAuth(){
-  $('#registerForm')?.addEventListener('submit',async e=>{e.preventDefault(); const name=$('#regName').value.trim(), email=$('#regEmail').value.trim(), pass=$('#regPassword').value; try{const r=await createUserWithEmailAndPassword(auth,email,pass); await setDoc(doc(db,'autostyle_users',r.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(r.user); $('#authMsg').textContent='Аккаунт создан. Проверьте почту для подтверждения.';}catch(err){$('#authMsg').textContent='Ошибка: '+err.message}});
-  $('#loginForm')?.addEventListener('submit',async e=>{e.preventDefault(); const email=$('#loginEmail').value.trim(), pass=$('#loginPassword').value; try{const r=await signInWithEmailAndPassword(auth,email,pass); if(!r.user.emailVerified){$('#authMsg').textContent='Подтвердите email. Письмо отправлено на почту.'; await sendEmailVerification(r.user); return;} $('#authModal').classList.remove('open');}catch(err){$('#authMsg').textContent='Ошибка: '+err.message}});
-}
-onAuthStateChanged(auth, async user=>{ currentUser=user; const btn=$('#accountBtn'), email=$('#userEmail'), admin=$('#adminLink'); if(user){ let snap; try{snap=await getDoc(doc(db,'autostyle_users',user.uid)); currentRole=snap.exists()?snap.data().role:'user'}catch(e){} btn.innerHTML='Аккаунт'; email.textContent=user.email; if(admin) admin.style.display=currentRole==='admin'?'block':'none'; }else{ btn.innerHTML='Войти'; if(admin)admin.style.display='none'; }});
+function money(v){ return `${Number(v||0).toLocaleString('ru-RU')} ₽`; }
+function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#cartCount') && ($('#cartCount').textContent = cart.length); }
+async function loadCollection(name){ const snap = await getDocs(collection(db, name)); return snap.docs.map(d=>({id:d.id,...d.data()})); }
 
-bindUI(); handleAuth(); loadPublic();
+async function renderHome(){
+  const cats = await loadCollection(COLLECTIONS.categories);
+  const products = await loadCollection(COLLECTIONS.products);
+  const banners = await loadCollection(COLLECTIONS.banners);
+  const catBox = $('#categories');
+  if(catBox) catBox.innerHTML = cats.length ? cats.map(c=>`<div class="cat-item">${c.title||c.name}</div>`).join('') : '<div class="muted">Категории появятся после добавления в админке.</div>';
+  const hero = $('#hero');
+  if(hero){ const b=banners[0]||{}; hero.innerHTML = `<h1>${b.title||'AUTO STYLE'} <span class="accent">market</span></h1><p>${b.text||'Современный магазин автотоваров и аксессуаров. Добавьте баннеры в админке.'}</p><button class="primary">Смотреть каталог</button>`; }
+  const bannersBox=$('#banners');
+  if(bannersBox) bannersBox.innerHTML = (banners.slice(1,4).length?banners.slice(1,4):[{title:'Акции',text:'Добавьте баннеры'},{title:'Новинки',text:'Управление из админки'},{title:'Топ товары',text:'Минималистичный UI'}]).map(b=>`<div class="mini-banner"><h3>${b.title}</h3><p class="muted">${b.text||''}</p></div>`).join('');
+  const grid = $('#productsGrid');
+  if(grid) grid.innerHTML = products.length ? products.map(p=>`<article class="product-card"><div class="product-img">${p.image?`<img src="${p.image}" alt="">`:'Фото'}</div><div class="product-title">${p.title||p.name}</div><div class="muted">${p.category||''}</div><div class="price">${money(p.price)}</div><button class="cart" data-id="${p.id}">В корзину</button></article>`).join('') : '<div class="panel muted">Товары появятся после добавления в админке.</div>';
+  $$('[data-id]').forEach(btn=>btn.onclick=()=>{cart.push(btn.dataset.id);saveCart();});
+  saveCart();
+}
+
+function authModal(){
+  const modal = $('#authModal'); if(!modal) return;
+  $('#openAuth') && ($('#openAuth').onclick=()=>modal.classList.add('open'));
+  $('#closeAuth') && ($('#closeAuth').onclick=()=>modal.classList.remove('open'));
+  $$('.tab').forEach(t=>t.onclick=()=>{ $$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $('#loginForm').style.display=t.dataset.tab==='login'?'block':'none'; $('#registerForm').style.display=t.dataset.tab==='register'?'block':'none'; });
+  $('#loginForm') && ($('#loginForm').onsubmit=async e=>{e.preventDefault(); const email=$('#loginEmail').value.trim(), pass=$('#loginPass').value; await signInWithEmailAndPassword(auth,email,pass); modal.classList.remove('open');});
+  $('#registerForm') && ($('#registerForm').onsubmit=async e=>{e.preventDefault(); const name=$('#regName').value.trim(), email=$('#regEmail').value.trim(), pass=$('#regPass').value; const res=await createUserWithEmailAndPassword(auth,email,pass); await setDoc(doc(db,COLLECTIONS.users,res.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(res.user); alert('Аккаунт создан. Проверьте письмо на почте для подтверждения.'); modal.classList.remove('open');});
+  onAuthStateChanged(auth,u=>{ const authBtn=$('#openAuth'); const dd=$('#accountDrop'); if(u){ if(authBtn) authBtn.style.display='none'; if(dd){dd.style.display='block'; $('#userEmail').textContent=u.email; $('#logout').onclick=()=>signOut(auth);} } else { if(authBtn) authBtn.style.display='inline-block'; if(dd) dd.style.display='none'; }});
+  $('#accountBtn') && ($('#accountBtn').onclick=()=>$('#accountDrop').classList.toggle('open'));
+}
+
+authModal();renderHome();
