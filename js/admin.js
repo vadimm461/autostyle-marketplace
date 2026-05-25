@@ -1,37 +1,19 @@
 import { auth, db } from './firebase.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, addDoc, getDocs, deleteDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-let active = 'products';
-const fields = ['name','price','category','image','subtitle'];
-const $ = s => document.querySelector(s);
-const list = $('#adminList');
-const msg = $('#adminMsg');
-const form = $('#itemForm');
-const title = $('#formTitle');
-const tabs = document.querySelectorAll('.adminNav button');
-const show = t => msg.textContent = t || '';
-
-function configure(){
-  title.textContent = active==='products'?'Добавить товар':active==='categories'?'Добавить категорию':'Добавить баннер';
-  document.getElementById('price').closest('.field').style.display = active==='products'?'block':'none';
-  document.getElementById('category').closest('.field').style.display = active==='products'?'block':'none';
-  document.getElementById('subtitle').closest('.field').style.display = active==='banners'?'block':'none';
-  document.getElementById('image').closest('.field').style.display = active==='products'||active==='banners'?'block':'none';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { collection, doc, getDoc, getDocs, addDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const $=s=>document.querySelector(s);
+function item(title, col, id){return `<div class="listItem"><b>${title}</b><button class="danger" data-col="${col}" data-id="${id}">Удалить</button></div>`}
+async function loadAdmin(){
+ const ps=(await getDocs(collection(db,'products'))).docs.map(d=>({id:d.id,...d.data()}));
+ const cs=(await getDocs(collection(db,'categories'))).docs.map(d=>({id:d.id,...d.data()}));
+ const bs=(await getDocs(collection(db,'banners'))).docs.map(d=>({id:d.id,...d.data()}));
+ $('#adminProducts').innerHTML=ps.map(p=>item(p.title||p.name,'products',p.id)).join('')||'<p class="muted">Нет товаров</p>';
+ $('#adminCategories').innerHTML=cs.map(c=>item(c.name,'categories',c.id)).join('')||'<p class="muted">Нет категорий</p>';
+ $('#adminBanners').innerHTML=bs.map(b=>item(b.title,'banners',b.id)).join('')||'<p class="muted">Нет баннеров</p>';
+ document.querySelectorAll('.danger').forEach(b=>b.onclick=async()=>{await deleteDoc(doc(db,b.dataset.col,b.dataset.id));loadAdmin()});
 }
-async function load(){
-  configure(); list.innerHTML='Загрузка...';
-  const snap = await getDocs(collection(db, active));
-  if(snap.empty){ list.innerHTML='<p class="muted">Пока пусто</p>'; return; }
-  list.innerHTML = snap.docs.map(d=>{const x=d.data();return `<div class="listItem"><div><b>${x.name||x.title||'Без названия'}</b><br><small>${x.category||x.subtitle||''}</small></div><button class="danger" data-id="${d.id}">Удалить</button></div>`}).join('');
-  list.querySelectorAll('.danger').forEach(b=>b.onclick=async()=>{await deleteDoc(doc(db,active,b.dataset.id));load();});
-}
-tabs.forEach(b=>b.onclick=()=>{tabs.forEach(x=>x.classList.remove('active')); b.classList.add('active'); active=b.dataset.tab; form.reset(); load();});
-form.addEventListener('submit',async e=>{e.preventDefault(); const data={}; fields.forEach(f=>{const el=document.getElementById(f); if(el && el.value.trim()) data[f]=el.value.trim();}); if(active==='banners'){data.title=data.name; data.label='AUTO STYLE'} if(active==='categories') data.name=data.name||'Категория'; data.createdAt=new Date().toISOString(); await addDoc(collection(db,active),data); show('Сохранено'); form.reset(); load();});
-
-onAuthStateChanged(auth, async user=>{
-  if(!user){ $('#adminContent').classList.add('hide'); $('#noAccess').classList.remove('hide'); return; }
-  const s = await getDoc(doc(db,'users',user.uid));
-  if(!s.exists() || s.data().role !== 'admin'){ $('#adminContent').classList.add('hide'); $('#noAccess').classList.remove('hide'); return; }
-  load();
-});
+onAuthStateChanged(auth,async user=>{ if(!user){location.href='index.html';return} const snap=await getDoc(doc(db,'users',user.uid)); if(!snap.exists()||snap.data().role!=='admin'){$('#adminAccess').style.display='block';return} $('#adminPanel').style.display='grid'; loadAdmin(); });
+$('#logoutAdmin').onclick=()=>signOut(auth).then(()=>location.href='index.html');
+$('#productForm').onsubmit=async e=>{e.preventDefault(); await addDoc(collection(db,'products'),{title:$('#pTitle').value,price:+$('#pPrice').value,category:$('#pCategory').value,imageUrl:$('#pImage').value,description:$('#pDesc').value,createdAt:serverTimestamp()}); e.target.reset(); loadAdmin()};
+$('#categoryForm').onsubmit=async e=>{e.preventDefault(); if($('#cName').value) await addDoc(collection(db,'categories'),{name:$('#cName').value}); e.target.reset(); loadAdmin()};
+$('#bannerForm').onsubmit=async e=>{e.preventDefault(); await addDoc(collection(db,'banners'),{tag:$('#bTag').value,title:$('#bTitle').value,subtitle:$('#bSubtitle').value,link:$('#bLink').value||'#products'}); e.target.reset(); loadAdmin()};
