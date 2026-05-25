@@ -1,7 +1,17 @@
-AutoStyle Light Admin
+AutoStyle Marketplace расширенная HTML версия
 
-1. Замените apiKey в js/firebase.js на ваш Firebase apiKey.
-2. Загрузите все файлы в GitHub repository.
-3. GitHub Pages: main / root.
-4. Чтобы зайти в админку: в Firestore collection users найдите свой UID и поставьте role = admin.
-5. В админке редактируются: главная, категории, баннеры, товары, преимущества.
+Что есть:
+- Верхнее меню как маркетплейс: каталог, поиск, вход, избранное, корзина
+- Главная с левыми категориями
+- Карусель баннеров
+- Мини-баннеры
+- Сетка товаров
+- Корзина в localStorage
+- Рабочая регистрация и вход через Firebase Auth
+- Админка: добавление/удаление товаров, категорий, баннеров
+
+Важно:
+1. Открой js/firebase.js
+2. Вставь свой apiKey вместо PASTE_API_KEY
+3. Чтобы аккаунт стал админом: Firebase → Firestore → users → UID → role = admin
+4. Загрузи все файлы в GitHub поверх старых

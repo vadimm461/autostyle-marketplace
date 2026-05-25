@@ -1,28 +1,11 @@
-import { db, auth, storage } from './firebase.js';
-import { collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, serverTimestamp, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { auth, db } from './firebase.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
-const $=s=>document.querySelector(s); let active='settings';
-const tabs=['settings','categories','banners','products','features'];
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>show(b.dataset.tab));
-function show(t){active=t;tabs.forEach(x=>$('#'+x).classList.toggle('hidden',x!==t));document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));loadLists()}
-async function upload(file,path){if(!file)return '';const r=ref(storage,path+'/'+Date.now()+'-'+file.name);await uploadBytes(r,file);return await getDownloadURL(r)}
-onAuthStateChanged(auth,async u=>{if(!u){location.href='login.html';return} const us=await getDoc(doc(db,'users',u.uid)); if(!us.exists()||us.data().role!=='admin'){alert('Нужны права администратора. В Firestore users -> ваш uid -> role: admin'); location.href='index.html'; return} init();});
-async function init(){const s=await getDoc(doc(db,'site','settings')); if(s.exists()){const d=s.data(); for(const k in d){if($('#set_'+k))$('#set_'+k).value=d[k]}} loadLists()}
-$('#logout').onclick=()=>signOut(auth);
-$('#settingsForm').onsubmit=async e=>{e.preventDefault();const f=e.target;let heroImage=f.heroImage.value;if(f.heroFile.files[0])heroImage=await upload(f.heroFile.files[0],'site');await setDoc(doc(db,'site','settings'),{brand:f.brand.value,phone:f.phone.value,slogan:f.slogan.value,heroTitle:f.heroTitle.value,heroText:f.heroText.value,heroImage},{merge:true});alert('Главная обновлена')};
-$('#catForm').onsubmit=async e=>{e.preventDefault();await addDoc(collection(db,'categories'),{title:e.target.title.value,icon:e.target.icon.value,createdAt:serverTimestamp()});e.target.reset();loadLists()};
-$('#bannerForm').onsubmit=async e=>{e.preventDefault();const f=e.target;let imageUrl=f.imageUrl.value;if(f.file.files[0])imageUrl=await upload(f.file.files[0],'banners');await addDoc(collection(db,'banners'),{title:f.title.value,text:f.text.value,link:f.link.value,type:f.type.value,imageUrl,createdAt:serverTimestamp()});f.reset();loadLists()};
-$('#productForm').onsubmit=async e=>{e.preventDefault();const f=e.target;let imageUrl=f.imageUrl.value;if(f.file.files[0])imageUrl=await upload(f.file.files[0],'products');await addDoc(collection(db,'products'),{title:f.title.value,price:Number(f.price.value),oldPrice:Number(f.oldPrice.value||0),category:f.category.value,description:f.description.value,imageUrl,inStock:f.inStock.checked,createdAt:serverTimestamp()});f.reset();loadLists()};
-$('#featureForm').onsubmit=async e=>{e.preventDefault();await addDoc(collection(db,'features'),{title:e.target.title.value,text:e.target.text.value,createdAt:serverTimestamp()});e.target.reset();loadLists()};
-async function list(name){try{return (await getDocs(query(collection(db,name),orderBy('createdAt','desc')))).docs.map(d=>({id:d.id,...d.data()}))}catch(e){return []}}
-async function del(name,id){if(confirm('Удалить?')){await deleteDoc(doc(db,name,id));loadLists()}}
-window.del=del;
-async function loadLists(){
- const cats=await list('categories');$('#catList').innerHTML=cats.map(i=>item('categories',i,i.title,i.icon||'')).join('');
- const banners=await list('banners');$('#bannerList').innerHTML=banners.map(i=>item('banners',i,i.title,i.text,i.imageUrl)).join('');
- const prods=await list('products');$('#productList').innerHTML=prods.map(i=>item('products',i,i.title,(i.price||0)+' ₸',i.imageUrl)).join('');
- const fs=await list('features');$('#featureList').innerHTML=fs.map(i=>item('features',i,i.title,i.text)).join('');
-}
-function item(col,i,title,sub,img=''){return `<div class="listItem">${img?`<img src="${img}">`:''}<div><b>${title}</b><br><span>${sub||''}</span></div><button class="btn danger" onclick="del('${col}','${i.id}')">Удалить</button></div>`}
-show('settings');
+import { collection, addDoc, getDocs, deleteDoc, doc, getDoc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const $=s=>document.querySelector(s); let active='products';
+const schemas={products:['title','price','oldPrice','category','image','rating'],categories:['title'],banners:['title','subtitle','text','image']};
+function formHtml(type){return `<h2>${type==='products'?'Товары':type==='categories'?'Категории':'Баннеры'}</h2><form id="adminForm" class="admin-grid">${schemas[type].map(f=>`<label class="field">${f}<input id="${f}" ${f==='price'||f==='oldPrice'?'type="number"':''}></label>`).join('')}<button class="primary">Добавить</button></form><div id="list"></div>`}
+async function load(type=active){ active=type; document.querySelectorAll('.admin-side button').forEach(b=>b.classList.toggle('active',b.dataset.type===type)); $('#panel').innerHTML=formHtml(type); $('#adminForm').onsubmit=save; const snap=await getDocs(query(collection(db,type), orderBy('createdAt','desc'))).catch(()=>null); const items=snap?snap.docs.map(d=>({id:d.id,...d.data()})):[]; $('#list').innerHTML=items.map(x=>`<div class="list-item"><div><b>${x.title||x.name}</b><p class="muted">${x.category||x.subtitle||x.text||''}</p></div><button class="danger" onclick="removeItem('${type}','${x.id}')">Удалить</button></div>`).join('')||'<p class="muted">Пока пусто</p>'}
+async function save(e){e.preventDefault(); const data={createdAt:serverTimestamp()}; schemas[active].forEach(f=>data[f]=$('#'+f).value); await addDoc(collection(db,active),data); load(active)}
+window.removeItem=async(t,id)=>{await deleteDoc(doc(db,t,id));load(t)}; window.load=load;
+onAuthStateChanged(auth, async user=>{ if(!user){location.href='login.html';return} const snap=await getDoc(doc(db,'users',user.uid)); if(!snap.exists() || snap.data().role!=='admin'){ $('#panel').innerHTML='<h2>Нет доступа</h2><p>Для админки нужен role: admin в Firestore → users → ваш UID.</p>'; return;} $('#adminEmail').textContent=user.email; load('products')});
+window.logout=()=>signOut(auth).then(()=>location.href='index.html');
