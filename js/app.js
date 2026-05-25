@@ -1,26 +1,18 @@
-import { auth, db } from './firebase.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, getDocs, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { db } from './firebase.js';
+import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const fmt = new Intl.NumberFormat('ru-RU');
-const $ = s => document.querySelector(s);
-const productsEl = $('#featuredProducts');
+const grid = document.getElementById('productsGrid');
+if (grid) loadProducts();
 
-onAuthStateChanged(auth, user => {
-  document.querySelectorAll('[data-user]').forEach(el => el.classList.toggle('hidden', !user));
-  document.querySelectorAll('[data-guest]').forEach(el => el.classList.toggle('hidden', !!user));
-});
-
-document.querySelectorAll('[data-logout]').forEach(btn => btn.onclick = async () => { await signOut(auth); location.href='index.html'; });
-
-async function loadFeatured(){
-  if(!productsEl) return;
-  const snap = await getDocs(query(collection(db,'products'), orderBy('createdAt','desc'), limit(6)));
-  productsEl.innerHTML = '';
-  if(snap.empty){ productsEl.innerHTML = '<div class="notice">Пока нет товаров. Добавь первый товар в админке.</div>'; return; }
-  snap.forEach(d=>{
-    const p=d.data();
-    productsEl.insertAdjacentHTML('beforeend', `<a class="product" href="product.html?id=${d.id}"><img class="pimg" src="${p.imageUrl||'assets/placeholder.svg'}" alt="${p.title||''}"><div class="pbody"><span class="chip">${p.category||'AutoStyle'}</span><h3>${p.title||'Товар'}</h3><div class="price">${fmt.format(Number(p.price||0))} ₽</div><p class="muted">${(p.description||'').slice(0,90)}</p></div></a>`);
-  });
+async function loadProducts(){
+  try{
+    const q = query(collection(db,'products'), orderBy('createdAt','desc'));
+    const snap = await getDocs(q);
+    grid.innerHTML = '';
+    if(snap.empty){ grid.innerHTML = '<p>Пока товаров нет. Добавь их через админку.</p>'; return; }
+    snap.forEach(doc=>{
+      const p = doc.data();
+      grid.innerHTML += `<article class="product"><div class="product-img">${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover">`:'🛞'}</div><div class="product-body"><h3>${p.title||'Товар'}</h3><p>${p.category||'Категория'}</p><div class="price">${p.price||0} ₴</div></div></article>`;
+    });
+  }catch(e){ grid.innerHTML = '<p>Проверь Firebase config и правила Firestore.</p>'; console.error(e); }
 }
-loadFeatured();
