@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<header class="topbar">
+<header class="topbar dark-topbar">
   <div class="bar">
     <a class="logo" href="index.html">
       <div class="logo-mark">AS</div>
@@ -22,10 +22,10 @@
       <button type="button">Найти</button>
     </form>
 
-    <button id="openAuth" class="icon-btn">Войти</button>
+    <button id="openAuth" class="icon-btn">👤 Войти</button>
 
     <div id="accountDrop" class="dropdown" style="display:none">
-      <button id="accountBtn" class="icon-btn">Аккаунт</button>
+      <button id="accountBtn" class="icon-btn">👤 Аккаунт</button>
       <div class="drop">
         <b id="userEmail"></b>
         <p class="muted">Вы авторизованы</p>
@@ -35,23 +35,39 @@
       </div>
     </div>
 
-    <button class="icon-btn">Избранное</button>
-    <button class="icon-btn">Корзина <b id="cartCount">0</b></button>
+    <button class="icon-btn">♡ Избранное</button>
+    <button class="icon-btn">🛒 Корзина <b id="cartCount">0</b></button>
   </div>
 </header>
 
 <main class="container">
   <section class="hero-grid">
-    <aside class="panel">
+    <aside class="panel categories-panel">
       <h3>Категории</h3>
       <div id="categories" class="cat-list"></div>
     </aside>
 
-    <div id="hero" class="hero"></div>
+    <div id="hero" class="hero premium-hero">
+      <div class="hero-content">
+        <span class="hero-label">AUTO STYLE MARKET</span>
+        <h1>Автотовары для стиля, комфорта и защиты</h1>
+        <p>Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.</p>
+
+        <div class="hero-actions">
+          <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
+          <button class="hero-link">Популярные товары</button>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="hero-circle"></div>
+        <div class="hero-car">🚘</div>
+      </div>
+    </div>
 
     <aside class="side-card panel">
-      <h2>Баннеры</h2>
-      <p class="muted">Управляются в админке.</p>
+      <h2>Промо</h2>
+      <p class="muted">Скидки, акции и баннеры управляются в админке.</p>
     </aside>
   </section>
 
@@ -59,13 +75,36 @@
 
   <section>
     <div class="section-head">
-      <h2>Горячие предложения</h2>
+      <h2>Товары</h2>
       <a href="catalog.html">Все товары</a>
+    </div>
+
+    <div class="product-tabs">
+      <button class="product-tab active" data-filter="hot">Горячие предложения</button>
+      <button class="product-tab" data-filter="new">Новинки</button>
+      <button class="product-tab" data-filter="best">Лучшая цена</button>
     </div>
 
     <div id="productsGrid" class="products"></div>
   </section>
 </main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-group">
+      <h3>AutoStyle</h3>
+      <a href="contacts.html">Контакты</a>
+      <a href="about.html">Про нас</a>
+      <a href="#">Адреса</a>
+    </div>
+
+    <div class="footer-group">
+      <h3>Выгода</h3>
+      <a href="#">Рассрочка</a>
+      <a href="#">Подарочные сертификаты</a>
+    </div>
+  </div>
+</footer>
 
 <div id="authModal" class="modal">
   <div class="modal-card">
@@ -80,35 +119,15 @@
     </div>
 
     <form id="loginForm">
-      <label class="field">
-        Email
-        <input id="loginEmail" type="email" required>
-      </label>
-
-      <label class="field">
-        Пароль
-        <input id="loginPass" type="password" required>
-      </label>
-
+      <label class="field">Email<input id="loginEmail" type="email" required></label>
+      <label class="field">Пароль<input id="loginPass" type="password" required></label>
       <button class="primary" style="width:100%">Войти</button>
     </form>
 
     <form id="registerForm" style="display:none">
-      <label class="field">
-        Имя
-        <input id="regName" required>
-      </label>
-
-      <label class="field">
-        Email
-        <input id="regEmail" type="email" required>
-      </label>
-
-      <label class="field">
-        Пароль
-        <input id="regPass" type="password" minlength="6" required>
-      </label>
-
+      <label class="field">Имя<input id="regName" required></label>
+      <label class="field">Email<input id="regEmail" type="email" required></label>
+      <label class="field">Пароль<input id="regPass" type="password" minlength="6" required></label>
       <button class="primary" style="width:100%">Создать</button>
     </form>
   </div>
