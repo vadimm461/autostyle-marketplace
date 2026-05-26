@@ -1111,7 +1111,26 @@ body:has(.catalog-menu:hover) .page-dim {
     grid-template-columns: 1fr;
   }
 }
+.catalog-menu::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 920px;
+  height: 22px;
+}
 
+.catalog-popup {
+  top: calc(100% + 8px) !important;
+}
+
+.catalog-menu:hover .catalog-popup,
+.catalog-popup:hover {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
+}
 
 
 
