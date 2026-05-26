@@ -306,3 +306,6 @@ authModal();
 renderHome();
 renderCatalogMenu();
 setupProductTabs();
+
+
+
