@@ -16,9 +16,15 @@
     </a>
 
     <nav class="admin-nav">
-      <button class="active" data-section="products">Товары</button>
+      <button class="active" data-section="dashboard">Главная</button>
+      <button data-section="products">Товары</button>
       <button data-section="categories">Категории</button>
       <button data-section="banners">Баннеры</button>
+      <button data-section="hero">Hero-блок</button>
+      <button data-section="footer">Футер</button>
+      <button data-section="pages">Страницы</button>
+      <button data-section="media">Медиа</button>
+      <button data-section="settings">Настройки</button>
       <a href="index.html"><button>На сайт</button></a>
     </nav>
   </aside>
@@ -27,37 +33,57 @@
     <button id="logout" class="icon-btn" style="float:right">Выйти</button>
 
     <h1>Панель управления</h1>
-    <p class="muted">Mini CMS: добавление, редактирование и удаление.</p>
+    <p class="muted">Полное управление контентом сайта AutoStyle.</p>
 
-    <section id="products" class="admin-section active">
+    <section id="dashboard" class="admin-section active">
+      <div class="admin-grid">
+        <div class="admin-card">
+          <h2>Товары</h2>
+          <p class="muted">Добавление, редактирование, цены, фото и категории.</p>
+        </div>
+
+        <div class="admin-card">
+          <h2>Категории</h2>
+          <p class="muted">Категории появляются в меню каталога и на главной.</p>
+        </div>
+
+        <div class="admin-card">
+          <h2>Баннеры</h2>
+          <p class="muted">Промо-блоки и рекламные карточки главной страницы.</p>
+        </div>
+
+        <div class="admin-card">
+          <h2>Медиа</h2>
+          <p class="muted">Загрузка изображений в Firebase Storage.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="products" class="admin-section">
       <div class="admin-card">
         <h2>Товар</h2>
 
         <form id="productForm" class="grid2">
+          <label class="field">Название<input id="pTitle" required></label>
+          <label class="field">Цена<input id="pPrice" type="number" required></label>
+          <label class="field">Категория<input id="pCategory"></label>
+          <label class="field">Фото URL<input id="pImage"></label>
+
           <label class="field">
-            Название
-            <input id="pTitle" required>
+            Загрузить фото
+            <input id="pFile" type="file" accept="image/*">
           </label>
 
           <label class="field">
-            Цена
-            <input id="pPrice" type="number" required>
+            Метка товара
+            <select id="pTag">
+              <option value="hot">Горячие предложения</option>
+              <option value="new">Новинки</option>
+              <option value="best">Лучшая цена</option>
+            </select>
           </label>
 
-          <label class="field">
-            Категория
-            <input id="pCategory">
-          </label>
-
-          <label class="field">
-            Фото URL
-            <input id="pImage">
-          </label>
-
-          <label class="field" style="grid-column:1/-1">
-            Описание
-            <textarea id="pDesc"></textarea>
-          </label>
+          <label class="field" style="grid-column:1/-1">Описание<textarea id="pDesc"></textarea></label>
 
           <button class="primary">Сохранить товар</button>
         </form>
@@ -70,12 +96,9 @@
       <div class="admin-card">
         <h2>Категория</h2>
 
-        <form id="catForm">
-          <label class="field">
-            Название
-            <input id="cTitle" required>
-          </label>
-
+        <form id="catForm" class="grid2">
+          <label class="field">Название<input id="cTitle" required></label>
+          <label class="field">Иконка / короткий код<input id="cIcon" placeholder="AS, CH, LT..."></label>
           <button class="primary">Сохранить категорию</button>
         </form>
 
@@ -88,20 +111,17 @@
         <h2>Баннер</h2>
 
         <form id="bannerForm" class="grid2">
-          <label class="field">
-            Заголовок
-            <input id="bTitle" required>
-          </label>
+          <label class="field">Заголовок<input id="bTitle" required></label>
+          <label class="field">Фото URL<input id="bImage"></label>
 
           <label class="field">
-            Фото URL
-            <input id="bImage">
+            Загрузить фото
+            <input id="bFile" type="file" accept="image/*">
           </label>
 
-          <label class="field" style="grid-column:1/-1">
-            Текст
-            <textarea id="bText"></textarea>
-          </label>
+          <label class="field">Ссылка<input id="bLink" placeholder="catalog.html"></label>
+
+          <label class="field" style="grid-column:1/-1">Текст<textarea id="bText"></textarea></label>
 
           <button class="primary">Сохранить баннер</button>
         </form>
@@ -109,6 +129,113 @@
         <div id="bannerList" class="list"></div>
       </div>
     </section>
+
+    <section id="hero" class="admin-section">
+      <div class="admin-card">
+        <h2>Hero-блок главной страницы</h2>
+
+        <form id="heroForm" class="grid2">
+          <label class="field">Метка<input id="heroLabel" placeholder="AUTO STYLE MARKET"></label>
+          <label class="field">Кнопка<input id="heroButton" placeholder="Смотреть каталог"></label>
+          <label class="field" style="grid-column:1/-1">Заголовок<input id="heroTitle"></label>
+          <label class="field" style="grid-column:1/-1">Текст<textarea id="heroText"></textarea></label>
+          <label class="field">Ссылка кнопки<input id="heroLink" placeholder="catalog.html"></label>
+          <label class="field">Фото URL<input id="heroImage"></label>
+
+          <button class="primary">Сохранить Hero</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="footer" class="admin-section">
+      <div class="admin-card">
+        <h2>Футер сайта</h2>
+
+        <form id="footerForm" class="grid2">
+          <label class="field">Название первой группы<input id="footerGroup1" placeholder="AutoStyle"></label>
+          <label class="field">Название второй группы<input id="footerGroup2" placeholder="Выгода"></label>
+
+          <label class="field" style="grid-column:1/-1">
+            Ссылки первой группы
+            <textarea id="footerLinks1" placeholder="Контакты|contacts.html&#10;Про нас|about.html&#10;Адреса|#"></textarea>
+          </label>
+
+          <label class="field" style="grid-column:1/-1">
+            Ссылки второй группы
+            <textarea id="footerLinks2" placeholder="Рассрочка|#&#10;Подарочные сертификаты|#"></textarea>
+          </label>
+
+          <button class="primary">Сохранить футер</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="pages" class="admin-section">
+      <div class="admin-card">
+        <h2>Страницы сайта</h2>
+
+        <form id="pageForm" class="grid2">
+          <label class="field">Страница
+            <select id="pageKey">
+              <option value="contacts">Контакты</option>
+              <option value="about">Про нас</option>
+              <option value="installment">Рассрочка</option>
+              <option value="certificates">Подарочные сертификаты</option>
+            </select>
+          </label>
+
+          <label class="field">Заголовок<input id="pageTitle"></label>
+
+          <label class="field" style="grid-column:1/-1">Контент<textarea id="pageContent"></textarea></label>
+
+          <button class="primary">Сохранить страницу</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="media" class="admin-section">
+      <div class="admin-card">
+        <h2>Медиа-файлы</h2>
+
+        <form id="mediaForm" class="grid2">
+          <label class="field">
+            Папка
+            <select id="mediaFolder">
+              <option value="products">products</option>
+              <option value="banners">banners</option>
+              <option value="categories">categories</option>
+              <option value="site">site</option>
+            </select>
+          </label>
+
+          <label class="field">
+            Файл
+            <input id="mediaFile" type="file" accept="image/*" required>
+          </label>
+
+          <button class="primary">Загрузить файл</button>
+        </form>
+
+        <div id="mediaResult" class="admin-upload-result"></div>
+      </div>
+    </section>
+
+    <section id="settings" class="admin-section">
+      <div class="admin-card">
+        <h2>Настройки сайта</h2>
+
+        <form id="settingsForm" class="grid2">
+          <label class="field">Название сайта<input id="siteName" placeholder="AutoStyle"></label>
+          <label class="field">Валюта<input id="siteCurrency" placeholder="₽"></label>
+          <label class="field">Email<input id="siteEmail"></label>
+          <label class="field">Телефон<input id="sitePhone"></label>
+          <label class="field" style="grid-column:1/-1">Адрес<textarea id="siteAddress"></textarea></label>
+
+          <button class="primary">Сохранить настройки</button>
+        </form>
+      </div>
+    </section>
+
   </main>
 </div>
 
