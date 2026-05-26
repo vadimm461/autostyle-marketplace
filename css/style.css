@@ -1179,5 +1179,52 @@ body:has(.catalog-menu:hover) .page-dim {
   border-radius: 999px;
   transition: width .2s ease;
 }
+.upload-box {
+  display: block;
+  width: 100%;
+}
 
+.upload-status,
+.upload-success,
+.upload-error {
+  border-radius: 18px;
+  padding: 16px;
+  font-weight: 700;
+  background: #f5f7f9;
+  border: 1px solid #e7ebf0;
+}
+
+.upload-success {
+  background: rgba(52,226,31,.12);
+  color: #148209;
+  border-color: rgba(52,226,31,.35);
+}
+
+.upload-error {
+  background: #ffe8e8;
+  color: #ba001b;
+  border-color: #ffcfcf;
+}
+
+.upload-status-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.upload-progress {
+  height: 12px;
+  background: #e7ebf0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-progress div {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg,#34e21f,#28c918);
+  border-radius: 999px;
+  transition: width .2s ease;
+}
 
