@@ -30,7 +30,7 @@ function val(id) {
 
 function setVal(id, value) {
   const el = $(id);
-  if (el) el.value = value || '';
+  if (el) el.value = value ?? '';
 }
 
 async function getCollection(name) {
@@ -41,36 +41,23 @@ async function getCollection(name) {
   }));
 }
 
-function section(id) {
-  $$('.admin-section').forEach(s => s.classList.remove('active'));
-  $('#' + id)?.classList.add('active');
+/* ===== МЕНЮ АДМИНКИ ===== */
 
-  $$('.admin-nav button').forEach(b => {
-    b.classList.toggle('active', b.dataset.section === id);
+function openSection(id) {
+  $$('.admin-section').forEach(sec => sec.classList.remove('active'));
+
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+
+  $$('.admin-nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.section === id);
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('[data-section]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-
-      const id = btn.dataset.section;
-      if (!id) return;
-
-      document.querySelectorAll('.admin-section').forEach(sec => {
-        sec.classList.remove('active');
-      });
-
-      const target = document.getElementById(id);
-      if (target) target.classList.add('active');
-
-      document.querySelectorAll('.admin-nav button').forEach(b => {
-        b.classList.remove('active');
-      });
-
-      btn.classList.add('active');
-    });
+$$('[data-section]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    openSection(btn.dataset.section);
   });
 });
 
@@ -124,18 +111,18 @@ async function renderProducts() {
       `).join('')
       : '<p class="muted">Пока пусто</p>';
 
-    $$('[data-delp]').forEach(b => {
-      b.onclick = async () => {
+    $$('[data-delp]').forEach(btn => {
+      btn.onclick = async () => {
         if (!confirm('Удалить товар?')) return;
 
-        await deleteDoc(doc(db, COLLECTIONS.products, b.dataset.delp));
-        renderProducts();
+        await deleteDoc(doc(db, COLLECTIONS.products, btn.dataset.delp));
+        await renderProducts();
       };
     });
 
-    $$('[data-editp]').forEach(b => {
-      b.onclick = () => {
-        const item = arr.find(x => x.id === b.dataset.editp);
+    $$('[data-editp]').forEach(btn => {
+      btn.onclick = () => {
+        const item = arr.find(x => x.id === btn.dataset.editp);
         if (!item) return;
 
         editing.product = item.id;
@@ -193,7 +180,7 @@ if ($('#productForm')) {
   };
 }
 
-/* ===== КАТЕГОРИИ ===== */
+/* ===== КАТЕГОРИИ И ПОДГРУППЫ ===== */
 
 async function renderCats() {
   const list = $('#catList');
@@ -238,18 +225,18 @@ async function renderCats() {
       `).join('')
       : '<p class="muted">Пока пусто</p>';
 
-    $$('[data-delc]').forEach(b => {
-      b.onclick = async () => {
+    $$('[data-delc]').forEach(btn => {
+      btn.onclick = async () => {
         if (!confirm('Удалить категорию?')) return;
 
-        await deleteDoc(doc(db, COLLECTIONS.categories, b.dataset.delc));
-        renderCats();
+        await deleteDoc(doc(db, COLLECTIONS.categories, btn.dataset.delc));
+        await renderCats();
       };
     });
 
-    $$('[data-editc]').forEach(b => {
-      b.onclick = () => {
-        const item = arr.find(x => x.id === b.dataset.editc);
+    $$('[data-editc]').forEach(btn => {
+      btn.onclick = () => {
+        const item = arr.find(x => x.id === btn.dataset.editc);
         if (!item) return;
 
         editing.cat = item.id;
@@ -268,32 +255,25 @@ async function renderCats() {
   }
 }
 
-    $$('[data-editc]').forEach(b => {
-      b.onclick = () => {
-        const item = arr.find(x => x.id === b.dataset.editc);
-        if (!item) return;
-
-        editing.cat = item.id;
-
-        setVal('#cTitle', item.title);
-        setVal('#cIcon', item.icon);
-      };
-    });
-  } catch (err) {
-    console.error(err);
-    alert('Ошибка загрузки категорий: ' + err.message);
-  }
-}
-
 if ($('#catForm')) {
   $('#catForm').onsubmit = async e => {
     e.preventDefault();
 
     try {
-  const data = {
+      const data = {
+        title: val('#cTitle'),
+        icon: val('#cIcon'),
+        parentId: val('#cParent'),
+        updatedAt: new Date().toISOString()
+      };
 
       if (!data.title) {
         alert('Введите название категории');
+        return;
+      }
+
+      if (editing.cat && editing.cat === data.parentId) {
+        alert('Категория не может быть родителем самой себя');
         return;
       }
 
@@ -334,18 +314,18 @@ async function renderBanners() {
       `).join('')
       : '<p class="muted">Пока пусто</p>';
 
-    $$('[data-delb]').forEach(b => {
-      b.onclick = async () => {
+    $$('[data-delb]').forEach(btn => {
+      btn.onclick = async () => {
         if (!confirm('Удалить баннер?')) return;
 
-        await deleteDoc(doc(db, COLLECTIONS.banners, b.dataset.delb));
-        renderBanners();
+        await deleteDoc(doc(db, COLLECTIONS.banners, btn.dataset.delb));
+        await renderBanners();
       };
     });
 
-    $$('[data-editb]').forEach(b => {
-      b.onclick = () => {
-        const item = arr.find(x => x.id === b.dataset.editb);
+    $$('[data-editb]').forEach(btn => {
+      btn.onclick = () => {
+        const item = arr.find(x => x.id === btn.dataset.editb);
         if (!item) return;
 
         editing.banner = item.id;
