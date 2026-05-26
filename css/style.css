@@ -1131,6 +1131,53 @@ body:has(.catalog-menu:hover) .page-dim {
   pointer-events: auto !important;
   transform: translateY(0) !important;
 }
+.upload-box {
+  display: block;
+  width: 100%;
+  align-self: end;
+}
 
+.upload-status,
+.upload-success,
+.upload-error {
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-weight: 800;
+  background: #f4f6f8;
+  border: 1px solid var(--line);
+}
+
+.upload-success {
+  background: rgba(52,226,31,.12);
+  color: #16830b;
+  border-color: rgba(52,226,31,.35);
+}
+
+.upload-error {
+  background: #ffe8e8;
+  color: #b00020;
+  border-color: #ffcaca;
+}
+
+.upload-status-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.upload-progress {
+  height: 10px;
+  background: #e8ebef;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-progress div {
+  height: 100%;
+  width: 0%;
+  background: #34e21f;
+  border-radius: 999px;
+  transition: width .2s ease;
+}
 
 
