@@ -261,9 +261,9 @@ if ($('#productForm')) {
     e.preventDefault();
 
     try {
-      let imageUrl = val('#pImage');
-      const uploaded = await uploadImage('#pFile', 'products');
-      if (uploaded) imageUrl = uploaded;
+    let imageUrl = val('#pImage');
+const uploaded = await uploadImage('#pFile', 'products', '#pImage', '#pUploadStatus');
+if (uploaded) imageUrl = uploaded;
 
       const data = {
         title: val('#pTitle'),
@@ -444,9 +444,9 @@ if ($('#bannerForm')) {
     e.preventDefault();
 
     try {
-      let imageUrl = val('#bImage');
-      const uploaded = await uploadImage('#bFile', 'banners');
-      if (uploaded) imageUrl = uploaded;
+    let imageUrl = val('#bImage');
+const uploaded = await uploadImage('#bFile', 'banners', '#bImage', '#bUploadStatus');
+if (uploaded) imageUrl = uploaded;
 
       const data = {
         title: val('#bTitle'),
