@@ -1,165 +1,819 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>AutoStyle</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+:root{--green:#34e21f;--dark:#111318;--text:#101217;--muted:#667085;--line:#e8ebef;--bg:#f7f8fa;--card:#fff;--shadow:0 18px 50px rgba(16,18,23,.08);--r:24px}*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--text);background:var(--bg)}a{text-decoration:none;color:inherit}.topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}.bar{max-width:1280px;margin:auto;display:flex;align-items:center;gap:18px;padding:14px 20px}.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:24px}.logo-mark{width:40px;height:40px;border-radius:12px;background:#111;display:grid;place-items:center;color:var(--green);font-weight:900}.logo span{color:var(--green)}.catalog-btn,.search button,.primary{border:0;border-radius:16px;background:var(--green);font-weight:800;padding:14px 22px;cursor:pointer}.search{flex:1;display:flex;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:white}.search input{flex:1;border:0;padding:0 18px;font-size:15px;outline:0}.icon-btn{border:1px solid var(--line);background:white;border-radius:16px;padding:12px 16px;cursor:pointer}.container{max-width:1280px;margin:22px auto;padding:0 20px}.hero-grid{display:grid;grid-template-columns:260px 1fr 300px;gap:18px}.panel,.hero,.side-card,.product-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}.panel{padding:18px}.cat-list{display:grid;gap:8px}.cat-item{padding:12px;border-radius:14px;border:1px solid transparent}.cat-item:hover{border-color:var(--line);background:#fafafa}.hero{min-height:330px;padding:46px;background:linear-gradient(135deg,#f9fff8,#fff)}.hero h1{font-size:54px;line-height:.95;margin:0 0 16px}.hero .accent{color:var(--green)}.hero p{font-size:18px;color:var(--muted);max-width:540px}.banner-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}.mini-banner{padding:24px;border-radius:22px;background:white;border:1px solid var(--line);min-height:120px}.section-head{display:flex;justify-content:space-between;align-items:center;margin:34px 0 14px}.products{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.product-card{padding:14px;transition:.2s}.product-card:hover{transform:translateY(-4px);box-shadow:0 24px 60px rgba(16,18,23,.12)}.product-img{height:170px;border-radius:18px;background:#f1f3f5;display:grid;place-items:center;overflow:hidden}.product-img img{max-width:100%;max-height:100%;object-fit:contain}.product-title{min-height:42px;margin:13px 0 6px;font-weight:700}.price{font-size:22px;font-weight:900}.muted{color:var(--muted)}.cart{margin-top:12px;width:100%;border:0;border-radius:14px;padding:12px;background:#111;color:white;font-weight:800}.modal{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:50}.modal.open{display:flex}.modal-card{width:min(440px,92vw);background:white;border-radius:28px;padding:26px;box-shadow:0 30px 90px rgba(0,0,0,.25)}.tabs{display:flex;background:#f2f4f7;border-radius:16px;padding:4px}.tabs button{flex:1;border:0;background:transparent;border-radius:13px;padding:12px;cursor:pointer}.tabs button.active{background:white;box-shadow:0 2px 10px rgba(0,0,0,.08)}.field{display:block;margin:12px 0;color:#475467}.field input,.field textarea,.field select{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:14px;padding:13px;outline:0}.dropdown{position:relative}.drop{display:none;position:absolute;right:0;top:52px;background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);width:240px;padding:12px}.dropdown.open .drop{display:block}.admin-layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}.admin-side{background:#111318;color:white;padding:22px;position:sticky;top:0;height:100vh}.admin-side .logo{margin-bottom:28px}.admin-nav button{display:block;width:100%;text-align:left;border:0;border-radius:14px;padding:14px 16px;background:transparent;color:white;cursor:pointer;margin-bottom:8px}.admin-nav button.active{background:#242832}.admin-main{padding:36px;background:#fbfcfd}.admin-section{display:none}.admin-section.active{display:block}.admin-card{background:white;border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:var(--shadow);margin-top:18px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.list{display:grid;gap:10px;margin-top:18px}.row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:16px;padding:12px}.danger{border:0;border-radius:12px;padding:10px 12px;background:#ffe8e8;color:#b00020;cursor:pointer}.edit{border:0;border-radius:12px;padding:10px 12px;background:#eef2ff;color:#1d4ed8;cursor:pointer}@media(max-width:980px){.hero-grid{grid-template-columns:1fr}.products{grid-template-columns:repeat(2,1fr)}.banner-row{grid-template-columns:1fr}.admin-layout{grid-template-columns:1fr}.admin-side{height:auto;position:relative}.bar{flex-wrap:wrap}.search{order:3;flex-basis:100%}}
+html { scroll-behavior: smooth; }
 
-<header class="topbar dark-topbar">
-  <div class="bar">
-    <a class="logo" href="index.html">
-      <div class="logo-mark">AS</div>
-      AUTO<span>STYLE</span>
-    </a>
+body {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(52,226,31,.12), transparent 28%),
+    radial-gradient(circle at 90% 20%, rgba(17,19,24,.08), transparent 24%),
+    var(--bg);
+}
 
-<div class="catalog-menu">
-  <button class="catalog-btn">☰ Каталог</button>
+.topbar {
+  animation: slideDown .7s ease both;
+}
 
-  <div class="catalog-popup mega-catalog">
-    <div class="mega-left">
-      <h3>Каталог товаров</h3>
-      <div id="catalogParents" class="mega-parent-list"></div>
-    </div>
+.logo-mark {
+  box-shadow: 0 0 0 rgba(52,226,31,.4);
+  animation: pulseLogo 2.4s infinite;
+}
 
-    <div class="mega-right">
-      <h3 id="megaTitle">Выберите категорию</h3>
-      <div id="catalogChildren" class="mega-child-grid"></div>
-    </div>
-  </div>
-</div>
+.catalog-btn,
+.search button,
+.primary {
+  transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+}
 
-<div class="page-dim"></div>
+.catalog-btn:hover,
+.search button:hover,
+.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(52,226,31,.28);
+  filter: saturate(1.1);
+}
 
-  <div class="catalog-popup">
-    <h3>Каталог товаров</h3>
+.icon-btn,
+.mini-banner,
+.panel,
+.hero,
+.side-card,
+.product-card {
+  transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+}
 
-    <div id="catalogGroups" class="catalog-groups"></div>
-  </div>
-</div>
+.icon-btn:hover,
+.mini-banner:hover,
+.panel:hover,
+.side-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 60px rgba(16,18,23,.12);
+  border-color: rgba(52,226,31,.35);
+}
 
-<div class="page-dim"></div>
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(249,255,248,.96), rgba(255,255,255,.92)),
+    linear-gradient(120deg, rgba(52,226,31,.18), transparent);
+  animation: fadeUp .8s ease both;
+}
 
-    <form class="search">
-      <input placeholder="Я ищу автотовары...">
-      <button type="button">Найти</button>
-    </form>
+.hero::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -70px;
+  top: -70px;
+  border-radius: 50%;
+  background: rgba(52,226,31,.22);
+  filter: blur(8px);
+  z-index: -1;
+  animation: floatBlob 6s ease-in-out infinite;
+}
 
-    <button id="openAuth" class="icon-btn">👤 Войти</button>
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.55) 45%, transparent 70%);
+  transform: translateX(-120%);
+  animation: shine 4s ease-in-out infinite;
+  z-index: -1;
+}
 
-    <div id="accountDrop" class="dropdown" style="display:none">
-      <button id="accountBtn" class="icon-btn">👤 Аккаунт</button>
-      <div class="drop">
-        <b id="userEmail"></b>
-        <p class="muted">Вы авторизованы</p>
-        <a href="admin.html">Админка</a>
-        <hr>
-        <button id="logout" class="icon-btn">Выйти</button>
-      </div>
-    </div>
+.hero h1,
+.hero p {
+  animation: fadeUp .9s ease both;
+}
 
-    <button class="icon-btn">♡ Избранное</button>
-    <button class="icon-btn">🛒 Корзина <b id="cartCount">0</b></button>
-  </div>
-</header>
+.hero p {
+  animation-delay: .12s;
+}
 
-<section class="hero-grid home-hero-grid">
-  <div id="hero" class="hero premium-hero"></div>
+.cat-item {
+  transition: transform .22s ease, background .22s ease, border-color .22s ease, color .22s ease;
+}
 
-  <aside class="side-card panel">
-    <h2>Промо</h2>
-    <p class="muted">Скидки, акции и баннеры управляются в админке.</p>
-  </aside>
-</section>
+.cat-item:hover {
+  transform: translateX(6px);
+  color: #111;
+  background: linear-gradient(90deg, rgba(52,226,31,.12), #fff);
+}
 
-    <div id="hero" class="hero premium-hero">
-      <div class="hero-content">
-        <span class="hero-label">AUTO STYLE MARKET</span>
-        <h1>Автотовары для стиля, комфорта и защиты</h1>
-        <p>Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.</p>
+.banner-row,
+.products {
+  animation: fadeUp .85s ease both;
+}
 
-        <div class="hero-actions">
-          <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
-          <button class="hero-link">Популярные товары</button>
-        </div>
-      </div>
+.mini-banner {
+  position: relative;
+  overflow: hidden;
+}
 
-      <div class="hero-visual">
-        <div class="hero-circle"></div>
-        <div class="hero-car">🚘</div>
-      </div>
-    </div>
+.mini-banner::before {
+  content: "";
+  position: absolute;
+  inset: auto -30% -60% auto;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(52,226,31,.16);
+  transition: transform .35s ease;
+}
 
-    <aside class="side-card panel">
-      <h2>Промо</h2>
-      <p class="muted">Скидки, акции и баннеры управляются в админке.</p>
-    </aside>
-  </section>
+.mini-banner:hover::before {
+  transform: scale(1.35);
+}
 
-  <div id="banners" class="banner-row"></div>
+.product-card {
+  position: relative;
+  overflow: hidden;
+}
 
-  <section>
-    <div class="section-head">
-      <h2>Товары</h2>
-      <a href="catalog.html">Все товары</a>
-    </div>
+.product-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(52,226,31,.12), transparent 40%);
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+}
 
-    <div class="product-tabs">
-      <button class="product-tab active" data-filter="hot">Горячие предложения</button>
-      <button class="product-tab" data-filter="new">Новинки</button>
-      <button class="product-tab" data-filter="best">Лучшая цена</button>
-    </div>
+.product-card:hover::before {
+  opacity: 1;
+}
 
-    <div id="productsGrid" class="products"></div>
-  </section>
-</main>
+.product-card:hover {
+  transform: translateY(-7px) scale(1.015);
+}
 
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="footer-group">
-      <h3>AutoStyle</h3>
-      <a href="contacts.html">Контакты</a>
-      <a href="about.html">Про нас</a>
-      <a href="#">Адреса</a>
-    </div>
+.product-img img {
+  transition: transform .35s ease;
+}
 
-    <div class="footer-group">
-      <h3>Выгода</h3>
-      <a href="#">Рассрочка</a>
-      <a href="#">Подарочные сертификаты</a>
-    </div>
-  </div>
-</footer>
+.product-card:hover .product-img img {
+  transform: scale(1.08) rotate(-1deg);
+}
 
-<div id="authModal" class="modal">
-  <div class="modal-card">
-    <button id="closeAuth" style="float:right;border:0;background:#f2f4f7;border-radius:99px;width:34px;height:34px">×</button>
+.cart {
+  transition: transform .24s ease, box-shadow .24s ease, background .24s ease;
+}
 
-    <h2>Вход в AutoStyle</h2>
-    <p class="muted">Войдите или создайте аккаунт.</p>
+.cart:hover {
+  transform: translateY(-2px);
+  background: #1a1d24;
+  box-shadow: 0 14px 28px rgba(17,19,24,.22);
+}
 
-    <div class="tabs">
-      <button class="tab active" data-tab="login">Вход</button>
-      <button class="tab" data-tab="register">Регистрация</button>
-    </div>
+.modal.open .modal-card {
+  animation: popIn .28s ease both;
+}
 
-    <form id="loginForm">
-      <label class="field">Email<input id="loginEmail" type="email" required></label>
-      <label class="field">Пароль<input id="loginPass" type="password" required></label>
-      <button class="primary" style="width:100%">Войти</button>
-    </form>
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.search:focus-within {
+  border-color: rgba(52,226,31,.7);
+  box-shadow: 0 0 0 4px rgba(52,226,31,.12);
+}
 
-    <form id="registerForm" style="display:none">
-      <label class="field">Имя<input id="regName" required></label>
-      <label class="field">Email<input id="regEmail" type="email" required></label>
-      <label class="field">Пароль<input id="regPass" type="password" minlength="6" required></label>
-      <button class="primary" style="width:100%">Создать</button>
-    </form>
-  </div>
-</div>
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-<script type="module" src="js/app.js"></script>
-</body>
-</html>
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseLogo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52,226,31,.32); }
+  50% { box-shadow: 0 0 0 10px rgba(52,226,31,0); }
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-18px,24px) scale(1.08); }
+}
+
+@keyframes shine {
+  0%, 55% { transform: translateX(-120%); }
+  75%, 100% { transform: translateX(120%); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(18px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* Modern admin product blocks */
+
+.admin-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(52,226,31,.12), transparent 32%);
+  pointer-events: none;
+}
+
+#productList .row {
+  grid-template-columns: 74px 1fr auto auto;
+  padding: 14px;
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 14px 35px rgba(16,18,23,.07);
+  transition: .25s ease;
+}
+
+#productList .row:hover {
+  transform: translateY(-4px);
+  border-color: rgba(52,226,31,.45);
+  box-shadow: 0 22px 55px rgba(16,18,23,.12);
+}
+
+.admin-product-img {
+  width: 74px;
+  height: 74px;
+  border-radius: 18px;
+  background: linear-gradient(135deg,#f1f3f5,#fff);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.admin-product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+
+.admin-product-info {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-product-title {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.admin-product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.admin-badge {
+  width: max-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(52,226,31,.12);
+  color: #16830b;
+  font-weight: 800;
+}
+
+.admin-price {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+@media(max-width:680px) {
+  #productList .row {
+    grid-template-columns: 64px 1fr;
+  }
+
+  #productList .row .edit,
+  #productList .row .danger {
+    width: 100%;
+  }
+}
+/* ===== FIX MAIN PAGE DESIGN ===== */
+
+body {
+  background: #f3f5f7 !important;
+}
+
+/* ЧЕРНАЯ ШАПКА */
+.topbar {
+  background: #111318 !important;
+  border-bottom: none !important;
+}
+
+.bar {
+  padding: 16px 20px !important;
+}
+
+.logo {
+  color: #fff !important;
+}
+
+.logo-mark {
+  background: #34e21f !important;
+  color: #111318 !important;
+}
+
+.logo span {
+  color: #34e21f !important;
+}
+
+.icon-btn {
+  background: #1d2028 !important;
+  color: #fff !important;
+  border: 1px solid #2b303b !important;
+}
+
+.search {
+  background: #fff !important;
+  border: none !important;
+}
+
+/* HERO */
+.hero {
+  background: linear-gradient(135deg, #111318, #252a35) !important;
+  color: white !important;
+  min-height: 380px !important;
+  padding: 52px !important;
+  border-radius: 30px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  right: -80px;
+  top: -80px;
+  width: 300px;
+  height: 300px;
+  background: #34e21f;
+  border-radius: 50%;
+  filter: blur(45px);
+  opacity: .55;
+}
+
+.hero h1 {
+  color: #fff !important;
+  font-size: 56px !important;
+  line-height: .95 !important;
+  max-width: 650px;
+}
+
+.hero p {
+  color: rgba(255,255,255,.7) !important;
+  font-size: 18px !important;
+}
+
+.hero-link {
+  border: 1px solid rgba(255,255,255,.25) !important;
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+  border-radius: 16px !important;
+  padding: 14px 20px !important;
+  font-weight: 800 !important;
+}
+
+/* БЛОКИ */
+.panel,
+.side-card {
+  border-radius: 30px !important;
+  box-shadow: 0 25px 70px rgba(17,19,24,.08) !important;
+}
+
+.cat-item {
+  background: #f7f8fa !important;
+  border-radius: 16px !important;
+  font-weight: 800 !important;
+}
+
+/* ВКЛАДКИ */
+.product-tabs {
+  display: flex !important;
+  gap: 12px !important;
+  margin: 0 0 24px !important;
+}
+
+.product-tab {
+  border: none !important;
+  background: #fff !important;
+  border-radius: 999px !important;
+  padding: 14px 22px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 10px 25px rgba(17,19,24,.07) !important;
+  cursor: pointer !important;
+}
+
+.product-tab.active {
+  background: #111318 !important;
+  color: #fff !important;
+}
+
+/* ФУТЕР */
+.footer {
+  margin-top: 70px !important;
+  background: #111318 !important;
+  color: #fff !important;
+  padding: 50px 20px !important;
+}
+
+.footer-inner {
+  max-width: 1280px !important;
+  margin: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 40px !important;
+}
+
+.footer-group {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.footer-group h3 {
+  color: #fff !important;
+  font-size: 24px !important;
+  margin: 0 0 10px !important;
+}
+
+.footer-group a {
+  color: rgba(255,255,255,.65) !important;
+  font-size: 15px !important;
+}
+
+.footer-group a:hover {
+  color: #34e21f !important;
+}
+.catalog-menu {
+  position: relative;
+  z-index: 220 !important;
+}
+
+.catalog-popup {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 0;
+  width: 360px;
+  background: #fff;
+  color: #111318;
+  border-radius: 26px;
+  padding: 22px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.28);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px) scale(.98);
+  transition: .25s ease;
+  pointer-events: none;
+  z-index: 230 !important;
+}
+
+.catalog-menu:hover .catalog-popup {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.catalog-groups {
+  display: grid;
+  gap: 10px;
+}
+
+.catalog-groups a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f4f6f8;
+  font-weight: 800;
+  transition: .2s ease;
+}
+
+.catalog-groups a:hover {
+  background: #111318;
+  color: #34e21f;
+  transform: translateX(6px);
+}
+
+.catalog-groups a span {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #111318;
+  color: #34e21f;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  flex: 0 0 auto;
+}
+
+.page-dim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 86px;
+  bottom: 0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: .25s ease;
+  z-index: 80;
+  pointer-events: none;
+}
+
+body:has(.catalog-menu:hover) .page-dim {
+  opacity: 1;
+  visibility: visible;
+}
+
+.topbar {
+  z-index: 200 !important;
+}
+.admin-link-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.admin-link-btn:hover {
+  background: #242832;
+}
+/* ===== MEGA CATALOG WITH PARENTS / CHILDREN ===== */
+
+.catalog-popup.mega-catalog {
+  width: min(920px, calc(100vw - 40px)) !important;
+  min-height: 430px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.mega-left {
+  background: #f5f7f9;
+  padding: 24px;
+  border-right: 1px solid var(--line);
+}
+
+.mega-left h3,
+.mega-right h3 {
+  margin: 0 0 16px;
+}
+
+.mega-right {
+  padding: 24px;
+  background: #fff;
+}
+
+.mega-parent-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mega-parent {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  border: 0;
+  border-radius: 16px;
+  padding: 13px 14px;
+  background: transparent;
+  color: #111318;
+  font-weight: 900;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.mega-parent span,
+.mega-child span {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #111318;
+  color: #34e21f;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.mega-parent:hover,
+.mega-parent.active {
+  background: #111318;
+  color: #fff;
+}
+
+.mega-parent:hover span,
+.mega-parent.active span {
+  background: #34e21f;
+  color: #111318;
+}
+
+.mega-child-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.mega-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f4f6f8;
+  border: 1px solid transparent;
+  transition: .2s ease;
+}
+
+.mega-child:hover {
+  background: #111318;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+.mega-child:hover span {
+  background: #34e21f;
+  color: #111318;
+}
+
+.mega-child b {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.mega-child small {
+  color: var(--muted);
+}
+
+.mega-child:hover small {
+  color: rgba(255,255,255,.65);
+}
+
+@media(max-width: 760px) {
+  .catalog-popup.mega-catalog {
+    grid-template-columns: 1fr;
+    width: calc(100vw - 24px) !important;
+    left: -12px;
+  }
+
+  .mega-left {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mega-child-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* ===== FINAL HOME FIXES ===== */
+
+/* поиск снова в одну строку */
+.topbar .bar {
+  flex-wrap: nowrap !important;
+}
+
+.topbar .search {
+  order: 0 !important;
+  flex: 1 1 auto !important;
+  min-width: 360px !important;
+}
+
+.topbar .search input {
+  min-height: 48px;
+}
+
+/* главная без левого блока категорий */
+.home-hero-grid {
+  grid-template-columns: 1fr 300px !important;
+}
+
+.home-hero-grid .hero {
+  min-height: 430px !important;
+}
+
+/* убираем поднимание блоков */
+.icon-btn:hover,
+.catalog-btn:hover,
+.search button:hover,
+.primary:hover,
+.hero-link:hover,
+.mini-banner:hover,
+.panel:hover,
+.side-card:hover,
+.product-card:hover,
+.cat-item:hover,
+.cart:hover {
+  transform: none !important;
+}
+
+/* hover теперь цвет + тень */
+.catalog-btn:hover,
+.search button:hover,
+.primary:hover {
+  background: #28c918 !important;
+  color: #111318 !important;
+  box-shadow: 0 0 0 4px rgba(52,226,31,.18), 0 16px 36px rgba(52,226,31,.22) !important;
+}
+
+.icon-btn:hover,
+.hero-link:hover {
+  background: #34e21f !important;
+  color: #111318 !important;
+  border-color: #34e21f !important;
+  box-shadow: 0 14px 32px rgba(52,226,31,.22) !important;
+}
+
+.panel:hover,
+.side-card:hover,
+.mini-banner:hover,
+.product-card:hover {
+  box-shadow: 0 24px 70px rgba(17,19,24,.14) !important;
+  border-color: rgba(52,226,31,.22) !important;
+}
+
+/* красивый активный hero link */
+.hero-link {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* убираем странный символ в hero */
+.hero input,
+.hero checkbox,
+.hero [type="checkbox"] {
+  display: none !important;
+}
+
+.hero-visual {
+  pointer-events: none;
+}
+
+.hero-car {
+  font-size: 34px !important;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  color: #111318;
+}
+
+/* баннеры */
+.banner-row {
+  margin-top: 22px !important;
+}
+
+.mini-banner {
+  min-height: 140px !important;
+  border-radius: 28px !important;
+}
+
+/* адаптив */
+@media(max-width: 980px) {
+  .topbar .bar {
+    flex-wrap: wrap !important;
+  }
+
+  .topbar .search {
+    flex-basis: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .home-hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
