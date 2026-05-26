@@ -97,10 +97,25 @@
         <h2>Категория</h2>
 
         <form id="catForm" class="grid2">
-          <label class="field">Название<input id="cTitle" required></label>
-          <label class="field">Иконка / короткий код<input id="cIcon" placeholder="AS, CH, LT..."></label>
-          <button class="primary">Сохранить категорию</button>
-        </form>
+  <label class="field">
+    Название
+    <input id="cTitle" required>
+  </label>
+
+  <label class="field">
+    Иконка / короткий код
+    <input id="cIcon" placeholder="AS, CH, LT...">
+  </label>
+
+  <label class="field" style="grid-column:1/-1">
+    Родительская категория
+    <select id="cParent">
+      <option value="">Нет — основная категория</option>
+    </select>
+  </label>
+
+  <button class="primary">Сохранить категорию</button>
+</form>
 
         <div id="catList" class="list"></div>
       </div>
