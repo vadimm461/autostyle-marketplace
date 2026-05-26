@@ -6,6 +6,34 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
+async function renderCatalogMenu() {
+  const snap = await getDocs(collection(db, COLLECTIONS.categories));
+
+  const categories = snap.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  const icons = [
+    '🚘',
+    '🧼',
+    '💡',
+    '🛞',
+    '🔧',
+    '🧽',
+    '⚙️',
+    '🔥'
+  ];
+
+  document.getElementById('catalogGroups').innerHTML =
+    categories.map((cat, index) => `
+      <a href="catalog.html?category=${encodeURIComponent(cat.title)}">
+        <span>${icons[index % icons.length]}</span>
+        ${cat.title}
+      </a>
+    `).join('');
+}
+
 function money(v){ return `${Number(v||0).toLocaleString('ru-RU')} ₽`; }
 function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#cartCount') && ($('#cartCount').textContent = cart.length); }
 async function loadCollection(name){ const snap = await getDocs(collection(db, name)); return snap.docs.map(d=>({id:d.id,...d.data()})); }
