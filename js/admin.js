@@ -270,11 +270,7 @@ if ($('#catForm')) {
     e.preventDefault();
 
     try {
-      const data = {
-        title: val('#cTitle'),
-        icon: val('#cIcon'),
-        updatedAt: new Date().toISOString()
-      };
+  const data = {
 
       if (!data.title) {
         alert('Введите название категории');
