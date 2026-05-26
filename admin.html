@@ -39,7 +39,7 @@
       <div class="admin-grid">
         <div class="admin-card"><h2>Товары</h2><p class="muted">Добавление, редактирование, цены, фото и категории.</p></div>
         <div class="admin-card"><h2>Категории</h2><p class="muted">Основные группы, подгруппы и порядок вывода.</p></div>
-        <div class="admin-card"><h2>Заказы</h2><p class="muted">Заявки покупателей из корзины.</p></div>
+        <div class="admin-card"><h2>Импорт</h2><p class="muted">Загрузка товаров из Excel по коду и названию.</p></div>
         <div class="admin-card"><h2>Медиа</h2><p class="muted">Загрузка изображений в Firebase Storage.</p></div>
       </div>
     </section>
@@ -50,6 +50,8 @@
 
         <form id="productForm" class="grid2">
           <label class="field">Название<input id="pTitle" required></label>
+          <label class="field">Код товара<input id="pCode" placeholder="Например: 00627"></label>
+
           <label class="field">Цена<input id="pPrice" type="number" required></label>
 
           <label class="field">
@@ -82,8 +84,44 @@
           <button class="primary">Сохранить товар</button>
         </form>
 
+        <div class="admin-card import-card">
+          <h2>Импорт товаров из Excel</h2>
+          <p class="muted">Загрузите файл `.xlsx`, `.xls` или `.csv`. Импортируются только код и название товара. Количество не используется.</p>
+
+          <div class="grid2">
+            <label class="field">
+              Файл базы
+              <input id="excelFile" type="file" accept=".xlsx,.xls,.csv">
+            </label>
+
+            <label class="field">
+              Категория для импортируемых товаров
+              <select id="importCategory">
+                <option value="">Без категории</option>
+              </select>
+            </label>
+
+            <label class="field">
+              Метка товара
+              <select id="importTag">
+                <option value="hot">Горячие предложения</option>
+                <option value="new">Новинки</option>
+                <option value="best">Лучшая цена</option>
+              </select>
+            </label>
+
+            <label class="field">
+              Цена по умолчанию
+              <input id="importPrice" type="number" value="0">
+            </label>
+          </div>
+
+          <button id="importExcelBtn" class="primary" type="button">Импортировать товары</button>
+          <div id="importStatus" class="import-status muted"></div>
+        </div>
+
         <div class="admin-tools admin-tools-products">
-          <input id="productSearch" placeholder="Поиск товара...">
+          <input id="productSearch" placeholder="Поиск товара, кода, категории...">
 
           <select id="productCategoryFilter">
             <option value="">Все категории</option>
@@ -240,6 +278,7 @@
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script type="module" src="js/admin.js"></script>
 </body>
 </html>

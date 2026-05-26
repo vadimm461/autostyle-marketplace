@@ -18,12 +18,23 @@
 }
 
 .admin-tools input,
-.admin-tools select {
+.admin-tools select,
+.import-card input,
+.import-card select {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 13px;
   outline: none;
   background: #fff;
+}
+
+.import-card {
+  margin-top: 24px;
+  background: #fbfcfd;
+}
+
+.import-status {
+  margin-top: 14px;
 }
 
 .tree-list {

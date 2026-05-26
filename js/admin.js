@@ -12,7 +12,10 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  setDoc
+  setDoc,
+  query,
+  where,
+  limit
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 import {
@@ -178,8 +181,9 @@ function buildCategoryOptions(cats) {
 async function renderCategoryOptions() {
   const select = $('#pCategory');
   const filter = $('#productCategoryFilter');
+  const importCategory = $('#importCategory');
 
-  if (!select && !filter) return;
+  if (!select && !filter && !importCategory) return;
 
   if (!allCatsCache.length) {
     allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
@@ -197,6 +201,12 @@ async function renderCategoryOptions() {
     const current = filter.value;
     filter.innerHTML = `<option value="">Все категории</option>${options}`;
     filter.value = current;
+  }
+
+  if (importCategory) {
+    const current = importCategory.value;
+    importCategory.innerHTML = `<option value="">Без категории</option>${options}`;
+    importCategory.value = current;
   }
 }
 
@@ -224,13 +234,13 @@ function renderProductList() {
   const list = $('#productList');
   if (!list) return;
 
-  const query = val('#productSearch').toLowerCase();
+  const queryText = val('#productSearch').toLowerCase();
   const category = val('#productCategoryFilter');
   const tag = val('#productTagFilter');
 
   const arr = allProductsCache.filter(p => {
-    const text = `${p.title || ''} ${p.category || ''} ${p.description || ''}`.toLowerCase();
-    if (query && !text.includes(query)) return false;
+    const text = `${p.code || ''} ${p.title || ''} ${p.category || ''} ${p.description || ''}`.toLowerCase();
+    if (queryText && !text.includes(queryText)) return false;
     if (category && p.category !== category) return false;
     if (tag && p.tag !== tag) return false;
     return true;
@@ -247,6 +257,7 @@ function renderProductList() {
           <b class="admin-product-title">${x.title || 'Без названия'}</b>
 
           <div class="admin-product-meta">
+            ${x.code ? `<span class="admin-badge">Код: ${x.code}</span>` : ''}
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
@@ -277,6 +288,7 @@ function renderProductList() {
       editing.product = item.id;
 
       setVal('#pTitle', item.title);
+      setVal('#pCode', item.code);
       setVal('#pPrice', item.price);
       setVal('#pCategory', item.category);
       setVal('#pImage', item.image);
@@ -298,6 +310,7 @@ if ($('#productForm')) {
 
       const data = {
         title: val('#pTitle'),
+        code: val('#pCode'),
         price: Number(val('#pPrice') || 0),
         category: val('#pCategory'),
         image: imageUrl,
@@ -325,6 +338,110 @@ if ($('#productForm')) {
     } catch (err) {
       console.error(err);
       alert('Ошибка сохранения товара: ' + err.message);
+    }
+  };
+}
+
+/* EXCEL IMPORT */
+
+function normalizeCode(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  return raw.replace(/\.0$/, '').padStart(raw.length <= 5 ? 5 : raw.length, '0');
+}
+
+function isProductCode(value) {
+  const code = normalizeCode(value);
+  return /^\d{4,}$/.test(code);
+}
+
+if ($('#importExcelBtn')) {
+  $('#importExcelBtn').onclick = async () => {
+    const fileInput = $('#excelFile');
+    const status = $('#importStatus');
+
+    if (!fileInput || !fileInput.files[0]) {
+      alert('Выберите Excel файл');
+      return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+      alert('Библиотека XLSX не загрузилась. Проверьте подключение интернета.');
+      return;
+    }
+
+    try {
+      const file = fileInput.files[0];
+      const buffer = await file.arrayBuffer();
+
+      if (status) status.innerHTML = '<b>Читаю файл...</b>';
+
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      const category = val('#importCategory');
+      const tag = $('#importTag') ? $('#importTag').value : 'hot';
+      const price = Number(val('#importPrice') || 0);
+
+      let imported = 0;
+      let skipped = 0;
+      let processed = 0;
+
+      for (const row of rows) {
+        const code = normalizeCode(row[0]);
+        const title = String(row[1] || '').trim();
+
+        if (!isProductCode(code) || !title) continue;
+
+        processed++;
+
+        const existingSnap = await getDocs(query(
+          collection(db, COLLECTIONS.products),
+          where('code', '==', code),
+          limit(1)
+        ));
+
+        if (!existingSnap.empty) {
+          skipped++;
+          if (status) status.textContent = `Обработано: ${processed}. Импортировано: ${imported}. Пропущено дублей: ${skipped}`;
+          continue;
+        }
+
+        await addDoc(collection(db, COLLECTIONS.products), {
+          code,
+          title,
+          price,
+          category,
+          image: '',
+          description: '',
+          tag,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+
+        imported++;
+
+        if (status) {
+          status.textContent = `Обработано: ${processed}. Импортировано: ${imported}. Пропущено дублей: ${skipped}`;
+        }
+      }
+
+      await renderProducts();
+
+      if (status) {
+        status.innerHTML = `
+          <div class="upload-success">
+            Готово. Импортировано: ${imported}. Пропущено дублей: ${skipped}.
+          </div>
+        `;
+      }
+
+      alert(`Импорт завершён. Импортировано: ${imported}. Пропущено дублей: ${skipped}.`);
+    } catch (err) {
+      console.error(err);
+      if (status) status.innerHTML = `<div class="upload-error">Ошибка импорта: ${err.message}</div>`;
+      alert('Ошибка импорта: ' + err.message);
     }
   };
 }
@@ -373,16 +490,16 @@ function renderCategoryTree() {
   const list = $('#catList');
   if (!list) return;
 
-  const query = val('#catSearch').toLowerCase();
+  const queryText = val('#catSearch').toLowerCase();
   const parentFilter = val('#catParentFilter');
 
   const parents = allCatsCache.filter(c => !c.parentId);
   const children = allCatsCache.filter(c => c.parentId);
 
   function matches(cat) {
-    return String(cat.title || '').toLowerCase().includes(query)
-      || String(cat.icon || '').toLowerCase().includes(query)
-      || String(cat.order || '').includes(query);
+    return String(cat.title || '').toLowerCase().includes(queryText)
+      || String(cat.icon || '').toLowerCase().includes(queryText)
+      || String(cat.order || '').includes(queryText);
   }
 
   let html = '';
@@ -391,20 +508,20 @@ function renderCategoryTree() {
     const childList = children.filter(c => c.parentId === parent.id);
 
     const visibleChildren = childList.filter(child => {
-      if (query && !matches(child)) return false;
+      if (queryText && !matches(child)) return false;
       if (parentFilter && parentFilter !== 'root' && child.parentId !== parentFilter) return false;
       return true;
     });
 
     const showParent =
-      (!query && !parentFilter) ||
+      (!queryText && !parentFilter) ||
       (parentFilter === 'root') ||
       (parentFilter === parent.id) ||
       matches(parent) ||
       visibleChildren.length;
 
     if (!showParent) return;
-    if (parentFilter === 'root' && query && !matches(parent)) return;
+    if (parentFilter === 'root' && queryText && !matches(parent)) return;
 
     html += `
       <div class="tree-parent">
