@@ -1,4 +1,5 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
+
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -51,7 +52,6 @@ async function renderCatalogMenu() {
 
   function renderChildren(parent) {
     const list = children.filter(c => c.parentId === parent.id);
-
     titleBox.textContent = parent.title || parent.name || 'Категория';
 
     childrenBox.innerHTML = list.length
@@ -140,15 +140,15 @@ function setupProductTabs() {
 
       if (btn.dataset.filter === 'hot') {
         if (title) title.textContent = 'Горячие предложения';
-        renderProducts(allProducts);
+        renderProducts(allProducts.filter(p => !p.tag || p.tag === 'hot'));
       }
 
       if (btn.dataset.filter === 'new') {
         if (title) title.textContent = 'Новинки';
 
-        const sorted = [...allProducts].sort((a, b) => {
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        });
+        const sorted = [...allProducts]
+          .filter(p => p.tag === 'new' || p.createdAt)
+          .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
         renderProducts(sorted);
       }
@@ -156,9 +156,9 @@ function setupProductTabs() {
       if (btn.dataset.filter === 'best') {
         if (title) title.textContent = 'Лучшая цена';
 
-        const sorted = [...allProducts].sort((a, b) => {
-          return Number(a.price || 0) - Number(b.price || 0);
-        });
+        const sorted = [...allProducts]
+          .filter(p => p.tag === 'best' || p.price)
+          .sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
 
         renderProducts(sorted);
       }
@@ -166,25 +166,38 @@ function setupProductTabs() {
   });
 }
 
-hero.innerHTML = `
-  <div class="hero-content">
-    <span class="hero-label">AUTO STYLE MARKET</span>
-    <h1>${b.title || 'Автотовары для стиля, комфорта и защиты'}</h1>
-    <p>${b.text || 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p>
+async function renderHome() {
+  const products = await loadCollection(COLLECTIONS.products);
+  const banners = await loadCollection(COLLECTIONS.banners);
 
-    <div class="hero-actions">
-      <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
-      <a href="#productsBlock" class="hero-link">Популярные товары</a>
-    </div>
-  </div>
+  allProducts = products;
 
-  <div class="hero-visual">
-    <div class="hero-circle"></div>
-    <div class="hero-car">AUTO</div>
-  </div>
-`;
+  const hero = $('#hero');
+
+  if (hero) {
+    const b = banners[0] || {};
+
+    hero.innerHTML = `
+      <div class="hero-content">
+        <span class="hero-label">AUTO STYLE MARKET</span>
+        <h1>${b.title || 'Автотовары для стиля, комфорта и защиты'}</h1>
+        <p>${b.text || 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p>
+
+        <div class="hero-actions">
+          <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
+          <a href="#productsBlock" class="hero-link">Популярные товары</a>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="hero-circle"></div>
+        <div class="hero-car">AUTO</div>
+      </div>
+    `;
+  }
 
   const bannersBox = $('#banners');
+
   if (bannersBox) {
     const defaultBanners = [
       { title: 'Акции', text: 'Лучшие предложения недели' },
@@ -195,14 +208,14 @@ hero.innerHTML = `
     const items = banners.slice(1, 4).length ? banners.slice(1, 4) : defaultBanners;
 
     bannersBox.innerHTML = items.map(b => `
-      <div class="mini-banner">
+      <a class="mini-banner" href="${b.link || '#productsBlock'}">
         <h3>${b.title}</h3>
         <p class="muted">${b.text || ''}</p>
-      </div>
+      </a>
     `).join('');
   }
 
-  renderProducts(products);
+  renderProducts(products.filter(p => !p.tag || p.tag === 'hot'));
   saveCart();
 }
 
