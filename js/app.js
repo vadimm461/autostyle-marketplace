@@ -39,20 +39,67 @@ async function loadCollection(name) {
 
 async function renderCatalogMenu() {
   const categories = await loadCollection(COLLECTIONS.categories);
-  const box = $('#catalogGroups');
 
-  if (!box) return;
+  const parentsBox = $('#catalogParents');
+  const childrenBox = $('#catalogChildren');
+  const titleBox = $('#megaTitle');
 
-  const icons = ['🚘', '🧼', '💡', '🛞', '🔧', '🧽', '⚙️', '🔥'];
+  if (!parentsBox || !childrenBox || !titleBox) return;
 
-  box.innerHTML = categories.length
-    ? categories.map((cat, index) => `
-      <a href="catalog.html?category=${encodeURIComponent(cat.title || cat.name || '')}">
-        <span>${icons[index % icons.length]}</span>
-        ${cat.title || cat.name || 'Без названия'}
-      </a>
+  const parents = categories.filter(c => !c.parentId);
+  const children = categories.filter(c => c.parentId);
+
+  function renderChildren(parent) {
+    const list = children.filter(c => c.parentId === parent.id);
+
+    titleBox.textContent = parent.title || parent.name || 'Категория';
+
+    childrenBox.innerHTML = list.length
+      ? list.map(child => `
+        <a href="catalog.html?category=${encodeURIComponent(child.title || child.name || '')}" class="mega-child">
+          <span>${child.icon || 'AS'}</span>
+          <div>
+            <b>${child.title || child.name || 'Без названия'}</b>
+            <small>Смотреть товары</small>
+          </div>
+        </a>
+      `).join('')
+      : `
+        <a href="catalog.html?category=${encodeURIComponent(parent.title || parent.name || '')}" class="mega-child">
+          <span>${parent.icon || 'AS'}</span>
+          <div>
+            <b>Все товары категории</b>
+            <small>${parent.title || parent.name || 'Категория'}</small>
+          </div>
+        </a>
+      `;
+  }
+
+  parentsBox.innerHTML = parents.length
+    ? parents.map((parent, index) => `
+      <button class="mega-parent ${index === 0 ? 'active' : ''}" data-parent="${parent.id}">
+        <span>${parent.icon || 'AS'}</span>
+        ${parent.title || parent.name || 'Без названия'}
+      </button>
     `).join('')
     : '<p class="muted">Категорий пока нет</p>';
+
+  if (parents[0]) renderChildren(parents[0]);
+
+  $$('.mega-parent').forEach(btn => {
+    btn.addEventListener('mouseenter', () => {
+      $$('.mega-parent').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const parent = parents.find(p => p.id === btn.dataset.parent);
+      if (parent) renderChildren(parent);
+    });
+
+    btn.addEventListener('click', () => {
+      const parent = parents.find(p => p.id === btn.dataset.parent);
+      if (parent) renderChildren(parent);
+    });
+  });
 }
 
 function renderProducts(products) {
