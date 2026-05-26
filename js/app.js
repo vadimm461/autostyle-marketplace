@@ -137,31 +137,24 @@ function setupProductTabs() {
       btn.classList.add('active');
 
       const title = $('.section-head h2');
+      let filtered = [];
 
       if (btn.dataset.filter === 'hot') {
         if (title) title.textContent = 'Горячие предложения';
-        renderProducts(allProducts.filter(p => !p.tag || p.tag === 'hot'));
+        filtered = allProducts.filter(p => !p.tag || p.tag === 'hot');
       }
 
       if (btn.dataset.filter === 'new') {
         if (title) title.textContent = 'Новинки';
-
-        const sorted = [...allProducts]
-          .filter(p => p.tag === 'new' || p.createdAt)
-          .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-        renderProducts(sorted);
+        filtered = allProducts.filter(p => p.tag === 'new');
       }
 
       if (btn.dataset.filter === 'best') {
         if (title) title.textContent = 'Лучшая цена';
-
-        const sorted = [...allProducts]
-          .filter(p => p.tag === 'best' || p.price)
-          .sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
-
-        renderProducts(sorted);
+        filtered = allProducts.filter(p => p.tag === 'best');
       }
+
+      renderProducts(filtered);
     });
   });
 }
