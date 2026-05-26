@@ -50,8 +50,28 @@ function section(id) {
   });
 }
 
-$$('[data-section]').forEach(b => {
-  b.onclick = () => section(b.dataset.section);
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-section]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+
+      const id = btn.dataset.section;
+      if (!id) return;
+
+      document.querySelectorAll('.admin-section').forEach(sec => {
+        sec.classList.remove('active');
+      });
+
+      const target = document.getElementById(id);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('.admin-nav button').forEach(b => {
+        b.classList.remove('active');
+      });
+
+      btn.classList.add('active');
+    });
+  });
 });
 
 if ($('#logout')) {
