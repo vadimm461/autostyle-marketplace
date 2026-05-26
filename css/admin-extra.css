@@ -1,0 +1,157 @@
+/* Extra admin CMS styles */
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.admin-tools {
+  display: grid;
+  grid-template-columns: 1fr 240px 180px;
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.admin-tools-cats {
+  grid-template-columns: 1fr 260px;
+}
+
+.admin-tools input,
+.admin-tools select {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 13px;
+  outline: none;
+  background: #fff;
+}
+
+.tree-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.tree-parent {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 14px 35px rgba(16,18,23,.05);
+}
+
+.tree-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 15px;
+}
+
+.tree-row.child {
+  margin-left: 22px;
+  border-left: 3px solid rgba(52,226,31,.45);
+}
+
+.tree-row small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.tree-children {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.tree-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tree-empty {
+  color: var(--muted);
+  padding: 12px 15px;
+}
+
+.upload-box {
+  display: block;
+  width: 100%;
+}
+
+.upload-status,
+.upload-success,
+.upload-error {
+  border-radius: 18px;
+  padding: 16px;
+  font-weight: 700;
+  background: #f5f7f9;
+  border: 1px solid #e7ebf0;
+}
+
+.upload-success {
+  background: rgba(52,226,31,.12);
+  color: #148209;
+  border-color: rgba(52,226,31,.35);
+}
+
+.upload-error {
+  background: #ffe8e8;
+  color: #ba001b;
+  border-color: #ffcfcf;
+}
+
+.upload-status-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.upload-progress {
+  height: 12px;
+  background: #e7ebf0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-progress div {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg,#34e21f,#28c918);
+  border-radius: 999px;
+  transition: width .2s ease;
+}
+
+.admin-media-url {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-media-url input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+@media(max-width: 980px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-tools,
+  .admin-tools-cats {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-actions {
+    flex-wrap: wrap;
+  }
+}

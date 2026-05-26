@@ -5,17 +5,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin AutoStyle</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin-extra.css">
 </head>
 <body>
+
 <div class="admin-layout">
   <aside class="admin-side">
-    <a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a>
+    <a class="logo" href="index.html">
+      <div class="logo-mark">AS</div>
+      AUTO<span>STYLE</span>
+    </a>
 
     <nav class="admin-nav">
       <button class="active" data-section="dashboard">Главная</button>
       <button data-section="products">Товары</button>
       <button data-section="categories">Категории</button>
       <button data-section="banners">Баннеры</button>
+      <button data-section="orders">Заказы</button>
+      <button data-section="media">Медиа</button>
+      <button data-section="pages">Страницы</button>
+      <button data-section="settings">Настройки</button>
       <a href="index.html" class="admin-link-btn">На сайт</a>
     </nav>
   </aside>
@@ -28,8 +37,10 @@
 
     <section id="dashboard" class="admin-section active">
       <div class="admin-grid">
-        <div class="admin-card"><h2>Товары</h2><p class="muted">Добавление, редактирование и фото.</p></div>
-        <div class="admin-card"><h2>Категории</h2><p class="muted">Дерево категорий и подкатегорий.</p></div>
+        <div class="admin-card"><h2>Товары</h2><p class="muted">Добавление, редактирование, цены, фото и категории.</p></div>
+        <div class="admin-card"><h2>Категории</h2><p class="muted">Основные группы, подгруппы и порядок вывода.</p></div>
+        <div class="admin-card"><h2>Заказы</h2><p class="muted">Заявки покупателей из корзины.</p></div>
+        <div class="admin-card"><h2>Медиа</h2><p class="muted">Загрузка изображений в Firebase Storage.</p></div>
       </div>
     </section>
 
@@ -38,16 +49,8 @@
         <h2>Товар</h2>
 
         <form id="productForm" class="grid2">
-
-          <label class="field">
-            Название
-            <input id="pTitle" required>
-          </label>
-
-          <label class="field">
-            Цена
-            <input id="pPrice" type="number" required>
-          </label>
+          <label class="field">Название<input id="pTitle" required></label>
+          <label class="field">Цена<input id="pPrice" type="number" required></label>
 
           <label class="field">
             Категория
@@ -65,10 +68,7 @@
             </select>
           </label>
 
-          <label class="field" style="grid-column:1/-1">
-            Фото URL
-            <input id="pImage">
-          </label>
+          <label class="field" style="grid-column:1/-1">Фото URL<input id="pImage"></label>
 
           <label class="field" style="grid-column:1/-1">
             Загрузить фото
@@ -77,16 +77,12 @@
 
           <div id="pUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
 
-          <label class="field" style="grid-column:1/-1">
-            Описание
-            <textarea id="pDesc"></textarea>
-          </label>
+          <label class="field" style="grid-column:1/-1">Описание<textarea id="pDesc"></textarea></label>
 
           <button class="primary">Сохранить товар</button>
-
         </form>
 
-        <div class="admin-tools">
+        <div class="admin-tools admin-tools-products">
           <input id="productSearch" placeholder="Поиск товара...">
 
           <select id="productCategoryFilter">
@@ -107,24 +103,14 @@
 
     <section id="categories" class="admin-section">
       <div class="admin-card">
-        <h2>Категории / подкатегории</h2>
+        <h2>Категории и подкатегории</h2>
 
         <form id="catForm" class="grid2">
+          <label class="field">Название<input id="cTitle" required></label>
 
-          <label class="field">
-            Название
-            <input id="cTitle" required>
-          </label>
+          <label class="field">Иконка / короткий код<input id="cIcon" placeholder="AS, CH, LT..."></label>
 
-          <label class="field">
-            Иконка / код
-            <input id="cIcon">
-          </label>
-
-          <label class="field">
-            Порядковый номер
-            <input id="cOrder" type="number" placeholder="10">
-          </label>
+          <label class="field">Порядковый номер<input id="cOrder" type="number" placeholder="10"></label>
 
           <label class="field">
             Родительская категория
@@ -134,10 +120,10 @@
           </label>
 
           <button class="primary">Сохранить категорию</button>
-
+          <button id="catReset" type="button" class="edit">Новая категория</button>
         </form>
 
-        <div class="admin-tools">
+        <div class="admin-tools admin-tools-cats">
           <input id="catSearch" placeholder="Поиск категории...">
 
           <select id="catParentFilter">
@@ -156,12 +142,9 @@
 
         <form id="bannerForm" class="grid2">
           <label class="field">Заголовок<input id="bTitle" required></label>
-          <label class="field">Ссылка<input id="bLink"></label>
+          <label class="field">Ссылка<input id="bLink" placeholder="catalog.html"></label>
 
-          <label class="field" style="grid-column:1/-1">
-            Фото URL
-            <input id="bImage">
-          </label>
+          <label class="field" style="grid-column:1/-1">Фото URL<input id="bImage"></label>
 
           <label class="field" style="grid-column:1/-1">
             Загрузить фото
@@ -170,15 +153,87 @@
 
           <div id="bUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
 
-          <label class="field" style="grid-column:1/-1">
-            Текст
-            <textarea id="bText"></textarea>
-          </label>
+          <label class="field" style="grid-column:1/-1">Текст<textarea id="bText"></textarea></label>
 
           <button class="primary">Сохранить баннер</button>
         </form>
 
         <div id="bannerList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="orders" class="admin-section">
+      <div class="admin-card">
+        <h2>Заказы</h2>
+        <p class="muted">Здесь будут отображаться заказы после подключения оформления заказа.</p>
+        <div id="orderList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="media" class="admin-section">
+      <div class="admin-card">
+        <h2>Медиа-файлы</h2>
+
+        <form id="mediaForm" class="grid2">
+          <label class="field">
+            Папка
+            <select id="mediaFolder">
+              <option value="products">products</option>
+              <option value="banners">banners</option>
+              <option value="categories">categories</option>
+              <option value="site">site</option>
+              <option value="media">media</option>
+            </select>
+          </label>
+
+          <label class="field">
+            Файл
+            <input id="mediaFile" type="file" accept="image/*" required>
+          </label>
+
+          <button class="primary">Загрузить файл</button>
+        </form>
+
+        <div id="mediaResult" class="admin-upload-result"></div>
+      </div>
+    </section>
+
+    <section id="pages" class="admin-section">
+      <div class="admin-card">
+        <h2>Страницы сайта</h2>
+
+        <form id="pageForm" class="grid2">
+          <label class="field">
+            Страница
+            <select id="pageKey">
+              <option value="contacts">Контакты</option>
+              <option value="about">Про нас</option>
+              <option value="installment">Рассрочка</option>
+              <option value="certificates">Подарочные сертификаты</option>
+            </select>
+          </label>
+
+          <label class="field">Заголовок<input id="pageTitle"></label>
+          <label class="field" style="grid-column:1/-1">Контент<textarea id="pageContent"></textarea></label>
+
+          <button class="primary">Сохранить страницу</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="settings" class="admin-section">
+      <div class="admin-card">
+        <h2>Настройки сайта</h2>
+
+        <form id="settingsForm" class="grid2">
+          <label class="field">Название сайта<input id="siteName" placeholder="AutoStyle"></label>
+          <label class="field">Валюта<input id="siteCurrency" placeholder="₽"></label>
+          <label class="field">Email<input id="siteEmail"></label>
+          <label class="field">Телефон<input id="sitePhone"></label>
+          <label class="field" style="grid-column:1/-1">Адрес<textarea id="siteAddress"></textarea></label>
+
+          <button class="primary">Сохранить настройки</button>
+        </form>
       </div>
     </section>
 
