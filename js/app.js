@@ -38,3 +38,23 @@ function authModal(){
 }
 
 authModal();renderHome();
+document.querySelectorAll('.product-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.product-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const title = document.querySelector('.section-head h2');
+
+    if (btn.dataset.filter === 'hot') {
+      title.textContent = 'Горячие предложения';
+    }
+
+    if (btn.dataset.filter === 'new') {
+      title.textContent = 'Новинки';
+    }
+
+    if (btn.dataset.filter === 'best') {
+      title.textContent = 'Лучшая цена';
+    }
+  });
+});
