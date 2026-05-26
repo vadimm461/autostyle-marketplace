@@ -166,42 +166,23 @@ function setupProductTabs() {
   });
 }
 
-async function renderHome() {
-  const cats = await loadCollection(COLLECTIONS.categories);
-  const products = await loadCollection(COLLECTIONS.products);
-  const banners = await loadCollection(COLLECTIONS.banners);
+hero.innerHTML = `
+  <div class="hero-content">
+    <span class="hero-label">AUTO STYLE MARKET</span>
+    <h1>${b.title || 'Автотовары для стиля, комфорта и защиты'}</h1>
+    <p>${b.text || 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p>
 
-  allProducts = products;
+    <div class="hero-actions">
+      <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
+      <a href="#productsBlock" class="hero-link">Популярные товары</a>
+    </div>
+  </div>
 
-  const catBox = $('#categories');
-  if (catBox) {
-    catBox.innerHTML = cats.length
-      ? cats.map(c => `<div class="cat-item">${c.title || c.name}</div>`).join('')
-      : '<div class="muted">Категории появятся после добавления в админке.</div>';
-  }
-
-  const hero = $('#hero');
-  if (hero) {
-    const b = banners[0] || {};
-
-    hero.innerHTML = `
-      <div class="hero-content">
-        <span class="hero-label">AUTO STYLE MARKET</span>
-        <h1>${b.title || 'Автотовары для стиля, комфорта и защиты'}</h1>
-        <p>${b.text || 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p>
-
-        <div class="hero-actions">
-          <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
-          <button class="hero-link">Популярные товары</button>
-        </div>
-      </div>
-
-      <div class="hero-visual">
-        <div class="hero-circle"></div>
-        <div class="hero-car">🚘</div>
-      </div>
-    `;
-  }
+  <div class="hero-visual">
+    <div class="hero-circle"></div>
+    <div class="hero-car">AUTO</div>
+  </div>
+`;
 
   const bannersBox = $('#banners');
   if (bannersBox) {
