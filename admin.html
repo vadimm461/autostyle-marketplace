@@ -60,42 +60,61 @@
     </section>
 
     <section id="products" class="admin-section">
-      <div class="admin-card">
-        <h2>Товар</h2>
+  <div class="admin-card">
+    <h2>Товар</h2>
 
-        <form id="productForm" class="grid2">
-          <label class="field">Название<input id="pTitle" required></label>
-          <label class="field">Цена<input id="pPrice" type="number" required></label>
-          <label class="field">
-  Категория
-  <select id="pCategory">
-    <option value="">Выберите категорию</option>
-  </select>
-</label>
-          <label class="field">Фото URL<input id="pImage"></label>
+    <form id="productForm" class="grid2">
 
-          <label class="field">
-            Загрузить фото
-            <input id="pFile" type="file" accept="image/*">
-          </label>
+      <label class="field">
+        Название
+        <input id="pTitle" required>
+      </label>
 
-          <label class="field">
-            Метка товара
-            <select id="pTag">
-              <option value="hot">Горячие предложения</option>
-              <option value="new">Новинки</option>
-              <option value="best">Лучшая цена</option>
-            </select>
-          </label>
+      <label class="field">
+        Цена
+        <input id="pPrice" type="number" required>
+      </label>
 
-          <label class="field" style="grid-column:1/-1">Описание<textarea id="pDesc"></textarea></label>
+      <label class="field">
+        Категория
+        <select id="pCategory">
+          <option value="">Выберите категорию</option>
+        </select>
+      </label>
 
-          <button class="primary">Сохранить товар</button>
-        </form>
+      <label class="field">
+        Метка товара
+        <select id="pTag">
+          <option value="hot">Горячие предложения</option>
+          <option value="new">Новинки</option>
+          <option value="best">Лучшая цена</option>
+        </select>
+      </label>
 
-        <div id="productList" class="list"></div>
-      </div>
-    </section>
+      <label class="field" style="grid-column:1/-1">
+        Фото URL
+        <input id="pImage">
+      </label>
+
+      <label class="field" style="grid-column:1/-1">
+        Загрузить фото
+        <input id="pFile" type="file" accept="image/*">
+      </label>
+
+      <div id="pUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+
+      <label class="field" style="grid-column:1/-1">
+        Описание
+        <textarea id="pDesc"></textarea>
+      </label>
+
+      <button class="primary">Сохранить товар</button>
+
+    </form>
+
+    <div id="productList" class="list"></div>
+  </div>
+</section>
 
     <section id="categories" class="admin-section">
       <div class="admin-card">
@@ -126,29 +145,46 @@
       </div>
     </section>
 
-    <section id="banners" class="admin-section">
-      <div class="admin-card">
-        <h2>Баннер</h2>
+   <section id="banners" class="admin-section">
+  <div class="admin-card">
+    <h2>Баннер</h2>
 
-        <form id="bannerForm" class="grid2">
-          <label class="field">Заголовок<input id="bTitle" required></label>
-          <label class="field">Фото URL<input id="bImage"></label>
+    <form id="bannerForm" class="grid2">
 
-          <label class="field">
-            Загрузить фото
-            <input id="bFile" type="file" accept="image/*">
-          </label>
+      <label class="field">
+        Заголовок
+        <input id="bTitle" required>
+      </label>
 
-          <label class="field">Ссылка<input id="bLink" placeholder="catalog.html"></label>
+      <label class="field">
+        Ссылка
+        <input id="bLink" placeholder="catalog.html">
+      </label>
 
-          <label class="field" style="grid-column:1/-1">Текст<textarea id="bText"></textarea></label>
+      <label class="field" style="grid-column:1/-1">
+        Фото URL
+        <input id="bImage">
+      </label>
 
-          <button class="primary">Сохранить баннер</button>
-        </form>
+      <label class="field" style="grid-column:1/-1">
+        Загрузить фото
+        <input id="bFile" type="file" accept="image/*">
+      </label>
 
-        <div id="bannerList" class="list"></div>
-      </div>
-    </section>
+      <div id="bUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+
+      <label class="field" style="grid-column:1/-1">
+        Текст
+        <textarea id="bText"></textarea>
+      </label>
+
+      <button class="primary">Сохранить баннер</button>
+
+    </form>
+
+    <div id="bannerList" class="list"></div>
+  </div>
+</section>
 
     <section id="hero" class="admin-section">
       <div class="admin-card">
