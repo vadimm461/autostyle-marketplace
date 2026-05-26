@@ -462,3 +462,70 @@ body {
 .footer-group a:hover {
   color: #34e21f !important;
 }
+.catalog-menu {
+  position: relative;
+  z-index: 120;
+}
+
+.catalog-popup {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 0;
+  width: 360px;
+  background: #fff;
+  color: #111318;
+  border-radius: 26px;
+  padding: 22px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.28);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px) scale(.98);
+  transition: .25s ease;
+  pointer-events: none;
+}
+
+.catalog-menu:hover .catalog-popup {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.catalog-groups {
+  display: grid;
+  gap: 10px;
+}
+
+.catalog-groups a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f4f6f8;
+  font-weight: 800;
+  transition: .2s ease;
+}
+
+.catalog-groups a:hover {
+  background: #111318;
+  color: #34e21f;
+  transform: translateX(6px);
+}
+
+.page-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.48);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: .25s ease;
+  z-index: 90;
+  pointer-events: none;
+}
+
+body:has(.catalog-menu:hover) .page-dim {
+  opacity: 1;
+  visibility: visible;
+}
