@@ -23,6 +23,24 @@ let editing = {
   banner: null
 };
 
+function val(id) {
+  const el = $(id);
+  return el ? el.value.trim() : '';
+}
+
+function setVal(id, value) {
+  const el = $(id);
+  if (el) el.value = value || '';
+}
+
+async function getCollection(name) {
+  const snap = await getDocs(collection(db, name));
+  return snap.docs.map(d => ({
+    id: d.id,
+    ...d.data()
+  }));
+}
+
 function section(id) {
   $$('.admin-section').forEach(s => s.classList.remove('active'));
   $('#' + id)?.classList.add('active');
@@ -36,213 +54,283 @@ $$('[data-section]').forEach(b => {
   b.onclick = () => section(b.dataset.section);
 });
 
-$('#logout').onclick = () => {
-  signOut(auth).then(() => location.href = 'index.html');
-};
+if ($('#logout')) {
+  $('#logout').onclick = () => {
+    signOut(auth).then(() => location.href = 'index.html');
+  };
+}
 
 onAuthStateChanged(auth, user => {
   if (!user) {
     location.href = 'index.html';
-  } else {
-    renderProducts();
-    renderCats();
-    renderBanners();
+    return;
   }
+
+  renderProducts();
+  renderCats();
+  renderBanners();
 });
 
-async function docs(name) {
-  const snap = await getDocs(collection(db, name));
-  return snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-  }));
-}
+/* ===== ТОВАРЫ ===== */
 
 async function renderProducts() {
-  const arr = await docs(COLLECTIONS.products);
+  const list = $('#productList');
+  if (!list) return;
 
-  $('#productList').innerHTML = arr.length
-    ? arr.map(x => `
-      <div class="row admin-product-row">
-        <div class="admin-product-img">
-          ${x.image ? `<img src="${x.image}" alt="${x.title || 'Товар'}">` : `<span>Фото</span>`}
-        </div>
+  try {
+    const arr = await getCollection(COLLECTIONS.products);
 
-        <div class="admin-product-info">
-          <b class="admin-product-title">${x.title || 'Без названия'}</b>
-
-          <div class="admin-product-meta">
-            <span class="admin-badge">${x.category || 'Без категории'}</span>
-            <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
+    list.innerHTML = arr.length
+      ? arr.map(x => `
+        <div class="row admin-product-row">
+          <div class="admin-product-img">
+            ${x.image ? `<img src="${x.image}" alt="${x.title || 'Товар'}">` : `<span>Фото</span>`}
           </div>
 
-          <p class="muted">${x.description || 'Описание не добавлено'}</p>
+          <div class="admin-product-info">
+            <b class="admin-product-title">${x.title || 'Без названия'}</b>
+
+            <div class="admin-product-meta">
+              <span class="admin-badge">${x.category || 'Без категории'}</span>
+              <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
+            </div>
+
+            <p class="muted">${x.description || 'Описание не добавлено'}</p>
+          </div>
+
+          <button class="edit" data-editp="${x.id}">Редактировать</button>
+          <button class="danger" data-delp="${x.id}">Удалить</button>
         </div>
+      `).join('')
+      : '<p class="muted">Пока пусто</p>';
 
-        <button class="edit" data-editp="${x.id}">Редактировать</button>
-        <button class="danger" data-delp="${x.id}">Удалить</button>
-      </div>
-    `).join('')
-    : '<p class="muted">Пока пусто</p>';
+    $$('[data-delp]').forEach(b => {
+      b.onclick = async () => {
+        if (!confirm('Удалить товар?')) return;
 
-  $$('[data-delp]').forEach(b => {
-    b.onclick = async () => {
-      await deleteDoc(doc(db, COLLECTIONS.products, b.dataset.delp));
-      renderProducts();
-    };
-  });
+        await deleteDoc(doc(db, COLLECTIONS.products, b.dataset.delp));
+        renderProducts();
+      };
+    });
 
-  $$('[data-editp]').forEach(b => {
-    b.onclick = () => {
-      const item = arr.find(x => x.id === b.dataset.editp);
-      if (!item) return;
+    $$('[data-editp]').forEach(b => {
+      b.onclick = () => {
+        const item = arr.find(x => x.id === b.dataset.editp);
+        if (!item) return;
 
-      editing.product = item.id;
-      $('#pTitle').value = item.title || '';
-      $('#pPrice').value = item.price || '';
-      $('#pCategory').value = item.category || '';
-      $('#pImage').value = item.image || '';
-      $('#pDesc').value = item.description || '';
+        editing.product = item.id;
 
-      if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
-    };
-  });
+        setVal('#pTitle', item.title);
+        setVal('#pPrice', item.price);
+        setVal('#pCategory', item.category);
+        setVal('#pImage', item.image);
+        setVal('#pDesc', item.description);
+
+        if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
+      };
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка загрузки товаров: ' + err.message);
+  }
 }
+
+if ($('#productForm')) {
+  $('#productForm').onsubmit = async e => {
+    e.preventDefault();
+
+    try {
+      const data = {
+        title: val('#pTitle'),
+        price: Number(val('#pPrice') || 0),
+        category: val('#pCategory'),
+        image: val('#pImage'),
+        description: val('#pDesc'),
+        tag: $('#pTag') ? $('#pTag').value : 'hot',
+        updatedAt: new Date().toISOString()
+      };
+
+      if (!data.title) {
+        alert('Введите название товара');
+        return;
+      }
+
+      if (editing.product) {
+        await updateDoc(doc(db, COLLECTIONS.products, editing.product), data);
+        editing.product = null;
+      } else {
+        data.createdAt = new Date().toISOString();
+        await addDoc(collection(db, COLLECTIONS.products), data);
+      }
+
+      e.target.reset();
+      await renderProducts();
+      alert('Товар сохранён');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка сохранения товара: ' + err.message);
+    }
+  };
+}
+
+/* ===== КАТЕГОРИИ ===== */
 
 async function renderCats() {
-  const arr = await docs(COLLECTIONS.categories);
+  const list = $('#catList');
+  if (!list) return;
 
-  $('#catList').innerHTML = arr.length
-    ? arr.map(x => `
-      <div class="row">
-        <b>${x.title || 'Без названия'}</b>
-        <button class="edit" data-editc="${x.id}">Редактировать</button>
-        <button class="danger" data-delc="${x.id}">Удалить</button>
-      </div>
-    `).join('')
-    : '<p class="muted">Пока пусто</p>';
+  try {
+    const arr = await getCollection(COLLECTIONS.categories);
 
-  $$('[data-delc]').forEach(b => {
-    b.onclick = async () => {
-      await deleteDoc(doc(db, COLLECTIONS.categories, b.dataset.delc));
-      renderCats();
-    };
-  });
+    list.innerHTML = arr.length
+      ? arr.map(x => `
+        <div class="row">
+          <b>${x.icon ? x.icon + ' ' : ''}${x.title || 'Без названия'}</b>
+          <button class="edit" data-editc="${x.id}">Редактировать</button>
+          <button class="danger" data-delc="${x.id}">Удалить</button>
+        </div>
+      `).join('')
+      : '<p class="muted">Пока пусто</p>';
 
-  $$('[data-editc]').forEach(b => {
-    b.onclick = () => {
-      const item = arr.find(x => x.id === b.dataset.editc);
-      if (!item) return;
+    $$('[data-delc]').forEach(b => {
+      b.onclick = async () => {
+        if (!confirm('Удалить категорию?')) return;
 
-      editing.cat = item.id;
-      $('#cTitle').value = item.title || '';
-      if ($('#cIcon')) $('#cIcon').value = item.icon || '';
-    };
-  });
+        await deleteDoc(doc(db, COLLECTIONS.categories, b.dataset.delc));
+        renderCats();
+      };
+    });
+
+    $$('[data-editc]').forEach(b => {
+      b.onclick = () => {
+        const item = arr.find(x => x.id === b.dataset.editc);
+        if (!item) return;
+
+        editing.cat = item.id;
+
+        setVal('#cTitle', item.title);
+        setVal('#cIcon', item.icon);
+      };
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка загрузки категорий: ' + err.message);
+  }
 }
+
+if ($('#catForm')) {
+  $('#catForm').onsubmit = async e => {
+    e.preventDefault();
+
+    try {
+      const data = {
+        title: val('#cTitle'),
+        icon: val('#cIcon'),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (!data.title) {
+        alert('Введите название категории');
+        return;
+      }
+
+      if (editing.cat) {
+        await updateDoc(doc(db, COLLECTIONS.categories, editing.cat), data);
+        editing.cat = null;
+      } else {
+        data.createdAt = new Date().toISOString();
+        await addDoc(collection(db, COLLECTIONS.categories), data);
+      }
+
+      e.target.reset();
+      await renderCats();
+      alert('Категория сохранена');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка сохранения категории: ' + err.message);
+    }
+  };
+}
+
+/* ===== БАННЕРЫ ===== */
 
 async function renderBanners() {
-  const arr = await docs(COLLECTIONS.banners);
+  const list = $('#bannerList');
+  if (!list) return;
 
-  $('#bannerList').innerHTML = arr.length
-    ? arr.map(x => `
-      <div class="row">
-        <b>${x.title || 'Без названия'}</b>
-        <button class="edit" data-editb="${x.id}">Редактировать</button>
-        <button class="danger" data-delb="${x.id}">Удалить</button>
-      </div>
-    `).join('')
-    : '<p class="muted">Пока пусто</p>';
+  try {
+    const arr = await getCollection(COLLECTIONS.banners);
 
-  $$('[data-delb]').forEach(b => {
-    b.onclick = async () => {
-      await deleteDoc(doc(db, COLLECTIONS.banners, b.dataset.delb));
-      renderBanners();
-    };
-  });
+    list.innerHTML = arr.length
+      ? arr.map(x => `
+        <div class="row">
+          <b>${x.title || 'Без названия'}</b>
+          <button class="edit" data-editb="${x.id}">Редактировать</button>
+          <button class="danger" data-delb="${x.id}">Удалить</button>
+        </div>
+      `).join('')
+      : '<p class="muted">Пока пусто</p>';
 
-  $$('[data-editb]').forEach(b => {
-    b.onclick = () => {
-      const item = arr.find(x => x.id === b.dataset.editb);
-      if (!item) return;
+    $$('[data-delb]').forEach(b => {
+      b.onclick = async () => {
+        if (!confirm('Удалить баннер?')) return;
 
-      editing.banner = item.id;
-      $('#bTitle').value = item.title || '';
-      $('#bText').value = item.text || '';
-      $('#bImage').value = item.image || '';
-      if ($('#bLink')) $('#bLink').value = item.link || '';
-    };
-  });
+        await deleteDoc(doc(db, COLLECTIONS.banners, b.dataset.delb));
+        renderBanners();
+      };
+    });
+
+    $$('[data-editb]').forEach(b => {
+      b.onclick = () => {
+        const item = arr.find(x => x.id === b.dataset.editb);
+        if (!item) return;
+
+        editing.banner = item.id;
+
+        setVal('#bTitle', item.title);
+        setVal('#bText', item.text);
+        setVal('#bImage', item.image);
+        setVal('#bLink', item.link);
+      };
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка загрузки баннеров: ' + err.message);
+  }
 }
 
-$('#productForm').onsubmit = async e => {
-  e.preventDefault();
+if ($('#bannerForm')) {
+  $('#bannerForm').onsubmit = async e => {
+    e.preventDefault();
 
-  const data = {
-    title: $('#pTitle').value.trim(),
-    price: Number($('#pPrice').value || 0),
-    category: $('#pCategory').value.trim(),
-    image: $('#pImage').value.trim(),
-    description: $('#pDesc').value.trim(),
-    tag: $('#pTag') ? $('#pTag').value : 'hot',
-    updatedAt: new Date().toISOString()
+    try {
+      const data = {
+        title: val('#bTitle'),
+        text: val('#bText'),
+        image: val('#bImage'),
+        link: val('#bLink'),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (!data.title) {
+        alert('Введите заголовок баннера');
+        return;
+      }
+
+      if (editing.banner) {
+        await updateDoc(doc(db, COLLECTIONS.banners, editing.banner), data);
+        editing.banner = null;
+      } else {
+        data.createdAt = new Date().toISOString();
+        await addDoc(collection(db, COLLECTIONS.banners), data);
+      }
+
+      e.target.reset();
+      await renderBanners();
+      alert('Баннер сохранён');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка сохранения баннера: ' + err.message);
+    }
   };
-
-  if (!data.title) return alert('Введите название товара');
-
-  if (editing.product) {
-    await updateDoc(doc(db, COLLECTIONS.products, editing.product), data);
-    editing.product = null;
-  } else {
-    data.createdAt = new Date().toISOString();
-    await addDoc(collection(db, COLLECTIONS.products), data);
-  }
-
-  e.target.reset();
-  renderProducts();
-  alert('Товар сохранён');
-};
-
-$('#catForm').onsubmit = async e => {
-  e.preventDefault();
-
-  const data = {
-    title: $('#cTitle').value.trim(),
-    icon: $('#cIcon') ? $('#cIcon').value.trim() : '',
-    updatedAt: new Date().toISOString()
-  };
-
-  if (editing.cat) {
-    await updateDoc(doc(db, COLLECTIONS.categories, editing.cat), data);
-    editing.cat = null;
-  } else {
-    data.createdAt = new Date().toISOString();
-    await addDoc(collection(db, COLLECTIONS.categories), data);
-  }
-
-  e.target.reset();
-  renderCats();
-};
-
-$('#bannerForm').onsubmit = async e => {
-  e.preventDefault();
-
-  const data = {
-    title: $('#bTitle').value.trim(),
-    text: $('#bText').value.trim(),
-    image: $('#bImage').value.trim(),
-    link: $('#bLink') ? $('#bLink').value.trim() : '',
-    updatedAt: new Date().toISOString()
-  };
-
-  if (editing.banner) {
-    await updateDoc(doc(db, COLLECTIONS.banners, editing.banner), data);
-    editing.banner = null;
-  } else {
-    data.createdAt = new Date().toISOString();
-    await addDoc(collection(db, COLLECTIONS.banners), data);
-  }
-
-  e.target.reset();
-  renderBanners();
-};
+}
