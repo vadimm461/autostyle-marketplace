@@ -182,10 +182,36 @@ async function renderCats() {
   try {
     const arr = await getCollection(COLLECTIONS.categories);
 
+    const parentSelect = $('#cParent');
+
+    if (parentSelect) {
+      parentSelect.innerHTML = `
+        <option value="">Нет — основная категория</option>
+        ${arr
+          .filter(c => !c.parentId)
+          .map(c => `<option value="${c.id}">${c.title || 'Без названия'}</option>`)
+          .join('')}
+      `;
+    }
+
+    const parentName = id => {
+      const parent = arr.find(c => c.id === id);
+      return parent ? parent.title : '';
+    };
+
     list.innerHTML = arr.length
       ? arr.map(x => `
         <div class="row">
-          <b>${x.icon ? x.icon + ' ' : ''}${x.title || 'Без названия'}</b>
+          <b>
+            ${x.parentId ? '↳ ' : ''}
+            ${x.icon ? x.icon + ' ' : ''}
+            ${x.title || 'Без названия'}
+          </b>
+
+          <span class="muted">
+            ${x.parentId ? 'Подгруппа: ' + parentName(x.parentId) : 'Основная категория'}
+          </span>
+
           <button class="edit" data-editc="${x.id}">Редактировать</button>
           <button class="danger" data-delc="${x.id}">Удалить</button>
         </div>
@@ -200,6 +226,27 @@ async function renderCats() {
         renderCats();
       };
     });
+
+    $$('[data-editc]').forEach(b => {
+      b.onclick = () => {
+        const item = arr.find(x => x.id === b.dataset.editc);
+        if (!item) return;
+
+        editing.cat = item.id;
+
+        setVal('#cTitle', item.title);
+        setVal('#cIcon', item.icon);
+
+        if ($('#cParent')) {
+          $('#cParent').value = item.parentId || '';
+        }
+      };
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка загрузки категорий: ' + err.message);
+  }
+}
 
     $$('[data-editc]').forEach(b => {
       b.onclick = () => {
