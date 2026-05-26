@@ -47,18 +47,82 @@ async function getCollection(name) {
   }));
 }
 
-async function uploadImage(inputId, folder) {
-  const input = $(inputId);
-  if (!input || !input.files || !input.files[0]) return '';
+function uploadImage(inputId, folder, targetInputId, statusId) {
+  return new Promise((resolve, reject) => {
+    const input = $(inputId);
+    const targetInput = $(targetInputId);
+    const statusBox = $(statusId);
 
-  const file = input.files[0];
-  const fileName = `${folder}/${Date.now()}-${file.name}`;
-  const fileRef = ref(storage, fileName);
+    if (!input || !input.files || !input.files[0]) {
+      resolve('');
+      return;
+    }
 
-  await uploadBytes(fileRef, file);
-  return await getDownloadURL(fileRef);
+    const file = input.files[0];
+    const safeName = file.name.replace(/[^\w.\-а-яА-ЯёЁ]/g, '_');
+    const fileName = `${folder}/${Date.now()}-${safeName}`;
+    const fileRef = ref(storage, fileName);
+
+    if (statusBox) {
+      statusBox.innerHTML = `
+        <div class="upload-status">
+          <div class="upload-status-top">
+            <b>Загрузка фото...</b>
+            <span>0%</span>
+          </div>
+          <div class="upload-progress">
+            <div style="width:0%"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    const task = uploadBytesResumable(fileRef, file);
+
+    task.on(
+      'state_changed',
+      snapshot => {
+        const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+
+        if (statusBox) {
+          const bar = statusBox.querySelector('.upload-progress div');
+          const text = statusBox.querySelector('.upload-status-top span');
+
+          if (bar) bar.style.width = percent + '%';
+          if (text) text.textContent = percent + '%';
+        }
+      },
+      error => {
+        if (statusBox) {
+          statusBox.innerHTML = `
+            <div class="upload-error">
+              Ошибка загрузки: ${error.message}
+            </div>
+          `;
+        }
+
+        reject(error);
+      },
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref);
+
+        if (targetInput) {
+          targetInput.value = url;
+        }
+
+        if (statusBox) {
+          statusBox.innerHTML = `
+            <div class="upload-success">
+              Фото загружено
+            </div>
+          `;
+        }
+
+        resolve(url);
+      }
+    );
+  });
 }
-
 /* MENU */
 
 function openSection(id) {
