@@ -1116,8 +1116,17 @@ body:has(.catalog-menu:hover) .page-dim {
   position: absolute;
   left: 0;
   top: 100%;
-  width: 920px;
-  height: 22px;
+  width: 160px;
+  height: 14px;
+}
+
+.catalog-menu {
+  width: max-content !important;
+  flex: 0 0 auto !important;
+}
+
+.catalog-popup {
+  left: 0 !important;
 }
 
 .catalog-popup {
