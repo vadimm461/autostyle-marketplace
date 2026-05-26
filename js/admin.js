@@ -1,4 +1,4 @@
-import { auth, db, COLLECTIONS } from './firebase.js';
+import { auth, db, storage, COLLECTIONS } from './firebase.js';
 
 import {
   onAuthStateChanged,
@@ -13,6 +13,12 @@ import {
   doc,
   updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -41,7 +47,19 @@ async function getCollection(name) {
   }));
 }
 
-/* ===== МЕНЮ АДМИНКИ ===== */
+async function uploadImage(inputId, folder) {
+  const input = $(inputId);
+  if (!input || !input.files || !input.files[0]) return '';
+
+  const file = input.files[0];
+  const fileName = `${folder}/${Date.now()}-${file.name}`;
+  const fileRef = ref(storage, fileName);
+
+  await uploadBytes(fileRef, file);
+  return await getDownloadURL(fileRef);
+}
+
+/* MENU */
 
 function openSection(id) {
   $$('.admin-section').forEach(sec => sec.classList.remove('active'));
@@ -78,11 +96,44 @@ onAuthStateChanged(auth, user => {
   renderBanners();
 });
 
-/* ===== ТОВАРЫ ===== */
+/* CATEGORY OPTIONS */
+
+async function renderCategoryOptions() {
+  const select = $('#pCategory');
+  if (!select) return;
+
+  const cats = await getCollection(COLLECTIONS.categories);
+  const parents = cats.filter(c => !c.parentId);
+  const children = cats.filter(c => c.parentId);
+
+  select.innerHTML = '<option value="">Выберите категорию</option>';
+
+  parents.forEach(parent => {
+    select.innerHTML += `
+      <option value="${parent.title || parent.name}">
+        ${parent.title || parent.name}
+      </option>
+    `;
+
+    children
+      .filter(child => child.parentId === parent.id)
+      .forEach(child => {
+        select.innerHTML += `
+          <option value="${child.title || child.name}">
+            — ${child.title || child.name}
+          </option>
+        `;
+      });
+  });
+}
+
+/* PRODUCTS */
 
 async function renderProducts() {
   const list = $('#productList');
   if (!list) return;
+
+  await renderCategoryOptions();
 
   try {
     const arr = await getCollection(COLLECTIONS.products);
@@ -99,6 +150,7 @@ async function renderProducts() {
 
             <div class="admin-product-meta">
               <span class="admin-badge">${x.category || 'Без категории'}</span>
+              <span class="admin-badge">${x.tag || 'hot'}</span>
               <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
             </div>
 
@@ -114,7 +166,6 @@ async function renderProducts() {
     $$('[data-delp]').forEach(btn => {
       btn.onclick = async () => {
         if (!confirm('Удалить товар?')) return;
-
         await deleteDoc(doc(db, COLLECTIONS.products, btn.dataset.delp));
         await renderProducts();
       };
@@ -137,7 +188,6 @@ async function renderProducts() {
       };
     });
   } catch (err) {
-    console.error(err);
     alert('Ошибка загрузки товаров: ' + err.message);
   }
 }
@@ -147,20 +197,22 @@ if ($('#productForm')) {
     e.preventDefault();
 
     try {
+      let imageUrl = val('#pImage');
+      const uploaded = await uploadImage('#pFile', 'products');
+      if (uploaded) imageUrl = uploaded;
+
       const data = {
         title: val('#pTitle'),
         price: Number(val('#pPrice') || 0),
         category: val('#pCategory'),
-        image: val('#pImage'),
+        image: imageUrl,
         description: val('#pDesc'),
         tag: $('#pTag') ? $('#pTag').value : 'hot',
         updatedAt: new Date().toISOString()
       };
 
-      if (!data.title) {
-        alert('Введите название товара');
-        return;
-      }
+      if (!data.title) return alert('Введите название товара');
+      if (!data.category) return alert('Выберите категорию');
 
       if (editing.product) {
         await updateDoc(doc(db, COLLECTIONS.products, editing.product), data);
@@ -174,13 +226,12 @@ if ($('#productForm')) {
       await renderProducts();
       alert('Товар сохранён');
     } catch (err) {
-      console.error(err);
       alert('Ошибка сохранения товара: ' + err.message);
     }
   };
 }
 
-/* ===== КАТЕГОРИИ И ПОДГРУППЫ ===== */
+/* CATEGORIES */
 
 async function renderCats() {
   const list = $('#catList');
@@ -188,7 +239,6 @@ async function renderCats() {
 
   try {
     const arr = await getCollection(COLLECTIONS.categories);
-
     const parentSelect = $('#cParent');
 
     if (parentSelect) {
@@ -209,16 +259,8 @@ async function renderCats() {
     list.innerHTML = arr.length
       ? arr.map(x => `
         <div class="row">
-          <b>
-            ${x.parentId ? '↳ ' : ''}
-            ${x.icon ? x.icon + ' ' : ''}
-            ${x.title || 'Без названия'}
-          </b>
-
-          <span class="muted">
-            ${x.parentId ? 'Подгруппа: ' + parentName(x.parentId) : 'Основная категория'}
-          </span>
-
+          <b>${x.parentId ? '↳ ' : ''}${x.icon ? x.icon + ' ' : ''}${x.title || 'Без названия'}</b>
+          <span class="muted">${x.parentId ? 'Подгруппа: ' + parentName(x.parentId) : 'Основная категория'}</span>
           <button class="edit" data-editc="${x.id}">Редактировать</button>
           <button class="danger" data-delc="${x.id}">Удалить</button>
         </div>
@@ -228,9 +270,9 @@ async function renderCats() {
     $$('[data-delc]').forEach(btn => {
       btn.onclick = async () => {
         if (!confirm('Удалить категорию?')) return;
-
         await deleteDoc(doc(db, COLLECTIONS.categories, btn.dataset.delc));
         await renderCats();
+        await renderCategoryOptions();
       };
     });
 
@@ -240,17 +282,15 @@ async function renderCats() {
         if (!item) return;
 
         editing.cat = item.id;
-
         setVal('#cTitle', item.title);
         setVal('#cIcon', item.icon);
 
-        if ($('#cParent')) {
-          $('#cParent').value = item.parentId || '';
-        }
+        if ($('#cParent')) $('#cParent').value = item.parentId || '';
       };
     });
+
+    await renderCategoryOptions();
   } catch (err) {
-    console.error(err);
     alert('Ошибка загрузки категорий: ' + err.message);
   }
 }
@@ -267,14 +307,10 @@ if ($('#catForm')) {
         updatedAt: new Date().toISOString()
       };
 
-      if (!data.title) {
-        alert('Введите название категории');
-        return;
-      }
+      if (!data.title) return alert('Введите название категории');
 
       if (editing.cat && editing.cat === data.parentId) {
-        alert('Категория не может быть родителем самой себя');
-        return;
+        return alert('Категория не может быть родителем самой себя');
       }
 
       if (editing.cat) {
@@ -287,15 +323,15 @@ if ($('#catForm')) {
 
       e.target.reset();
       await renderCats();
+      await renderCategoryOptions();
       alert('Категория сохранена');
     } catch (err) {
-      console.error(err);
       alert('Ошибка сохранения категории: ' + err.message);
     }
   };
 }
 
-/* ===== БАННЕРЫ ===== */
+/* BANNERS */
 
 async function renderBanners() {
   const list = $('#bannerList');
@@ -317,7 +353,6 @@ async function renderBanners() {
     $$('[data-delb]').forEach(btn => {
       btn.onclick = async () => {
         if (!confirm('Удалить баннер?')) return;
-
         await deleteDoc(doc(db, COLLECTIONS.banners, btn.dataset.delb));
         await renderBanners();
       };
@@ -329,7 +364,6 @@ async function renderBanners() {
         if (!item) return;
 
         editing.banner = item.id;
-
         setVal('#bTitle', item.title);
         setVal('#bText', item.text);
         setVal('#bImage', item.image);
@@ -337,7 +371,6 @@ async function renderBanners() {
       };
     });
   } catch (err) {
-    console.error(err);
     alert('Ошибка загрузки баннеров: ' + err.message);
   }
 }
@@ -347,18 +380,19 @@ if ($('#bannerForm')) {
     e.preventDefault();
 
     try {
+      let imageUrl = val('#bImage');
+      const uploaded = await uploadImage('#bFile', 'banners');
+      if (uploaded) imageUrl = uploaded;
+
       const data = {
         title: val('#bTitle'),
         text: val('#bText'),
-        image: val('#bImage'),
+        image: imageUrl,
         link: val('#bLink'),
         updatedAt: new Date().toISOString()
       };
 
-      if (!data.title) {
-        alert('Введите заголовок баннера');
-        return;
-      }
+      if (!data.title) return alert('Введите заголовок баннера');
 
       if (editing.banner) {
         await updateDoc(doc(db, COLLECTIONS.banners, editing.banner), data);
@@ -372,7 +406,6 @@ if ($('#bannerForm')) {
       await renderBanners();
       alert('Баннер сохранён');
     } catch (err) {
-      console.error(err);
       alert('Ошибка сохранения баннера: ' + err.message);
     }
   };
