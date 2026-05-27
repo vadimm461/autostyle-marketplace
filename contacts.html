@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Каталог — AutoStyle</title>
+  <title>Контакты — AutoStyle</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/shop-pages.css">
 </head>
@@ -22,36 +22,11 @@
   </div>
 </header>
 
-<main class="container catalog-page">
-  <div class="catalog-title">
-    <div>
-      <h1>Каталог товаров</h1>
-      <p class="muted">Все товары с актуальными ценами и остатками из 1С.</p>
-    </div>
-  </div>
-
-  <section class="catalog-layout">
-    <aside class="catalog-filters">
-      <h3>Фильтры</h3>
-      <label class="field">Поиск<input id="search" placeholder="Название, код..."></label>
-      <label class="field">Категория<select id="category"><option value="">Все категории</option></select></label>
-      <label class="field">Сортировка
-        <select id="sort">
-          <option value="default">По умолчанию</option>
-          <option value="priceAsc">Сначала дешевле</option>
-          <option value="priceDesc">Сначала дороже</option>
-          <option value="nameAsc">По названию</option>
-        </select>
-      </label>
-    </aside>
-
-    <section>
-      <div class="catalog-toolbar">
-        <b id="catalogCount">0 товаров</b>
-        <span class="muted">Товары с нулевым остатком скрыты</span>
-      </div>
-      <div id="catalogGrid" class="products"></div>
-    </section>
+<main class="container page-simple">
+  <h1>Контакты</h1>
+  <section class="info-grid">
+    <div class="info-card"><h2>Связь</h2><p>Телефон: +7 (___) ___-__-__</p><p>Email: info@autostyle.ru</p></div>
+    <div class="info-card" id="addresses"><h2>Адреса</h2><p>Адрес магазина можно указать в админке или заменить в этом файле.</p></div>
   </section>
 </main>
 
@@ -70,6 +45,6 @@
     </div>
   </div>
 </footer>
-<script type="module" src="js/catalog.js"></script>
+<script type="module" src="js/page-common.js"></script>
 </body>
 </html>

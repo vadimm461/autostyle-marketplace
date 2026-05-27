@@ -48,10 +48,7 @@ function saveCart() {
 
 async function loadCollection(name) {
   const snap = await getDocs(collection(db, name));
-  return snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-  }));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 async function renderCatalogMenu() {
@@ -60,9 +57,7 @@ async function renderCatalogMenu() {
   categories.sort((a, b) => {
     const ao = Number(a.order ?? 999999);
     const bo = Number(b.order ?? 999999);
-
     if (ao !== bo) return ao - bo;
-
     return String(a.title || '').localeCompare(String(b.title || ''), 'ru');
   });
 
@@ -83,19 +78,13 @@ async function renderCatalogMenu() {
       ? list.map(child => `
         <a href="catalog.html?category=${encodeURIComponent(child.title || child.name || '')}" class="mega-child">
           <span>${child.icon || 'AS'}</span>
-          <div>
-            <b>${child.title || child.name || 'Без названия'}</b>
-            <small>Смотреть товары</small>
-          </div>
+          <div><b>${child.title || child.name || 'Без названия'}</b><small>Смотреть товары</small></div>
         </a>
       `).join('')
       : `
         <a href="catalog.html?category=${encodeURIComponent(parent.title || parent.name || '')}" class="mega-child">
           <span>${parent.icon || 'AS'}</span>
-          <div>
-            <b>Все товары категории</b>
-            <small>${parent.title || parent.name || 'Категория'}</small>
-          </div>
+          <div><b>Все товары категории</b><small>${parent.title || parent.name || 'Категория'}</small></div>
         </a>
       `;
   }
@@ -103,8 +92,7 @@ async function renderCatalogMenu() {
   parentsBox.innerHTML = parents.length
     ? parents.map((parent, index) => `
       <button class="mega-parent ${index === 0 ? 'active' : ''}" data-parent="${parent.id}">
-        <span>${parent.icon || 'AS'}</span>
-        ${parent.title || parent.name || 'Без названия'}
+        <span>${parent.icon || 'AS'}</span>${parent.title || parent.name || 'Без названия'}
       </button>
     `).join('')
     : '<p class="muted">Категорий пока нет</p>';
@@ -115,12 +103,6 @@ async function renderCatalogMenu() {
     btn.addEventListener('mouseenter', () => {
       $$('.mega-parent').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
-      const parent = parents.find(p => p.id === btn.dataset.parent);
-      if (parent) renderChildren(parent);
-    });
-
-    btn.addEventListener('click', () => {
       const parent = parents.find(p => p.id === btn.dataset.parent);
       if (parent) renderChildren(parent);
     });
@@ -131,31 +113,24 @@ function renderProducts(products) {
   const grid = $('#productsGrid');
   if (!grid) return;
 
-  const visibleProducts = onlyInStock(products);
+  const visibleProducts = onlyInStock(products).slice(0, 20);
 
   grid.innerHTML = visibleProducts.length
     ? visibleProducts.map(p => `
-      <article class="product-card">
-        <div class="product-img">
-          ${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}
-        </div>
-
+      <a class="product-card product-card-link" href="product.html?id=${p.id}">
+        <div class="product-img">${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}</div>
         <div class="product-title">${productTitle(p)}</div>
-        <div class="muted">
-          ${p.category || 'Без категории'}
-          ${p.code ? ` · код: ${p.code}` : ''}
-        </div>
-
+        <div class="muted">${p.category || 'Без категории'}${p.code ? ` · код: ${p.code}` : ''}</div>
         <div class="price">${money(p.price)}</div>
         <div class="stock in-stock">В наличии: ${productStock(p)}</div>
-
-        <button class="cart" data-id="${p.id}">В корзину</button>
-      </article>
+        <button class="cart" data-id="${p.id}" type="button">В корзину</button>
+      </a>
     `).join('')
     : '<div class="panel muted">Нет товаров в наличии.</div>';
 
   $$('[data-id]').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = e => {
+      e.preventDefault();
       cart.push(btn.dataset.id);
       saveCart();
     };
@@ -196,30 +171,23 @@ async function renderHome() {
   products = onlyInStock(products);
 
   const banners = await loadCollection(COLLECTIONS.banners);
-
   allProducts = products;
 
   const hero = $('#hero');
 
   if (hero) {
     const b = banners[0] || {};
-
     hero.innerHTML = `
       <div class="hero-content">
         <span class="hero-label">AUTO STYLE MARKET</span>
         <h1>${b.title || 'Автотовары для стиля, комфорта и защиты'}</h1>
         <p>${b.text || 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p>
-
         <div class="hero-actions">
           <a href="catalog.html" class="primary hero-btn">Смотреть каталог</a>
           <a href="#productsBlock" class="hero-link">Популярные товары</a>
         </div>
       </div>
-
-      <div class="hero-visual">
-        <div class="hero-circle"></div>
-        <div class="hero-car">AUTO</div>
-      </div>
+      <div class="hero-visual"><div class="hero-circle"></div><div class="hero-car">AUTO</div></div>
     `;
   }
 
@@ -235,10 +203,7 @@ async function renderHome() {
     const items = banners.slice(1, 4).length ? banners.slice(1, 4) : defaultBanners;
 
     bannersBox.innerHTML = items.map(b => `
-      <a class="mini-banner" href="${b.link || '#productsBlock'}">
-        <h3>${b.title}</h3>
-        <p class="muted">${b.text || ''}</p>
-      </a>
+      <a class="mini-banner" href="${b.link || '#productsBlock'}"><h3>${b.title}</h3><p class="muted">${b.text || ''}</p></a>
     `).join('');
   }
 
@@ -256,34 +221,25 @@ function setupHomeSearch() {
   }
 
   if (btn) btn.onclick = goSearch;
-
-  if (input) {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        goSearch();
-      }
-    });
-  }
+  if (input) input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      goSearch();
+    }
+  });
 }
 
 function authModal() {
   const modal = $('#authModal');
   if (!modal) return;
 
-  if ($('#openAuth')) {
-    $('#openAuth').onclick = () => modal.classList.add('open');
-  }
-
-  if ($('#closeAuth')) {
-    $('#closeAuth').onclick = () => modal.classList.remove('open');
-  }
+  if ($('#openAuth')) $('#openAuth').onclick = () => modal.classList.add('open');
+  if ($('#closeAuth')) $('#closeAuth').onclick = () => modal.classList.remove('open');
 
   $$('.tab').forEach(t => {
     t.onclick = () => {
       $$('.tab').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
-
       $('#loginForm').style.display = t.dataset.tab === 'login' ? 'block' : 'none';
       $('#registerForm').style.display = t.dataset.tab === 'register' ? 'block' : 'none';
     };
@@ -292,11 +248,7 @@ function authModal() {
   if ($('#loginForm')) {
     $('#loginForm').onsubmit = async e => {
       e.preventDefault();
-
-      const email = $('#loginEmail').value.trim();
-      const pass = $('#loginPass').value;
-
-      await signInWithEmailAndPassword(auth, email, pass);
+      await signInWithEmailAndPassword(auth, $('#loginEmail').value.trim(), $('#loginPass').value);
       modal.classList.remove('open');
     };
   }
@@ -304,20 +256,13 @@ function authModal() {
   if ($('#registerForm')) {
     $('#registerForm').onsubmit = async e => {
       e.preventDefault();
-
-      const name = $('#regName').value.trim();
-      const email = $('#regEmail').value.trim();
-      const pass = $('#regPass').value;
-
-      const res = await createUserWithEmailAndPassword(auth, email, pass);
-
+      const res = await createUserWithEmailAndPassword(auth, $('#regEmail').value.trim(), $('#regPass').value);
       await setDoc(doc(db, COLLECTIONS.users, res.user.uid), {
-        name,
-        email,
+        name: $('#regName').value.trim(),
+        email: $('#regEmail').value.trim(),
         role: 'user',
         createdAt: new Date().toISOString()
       });
-
       await sendEmailVerification(res.user);
       alert('Аккаунт создан. Проверьте письмо на почте для подтверждения.');
       modal.classList.remove('open');
@@ -330,14 +275,10 @@ function authModal() {
 
     if (u) {
       if (authBtn) authBtn.style.display = 'none';
-
       if (dd) {
         dd.style.display = 'block';
         $('#userEmail').textContent = u.email;
-
-        if ($('#logout')) {
-          $('#logout').onclick = () => signOut(auth);
-        }
+        if ($('#logout')) $('#logout').onclick = () => signOut(auth);
       }
     } else {
       if (authBtn) authBtn.style.display = 'inline-block';
@@ -345,9 +286,7 @@ function authModal() {
     }
   });
 
-  if ($('#accountBtn')) {
-    $('#accountBtn').onclick = () => $('#accountDrop').classList.toggle('open');
-  }
+  if ($('#accountBtn')) $('#accountBtn').onclick = () => $('#accountDrop').classList.toggle('open');
 }
 
 authModal();

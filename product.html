@@ -1,1 +1,57 @@
-<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Товар</title><link rel="stylesheet" href="css/style.css"></head><body><header class="header"><div class="container nav"><a class="logo" href="index.html"><img src="assets/logo.jpeg"><span>AUTO<span class="green">STYLE</span></span></a><a class="catalogBtn" href="catalog.html">Назад в каталог</a></div></header><main class="container"><section class="adminPanel" style="margin-top:30px"><h1>Страница товара</h1><p>Детальную карточку товара подключим на следующем этапе.</p></section></main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Товар — AutoStyle</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/shop-pages.css">
+</head>
+<body>
+<header class="topbar dark-topbar">
+  <div class="bar">
+    <a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a>
+    <a class="catalog-btn" href="catalog.html">☰ Каталог</a>
+    <form class="search">
+      <input id="siteSearch" placeholder="Я ищу автотовары...">
+      <button type="button" id="siteSearchBtn">Найти</button>
+    </form>
+    <button id="openAuth" class="icon-btn">Аккаунт</button>
+    <button class="icon-btn">♡ Избранное</button>
+    <a class="icon-btn" href="cart.html">Корзина <b id="cartCount">0</b></a>
+  </div>
+</header>
+
+<main class="container product-page">
+  <div class="product-top-line">
+    <a href="catalog.html" class="back-link">← Вернуться в каталог</a>
+    <div class="product-actions-top">
+      <button type="button">♡ В избранное</button>
+      <button type="button">⚖ Сравнить</button>
+      <button type="button">↗ Поделиться</button>
+    </div>
+  </div>
+
+  <section id="productView" class="product-layout">
+    <div class="product-loading">Загрузка товара...</div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-group">
+      <h3>AutoStyle</h3>
+      <a href="contacts.html">Контакты</a>
+      <a href="about.html">Про нас</a>
+      <a href="contacts.html#addresses">Адреса</a>
+    </div>
+    <div class="footer-group">
+      <h3>Выгода</h3>
+      <a href="installment.html">Рассрочка</a>
+      <a href="certificates.html">Подарочные сертификаты</a>
+    </div>
+  </div>
+</footer>
+<script type="module" src="js/product.js"></script>
+</body>
+</html>

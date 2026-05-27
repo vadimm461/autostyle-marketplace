@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AutoStyle</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/shop-pages.css">
 </head>
 <body>
-
 <header class="topbar dark-topbar">
   <div class="bar">
     <a class="logo" href="index.html">
@@ -17,13 +17,11 @@
 
     <div class="catalog-menu">
       <button class="catalog-btn">☰ Каталог</button>
-
       <div class="catalog-popup mega-catalog">
         <div class="mega-left">
           <h3>Каталог товаров</h3>
           <div id="catalogParents" class="mega-parent-list"></div>
         </div>
-
         <div class="mega-right">
           <h3 id="megaTitle">Выберите категорию</h3>
           <div id="catalogChildren" class="mega-child-grid"></div>
@@ -50,7 +48,7 @@
     </div>
 
     <button class="icon-btn">♡ Избранное</button>
-    <button class="icon-btn">Корзина <b id="cartCount">0</b></button>
+    <a class="icon-btn" href="cart.html">Корзина <b id="cartCount">0</b></a>
   </div>
 </header>
 
@@ -59,7 +57,6 @@
 <main class="container">
   <section class="hero-grid home-hero-grid">
     <div id="hero" class="hero premium-hero"></div>
-
     <aside class="side-card panel">
       <h2>Промо</h2>
       <p class="muted">Скидки, акции и баннеры управляются в админке.</p>
@@ -73,13 +70,11 @@
       <h2>Горячие предложения</h2>
       <a href="catalog.html">Все товары</a>
     </div>
-
     <div class="product-tabs">
       <button class="product-tab active" data-filter="hot">Горячие предложения</button>
       <button class="product-tab" data-filter="new">Новинки</button>
       <button class="product-tab" data-filter="best">Лучшая цена</button>
     </div>
-
     <div id="productsGrid" class="products"></div>
   </section>
 </main>
@@ -90,13 +85,12 @@
       <h3>AutoStyle</h3>
       <a href="contacts.html">Контакты</a>
       <a href="about.html">Про нас</a>
-      <a href="#">Адреса</a>
+      <a href="contacts.html#addresses">Адреса</a>
     </div>
-
     <div class="footer-group">
       <h3>Выгода</h3>
-      <a href="#">Рассрочка</a>
-      <a href="#">Подарочные сертификаты</a>
+      <a href="installment.html">Рассрочка</a>
+      <a href="certificates.html">Подарочные сертификаты</a>
     </div>
   </div>
 </footer>
@@ -104,21 +98,17 @@
 <div id="authModal" class="modal">
   <div class="modal-card">
     <button id="closeAuth" style="float:right;border:0;background:#f2f4f7;border-radius:99px;width:34px;height:34px">×</button>
-
     <h2>Вход в AutoStyle</h2>
     <p class="muted">Войдите или создайте аккаунт.</p>
-
     <div class="tabs">
       <button class="tab active" data-tab="login">Вход</button>
       <button class="tab" data-tab="register">Регистрация</button>
     </div>
-
     <form id="loginForm">
       <label class="field">Email<input id="loginEmail" type="email" required></label>
       <label class="field">Пароль<input id="loginPass" type="password" required></label>
       <button class="primary" style="width:100%">Войти</button>
     </form>
-
     <form id="registerForm" style="display:none">
       <label class="field">Имя<input id="regName" required></label>
       <label class="field">Email<input id="regEmail" type="email" required></label>
