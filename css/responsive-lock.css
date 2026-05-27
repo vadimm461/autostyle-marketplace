@@ -439,3 +439,6 @@ body.page-locked {
     inset: 0;
     touch-action: none;
 }
+* {
+    min-width: 0;
+}
