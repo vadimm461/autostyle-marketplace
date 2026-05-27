@@ -5,123 +5,58 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AutoStyle</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/shop-pages.css">
-  <link rel="stylesheet" href="css/home-product-fix.css">
-  <link rel="stylesheet" href="css/app-mobile-shell.css">
-  <link rel="stylesheet" href="css/app-redesign.css">
+  <link rel="stylesheet" href="css/modern-exact.css">
 </head>
-<body>
-<header class="topbar dark-topbar">
-  <div class="bar">
-    <a class="logo" href="index.html">
-      <div class="logo-mark">AS</div>
-      AUTO<span>STYLE</span>
-    </a>
-
+<body class="modern-page home-page">
+<header class="app-header">
+  <div class="app-header-inner">
+    <a class="app-logo" href="index.html"><span>AS</span><b>AUTO <em>STYLE</em></b></a>
     <div class="catalog-menu">
-      <button class="catalog-btn">☰ Каталог</button>
+      <button class="catalog-btn" type="button">☰ Каталог</button>
       <div class="catalog-popup mega-catalog">
-        <div class="mega-left">
-          <h3>Каталог товаров</h3>
-          <div id="catalogParents" class="mega-parent-list"></div>
-        </div>
-        <div class="mega-right">
-          <h3 id="megaTitle">Выберите категорию</h3>
-          <div id="catalogChildren" class="mega-child-grid"></div>
-        </div>
+        <div class="mega-left"><h3>Каталог товаров</h3><div id="catalogParents" class="mega-parent-list"></div></div>
+        <div class="mega-right"><h3 id="megaTitle">Выберите категорию</h3><div id="catalogChildren" class="mega-child-grid"></div></div>
       </div>
     </div>
-
-    <form class="search">
-      <input id="homeSearch" placeholder="Я ищу автотовары...">
-      <button type="button" id="homeSearchBtn">Найти</button>
-    </form>
-
-    <button id="openAuth" class="icon-btn">Аккаунт</button>
-
-    <div id="accountDrop" class="dropdown" style="display:none">
-      <button id="accountBtn" class="icon-btn">Аккаунт</button>
-      <div class="drop">
-        <b id="userEmail"></b>
-        <p class="muted">Вы авторизованы</p>
-        <a href="admin.html">Админка</a>
-        <hr>
-        <button id="logout" class="icon-btn">Выйти</button>
-      </div>
-    </div>
-
-    <button class="icon-btn">♡ Избранное</button>
-    <a class="icon-btn" href="cart.html">Корзина <b id="cartCount">0</b></a>
+    <form class="app-search"><span>⌕</span><input id="homeSearch" placeholder="Я ищу автотовары..."><button id="homeSearchBtn" type="button">Найти</button></form>
+    <button id="openAuth" class="app-nav-btn" type="button">♙ Аккаунт</button>
+    <div id="accountDrop" class="dropdown app-account-drop" style="display:none"><button id="accountBtn" class="app-nav-btn" type="button">♙ Аккаунт ✓</button><div class="drop"><b id="userEmail"></b><p class="muted">Вы авторизованы</p><a href="admin.html">Админка</a><hr><button id="logout" class="icon-btn" type="button">Выйти</button></div></div>
+    <button class="app-nav-btn" type="button">♡ Избранное <small>0</small></button>
+    <a class="app-nav-btn" href="cart.html">🛒 Корзина <small id="cartCount">0</small></a>
   </div>
 </header>
 
-<div class="page-dim"></div>
-
-<main class="container">
-  <section class="hero-grid home-hero-grid">
-    <div id="hero" class="hero premium-hero"></div>
-    <aside class="side-card panel">
-      <h2>Промо</h2>
-      <p class="muted">Скидки, акции и баннеры управляются в админке.</p>
-    </aside>
+<main class="app-container">
+  <section class="home-hero-photo">
+    <div class="hero-copy"><h1>Автотовары<br>для вашего авто</h1><p>Качественные товары<br>по лучшим ценам</p><a class="green-btn" href="catalog.html">Перейти в каталог</a></div>
   </section>
 
-  <div id="banners" class="banner-row"></div>
+  <section class="benefits-row">
+    <div><span>▱</span><b>Быстрая доставка</b><small>По всей России</small></div>
+    <div><span>✓</span><b>Качество 100%</b><small>Гарантия на все товары</small></div>
+    <div><span>♧</span><b>Поддержка 24/7</b><small>Поможем с выбором</small></div>
+    <div><span>♡</span><b>Скидки и акции</b><small>Выгодные предложения</small></div>
+  </section>
 
-  <section id="productsBlock">
-    <div class="section-head">
-      <h2>Горячие предложения</h2>
-      <a href="catalog.html">Все товары</a>
-    </div>
-    <div class="product-tabs">
-      <button class="product-tab active" data-filter="hot">Горячие предложения</button>
-      <button class="product-tab" data-filter="new">Новинки</button>
-      <button class="product-tab" data-filter="best">Лучшая цена</button>
-    </div>
-    <div id="productsGrid" class="products"></div>
+  <section class="modern-section" id="productsBlock">
+    <div class="modern-section-head"><h2>Популярные товары</h2><a href="catalog.html">Смотреть все</a></div>
+    <div id="productsGrid" class="modern-products modern-home-products"></div>
+  </section>
+
+  <section class="modern-section">
+    <div class="modern-section-head"><h2>Новинки</h2><a href="catalog.html">Смотреть все</a></div>
+    <div id="newProductsGrid" class="modern-products modern-home-products"></div>
   </section>
 </main>
 
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="footer-group">
-      <h3>AutoStyle</h3>
-      <a href="contacts.html">Контакты</a>
-      <a href="about.html">Про нас</a>
-      <a href="contacts.html#addresses">Адреса</a>
-    </div>
-    <div class="footer-group">
-      <h3>Выгода</h3>
-      <a href="installment.html">Рассрочка</a>
-      <a href="certificates.html">Подарочные сертификаты</a>
-    </div>
-  </div>
+<footer class="modern-footer">
+  <div><h3>AUTO<span>STYLE</span></h3><p>© 2025 AutoStyle. Все права защищены.</p></div>
+  <nav><b>Покупателям</b><a href="installment.html">Доставка и оплата</a><a href="certificates.html">Гарантия</a><a href="contacts.html">Возврат и обмен</a></nav>
+  <nav><b>Компания</b><a href="about.html">О нас</a><a href="contacts.html">Контакты</a><a href="admin.html">Партнерам</a></nav>
+  <nav><b>Мы в соцсетях</b><div class="socials"><span>vk</span><span>tg</span><span>▶</span><span>◎</span></div></nav>
 </footer>
 
-<div id="authModal" class="modal">
-  <div class="modal-card">
-    <button id="closeAuth" style="float:right;border:0;background:#f2f4f7;border-radius:99px;width:34px;height:34px">×</button>
-    <h2>Вход в AutoStyle</h2>
-    <p class="muted">Войдите или создайте аккаунт.</p>
-    <div class="tabs">
-      <button class="tab active" data-tab="login">Вход</button>
-      <button class="tab" data-tab="register">Регистрация</button>
-    </div>
-    <form id="loginForm">
-      <label class="field">Email<input id="loginEmail" type="email" required></label>
-      <label class="field">Пароль<input id="loginPass" type="password" required></label>
-      <button class="primary" style="width:100%">Войти</button>
-    </form>
-    <form id="registerForm" style="display:none">
-      <label class="field">Имя<input id="regName" required></label>
-      <label class="field">Email<input id="regEmail" type="email" required></label>
-      <label class="field">Пароль<input id="regPass" type="password" minlength="6" required></label>
-      <button class="primary" style="width:100%">Создать</button>
-    </form>
-  </div>
-</div>
-
+<div id="authModal" class="modal"><div class="modal-card"><button id="closeAuth" type="button" class="modal-close">×</button><h2>Вход в AutoStyle</h2><p class="muted">Войдите или создайте аккаунт.</p><div class="tabs"><button class="tab active" data-tab="login" type="button">Вход</button><button class="tab" data-tab="register" type="button">Регистрация</button></div><form id="loginForm"><label class="field">Email<input id="loginEmail" type="email" required></label><label class="field">Пароль<input id="loginPass" type="password" required></label><button class="primary" style="width:100%">Войти</button></form><form id="registerForm" style="display:none"><label class="field">Имя<input id="regName" required></label><label class="field">Email<input id="regEmail" type="email" required></label><label class="field">Пароль<input id="regPass" type="password" minlength="6" required></label><button class="primary" style="width:100%">Создать</button></form></div></div>
 <script type="module" src="js/app.js"></script>
-<script src="js/app-shell.js"></script>
 </body>
 </html>

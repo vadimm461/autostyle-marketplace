@@ -25,19 +25,6 @@ function image(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
-function discountInfo(p) {
-  const price = Number(p.price || 0);
-  const rawOld = Number(p.oldPrice ?? p.priceOld ?? p.compareAtPrice ?? p.previousPrice ?? 0);
-  const percent = Number(p.discountPercent ?? p.discount ?? p.sale ?? 0);
-  const oldPrice = rawOld > price ? rawOld : (percent > 0 && price > 0 ? Math.round(price / (1 - percent / 100)) : 0);
-  const discount = oldPrice > price ? Math.round((oldPrice - price) / oldPrice * 100) : (percent > 0 ? percent : 0);
-  return { price, oldPrice, discount };
-}
-function priceHtml(p, cls='price-big') {
-  const d = discountInfo(p);
-  return `<div class="product-price-wrap"><span class="${cls} price-current">${money(d.price)}</span>${d.oldPrice ? `<span class="price-old">${money(d.oldPrice)}</span>` : ''}${d.discount ? `<span class="discount-badge">-${d.discount}%</span>` : ''}</div>`;
-}
-
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
   const c = $('#cartCount');
@@ -66,8 +53,6 @@ async function loadProduct() {
   const box = $('#productView');
   if (!box) return;
 
-  box.innerHTML = '<div class="app-loader">Загружаем товар...</div>';
-
   const id = new URLSearchParams(location.search).get('id');
 
   if (!id) {
@@ -93,7 +78,7 @@ async function loadProduct() {
     box.innerHTML = `
       <div class="product-gallery">
         <div class="promo-strip"><b>🔥 Акция</b><span>AutoStyle</span></div>
-        <div class="main-photo">${discountInfo(p).discount ? `<span class="card-discount-badge">-${discountInfo(p).discount}%</span>` : ''}${img ? `<img src="${img}" alt="${name}">` : `<div class="photo-empty">Фото</div>`}</div>
+        <div class="main-photo">${img ? `<img src="${img}" alt="${name}">` : `<div class="photo-empty">Фото</div>`}</div>
         <div class="photo-dots"><span class="active"></span><span></span><span></span></div>
         <div class="floating-tags">
           <span>Хит</span>
@@ -125,7 +110,7 @@ async function loadProduct() {
 
         <div class="buy-card">
           <div>
-            ${priceHtml(p, 'price-big')}
+            <div class="price-big">${money(p.price)}</div>
             ${s > 0 ? `<div class="stock-ok">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
           </div>
           <button id="addToCart" class="buy-btn" ${s <= 0 ? 'disabled' : ''}>🛒 В корзину</button>
@@ -144,8 +129,6 @@ async function loadProduct() {
           <div class="spec"><span>Категория</span><b>${p.category || 'Без категории'}</b></div>
           <div class="spec"><span>Остаток</span><b>${s}</b></div>
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
-          ${discountInfo(p).oldPrice ? `<div class="spec"><span>Цена до скидки</span><b>${money(discountInfo(p).oldPrice)}</b></div>` : ''}
-          ${discountInfo(p).discount ? `<div class="spec"><span>Скидка</span><b>${discountInfo(p).discount}%</b></div>` : ''}
         </section>
       </div>
     `;
