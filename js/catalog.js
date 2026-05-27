@@ -2,18 +2,25 @@ import { auth, db, COLLECTIONS } from './firebase.js';
 
 import {
   onAuthStateChanged,
-  signOut
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import {
   collection,
-  getDocs
+  getDocs,
+  setDoc,
+  doc
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const fmt = new Intl.NumberFormat('ru-RU');
 
 const grid = document.querySelector('#catalogGrid');
 const search = document.querySelector('#search');
+const topSearch = document.querySelector('#topSearch');
+const topSearchBtn = document.querySelector('#topSearchBtn');
 const cat = document.querySelector('#category');
 const sort = document.querySelector('#sort');
 const count = document.querySelector('#catalogCount');
@@ -48,22 +55,125 @@ function image(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
-function setupAuthHeader() {
+async function getCollection(name) {
+  const snap = await getDocs(collection(db, name));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function renderCatalogMenu() {
+  const parentsBox = document.querySelector('#catalogParents');
+  const childrenBox = document.querySelector('#catalogChildren');
+  const titleBox = document.querySelector('#megaTitle');
+
+  if (!parentsBox || !childrenBox || !titleBox) return;
+
+  const parents = categories.filter(c => !c.parentId);
+  const children = categories.filter(c => c.parentId);
+
+  function catName(c) {
+    return c.title || c.name || 'Без названия';
+  }
+
+  function renderChildren(parent) {
+    const list = children.filter(c => c.parentId === parent.id || c.parentId === parent.externalId);
+    titleBox.textContent = catName(parent);
+
+    childrenBox.innerHTML = list.length
+      ? list.map(child => `
+        <a href="catalog.html?category=${encodeURIComponent(catName(child))}" class="mega-child">
+          <span>${child.icon || 'AS'}</span>
+          <div><b>${catName(child)}</b><small>Смотреть товары</small></div>
+        </a>
+      `).join('')
+      : `
+        <a href="catalog.html?category=${encodeURIComponent(catName(parent))}" class="mega-child">
+          <span>${parent.icon || 'AS'}</span>
+          <div><b>Все товары категории</b><small>${catName(parent)}</small></div>
+        </a>
+      `;
+  }
+
+  parentsBox.innerHTML = parents.length
+    ? parents.map((parent, index) => `
+      <button class="mega-parent ${index === 0 ? 'active' : ''}" type="button" data-parent="${parent.id}">
+        <span>${parent.icon || 'AS'}</span>${catName(parent)}
+      </button>
+    `).join('')
+    : '<p class="muted">Категорий пока нет</p>';
+
+  if (parents[0]) renderChildren(parents[0]);
+
+  document.querySelectorAll('.mega-parent').forEach(btn => {
+    btn.addEventListener('mouseenter', () => {
+      document.querySelectorAll('.mega-parent').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const parent = parents.find(p => p.id === btn.dataset.parent);
+      if (parent) renderChildren(parent);
+    });
+
+    btn.addEventListener('click', () => {
+      const parent = parents.find(p => p.id === btn.dataset.parent);
+      if (parent) renderChildren(parent);
+    });
+  });
+}
+
+function setupAuth() {
+  const modal = document.querySelector('#authModal');
   const openAuth = document.querySelector('#openAuth');
+  const closeAuth = document.querySelector('#closeAuth');
   const accountDrop = document.querySelector('#accountDrop');
   const accountBtn = document.querySelector('#accountBtn');
   const userEmail = document.querySelector('#userEmail');
   const logout = document.querySelector('#logout');
 
+  if (openAuth && modal) {
+    openAuth.onclick = () => modal.classList.add('open');
+  }
+
+  if (closeAuth && modal) {
+    closeAuth.onclick = () => modal.classList.remove('open');
+  }
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.querySelector('#loginForm').style.display = t.dataset.tab === 'login' ? 'block' : 'none';
+      document.querySelector('#registerForm').style.display = t.dataset.tab === 'register' ? 'block' : 'none';
+    };
+  });
+
+  const loginForm = document.querySelector('#loginForm');
+  if (loginForm) {
+    loginForm.onsubmit = async e => {
+      e.preventDefault();
+      await signInWithEmailAndPassword(auth, document.querySelector('#loginEmail').value.trim(), document.querySelector('#loginPass').value);
+      modal.classList.remove('open');
+    };
+  }
+
+  const registerForm = document.querySelector('#registerForm');
+  if (registerForm) {
+    registerForm.onsubmit = async e => {
+      e.preventDefault();
+      const res = await createUserWithEmailAndPassword(auth, document.querySelector('#regEmail').value.trim(), document.querySelector('#regPass').value);
+      await setDoc(doc(db, COLLECTIONS.users, res.user.uid), {
+        name: document.querySelector('#regName').value.trim(),
+        email: document.querySelector('#regEmail').value.trim(),
+        role: 'user',
+        createdAt: new Date().toISOString()
+      });
+      await sendEmailVerification(res.user);
+      alert('Аккаунт создан. Проверьте почту.');
+      modal.classList.remove('open');
+    };
+  }
+
   onAuthStateChanged(auth, user => {
     if (user) {
       if (openAuth) openAuth.style.display = 'none';
-
-      if (accountDrop) {
-        accountDrop.style.display = 'block';
-        accountDrop.classList.add('active-account');
-      }
-
+      if (accountDrop) accountDrop.style.display = 'block';
       if (userEmail) userEmail.textContent = user.email || 'Аккаунт';
       if (accountBtn) accountBtn.textContent = 'Аккаунт ✓';
 
@@ -78,11 +188,7 @@ function setupAuthHeader() {
         openAuth.style.display = 'inline-flex';
         openAuth.textContent = 'Аккаунт';
       }
-
-      if (accountDrop) {
-        accountDrop.style.display = 'none';
-        accountDrop.classList.remove('active-account');
-      }
+      if (accountDrop) accountDrop.style.display = 'none';
     }
   });
 
@@ -95,56 +201,37 @@ function setupAuthHeader() {
 }
 
 function setupHeaderButtons() {
-  document.querySelectorAll('.catalog-btn').forEach(btn => {
-    btn.type = 'button';
-    btn.onclick = e => {
-      const menu = document.querySelector('.catalog-menu');
-      if (!menu) return;
-      menu.classList.toggle('open');
-    };
-  });
+  const cartBtn = document.querySelector('#cartBtn');
+  const favBtn = document.querySelector('#favBtn');
+  const searchForm = document.querySelector('.search');
 
-  const cartBtn = [...document.querySelectorAll('.icon-btn')].find(b => b.textContent.includes('Корзина'));
-  if (cartBtn) {
-    cartBtn.type = 'button';
-    cartBtn.onclick = () => location.href = 'cart.html';
+  if (searchForm) searchForm.onsubmit = e => e.preventDefault();
+
+  if (cartBtn) cartBtn.onclick = () => location.href = 'cart.html';
+  if (favBtn) favBtn.onclick = () => alert('Избранное скоро будет доступно.');
+
+  function goSearch() {
+    const q = encodeURIComponent((topSearch?.value || '').trim());
+    location.href = q ? `catalog.html?search=${q}` : 'catalog.html';
   }
 
-  const favBtn = [...document.querySelectorAll('.icon-btn')].find(b => b.textContent.includes('Избранное'));
-  if (favBtn) {
-    favBtn.type = 'button';
-    favBtn.onclick = () => alert('Избранное скоро будет доступно.');
-  }
+  if (topSearchBtn) topSearchBtn.onclick = goSearch;
 
-  const searchFormBtn = document.querySelector('.search button');
-  const siteSearchInput = document.querySelector('.search input');
-
-  if (searchFormBtn && siteSearchInput) {
-    searchFormBtn.type = 'button';
-    searchFormBtn.onclick = () => {
-      const q = encodeURIComponent(siteSearchInput.value.trim());
-      location.href = q ? `catalog.html?search=${q}` : 'catalog.html';
-    };
-  }
-
-  if (siteSearchInput) {
-    siteSearchInput.addEventListener('keydown', e => {
+  if (topSearch) {
+    topSearch.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        const q = encodeURIComponent(siteSearchInput.value.trim());
-        location.href = q ? `catalog.html?search=${q}` : 'catalog.html';
+        goSearch();
       }
     });
   }
 }
 
 async function load() {
-  const productsSnap = await getDocs(collection(db, COLLECTIONS.products));
-  items = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  items = await getCollection(COLLECTIONS.products);
 
   try {
-    const catSnap = await getDocs(collection(db, COLLECTIONS.categories));
-    categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    categories = await getCollection(COLLECTIONS.categories);
     categories.sort((a, b) => {
       const ao = Number(a.order ?? 999999);
       const bo = Number(b.order ?? 999999);
@@ -158,6 +245,8 @@ async function load() {
         return `<option value="${name}">${name}</option>`;
       }).join('');
     }
+
+    await renderCatalogMenu();
   } catch (e) {}
 
   const params = new URLSearchParams(location.search);
@@ -166,8 +255,6 @@ async function load() {
 
   if (cat && categoryFromUrl) cat.value = categoryFromUrl;
   if (search && searchFromUrl) search.value = searchFromUrl;
-
-  const topSearch = document.querySelector('.search input');
   if (topSearch && searchFromUrl) topSearch.value = searchFromUrl;
 
   updateCartCount();
@@ -195,20 +282,7 @@ function render() {
   if (count) count.textContent = `${list.length} товаров`;
 
   if (zeroNotice) {
-    zeroNotice.textContent = showZero
-      ? 'Показаны все товары'
-      : 'Товары с нулевым остатком скрыты';
-    zeroNotice.onclick = () => {
-      if (!showZero) {
-        if (confirm('Показать все товары, включая товары с нулевым остатком?')) {
-          showZero = true;
-          render();
-        }
-      } else {
-        showZero = false;
-        render();
-      }
-    };
+    zeroNotice.textContent = showZero ? 'Показаны все товары' : 'Товары с нулевым остатком скрыты';
   }
 
   grid.innerHTML = list.length
@@ -243,12 +317,32 @@ function render() {
       setTimeout(() => btn.textContent = 'В корзину', 900);
     };
   });
+
+  setTimeout(() => {
+    window.scrollTo(0, window.scrollY);
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
+  }, 0);
 }
 
 search?.addEventListener('input', render);
 cat?.addEventListener('change', render);
 sort?.addEventListener('change', render);
 
-setupAuthHeader();
+if (zeroNotice) {
+  zeroNotice.onclick = () => {
+    if (!showZero) {
+      if (confirm('Показать все товары, включая товары с нулевым остатком?')) {
+        showZero = true;
+        render();
+      }
+    } else {
+      showZero = false;
+      render();
+    }
+  };
+}
+
+setupAuth();
 setupHeaderButtons();
 load();
