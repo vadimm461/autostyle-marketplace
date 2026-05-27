@@ -165,21 +165,15 @@ function uniqueCategoriesForProductSelect() {
   sortByOrder(allCatsCache).forEach(cat => {
     const title = normalizeTitle(cat.title || cat.name);
     if (!title || title === 'Без названия') return;
-
     const parent = allCatsCache.find(p => p.id === cat.parentId || p.externalId === cat.parentId);
     const parentTitle = parent ? normalizeTitle(parent.title || parent.name) : '';
-
-    const label = parentTitle
-      ? `${Number(cat.order ?? 0)} — ${parentTitle} / ${title}`
-      : `${Number(cat.order ?? 0)} — ${title}`;
-
+    const label = parentTitle ? `${parentTitle} / ${title}` : title;
     map.set(title.toLowerCase(), { value: title, label, order: Number(cat.order ?? 999999) });
   });
 
   allProductsCache.forEach(product => {
     const title = normalizeTitle(product.category);
     if (!title || title === 'Без категории') return;
-
     if (!map.has(title.toLowerCase())) {
       map.set(title.toLowerCase(), { value: title, label: title, order: 999999 });
     }
