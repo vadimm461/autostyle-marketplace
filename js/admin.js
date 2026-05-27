@@ -13,6 +13,7 @@ import {
   doc,
   updateDoc,
   setDoc,
+  getDoc,
   query,
   where,
   limit
@@ -151,6 +152,7 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
+  renderSiteContent();
 });
 
 /* CATEGORY OPTIONS */
@@ -842,3 +844,92 @@ if ($('#settingsForm')) {
     el.addEventListener('change', renderProductList);
   }
 });
+
+/* SITE VISUAL CONTENT EDITOR */
+
+const SITE_CONTENT_DEFAULTS = {
+  logoText: 'AUTO STYLE',
+  catalogButton: '☰ Каталог',
+  searchPlaceholder: 'Я ищу автотовары...',
+  searchButton: 'Найти',
+  accountButton: '♙ Аккаунт',
+  favoritesButton: '♡ Избранное',
+  cartButton: '🛒 Корзина',
+  heroTitle: 'Автотовары\nдля вашего авто',
+  heroText: 'Качественные товары\nпо лучшим ценам',
+  heroButton: 'Перейти в каталог',
+  heroImage: 'assets/storefront.jpeg',
+  benefit1Title: 'Быстрая доставка',
+  benefit1Text: 'По всей России',
+  benefit2Title: 'Качество 100%',
+  benefit2Text: 'Гарантия на все товары',
+  benefit3Title: 'Поддержка 24/7',
+  benefit3Text: 'Поможем с выбором',
+  benefit4Title: 'Скидки и акции',
+  benefit4Text: 'Выгодные предложения',
+  popularTitle: 'Популярные товары',
+  newTitle: 'Новинки',
+  seeAll: 'Смотреть все',
+  catalogTitle: 'Каталог товаров',
+  filtersTitle: 'Фильтры',
+  filterSearch: 'Название, категория...',
+  zeroHidden: 'Товары с нулевым остатком скрыты',
+  footerBrand: 'AUTOSTYLE',
+  footerCopyright: '© 2025 AutoStyle. Все права защищены.',
+  footerBuyers: 'Покупателям',
+  footerCompany: 'Компания',
+  footerSocial: 'Мы в соцсетях'
+};
+
+function fillSiteContentForm(data = {}) {
+  const content = { ...SITE_CONTENT_DEFAULTS, ...data };
+  Object.keys(SITE_CONTENT_DEFAULTS).forEach(key => {
+    setVal(`#content_${key}`, content[key]);
+  });
+}
+
+async function renderSiteContent() {
+  if (!$('#siteContentForm')) return;
+
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.settings, 'siteContent'));
+    fillSiteContentForm(snap.exists() ? snap.data() : SITE_CONTENT_DEFAULTS);
+  } catch (err) {
+    console.error(err);
+    fillSiteContentForm(SITE_CONTENT_DEFAULTS);
+  }
+}
+
+if ($('#siteContentReset')) {
+  $('#siteContentReset').onclick = () => fillSiteContentForm(SITE_CONTENT_DEFAULTS);
+}
+
+if ($('#siteContentForm')) {
+  $('#siteContentForm').onsubmit = async e => {
+    e.preventDefault();
+
+    try {
+      let heroImage = val('#content_heroImage');
+      const uploaded = await uploadImage('#contentHeroFile', 'site', '#content_heroImage', '#contentHeroUpload');
+      if (uploaded) heroImage = uploaded;
+
+      const data = {};
+      Object.keys(SITE_CONTENT_DEFAULTS).forEach(key => {
+        data[key] = val(`#content_${key}`);
+      });
+      data.heroImage = heroImage;
+      data.updatedAt = new Date().toISOString();
+
+      await setDoc(doc(db, COLLECTIONS.settings, 'siteContent'), data, { merge: true });
+
+      if ($('#siteContentStatus')) {
+        $('#siteContentStatus').innerHTML = '<div class="upload-success">Сохранено. Обнови сайт, чтобы увидеть изменения.</div>';
+      }
+
+      alert('Контент сайта сохранён');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка сохранения контента: ' + err.message);
+    }
+  };
+}
