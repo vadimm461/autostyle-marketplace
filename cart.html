@@ -1,1 +1,58 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Корзина — AutoStyle</title><link rel="stylesheet" href="css/style.css"></head><body><header class="topbar dark-topbar"><div class="bar"><a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a><div class="catalog-menu"><button class="catalog-btn" type="button">☰ Каталог</button><div class="catalog-popup mega-catalog"><div class="mega-left"><h3>Каталог товаров</h3><div id="catalogParents" class="mega-parent-list"></div></div><div class="mega-right"><h3 id="megaTitle">Категории</h3><div id="catalogChildren" class="mega-child-grid"></div></div></div></div><form class="search"><input placeholder="Я ищу автотовары..."><button type="button">Найти</button></form><button id="openAuth" class="icon-btn" type="button">Аккаунт</button><button id="favBtn" class="icon-btn" type="button">♡ Избранное</button><button id="cartBtn" class="icon-btn" type="button">Корзина <b id="cartCount">0</b></button></div></header><main class="container"><section class="catalog-hero"><h1>Корзина</h1></section><div class="notice">Оформление заказа подключим следующим шагом.</div></main><script type="module">import {initMobileUi,setupSearch,updateCartCount} from './js/common.js';initMobileUi();setupSearch();updateCartCount();</script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Корзина — AutoStyle</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/shop-pages.css">
+</head>
+<body>
+<header class="topbar dark-topbar">
+  <div class="bar">
+    <a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a>
+    <a class="catalog-btn" href="catalog.html">☰ Каталог</a>
+    <form class="search">
+      <input id="siteSearch" placeholder="Я ищу автотовары...">
+      <button type="button" id="siteSearchBtn">Найти</button>
+    </form>
+    <button id="openAuth" class="icon-btn">Аккаунт</button>
+    <button class="icon-btn">♡ Избранное</button>
+    <a class="icon-btn" href="cart.html">Корзина <b id="cartCount">0</b></a>
+  </div>
+</header>
+
+<main class="container page-simple">
+  <h1>Корзина</h1>
+  <p class="muted">Проверь товары перед оформлением заказа.</p>
+
+  <section class="cart-layout">
+    <div id="cartList" class="cart-list"></div>
+    <aside class="cart-summary">
+      <h2>Итого</h2>
+      <div class="summary-row"><span>Товары</span><b id="cartItemsCount">0</b></div>
+      <div class="summary-row"><span>Сумма</span><b id="cartTotal">0 ₽</b></div>
+      <button id="checkoutBtn" class="primary">Оформить заказ</button>
+      <button id="clearCart" class="secondary-btn" type="button">Очистить корзину</button>
+    </aside>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-group">
+      <h3>AutoStyle</h3>
+      <a href="contacts.html">Контакты</a>
+      <a href="about.html">Про нас</a>
+      <a href="contacts.html#addresses">Адреса</a>
+    </div>
+    <div class="footer-group">
+      <h3>Выгода</h3>
+      <a href="installment.html">Рассрочка</a>
+      <a href="certificates.html">Подарочные сертификаты</a>
+    </div>
+  </div>
+</footer>
+<script type="module" src="js/cart.js"></script>
+</body>
+</html>

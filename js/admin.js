@@ -155,38 +155,52 @@ onAuthStateChanged(auth, user => {
 
 /* CATEGORY OPTIONS */
 
-function normalizeTitle(value) {
+function normalizeCatTitle(value) {
   return String(value || '').trim();
 }
 
-function uniqueCategoriesForProductSelect() {
+function buildCategoryOptions(cats) {
   const map = new Map();
 
-  sortByOrder(allCatsCache).forEach(cat => {
-    const title = normalizeTitle(cat.title || cat.name);
+  // 1) Категории из раздела "Категории"
+  sortByOrder(cats || []).forEach(cat => {
+    const title = normalizeCatTitle(cat.title || cat.name);
     if (!title || title === 'Без названия') return;
-    const parent = allCatsCache.find(p => p.id === cat.parentId || p.externalId === cat.parentId);
-    const parentTitle = parent ? normalizeTitle(parent.title || parent.name) : '';
-    const label = parentTitle ? `${parentTitle} / ${title}` : title;
-    map.set(title.toLowerCase(), { value: title, label, order: Number(cat.order ?? 999999) });
+
+    const parent = (cats || []).find(p => p.id === cat.parentId || p.externalId === cat.parentId);
+    const parentTitle = parent ? normalizeCatTitle(parent.title || parent.name) : '';
+
+    const label = parentTitle
+      ? `${Number(cat.order ?? 0)} — ${parentTitle} / ${title}`
+      : `${Number(cat.order ?? 0)} — ${title}`;
+
+    map.set(title.toLowerCase(), {
+      value: title,
+      label,
+      order: Number(cat.order ?? 999999)
+    });
   });
 
-  allProductsCache.forEach(product => {
-    const title = normalizeTitle(product.category);
+  // 2) Категории из самих товаров.
+  // Именно отсюда берутся "Автохимия LAVR", "Автохимия MANNOL" и т.д.
+  (allProductsCache || []).forEach(product => {
+    const title = normalizeCatTitle(product.category);
     if (!title || title === 'Без категории') return;
+
     if (!map.has(title.toLowerCase())) {
-      map.set(title.toLowerCase(), { value: title, label: title, order: 999999 });
+      map.set(title.toLowerCase(), {
+        value: title,
+        label: title,
+        order: 999999
+      });
     }
   });
 
-  return [...map.values()].sort((a, b) => {
-    if (a.order !== b.order) return a.order - b.order;
-    return a.value.localeCompare(b.value, 'ru');
-  });
-}
-
-function buildCategoryOptions() {
-  return uniqueCategoriesForProductSelect()
+  return [...map.values()]
+    .sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.value.localeCompare(b.value, 'ru');
+    })
     .map(cat => `<option value="${cat.value}">${cat.label}</option>`)
     .join('');
 }
@@ -304,8 +318,6 @@ function renderProductList() {
       setVal('#pTitle', item.title);
       setVal('#pCode', item.code);
       setVal('#pPrice', item.price);
-      setVal('#pOldPrice', item.oldPrice || '');
-      setVal('#pDiscount', item.discountPercent || '');
       setVal('#pCategory', item.category);
       setVal('#pImage', item.image);
       setVal('#pDesc', item.description);
@@ -329,8 +341,6 @@ if ($('#productForm')) {
         title: val('#pTitle'),
         code: val('#pCode'),
         price: Number(val('#pPrice') || 0),
-        oldPrice: Number(val('#pOldPrice') || 0),
-        discountPercent: Number(val('#pDiscount') || 0),
         category: val('#pCategory'),
         image: imageUrl,
         description: val('#pDesc'),
