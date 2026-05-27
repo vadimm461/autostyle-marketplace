@@ -25,6 +25,22 @@ function money(v) {
   return `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 }
 
+function productStock(p) {
+  return Number(p.stock ?? p.quantity ?? p.count ?? 0);
+}
+
+function onlyInStock(products) {
+  return products.filter(p => productStock(p) > 0);
+}
+
+function productTitle(p) {
+  return p.title || p.name || 'Без названия';
+}
+
+function productImage(p) {
+  return p.image || p.imageUrl || p.photo || '';
+}
+
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
   if ($('#cartCount')) $('#cartCount').textContent = cart.length;
@@ -39,7 +55,16 @@ async function loadCollection(name) {
 }
 
 async function renderCatalogMenu() {
-  const categories = await loadCollection(COLLECTIONS.categories);
+  let categories = await loadCollection(COLLECTIONS.categories);
+
+  categories.sort((a, b) => {
+    const ao = Number(a.order ?? 999999);
+    const bo = Number(b.order ?? 999999);
+
+    if (ao !== bo) return ao - bo;
+
+    return String(a.title || '').localeCompare(String(b.title || ''), 'ru');
+  });
 
   const parentsBox = $('#catalogParents');
   const childrenBox = $('#catalogChildren');
@@ -106,21 +131,28 @@ function renderProducts(products) {
   const grid = $('#productsGrid');
   if (!grid) return;
 
-  grid.innerHTML = products.length
-    ? products.map(p => `
+  const visibleProducts = onlyInStock(products);
+
+  grid.innerHTML = visibleProducts.length
+    ? visibleProducts.map(p => `
       <article class="product-card">
         <div class="product-img">
-          ${p.image ? `<img src="${p.image}" alt="${p.title || p.name || 'Товар'}">` : 'Фото'}
+          ${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}
         </div>
 
-        <div class="product-title">${p.title || p.name || 'Без названия'}</div>
-        <div class="muted">${p.category || 'Без категории'}</div>
+        <div class="product-title">${productTitle(p)}</div>
+        <div class="muted">
+          ${p.category || 'Без категории'}
+          ${p.code ? ` · код: ${p.code}` : ''}
+        </div>
+
         <div class="price">${money(p.price)}</div>
+        <div class="stock in-stock">В наличии: ${productStock(p)}</div>
 
         <button class="cart" data-id="${p.id}">В корзину</button>
       </article>
     `).join('')
-    : '<div class="panel muted">Товары появятся после добавления в админке.</div>';
+    : '<div class="panel muted">Нет товаров в наличии.</div>';
 
   $$('[data-id]').forEach(btn => {
     btn.onclick = () => {
@@ -160,7 +192,9 @@ function setupProductTabs() {
 }
 
 async function renderHome() {
-  const products = await loadCollection(COLLECTIONS.products);
+  let products = await loadCollection(COLLECTIONS.products);
+  products = onlyInStock(products);
+
   const banners = await loadCollection(COLLECTIONS.banners);
 
   allProducts = products;
@@ -210,6 +244,27 @@ async function renderHome() {
 
   renderProducts(products.filter(p => !p.tag || p.tag === 'hot'));
   saveCart();
+}
+
+function setupHomeSearch() {
+  const input = $('#homeSearch');
+  const btn = $('#homeSearchBtn');
+
+  function goSearch() {
+    const q = encodeURIComponent((input?.value || '').trim());
+    location.href = q ? `catalog.html?search=${q}` : 'catalog.html';
+  }
+
+  if (btn) btn.onclick = goSearch;
+
+  if (input) {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        goSearch();
+      }
+    });
+  }
 }
 
 function authModal() {
@@ -296,9 +351,7 @@ function authModal() {
 }
 
 authModal();
+setupHomeSearch();
 renderHome();
 renderCatalogMenu();
 setupProductTabs();
-
-
-
