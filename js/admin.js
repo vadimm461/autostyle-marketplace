@@ -260,6 +260,7 @@ function renderProductList() {
             ${x.code ? `<span class="admin-badge">Код: ${x.code}</span>` : ''}
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
+            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
           </div>
 
@@ -295,6 +296,7 @@ function renderProductList() {
       setVal('#pDesc', item.description);
 
       if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
+      if ($('#pShowHome')) $('#pShowHome').checked = item.showOnHome === true;
     };
   });
 }
@@ -316,6 +318,7 @@ if ($('#productForm')) {
         image: imageUrl,
         description: val('#pDesc'),
         tag: $('#pTag') ? $('#pTag').value : 'hot',
+        showOnHome: $('#pShowHome') ? $('#pShowHome').checked : false,
         updatedAt: new Date().toISOString()
       };
 
@@ -416,6 +419,7 @@ if ($('#importExcelBtn')) {
           image: '',
           description: '',
           tag,
+          showOnHome: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });

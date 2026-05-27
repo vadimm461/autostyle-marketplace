@@ -40,6 +40,10 @@ function onlyInStock(products) {
   return products.filter(p => productStock(p) > 0);
 }
 
+function onlyHomeProducts(products) {
+  return products.filter(p => p.showOnHome === true);
+}
+
 function productTitle(p) {
   return p.title || p.name || 'Без названия';
 }
@@ -177,7 +181,7 @@ async function renderHome() {
   products = onlyInStock(products);
 
   const banners = await loadCollection(COLLECTIONS.banners);
-  allProducts = products;
+  allProducts = onlyHomeProducts(products);
 
   const hero = $('#hero');
 
@@ -213,7 +217,7 @@ async function renderHome() {
     `).join('');
   }
 
-  renderProducts(products.filter(p => !p.tag || p.tag === 'hot'));
+  renderProducts(allProducts.filter(p => !p.tag || p.tag === 'hot'));
   saveCart();
 }
 

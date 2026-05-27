@@ -166,3 +166,30 @@
     flex-wrap: wrap;
   }
 }
+
+
+/* Show on home checkbox */
+.check-field {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 62px;
+  padding: 14px 16px;
+  border: 1px solid var(--line, #e7ebf0);
+  border-radius: 16px;
+  background: #fff;
+  font-weight: 900;
+}
+
+.check-field input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #34e21f;
+}
+
+.admin-badge-home {
+  background: rgba(52,226,31,.16) !important;
+  color: #16830b !important;
+}
