@@ -55,6 +55,35 @@ function image(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
+function oldPrice(p) {
+  return Number(p.oldPrice || p.priceBefore || p.compareAtPrice || 0);
+}
+
+function discountPercent(p) {
+  const manual = Number(p.discountPercent || p.discount || 0);
+  if (manual > 0) return manual;
+
+  const old = oldPrice(p);
+  const price = Number(p.price || 0);
+
+  if (old > price && price > 0) return Math.round(((old - price) / old) * 100);
+  return 0;
+}
+
+function priceBlock(p) {
+  const price = Number(p.price || 0);
+  const old = oldPrice(p);
+  const discount = discountPercent(p);
+
+  return `
+    <div class="catalog-price-wrap">
+      ${old > price && old > 0 ? `<div class="catalog-card-oldprice">${fmt.format(old)} ₽</div>` : ''}
+      <div class="catalog-card-price">${fmt.format(price)} ₽</div>
+      ${discount > 0 ? `<div class="catalog-card-discount">-${discount}%</div>` : ''}
+    </div>
+  `;
+}
+
 async function getCollection(name) {
   const snap = await getDocs(collection(db, name));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -296,7 +325,7 @@ function render() {
           <div class="catalog-card-body">
             <h3>${title(p)}</h3>
             <div class="catalog-card-category">${p.category || 'Без категории'}</div>
-            <div class="catalog-card-price">${fmt.format(Number(p.price || 0))} ₽</div>
+            ${priceBlock(p)}
             <div class="catalog-card-stock">${stockText(p)}</div>
           </div>
         </a>
