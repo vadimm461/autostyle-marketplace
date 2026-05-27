@@ -29,6 +29,13 @@ function productStock(p) {
   return Number(p.stock ?? p.quantity ?? p.count ?? 0);
 }
 
+function stockText(p) {
+  const s = productStock(p);
+  if (s > 10) return 'В наличии больше 10';
+  if (s > 0) return 'В наличии меньше 10';
+  return 'Нет в наличии';
+}
+
 function onlyInStock(products) {
   return products.filter(p => productStock(p) > 0);
 }
@@ -113,28 +120,27 @@ function renderProducts(products) {
   const grid = $('#productsGrid');
   if (!grid) return;
 
-  const visibleProducts = onlyInStock(products).slice(0, 20);
+  const visibleProducts = onlyInStock(products).slice(0, 24);
 
   grid.innerHTML = visibleProducts.length
     ? visibleProducts.map(p => `
-      <a class="product-card product-card-link" href="product.html?id=${p.id}">
-        <div class="product-img">${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}</div>
+      <a class="product-card product-card-link home-product-card" href="product.html?id=${p.id}">
+        <div class="product-img">
+          ${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}
+        </div>
+
         <div class="product-title">${productTitle(p)}</div>
-        <div class="muted">${p.category || 'Без категории'}${p.code ? ` · код: ${p.code}` : ''}</div>
-        <div class="price">${money(p.price)}</div>
-        <div class="stock in-stock">В наличии: ${productStock(p)}</div>
-        <button class="cart" data-id="${p.id}" type="button">В корзину</button>
+
+        <div class="muted product-category-line">
+          ${p.category || 'Без категории'}
+          ${p.code ? ` · код: ${p.code}` : ''}
+        </div>
+
+        <div class="price home-price">${money(p.price)}</div>
+        <div class="stock home-stock ${productStock(p) > 10 ? 'stock-more' : 'stock-less'}">${stockText(p)}</div>
       </a>
     `).join('')
     : '<div class="panel muted">Нет товаров в наличии.</div>';
-
-  $$('[data-id]').forEach(btn => {
-    btn.onclick = e => {
-      e.preventDefault();
-      cart.push(btn.dataset.id);
-      saveCart();
-    };
-  });
 }
 
 function setupProductTabs() {
@@ -212,8 +218,8 @@ async function renderHome() {
 }
 
 function setupHomeSearch() {
-  const input = $('#homeSearch');
-  const btn = $('#homeSearchBtn');
+  const input = $('#homeSearch') || $('#siteSearch');
+  const btn = $('#homeSearchBtn') || $('#siteSearchBtn');
 
   function goSearch() {
     const q = encodeURIComponent((input?.value || '').trim());

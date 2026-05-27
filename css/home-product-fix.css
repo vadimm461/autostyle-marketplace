@@ -1,0 +1,47 @@
+/* Home card fixes */
+
+.product-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-product-card .cart {
+  display: none !important;
+}
+
+.home-price {
+  font-size: 30px !important;
+  line-height: 1.05;
+  font-weight: 950 !important;
+  letter-spacing: -.04em;
+  margin-top: 10px;
+}
+
+.home-stock {
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 850;
+  margin-top: 6px;
+}
+
+.stock-more {
+  color: #159307;
+}
+
+.stock-less {
+  color: #e07a00;
+}
+
+.product-category-line {
+  min-height: 20px;
+}
+
+.home-product-card {
+  transition: box-shadow .18s ease, border-color .18s ease;
+}
+
+.home-product-card:hover {
+  transform: none !important;
+  box-shadow: 0 24px 60px rgba(16,18,23,.12);
+  border-color: rgba(52,226,31,.4);
+}
