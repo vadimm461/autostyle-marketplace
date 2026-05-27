@@ -29,19 +29,8 @@ function productStock(p) {
   return Number(p.stock ?? p.quantity ?? p.count ?? 0);
 }
 
-function stockText(p) {
-  const s = productStock(p);
-  if (s > 10) return 'В наличии больше 10';
-  if (s > 0) return 'В наличии меньше 10';
-  return 'Нет в наличии';
-}
-
 function onlyInStock(products) {
   return products.filter(p => productStock(p) > 0);
-}
-
-function onlyHomeProducts(products) {
-  return products.filter(p => p.showOnHome === true);
 }
 
 function productTitle(p) {
@@ -124,7 +113,9 @@ function renderProducts(products) {
   const grid = $('#productsGrid');
   if (!grid) return;
 
-  const visibleProducts = onlyInStock(products).slice(0, 24);
+  const visibleProducts = onlyInStock(products)
+    .filter(p => p.showOnHome === true)
+    .slice(0, 24);
 
   grid.innerHTML = visibleProducts.length
     ? visibleProducts.map(p => `
@@ -135,16 +126,14 @@ function renderProducts(products) {
 
         <div class="product-title">${productTitle(p)}</div>
 
-        <div class="muted product-category-line">
-          ${p.category || 'Без категории'}
-          ${p.code ? ` · код: ${p.code}` : ''}
+        <div class="muted product-code-line">
+          ${p.code ? `Код: ${p.code}` : ''}
         </div>
 
         <div class="price home-price">${money(p.price)}</div>
-        <div class="stock home-stock ${productStock(p) > 10 ? 'stock-more' : 'stock-less'}">${stockText(p)}</div>
       </a>
     `).join('')
-    : '<div class="panel muted">Нет товаров в наличии.</div>';
+    : '<div class="panel muted">На главной пока нет выбранных товаров. Отметьте товар в админке галочкой “Показывать на главной”.</div>';
 }
 
 function setupProductTabs() {
@@ -181,7 +170,7 @@ async function renderHome() {
   products = onlyInStock(products);
 
   const banners = await loadCollection(COLLECTIONS.banners);
-  allProducts = onlyHomeProducts(products);
+  allProducts = products;
 
   const hero = $('#hero');
 
@@ -217,7 +206,7 @@ async function renderHome() {
     `).join('');
   }
 
-  renderProducts(allProducts.filter(p => !p.tag || p.tag === 'hot'));
+  renderProducts(products.filter(p => !p.tag || p.tag === 'hot'));
   saveCart();
 }
 
