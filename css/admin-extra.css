@@ -193,3 +193,24 @@
   background: rgba(52,226,31,.16) !important;
   color: #16830b !important;
 }
+.admin-card,
+.panel,
+.form-card,
+section {
+  background: #fff !important;
+  background-image: none !important;
+}
+
+.admin-card::before,
+.panel::before,
+.form-card::before,
+section::before {
+  display: none !important;
+}
+#productsSection,
+#productForm,
+.product-admin,
+.admin-form {
+  background: #fff !important;
+  background-image: none !important;
+}
