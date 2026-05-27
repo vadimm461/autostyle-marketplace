@@ -388,3 +388,54 @@ body.catalog-open .page-dim {
     display: none;
   }
 }
+/* Жесткая фиксация страницы */
+html,
+body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    position: relative;
+}
+
+/* Все секции сайта */
+section,
+div,
+main,
+header,
+footer {
+    max-width: 100%;
+}
+
+/* Контейнер */
+.container,
+.wrap,
+.content,
+.page {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* Карточки и ряды */
+.products,
+.banner-row,
+.hero-grid,
+.catalog-layout {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* IOS Safari фикс */
+body {
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Когда открыто окно */
+body.page-locked {
+    position: fixed !important;
+    overflow: hidden !important;
+    inset: 0;
+    touch-action: none;
+}
