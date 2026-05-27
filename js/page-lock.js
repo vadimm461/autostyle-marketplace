@@ -1,117 +1,107 @@
-// AutoStyle page lock for popups/modals/catalog
+// AutoStyle hard page lock + anti horizontal shift
 
-let savedScrollY = 0;
+(function () {
+  let savedScrollY = 0;
 
-function lockPage(type = 'popup-open') {
-  if (document.body.classList.contains('page-locked')) return;
+  function lockPage(type) {
+    savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
-  savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-
-  document.documentElement.classList.add('page-locked');
-  document.body.classList.add('page-locked', type);
-  document.body.style.top = `-${savedScrollY}px`;
-}
-
-function unlockPage() {
-  document.documentElement.classList.remove('page-locked');
-  document.body.classList.remove('page-locked', 'popup-open', 'modal-open', 'catalog-open');
-  document.body.style.top = '';
-
-  window.scrollTo(0, savedScrollY || 0);
-}
-
-function setupCatalogLock() {
-  const menu = document.querySelector('.catalog-menu');
-  const btn = document.querySelector('.catalog-btn');
-  const dim = document.querySelector('.page-dim');
-
-  if (!btn) return;
-
-  let openedByClick = false;
-
-  function openCatalog() {
-    openedByClick = true;
-    document.body.classList.add('catalog-open');
-    lockPage('catalog-open');
+    document.documentElement.classList.add('page-locked');
+    document.body.classList.add('page-locked', type || 'popup-open');
+    document.body.style.top = '-' + savedScrollY + 'px';
   }
 
-  function closeCatalog() {
-    openedByClick = false;
-    document.body.classList.remove('catalog-open');
-    unlockPage();
+  function unlockPage() {
+    document.documentElement.classList.remove('page-locked');
+    document.body.classList.remove('page-locked', 'popup-open', 'modal-open', 'catalog-open');
+    document.body.style.top = '';
+    window.scrollTo(0, savedScrollY || 0);
   }
 
-  btn.addEventListener('click', (e) => {
-    if (window.innerWidth <= 820 && menu) {
-      e.preventDefault();
+  function resetHorizontal() {
+    if (window.scrollX !== 0) window.scrollTo(0, window.scrollY);
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
+  }
 
-      if (openedByClick) closeCatalog();
-      else openCatalog();
+  window.addEventListener('scroll', resetHorizontal, { passive: true });
+  window.addEventListener('resize', resetHorizontal);
+
+  document.addEventListener('click', function (e) {
+    const tab = e.target.closest('.product-tab');
+    if (tab) {
+      setTimeout(resetHorizontal, 0);
+      setTimeout(resetHorizontal, 80);
+      setTimeout(resetHorizontal, 250);
     }
   });
 
-  if (menu) {
-    menu.addEventListener('mouseenter', () => {
-      if (window.innerWidth > 820) document.body.classList.add('catalog-open');
-    });
+  document.addEventListener('DOMContentLoaded', function () {
+    resetHorizontal();
 
-    menu.addEventListener('mouseleave', () => {
-      if (window.innerWidth > 820) document.body.classList.remove('catalog-open');
-    });
-  }
+    const btn = document.querySelector('.catalog-btn');
+    const menu = document.querySelector('.catalog-menu');
+    const dim = document.querySelector('.page-dim');
+    const modal = document.querySelector('#authModal');
+    const openAuth = document.querySelector('#openAuth');
+    const closeAuth = document.querySelector('#closeAuth');
 
-  if (dim) {
-    dim.addEventListener('click', () => {
-      closeCatalog();
-      closeAllModals();
-    });
-  }
+    let catalogOpen = false;
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeCatalog();
-      closeAllModals();
+    function openCatalog() {
+      catalogOpen = true;
+      document.body.classList.add('catalog-open');
+      lockPage('catalog-open');
     }
-  });
-}
 
-function setupModalLock() {
-  const modal = document.querySelector('#authModal');
-  const openBtn = document.querySelector('#openAuth');
-  const closeBtn = document.querySelector('#closeAuth');
-
-  if (!modal) return;
-
-  if (openBtn) {
-    openBtn.addEventListener('click', () => {
-      document.body.classList.add('modal-open');
-      lockPage('modal-open');
-    });
-  }
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      document.body.classList.remove('modal-open');
-      unlockPage();
-    });
-  }
-
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('open');
-      document.body.classList.remove('modal-open');
+    function closeCatalog() {
+      catalogOpen = false;
+      document.body.classList.remove('catalog-open');
       unlockPage();
     }
+
+    if (btn && menu) {
+      btn.addEventListener('click', function (e) {
+        if (window.innerWidth <= 820) {
+          e.preventDefault();
+          catalogOpen ? closeCatalog() : openCatalog();
+        }
+      });
+    }
+
+    if (openAuth) {
+      openAuth.addEventListener('click', function () {
+        lockPage('modal-open');
+      });
+    }
+
+    if (closeAuth) {
+      closeAuth.addEventListener('click', function () {
+        unlockPage();
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) unlockPage();
+      });
+    }
+
+    if (dim) {
+      dim.addEventListener('click', function () {
+        closeCatalog();
+        document.querySelectorAll('.modal.open').forEach(function (m) {
+          m.classList.remove('open');
+        });
+        unlockPage();
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeCatalog();
+        unlockPage();
+      }
+    });
   });
-}
-
-function closeAllModals() {
-  document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
-  document.body.classList.remove('modal-open');
-  unlockPage();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  setupCatalogLock();
-  setupModalLock();
-});
+})();
