@@ -41,6 +41,23 @@ function productImage(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
+function discountInfo(p) {
+  const price = Number(p.price || 0);
+  const rawOld = Number(p.oldPrice ?? p.priceOld ?? p.compareAtPrice ?? p.previousPrice ?? 0);
+  const percent = Number(p.discountPercent ?? p.discount ?? p.sale ?? 0);
+  const oldPrice = rawOld > price ? rawOld : (percent > 0 && price > 0 ? Math.round(price / (1 - percent / 100)) : 0);
+  const discount = oldPrice > price ? Math.round((oldPrice - price) / oldPrice * 100) : (percent > 0 ? percent : 0);
+  return { price, oldPrice, discount };
+}
+function priceHtml(p, cls='price') {
+  const d = discountInfo(p);
+  return `<div class="product-price-wrap"><span class="${cls} price-current">${money(d.price)}</span>${d.oldPrice ? `<span class="price-old">${money(d.oldPrice)}</span>` : ''}${d.discount ? `<span class="discount-badge">-${d.discount}%</span>` : ''}</div>`;
+}
+function showProductsLoader() {
+  const grid = $('#productsGrid');
+  if (grid) grid.innerHTML = '<div class="app-loader">Загружаем товары...</div>';
+}
+
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
   if ($('#cartCount')) $('#cartCount').textContent = cart.length;
@@ -121,7 +138,7 @@ function renderProducts(products) {
     ? visibleProducts.map(p => `
       <a class="product-card product-card-link home-product-card" href="product.html?id=${p.id}">
         <div class="product-img">
-          ${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}
+          ${discountInfo(p).discount ? `<span class="card-discount-badge">-${discountInfo(p).discount}%</span>` : ''}${productImage(p) ? `<img src="${productImage(p)}" alt="${productTitle(p)}">` : 'Фото'}
         </div>
 
         <div class="product-title">${productTitle(p)}</div>
@@ -130,7 +147,7 @@ function renderProducts(products) {
           ${p.code ? `Код: ${p.code}` : ''}
         </div>
 
-        <div class="price home-price">${money(p.price)}</div>
+        ${priceHtml(p, 'price home-price')}
       </a>
     `).join('')
     : '<div class="panel muted">На главной пока нет выбранных товаров. Отметьте товар в админке галочкой “Показывать на главной”.</div>';
@@ -166,6 +183,7 @@ function setupProductTabs() {
 }
 
 async function renderHome() {
+  showProductsLoader();
   let products = await loadCollection(COLLECTIONS.products);
   products = onlyInStock(products);
 

@@ -289,6 +289,8 @@ function renderProductList() {
             <span class="admin-badge">${x.tag || 'hot'}</span>
             ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
+            ${Number(x.discountPercent || x.discount || 0) > 0 ? `<span class="admin-badge">Скидка ${Number(x.discountPercent || x.discount)}%</span>` : ``}
+            ${Number(x.oldPrice || x.priceOld || x.compareAtPrice || 0) > Number(x.price || 0) ? `<span class="admin-badge">Старая цена ${Number(x.oldPrice || x.priceOld || x.compareAtPrice).toLocaleString('ru-RU')} ₽</span>` : ``}
           </div>
 
           <p class="muted">${x.description || 'Описание не добавлено'}</p>
@@ -318,6 +320,8 @@ function renderProductList() {
       setVal('#pTitle', item.title);
       setVal('#pCode', item.code);
       setVal('#pPrice', item.price);
+      setVal('#pOldPrice', item.oldPrice ?? item.priceOld ?? item.compareAtPrice ?? '');
+      setVal('#pDiscount', item.discountPercent ?? item.discount ?? item.sale ?? '');
       setVal('#pCategory', item.category);
       setVal('#pImage', item.image);
       setVal('#pDesc', item.description);
@@ -341,6 +345,8 @@ if ($('#productForm')) {
         title: val('#pTitle'),
         code: val('#pCode'),
         price: Number(val('#pPrice') || 0),
+        oldPrice: Number(val('#pOldPrice') || 0),
+        discountPercent: Number(val('#pDiscount') || 0),
         category: val('#pCategory'),
         image: imageUrl,
         description: val('#pDesc'),
@@ -362,6 +368,8 @@ if ($('#productForm')) {
 
       e.target.reset();
       setVal('#pImage', '');
+      setVal('#pOldPrice', '');
+      setVal('#pDiscount', '');
       if ($('#pUploadStatus')) $('#pUploadStatus').innerHTML = '';
       await renderProducts();
       alert('Товар сохранён');

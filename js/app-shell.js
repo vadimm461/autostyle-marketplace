@@ -16,7 +16,9 @@
     return window.scrollY > 120 && passedIntoProducts && stillNearContent;
   }
   function updateHeader(){
-    body.classList.toggle('app-scrolling-products', nearProducts());
+    const near = nearProducts();
+    body.classList.toggle('app-scrolling-products', near);
+    body.classList.toggle('app-search-peek', near && window.scrollY < 260);
     ticking = false;
   }
   window.addEventListener('scroll', () => {
@@ -27,6 +29,11 @@
   }, {passive:true});
   window.addEventListener('resize', updateHeader);
   updateHeader();
+
+  if (window.matchMedia('(min-width: 921px)').matches) {
+    document.body.classList.add('app-desktop-shell');
+    return;
+  }
 
   const nav = document.createElement('nav');
   nav.className = 'app-bottom-nav';
@@ -84,4 +91,13 @@
     fab.addEventListener('click', () => filters.classList.toggle('app-open'));
     filters.addEventListener('change', () => { if (innerWidth <= 920) filters.classList.remove('app-open'); });
   }
+
+  function clampAfterFooter(){
+    const footer = document.querySelector('.footer');
+    if (!footer || innerWidth > 920) return;
+    const max = Math.max(0, footer.offsetTop + footer.offsetHeight - innerHeight);
+    if (window.scrollY > max + 80) window.scrollTo(0, max);
+  }
+  window.addEventListener('scroll', () => requestAnimationFrame(clampAfterFooter), {passive:true});
+  window.addEventListener('resize', clampAfterFooter);
 })();

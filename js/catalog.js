@@ -55,6 +55,23 @@ function image(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
+function money(v) { return `${Number(v || 0).toLocaleString('ru-RU')} ₽`; }
+function discountInfo(p) {
+  const price = Number(p.price || 0);
+  const rawOld = Number(p.oldPrice ?? p.priceOld ?? p.compareAtPrice ?? p.previousPrice ?? 0);
+  const percent = Number(p.discountPercent ?? p.discount ?? p.sale ?? 0);
+  const oldPrice = rawOld > price ? rawOld : (percent > 0 && price > 0 ? Math.round(price / (1 - percent / 100)) : 0);
+  const discount = oldPrice > price ? Math.round((oldPrice - price) / oldPrice * 100) : (percent > 0 ? percent : 0);
+  return { price, oldPrice, discount };
+}
+function catalogPriceHtml(p) {
+  const d = discountInfo(p);
+  return `<div class="catalog-price-wrap"><span class="catalog-card-price price-current">${money(d.price)}</span>${d.oldPrice ? `<span class="catalog-price-old">${money(d.oldPrice)}</span>` : ''}${d.discount ? `<span class="discount-badge">-${d.discount}%</span>` : ''}</div>`;
+}
+function showCatalogLoader() {
+  if (grid) grid.innerHTML = '<div class="app-loader">Загружаем товары...</div>';
+}
+
 async function getCollection(name) {
   const snap = await getDocs(collection(db, name));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -228,6 +245,7 @@ function setupHeaderButtons() {
 }
 
 async function load() {
+  showCatalogLoader();
   items = await getCollection(COLLECTIONS.products);
 
   try {
@@ -290,13 +308,13 @@ function render() {
       <article class="catalog-card">
         <a class="catalog-card-link" href="product.html?id=${p.id}">
           <div class="catalog-card-photo">
-            ${image(p) ? `<img src="${image(p)}" alt="${title(p)}">` : '<span>Фото</span>'}
+            ${discountInfo(p).discount ? `<span class="card-discount-badge">-${discountInfo(p).discount}%</span>` : ''}${image(p) ? `<img src="${image(p)}" alt="${title(p)}">` : '<span>Фото</span>'}
           </div>
 
           <div class="catalog-card-body">
             <h3>${title(p)}</h3>
             <div class="catalog-card-category">${p.category || 'Без категории'}</div>
-            <div class="catalog-card-price">${fmt.format(Number(p.price || 0))} ₽</div>
+            ${catalogPriceHtml(p)}
             <div class="catalog-card-stock">${stockText(p)}</div>
           </div>
         </a>
