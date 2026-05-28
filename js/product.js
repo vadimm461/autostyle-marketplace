@@ -25,8 +25,10 @@ function image(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
-function group(p) {
-  return p.group || p.category || p.categoryName || p.tag || 'Без группы';
+function saveCart() {
+  localStorage.setItem('cart', JSON.stringify(cart));
+  const c = $('#cartCount');
+  if (c) c.textContent = cart.length;
 }
 
 function saveViewedProduct(productId) {
@@ -34,14 +36,21 @@ function saveViewedProduct(productId) {
   let viewed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
   viewed = viewed.filter(id => id !== productId);
   viewed.unshift(productId);
-  viewed = viewed.slice(0, 12);
+  viewed = viewed.slice(0, 20);
   localStorage.setItem('viewedProducts', JSON.stringify(viewed));
 }
 
-function saveCart() {
-  localStorage.setItem('cart', JSON.stringify(cart));
-  const c = $('#cartCount');
-  if (c) c.textContent = cart.length;
+function oldPrice(p) {
+  return Number(p.oldPrice || p.priceOld || p.compareAtPrice || p.old_price || 0);
+}
+
+function discountPercent(p) {
+  const explicit = Number(p.discountPercent || p.discount || p.sale || 0);
+  if (explicit > 0) return Math.round(explicit);
+  const old = oldPrice(p);
+  const price = Number(p.price || 0);
+  if (old > price && price > 0) return Math.round((old - price) / old * 100);
+  return 0;
 }
 
 function setupSearch() {
@@ -86,18 +95,20 @@ async function loadProduct() {
     const s = stock(p);
     const name = title(p);
     const img = image(p);
+    const old = oldPrice(p);
+    const disc = discountPercent(p);
 
     document.title = `${name} — AutoStyle`;
 
     box.innerHTML = `
       <div class="product-gallery">
         <div class="promo-strip"><b>🔥 Акция</b><span>AutoStyle</span></div>
-        <div class="main-photo">${img ? `<img src="${img}" alt="${name}">` : `<div class="photo-empty">Фото</div>`}</div>
+        <div class="main-photo">${disc ? `<span class="card-discount-badge">-${disc}%</span>` : ''}${img ? `<img src="${img}" alt="${name}">` : `<div class="photo-empty">Фото</div>`}</div>
         <div class="photo-dots"><span class="active"></span><span></span><span></span></div>
         <div class="floating-tags">
           <span>Хит</span>
           <span>${p.category || 'Каталог'}</span>
-          <span>Группа: ${group(p)}</span>
+          ${(p.group || p.category) ? `<span>Группа: ${p.group || p.category}</span>` : ''}
         </div>
       </div>
 
@@ -111,8 +122,7 @@ async function loadProduct() {
         <h1>${name}</h1>
 
         <div class="chips">
-          <span>Группа: ${group(p)}</span>
-          ${p.category ? `<span>${p.category}</span>` : ''}
+          ${(p.group || p.category) ? `<span>Группа: ${p.group || p.category}</span>` : ''}
           ${p.externalId ? `<span>ID 1C: ${p.externalId}</span>` : ''}
         </div>
 
@@ -124,7 +134,7 @@ async function loadProduct() {
 
         <div class="buy-card">
           <div>
-            <div class="price-big">${money(p.price)}</div>
+            <div class="price-big">${money(p.price)}</div>${old > Number(p.price || 0) ? `<div class="price-old product-page-old-price">${money(old)}</div>` : ''}
             ${s > 0 ? `<div class="stock-ok">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
           </div>
           <button id="addToCart" class="buy-btn" ${s <= 0 ? 'disabled' : ''}>🛒 В корзину</button>
@@ -139,7 +149,7 @@ async function loadProduct() {
         <section class="product-block">
           <h2>Характеристики</h2>
           <div class="spec"><span>Название</span><b>${name}</b></div>
-          <div class="spec"><span>Группа</span><b>${group(p)}</b></div>
+          <div class="spec"><span>Группа</span><b>${p.group || p.category || 'Не указана'}</b></div>
           <div class="spec"><span>Категория</span><b>${p.category || 'Без категории'}</b></div>
           <div class="spec"><span>Остаток</span><b>${s}</b></div>
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
