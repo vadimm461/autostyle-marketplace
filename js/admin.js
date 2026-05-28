@@ -13,7 +13,6 @@ import {
   doc,
   updateDoc,
   setDoc,
-  getDoc,
   query,
   where,
   limit
@@ -152,7 +151,6 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
-  renderSiteContent();
 });
 
 /* CATEGORY OPTIONS */
@@ -239,11 +237,6 @@ async function renderCategoryOptions() {
   }
 }
 
-
-function homeSectionName(value) {
-  return ({popular:'Популярные', new:'Новинки', leaders:'Лидеры продаж'}[value || 'popular'] || 'Популярные');
-}
-
 /* PRODUCTS */
 
 async function renderProducts() {
@@ -291,10 +284,10 @@ function renderProductList() {
           <b class="admin-product-title">${x.title || 'Без названия'}</b>
 
           <div class="admin-product-meta">
-            ${x.code ? `<span class="admin-badge">Группа: ${x.code}</span>` : ''}
+            <span class="admin-badge">Группа: ${x.group || x.category || 'Без группы'}</span>
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
-            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной: ${homeSectionName(x.homeSection)}</span>` : ''}
+            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
           </div>
 
@@ -323,14 +316,16 @@ function renderProductList() {
       editing.product = item.id;
 
       setVal('#pTitle', item.title);
-      setVal('#pCode', item.code);
+      setVal('#pGroup', item.group || item.category || '');
       setVal('#pPrice', item.price);
+      setVal('#pOldPrice', item.oldPrice || item.priceOld || '');
+      setVal('#pDiscount', item.discount || item.discountPercent || '');
       setVal('#pCategory', item.category);
       setVal('#pImage', item.image);
       setVal('#pDesc', item.description);
 
       if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
-      if ($('#pHomeSection')) $('#pHomeSection').value = item.homeSection || item.homeBlock || 'popular';
+      if ($('#pHomeSection')) $('#pHomeSection').value = item.homeSection || item.tag || 'hot';
       if ($('#pShowHome')) $('#pShowHome').checked = item.showOnHome === true;
     };
   });
@@ -347,13 +342,15 @@ if ($('#productForm')) {
 
       const data = {
         title: val('#pTitle'),
-        code: val('#pCode'),
+        group: val('#pGroup'),
         price: Number(val('#pPrice') || 0),
+        oldPrice: Number(val('#pOldPrice') || 0),
+        discount: Number(val('#pDiscount') || 0),
         category: val('#pCategory'),
         image: imageUrl,
         description: val('#pDesc'),
         tag: $('#pTag') ? $('#pTag').value : 'hot',
-        homeSection: $('#pHomeSection') ? $('#pHomeSection').value : 'popular',
+        homeSection: $('#pHomeSection') ? $('#pHomeSection').value : ($('#pTag') ? $('#pTag').value : 'hot'),
         showOnHome: $('#pShowHome') ? $('#pShowHome').checked : false,
         updatedAt: new Date().toISOString()
       };
@@ -455,7 +452,6 @@ if ($('#importExcelBtn')) {
           image: '',
           description: '',
           tag,
-          homeSection: 'popular',
           showOnHome: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -852,94 +848,3 @@ if ($('#settingsForm')) {
     el.addEventListener('change', renderProductList);
   }
 });
-
-/* SITE VISUAL CONTENT EDITOR */
-
-const SITE_CONTENT_DEFAULTS = {
-  logoText: 'AUTO STYLE',
-  catalogButton: '☰ Каталог',
-  searchPlaceholder: 'Я ищу автотовары...',
-  searchButton: 'Найти',
-  accountButton: '♙ Аккаунт',
-  favoritesButton: '♡ Избранное',
-  cartButton: '🛒 Корзина',
-  heroTitle: 'Автотовары\nдля вашего авто',
-  heroText: 'Качественные товары\nпо лучшим ценам',
-  heroButton: 'Перейти в каталог',
-  heroImage: 'assets/storefront.jpeg',
-  benefit1Title: 'Быстрая доставка',
-  benefit1Text: 'По всей России',
-  benefit2Title: 'Качество 100%',
-  benefit2Text: 'Гарантия на все товары',
-  benefit3Title: 'Поддержка 24/7',
-  benefit3Text: 'Поможем с выбором',
-  benefit4Title: 'Скидки и акции',
-  benefit4Text: 'Выгодные предложения',
-  popularTitle: 'Популярные товары',
-  newTitle: 'Новинки',
-  recentTitle: 'Недавно просмотренные',
-  leadersTitle: 'Лидеры продаж',
-  seeAll: 'Смотреть все',
-  catalogTitle: 'Каталог товаров',
-  filtersTitle: 'Фильтры',
-  filterSearch: 'Название, категория...',
-  zeroHidden: 'Товары с нулевым остатком скрыты',
-  footerBrand: 'AUTOSTYLE',
-  footerCopyright: '© 2025 AutoStyle. Все права защищены.',
-  footerBuyers: 'Покупателям',
-  footerCompany: 'Компания',
-  footerSocial: 'Мы в соцсетях'
-};
-
-function fillSiteContentForm(data = {}) {
-  const content = { ...SITE_CONTENT_DEFAULTS, ...data };
-  Object.keys(SITE_CONTENT_DEFAULTS).forEach(key => {
-    setVal(`#content_${key}`, content[key]);
-  });
-}
-
-async function renderSiteContent() {
-  if (!$('#siteContentForm')) return;
-
-  try {
-    const snap = await getDoc(doc(db, COLLECTIONS.settings, 'siteContent'));
-    fillSiteContentForm(snap.exists() ? snap.data() : SITE_CONTENT_DEFAULTS);
-  } catch (err) {
-    console.error(err);
-    fillSiteContentForm(SITE_CONTENT_DEFAULTS);
-  }
-}
-
-if ($('#siteContentReset')) {
-  $('#siteContentReset').onclick = () => fillSiteContentForm(SITE_CONTENT_DEFAULTS);
-}
-
-if ($('#siteContentForm')) {
-  $('#siteContentForm').onsubmit = async e => {
-    e.preventDefault();
-
-    try {
-      let heroImage = val('#content_heroImage');
-      const uploaded = await uploadImage('#contentHeroFile', 'site', '#content_heroImage', '#contentHeroUpload');
-      if (uploaded) heroImage = uploaded;
-
-      const data = {};
-      Object.keys(SITE_CONTENT_DEFAULTS).forEach(key => {
-        data[key] = val(`#content_${key}`);
-      });
-      data.heroImage = heroImage;
-      data.updatedAt = new Date().toISOString();
-
-      await setDoc(doc(db, COLLECTIONS.settings, 'siteContent'), data, { merge: true });
-
-      if ($('#siteContentStatus')) {
-        $('#siteContentStatus').innerHTML = '<div class="upload-success">Сохранено. Обнови сайт, чтобы увидеть изменения.</div>';
-      }
-
-      alert('Контент сайта сохранён');
-    } catch (err) {
-      console.error(err);
-      alert('Ошибка сохранения контента: ' + err.message);
-    }
-  };
-}
