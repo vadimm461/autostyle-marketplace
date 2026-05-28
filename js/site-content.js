@@ -24,6 +24,8 @@ const DEFAULT_CONTENT = {
   benefit4Text: 'Выгодные предложения',
   popularTitle: 'Популярные товары',
   newTitle: 'Новинки',
+  recentTitle: 'Недавно просмотренные',
+  leadersTitle: 'Лидеры продаж',
   seeAll: 'Смотреть все',
   catalogTitle: 'Каталог товаров',
   filtersTitle: 'Фильтры',

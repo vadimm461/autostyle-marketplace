@@ -239,6 +239,11 @@ async function renderCategoryOptions() {
   }
 }
 
+
+function homeSectionName(value) {
+  return ({popular:'Популярные', new:'Новинки', recent:'Недавно просмотренные', leaders:'Лидеры продаж'}[value || 'popular'] || 'Популярные');
+}
+
 /* PRODUCTS */
 
 async function renderProducts() {
@@ -289,7 +294,7 @@ function renderProductList() {
             ${x.code ? `<span class="admin-badge">Код: ${x.code}</span>` : ''}
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
-            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
+            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной: ${homeSectionName(x.homeSection)}</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
           </div>
 
@@ -325,6 +330,7 @@ function renderProductList() {
       setVal('#pDesc', item.description);
 
       if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
+      if ($('#pHomeSection')) $('#pHomeSection').value = item.homeSection || item.homeBlock || 'popular';
       if ($('#pShowHome')) $('#pShowHome').checked = item.showOnHome === true;
     };
   });
@@ -347,6 +353,7 @@ if ($('#productForm')) {
         image: imageUrl,
         description: val('#pDesc'),
         tag: $('#pTag') ? $('#pTag').value : 'hot',
+        homeSection: $('#pHomeSection') ? $('#pHomeSection').value : 'popular',
         showOnHome: $('#pShowHome') ? $('#pShowHome').checked : false,
         updatedAt: new Date().toISOString()
       };
@@ -448,6 +455,7 @@ if ($('#importExcelBtn')) {
           image: '',
           description: '',
           tag,
+          homeSection: 'popular',
           showOnHome: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -869,6 +877,8 @@ const SITE_CONTENT_DEFAULTS = {
   benefit4Text: 'Выгодные предложения',
   popularTitle: 'Популярные товары',
   newTitle: 'Новинки',
+  recentTitle: 'Недавно просмотренные',
+  leadersTitle: 'Лидеры продаж',
   seeAll: 'Смотреть все',
   catalogTitle: 'Каталог товаров',
   filtersTitle: 'Фильтры',
