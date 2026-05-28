@@ -5,6 +5,7 @@ const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
 let cart=JSON.parse(localStorage.getItem('cart')||'[]');
 let favorites=JSON.parse(localStorage.getItem('favorites')||'[]');
 let allProducts=[];
+const expandedHomeSections = new Set();
 const money=v=>`${Number(v||0).toLocaleString('ru-RU')} ₽`;
 const title=p=>p.title||p.name||'Без названия';
 const image=p=>p.image||p.imageUrl||p.photo||'';
@@ -17,19 +18,47 @@ function toggleFavorite(id){ if(!id)return; favorites=favorites.includes(id)?fav
 function updateCart(){localStorage.setItem('cart',JSON.stringify(cart)); const c=$('#cartCount'); if(c)c.textContent=cart.length}
 async function getCol(name){const snap=await getDocs(collection(db,name)); return snap.docs.map(d=>({id:d.id,...d.data()}))}
 function card(p, withCart=false){const d=discount(p), op=oldPrice(p), fav=favorites.includes(p.id); return `<a class="modern-card" href="product.html?id=${p.id}">${d?`<span class="discount-badge">-${d}%</span>`:''}<button class="fav-heart ${fav?'active':''}" data-fav="${p.id}" type="button" aria-label="В избранное">♡</button><div class="modern-card-image">${image(p)?`<img src="${image(p)}" alt="${title(p)}">`:'Фото'}</div><h3 class="modern-card-title">${title(p)}</h3><div class="modern-code">Группа: ${group(p)}</div><div class="modern-price"><b>${money(p.price)}</b>${op?`<span class="old-price">${money(op)}</span>`:''}</div>${withCart?`<button class="black-cart" data-id="${p.id}" type="button">🛒 В корзину</button>`:''}</a>`}
-function pick(section, fallback=[]){
-  const direct=allProducts.filter(p=>stock(p)>0 && p.showOnHome===true && (p.homeSection===section || p.homeBlock===section || (Array.isArray(p.homeSections)&&p.homeSections.includes(section))));
-  return (direct.length?direct:fallback).slice(0,5);
+function assignedTo(section){
+  return allProducts.filter(p => stock(p) > 0 && p.showOnHome === true && (
+    p.homeSection === section ||
+    p.homeBlock === section ||
+    (Array.isArray(p.homeSections) && p.homeSections.includes(section))
+  ));
 }
-function renderOne(sel, arr){const box=$(sel); if(!box)return; box.innerHTML=arr.length?arr.map(p=>card(p)).join(''):'<div class="notice">Добавьте товары для этого блока в админке.</div>'}
+function pick(section){
+  const arr = assignedTo(section);
+  return expandedHomeSections.has(section) ? arr : arr.slice(0, 5);
+}
+function renderOne(sel, section){
+  const box=$(sel); if(!box)return;
+  const arr = pick(section);
+  box.innerHTML=arr.length?arr.map(p=>card(p)).join(''):`<div class="notice">Добавьте товары в блок «${homeSectionTitle(section)}» в админке.</div>`;
+  const btn = document.querySelector(`[data-show-section="${section}"]`);
+  if(btn){
+    const total = assignedTo(section).length;
+    btn.style.display = total > 5 ? 'inline-flex' : 'none';
+    btn.textContent = expandedHomeSections.has(section) ? 'Свернуть' : 'Смотреть все';
+  }
+}
+function homeSectionTitle(section){
+  return ({popular:'Популярные товары', new:'Новинки', recent:'Недавно просмотренные', leaders:'Лидеры продаж'}[section] || 'Главная');
+}
 function renderProducts(){
-  const active=allProducts.filter(p=>stock(p)>0);
-  const home=active.filter(p=>p.showOnHome===true);
-  renderOne('#productsGrid', pick('popular', home.length?home:active));
-  renderOne('#newProductsGrid', pick('new', active.slice(5,10)));
-  renderOne('#recentProductsGrid', pick('recent', active.slice(10,15)));
-  renderOne('#leadersProductsGrid', pick('leaders', active.slice(15,20)));
+  renderOne('#productsGrid', 'popular');
+  renderOne('#newProductsGrid', 'new');
+  renderOne('#recentProductsGrid', 'recent');
+  renderOne('#leadersProductsGrid', 'leaders');
   bindProductButtons();
+  bindSeeAllButtons();
+}
+function bindSeeAllButtons(){
+  $$('[data-show-section]').forEach(btn=>btn.onclick=()=>{
+    const section = btn.dataset.showSection;
+    if(expandedHomeSections.has(section)) expandedHomeSections.delete(section); else expandedHomeSections.add(section);
+    renderProducts();
+    const block = document.querySelector(`[data-home-section="${section}"]`);
+    if(block) block.scrollIntoView({behavior:'smooth', block:'start'});
+  });
 }
 function bindProductButtons(){
   $$('.fav-heart').forEach(btn=>btn.onclick=e=>{e.preventDefault();e.stopPropagation();toggleFavorite(btn.dataset.fav)});
