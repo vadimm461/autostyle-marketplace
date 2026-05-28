@@ -241,7 +241,7 @@ async function renderCategoryOptions() {
 
 
 function homeSectionName(value) {
-  return ({popular:'Популярные', new:'Новинки', recent:'Недавно просмотренные', leaders:'Лидеры продаж'}[value || 'popular'] || 'Популярные');
+  return ({popular:'Популярные', new:'Новинки', leaders:'Лидеры продаж'}[value || 'popular'] || 'Популярные');
 }
 
 /* PRODUCTS */
@@ -291,7 +291,7 @@ function renderProductList() {
           <b class="admin-product-title">${x.title || 'Без названия'}</b>
 
           <div class="admin-product-meta">
-            ${x.code ? `<span class="admin-badge">Код: ${x.code}</span>` : ''}
+            ${x.code ? `<span class="admin-badge">Группа: ${x.code}</span>` : ''}
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
             ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной: ${homeSectionName(x.homeSection)}</span>` : ''}

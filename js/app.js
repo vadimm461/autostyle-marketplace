@@ -5,6 +5,7 @@ const $=s=>document.querySelector(s); const $$=s=>document.querySelectorAll(s);
 let cart=JSON.parse(localStorage.getItem('cart')||'[]');
 let favorites=JSON.parse(localStorage.getItem('favorites')||'[]');
 let allProducts=[];
+let recentViewedIds=[];
 const expandedHomeSections = new Set();
 const money=v=>`${Number(v||0).toLocaleString('ru-RU')} ₽`;
 const title=p=>p.title||p.name||'Без названия';
@@ -18,7 +19,15 @@ function toggleFavorite(id){ if(!id)return; favorites=favorites.includes(id)?fav
 function updateCart(){localStorage.setItem('cart',JSON.stringify(cart)); const c=$('#cartCount'); if(c)c.textContent=cart.length}
 async function getCol(name){const snap=await getDocs(collection(db,name)); return snap.docs.map(d=>({id:d.id,...d.data()}))}
 function card(p, withCart=false){const d=discount(p), op=oldPrice(p), fav=favorites.includes(p.id); return `<a class="modern-card" href="product.html?id=${p.id}">${d?`<span class="discount-badge">-${d}%</span>`:''}<button class="fav-heart ${fav?'active':''}" data-fav="${p.id}" type="button" aria-label="В избранное">♡</button><div class="modern-card-image">${image(p)?`<img src="${image(p)}" alt="${title(p)}">`:'Фото'}</div><h3 class="modern-card-title">${title(p)}</h3><div class="modern-code">Группа: ${group(p)}</div><div class="modern-price"><b>${money(p.price)}</b>${op?`<span class="old-price">${money(op)}</span>`:''}</div>${withCart?`<button class="black-cart" data-id="${p.id}" type="button">🛒 В корзину</button>`:''}</a>`}
+function getRecentlyViewedProducts(){
+  recentViewedIds = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+  return recentViewedIds
+    .map(id => allProducts.find(p => p.id === id))
+    .filter(Boolean)
+    .filter(p => stock(p) > 0);
+}
 function assignedTo(section){
+  if(section === 'recent') return getRecentlyViewedProducts();
   return allProducts.filter(p => stock(p) > 0 && p.showOnHome === true && (
     p.homeSection === section ||
     p.homeBlock === section ||
@@ -32,7 +41,9 @@ function pick(section){
 function renderOne(sel, section){
   const box=$(sel); if(!box)return;
   const arr = pick(section);
-  box.innerHTML=arr.length?arr.map(p=>card(p)).join(''):`<div class="notice">Добавьте товары в блок «${homeSectionTitle(section)}» в админке.</div>`;
+  box.innerHTML=arr.length?arr.map(p=>card(p)).join(''):(section === 'recent'
+    ? '<div class="notice">Вы ещё не открывали товары. История появится после просмотра карточек товара.</div>'
+    : `<div class="notice">Добавьте товары в блок «${homeSectionTitle(section)}» в админке.</div>`);
   const btn = document.querySelector(`[data-show-section="${section}"]`);
   if(btn){
     const total = assignedTo(section).length;

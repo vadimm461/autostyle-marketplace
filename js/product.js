@@ -25,6 +25,19 @@ function image(p) {
   return p.image || p.imageUrl || p.photo || '';
 }
 
+function group(p) {
+  return p.group || p.category || p.categoryName || p.tag || 'Без группы';
+}
+
+function saveViewedProduct(productId) {
+  if (!productId) return;
+  let viewed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+  viewed = viewed.filter(id => id !== productId);
+  viewed.unshift(productId);
+  viewed = viewed.slice(0, 12);
+  localStorage.setItem('viewedProducts', JSON.stringify(viewed));
+}
+
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
   const c = $('#cartCount');
@@ -69,6 +82,7 @@ async function loadProduct() {
     }
 
     const p = { id: snap.id, ...snap.data() };
+    saveViewedProduct(p.id);
     const s = stock(p);
     const name = title(p);
     const img = image(p);
@@ -83,7 +97,7 @@ async function loadProduct() {
         <div class="floating-tags">
           <span>Хит</span>
           <span>${p.category || 'Каталог'}</span>
-          ${p.code ? `<span>Код: ${p.code}</span>` : ''}
+          <span>Группа: ${group(p)}</span>
         </div>
       </div>
 
@@ -97,7 +111,7 @@ async function loadProduct() {
         <h1>${name}</h1>
 
         <div class="chips">
-          ${p.code ? `<span>Код: ${p.code}</span>` : ''}
+          <span>Группа: ${group(p)}</span>
           ${p.category ? `<span>${p.category}</span>` : ''}
           ${p.externalId ? `<span>ID 1C: ${p.externalId}</span>` : ''}
         </div>
@@ -125,7 +139,7 @@ async function loadProduct() {
         <section class="product-block">
           <h2>Характеристики</h2>
           <div class="spec"><span>Название</span><b>${name}</b></div>
-          <div class="spec"><span>Код товара</span><b>${p.code || 'Не указан'}</b></div>
+          <div class="spec"><span>Группа</span><b>${group(p)}</b></div>
           <div class="spec"><span>Категория</span><b>${p.category || 'Без категории'}</b></div>
           <div class="spec"><span>Остаток</span><b>${s}</b></div>
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
