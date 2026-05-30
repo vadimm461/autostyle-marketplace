@@ -1372,4 +1372,47 @@ header.topbar{
 
 .catalog-dropdown a:hover,
 .catalog-dropdown button:hover,
+/* ===== UI FIXES ===== */
 
+/* убрать логотипы/иконки у групп каталога */
+.catalog-groups a span,
+.mega-parent span,
+.mega-child span {
+  display: none !important;
+}
+
+/* одинаковые шрифты: Аккаунт / Избранное / Корзина */
+.icon-btn,
+.header-actions button,
+.header-actions a,
+.dropdown > button {
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+/* карточки одинаковой высоты */
+.product-card {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+/* название занимает одинаковое место */
+.product-title {
+  min-height: 48px !important;
+}
+
+/* кнопка в корзину всегда снизу */
+.product-card .cart,
+.product-card .cart-btn,
+.product-card button {
+  margin-top: auto !important;
+}
+
+/* сетка выравнивает карточки */
+.products,
+.products-grid {
+  align-items: stretch !important;
+}
