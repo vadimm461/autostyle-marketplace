@@ -8,6 +8,7 @@ import {
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   deleteDoc,
   doc,
@@ -151,6 +152,7 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
+  loadSiteContentAdmin();
 });
 
 /* CATEGORY OPTIONS */
@@ -848,3 +850,191 @@ if ($('#settingsForm')) {
     el.addEventListener('change', renderProductList);
   }
 });
+
+/* ===== FULL SITE CONTENT EDITOR ===== */
+
+const SITE_CONTENT_DEFAULTS = {
+  logoText: 'AUTO STYLE',
+  catalogButton: '☰ Каталог',
+  searchPlaceholder: 'Я ищу автотовары...',
+  searchButton: 'Найти',
+  accountButton: 'Аккаунт',
+  favoritesButton: '♡ Избранное',
+  cartButton: 'Корзина',
+  heroLabel: 'AUTO STYLE MARKET',
+  heroTitle: 'Автотовары для стиля, комфорта и защиты',
+  heroText: 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.',
+  heroButton: 'Смотреть каталог',
+  heroSecondButton: 'Лидеры продаж',
+  heroVisual: 'AUTO',
+  promoTitle: 'Промо',
+  promoText: 'Баннеры, тексты и товары управляются в админке.',
+  newTitle: 'Новинки',
+  recentTitle: 'Недавно просмотренные',
+  leadersTitle: 'Лидеры продаж',
+  popularTitle: 'Горячие предложения',
+  seeAll: 'Смотреть все',
+  collapse: 'Свернуть',
+  mini1Title: 'Акции',
+  mini1Text: 'Лучшие предложения недели',
+  mini2Title: 'Новинки',
+  mini2Text: 'Свежие товары для твоего авто',
+  mini3Title: 'Топ товары',
+  mini3Text: 'Популярный выбор покупателей',
+  footerBrand: 'AutoStyle',
+  footerCol1: 'Покупателям',
+  footerCol2: 'Выгода',
+  footerCopyright: '© 2025 AutoStyle. Все права защищены.',
+  emptyNew: 'В админке отметьте товары: показывать на главной + блок “Новинки”.',
+  emptyBestsellers: 'В админке отметьте товары: показывать на главной + блок “Лидеры продаж”.',
+  emptyHot: 'В админке отметьте товары для главной.',
+  emptyRecent: 'Вы пока не смотрели товары.'
+};
+
+const CONTENT_FIELD_MAP = {
+  ctLogoText: 'logoText',
+  ctCatalogButton: 'catalogButton',
+  ctSearchPlaceholder: 'searchPlaceholder',
+  ctSearchButton: 'searchButton',
+  ctAccountButton: 'accountButton',
+  ctFavoritesButton: 'favoritesButton',
+  ctCartButton: 'cartButton',
+  ctHeroLabel: 'heroLabel',
+  ctHeroTitle: 'heroTitle',
+  ctHeroText: 'heroText',
+  ctHeroButton: 'heroButton',
+  ctHeroSecondButton: 'heroSecondButton',
+  ctHeroVisual: 'heroVisual',
+  ctPromoTitle: 'promoTitle',
+  ctPromoText: 'promoText',
+  ctNewTitle: 'newTitle',
+  ctRecentTitle: 'recentTitle',
+  ctLeadersTitle: 'leadersTitle',
+  ctPopularTitle: 'popularTitle',
+  ctSeeAll: 'seeAll',
+  ctCollapse: 'collapse',
+  ctMini1Title: 'mini1Title',
+  ctMini1Text: 'mini1Text',
+  ctMini2Title: 'mini2Title',
+  ctMini2Text: 'mini2Text',
+  ctMini3Title: 'mini3Title',
+  ctMini3Text: 'mini3Text',
+  ctFooterBrand: 'footerBrand',
+  ctFooterCol1: 'footerCol1',
+  ctFooterCol2: 'footerCol2',
+  ctFooterCopyright: 'footerCopyright',
+  ctEmptyNew: 'emptyNew',
+  ctEmptyBestsellers: 'emptyBestsellers',
+  ctEmptyHot: 'emptyHot',
+  ctEmptyRecent: 'emptyRecent'
+};
+
+function fillSiteContentForm(data = {}) {
+  const content = { ...SITE_CONTENT_DEFAULTS, ...data };
+  Object.entries(CONTENT_FIELD_MAP).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = content[key] ?? '';
+  });
+}
+
+async function loadSiteContentAdmin() {
+  const form = document.getElementById('siteContentForm');
+  if (!form) return;
+
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.settings, 'siteContent'));
+    fillSiteContentForm(snap.exists() ? snap.data() : SITE_CONTENT_DEFAULTS);
+  } catch (error) {
+    console.warn('Не удалось загрузить контент сайта', error);
+    fillSiteContentForm(SITE_CONTENT_DEFAULTS);
+  }
+}
+
+function collectSiteContentForm() {
+  const data = {};
+  Object.entries(CONTENT_FIELD_MAP).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    data[key] = el ? String(el.value || '').trim() : '';
+  });
+  return data;
+}
+
+const siteContentForm = document.getElementById('siteContentForm');
+if (siteContentForm) {
+  siteContentForm.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const status = document.getElementById('siteContentStatus');
+    if (status) status.textContent = 'Сохраняю...';
+
+    try {
+      await setDoc(doc(db, COLLECTIONS.settings, 'siteContent'), {
+        ...collectSiteContentForm(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      if (status) status.textContent = 'Сохранено. Обновите главную страницу.';
+    } catch (error) {
+      if (status) status.textContent = 'Ошибка сохранения: ' + error.message;
+      console.error(error);
+    }
+  });
+}
+
+const defaultsBtn = document.getElementById('loadContentDefaults');
+if (defaultsBtn) {
+  defaultsBtn.addEventListener('click', () => {
+    fillSiteContentForm(SITE_CONTENT_DEFAULTS);
+  });
+}
+
+
+/* ===== LOAD EXISTING SIMPLE PAGE / SETTINGS VALUES ===== */
+
+async function loadSelectedPageToForm() {
+  const pageKey = document.getElementById('pageKey');
+  if (!pageKey) return;
+
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.pages, pageKey.value || 'contacts'));
+    if (!snap.exists()) {
+      setVal('#pageTitle', '');
+      setVal('#pageContent', '');
+      return;
+    }
+
+    const data = snap.data();
+    setVal('#pageTitle', data.title || '');
+    setVal('#pageContent', data.content || '');
+  } catch (error) {
+    console.warn('Не удалось загрузить страницу', error);
+  }
+}
+
+async function loadMainSettingsToForm() {
+  if (!document.getElementById('settingsForm')) return;
+
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.settings, 'main'));
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+    setVal('#siteName', data.siteName || '');
+    setVal('#siteCurrency', data.currency || '');
+    setVal('#siteEmail', data.email || '');
+    setVal('#sitePhone', data.phone || '');
+    setVal('#siteAddress', data.address || '');
+  } catch (error) {
+    console.warn('Не удалось загрузить настройки', error);
+  }
+}
+
+const pageKeySelect = document.getElementById('pageKey');
+if (pageKeySelect) {
+  pageKeySelect.addEventListener('change', loadSelectedPageToForm);
+}
+
+setTimeout(() => {
+  loadSelectedPageToForm();
+  loadMainSettingsToForm();
+}, 500);
