@@ -1323,16 +1323,52 @@ header.topbar{
     grid-template-columns:1fr !important;
   }
 }
-/* FIX: каталог не должен двигаться при движении мыши */
+/* ===== FINAL FIX CATALOG NO JUMP ===== */
 
-.catalog-dropdown,
-.catalog-dropdown.active,
-
-
-.catalog-dropdown *:hover {
-    transform: none;
+.catalog-menu {
+  position: static !important;
 }
 
+.catalog-menu:hover .catalog-popup {
+  transform: translateX(-50%) !important;
+}
+
+.catalog-popup,
+.catalog-popup:hover,
+.catalog-popup.active,
+.mega-catalog,
+.mega-catalog:hover,
+.mega-catalog.active,
+.catalog-dropdown,
+.catalog-dropdown:hover,
+.catalog-dropdown.active {
+  position: fixed !important;
+  top: 92px !important;
+  left: 50% !important;
+  right: auto !important;
+
+  transform: translateX(-50%) !important;
+
+  width: min(1120px, calc(100vw - 40px)) !important;
+  max-width: calc(100vw - 40px) !important;
+
+  opacity: 1;
+  margin: 0 !important;
+
+  animation: none !important;
+}
+
+.catalog-popup *,
+.mega-catalog *,
+.catalog-dropdown * {
+  transform: none !important;
+}
+
+.catalog-groups a:hover,
+.mega-child:hover,
+.mega-parent:hover {
+  transform: none !important;
+}
 
 .catalog-dropdown a:hover,
 .catalog-dropdown button:hover,
