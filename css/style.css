@@ -1323,3 +1323,24 @@ header.topbar{
     grid-template-columns:1fr !important;
   }
 }
+/* FIX: каталог не должен двигаться при движении мыши */
+
+.catalog-dropdown,
+.catalog-dropdown.active,
+.catalog-dropdown:hover {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    margin: 0 !important;
+}
+
+.catalog-dropdown *:hover {
+    transform: none;
+}
+
+/* если у пунктов каталога есть hover-анимация — оставляем только цвет */
+.catalog-dropdown a:hover,
+.catalog-dropdown button:hover,
+.catalog-dropdown .catalog-item:hover {
+    transform: none !important;
+}
