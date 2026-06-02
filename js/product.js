@@ -71,6 +71,18 @@ function setupRelatedActions(){
     };
   });
 }
+
+function setupRelatedCarousel(){
+  const wrap = document.querySelector('.related-carousel-wrap');
+  const row = document.querySelector('.related-carousel');
+  if (!wrap || !row) return;
+  const step = () => Math.max(260, Math.round(row.clientWidth * 0.85));
+  const prev = wrap.querySelector('.related-prev');
+  const next = wrap.querySelector('.related-next');
+  if (prev) prev.onclick = () => row.scrollBy({ left: -step(), behavior: 'smooth' });
+  if (next) next.onclick = () => row.scrollBy({ left: step(), behavior: 'smooth' });
+}
+
 async function renderRelated(current){
   const box = document.getElementById('relatedProducts');
   if (!box) return;
@@ -79,15 +91,17 @@ async function renderRelated(current){
     const products = snap.docs.map(d => ({id:d.id, ...d.data()}));
     const currentGroup = group(current).toLowerCase().trim();
     const currentParent = (current.parentCategory || current.parentGroup || current.categoryParent || '').toLowerCase().trim();
-    let related = products.filter(p => p.id !== current.id && group(p).toLowerCase().trim() === currentGroup);
+    let related = products.filter(p => p.id !== current.id && stock(p) > 0 && group(p).toLowerCase().trim() === currentGroup);
     if (related.length < 4 && currentParent){
-      const extra = products.filter(p => p.id !== current.id && !related.some(x => x.id === p.id) && String(p.parentCategory || p.parentGroup || p.categoryParent || '').toLowerCase().trim() === currentParent);
+      const extra = products.filter(p => p.id !== current.id && stock(p) > 0 && !related.some(x => x.id === p.id) && String(p.parentCategory || p.parentGroup || p.categoryParent || '').toLowerCase().trim() === currentParent);
       related = [...related, ...extra];
     }
     if (!related.length){ box.innerHTML = ''; return; }
-    related = related.slice(0, 8);
-    box.innerHTML = `<section class="related-section"><div class="section-head related-head"><h2>Похожие товары</h2><a href="catalog.html?category=${encodeURIComponent(group(current))}">Смотреть все</a></div><div class="related-grid products">${related.map(relatedCard).join('')}</div></section>`;
+    related = related.slice(0, 12);
+    const canScroll = related.length > 4;
+    box.innerHTML = `<section class="related-section"><div class="section-head related-head"><h2>Похожие товары</h2><a href="catalog.html?category=${encodeURIComponent(group(current))}">Смотреть все</a></div><div class="related-carousel-wrap">${canScroll ? '<button class="related-nav related-prev" type="button" aria-label="Назад">‹</button>' : ''}<div class="related-carousel">${related.map(relatedCard).join('')}</div>${canScroll ? '<button class="related-nav related-next" type="button" aria-label="Вперёд">›</button>' : ''}</div></section>`;
     setupRelatedActions();
+    setupRelatedCarousel();
   }catch(e){ box.innerHTML = ''; }
 }
 
