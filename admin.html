@@ -49,12 +49,14 @@
         <h2>Порядок блоков на главной</h2>
         <p class="muted">Меньшее число — блок выше. Например: Лидеры продаж = 1, Недавно просмотренные = 5.</p>
         <form id="homeBlocksForm" class="grid2">
-          <label class="field">Лидеры продаж<input id="homeOrderBestsellers" type="number" value="1"></label>
-          <label class="field">Новинки<input id="homeOrderNew" type="number" value="2"></label>
-          <label class="field">Горячие предложения<input id="homeOrderHot" type="number" value="3"></label>
-          <label class="field">Недавно просмотренные<input id="homeOrderRecent" type="number" value="5"></label>
-          <button class="primary" style="grid-column:1/-1">Сохранить порядок блоков</button>
+          <label class="field">Ключ блока <input id="homeBlockKey" placeholder="bestsellers / sale / winter"></label>
+          <label class="field">Название блока <input id="homeBlockTitle" placeholder="Например: Зимние товары"></label>
+          <label class="field">Порядковый номер <input id="homeBlockOrder" type="number" value="10"></label>
+          <label class="field check-field"><span>Показывать блок</span><input id="homeBlockEnabled" type="checkbox" checked></label>
+          <button id="saveHomeBlockBtn" class="primary" type="submit">Сохранить / создать блок</button>
+          <button id="newHomeBlockBtn" class="edit" type="button">Новый блок</button>
         </form>
+        <div id="homeBlocksList" class="list"></div>
       </div>
 </section>
 

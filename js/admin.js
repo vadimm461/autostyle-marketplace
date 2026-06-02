@@ -31,11 +31,13 @@ const $$ = s => document.querySelectorAll(s);
 let editing = {
   product: null,
   cat: null,
-  banner: null
+  banner: null,
+  homeBlock: null
 };
 
 let allCatsCache = [];
 let allProductsCache = [];
+let homeBlocksCache = [];
 
 function val(id) {
   const el = $(id);
@@ -291,7 +293,7 @@ function renderProductList() {
             <span class="admin-badge">${x.tag || 'hot'}</span>
             <span class="admin-badge">Наличие: ${Number(x.stock ?? x.quantity ?? x.count ?? 0)} шт.</span>
             ${(x.installment || x.installmentAvailable) ? `<span class="admin-badge admin-badge-home">Рассрочка</span>` : ''}
-            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
+            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной: ${getBlockTitleByKey(x.homeSection || x.tag || 'hot')}</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
           </div>
 
@@ -966,41 +968,128 @@ if ($('#settingsForm')) {
   }
 });
 
-/* HOME BLOCK ORDER SETTINGS */
+/* HOME BLOCKS SETTINGS */
+const DEFAULT_HOME_BLOCKS = [
+  { key:'bestsellers', title:'Лидеры продаж', order:1, enabled:true },
+  { key:'new', title:'Новинки', order:2, enabled:true },
+  { key:'hot', title:'Горячие предложения', order:3, enabled:true },
+  { key:'recentlyViewed', title:'Недавно просмотренные', order:5, enabled:true, special:'recentlyViewed' }
+];
+function normalizeBlockKey(v){
+  return String(v||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+}
+function getBlockTitleByKey(key){
+  return (homeBlocksCache.find(b=>b.key===key)||{}).title || key;
+}
+function fillHomeSectionOptions(){
+  const select=$('#pHomeSection');
+  if(!select) return;
+  const current=select.value;
+  const blocks=(homeBlocksCache.length?homeBlocksCache:DEFAULT_HOME_BLOCKS).filter(b=>b.key!=='recentlyViewed');
+  select.innerHTML=blocks.map(b=>`<option value="${b.key}">${b.title}</option>`).join('');
+  if(current && blocks.some(b=>b.key===current)) select.value=current;
+}
 async function loadHomeBlocksSettings() {
   try {
-    const form = $('#homeBlocksForm');
-    if (!form) return;
-
+    if (!$('#homeBlocksForm')) return;
     const snap = await getDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'));
     const data = snap.exists() ? snap.data() : {};
-
-    setVal('#homeOrderBestsellers', data.bestsellers ?? 1);
-    setVal('#homeOrderNew', data.new ?? 2);
-    setVal('#homeOrderHot', data.hot ?? 3);
-    setVal('#homeOrderRecent', data.recentlyViewed ?? 5);
+    if(Array.isArray(data.blocks) && data.blocks.length){
+      homeBlocksCache=data.blocks.map((b,i)=>({
+        key: normalizeBlockKey(b.key || b.id || ('block_'+i)),
+        title: b.title || b.name || b.key || 'Блок товаров',
+        order: Number(b.order ?? 999),
+        enabled: b.enabled !== false,
+        special: b.special || ''
+      })).filter(b=>b.key);
+    }else{
+      homeBlocksCache=DEFAULT_HOME_BLOCKS.map(b=>({
+        ...b,
+        order:Number(data[b.key] ?? b.order),
+        enabled:data[b.key+'Enabled'] !== false
+      }));
+    }
+    homeBlocksCache.sort((a,b)=>a.order-b.order || a.title.localeCompare(b.title,'ru'));
+    renderHomeBlocksList();
+    fillHomeSectionOptions();
   } catch (err) {
-    console.error('Ошибка загрузки порядка блоков:', err);
+    console.error('Ошибка загрузки блоков главной:', err);
   }
 }
-
+function renderHomeBlocksList(){
+  const list=$('#homeBlocksList'); if(!list) return;
+  list.innerHTML=homeBlocksCache.map(b=>`
+    <div class="row admin-home-block-row">
+      <div>
+        <b>${b.title}</b>
+        <div class="muted">Ключ: ${b.key} · порядок: ${b.order} · ${b.enabled?'показывается':'скрыт'}${b.special?' · системный блок':''}</div>
+      </div>
+      <button class="edit" type="button" data-edit-home-block="${b.key}">Редактировать</button>
+      ${b.special?'<button class="danger" type="button" disabled>Системный</button>':`<button class="danger" type="button" data-delete-home-block="${b.key}">Удалить</button>`}
+    </div>
+  `).join('') || '<p class="muted">Блоков пока нет</p>';
+  $$('[data-edit-home-block]').forEach(btn=>btn.onclick=()=>{
+    const b=homeBlocksCache.find(x=>x.key===btn.dataset.editHomeBlock); if(!b) return;
+    editing.homeBlock=b.key;
+    setVal('#homeBlockKey', b.key); $('#homeBlockKey').disabled = !!b.special;
+    setVal('#homeBlockTitle', b.title);
+    setVal('#homeBlockOrder', b.order);
+    if($('#homeBlockEnabled')) $('#homeBlockEnabled').checked=b.enabled!==false;
+  });
+  $$('[data-delete-home-block]').forEach(btn=>btn.onclick=async()=>{
+    if(!confirm('Удалить блок главной? Товары не удалятся, только сам блок.')) return;
+    homeBlocksCache=homeBlocksCache.filter(b=>b.key!==btn.dataset.deleteHomeBlock);
+    await saveHomeBlocksCache();
+  });
+}
+async function saveHomeBlocksCache(){
+  homeBlocksCache.sort((a,b)=>a.order-b.order || a.title.localeCompare(b.title,'ru'));
+  await setDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'), {
+    blocks: homeBlocksCache,
+    // старые поля оставлены для совместимости
+    bestsellers: Number((homeBlocksCache.find(b=>b.key==='bestsellers')||{}).order ?? 1),
+    new: Number((homeBlocksCache.find(b=>b.key==='new')||{}).order ?? 2),
+    hot: Number((homeBlocksCache.find(b=>b.key==='hot')||{}).order ?? 3),
+    recentlyViewed: Number((homeBlocksCache.find(b=>b.key==='recentlyViewed')||{}).order ?? 5),
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+  renderHomeBlocksList();
+  fillHomeSectionOptions();
+}
 if ($('#homeBlocksForm')) {
   $('#homeBlocksForm').onsubmit = async e => {
     e.preventDefault();
-
     try {
-      await setDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'), {
-        bestsellers: Number(val('#homeOrderBestsellers') || 1),
-        new: Number(val('#homeOrderNew') || 2),
-        hot: Number(val('#homeOrderHot') || 3),
-        recentlyViewed: Number(val('#homeOrderRecent') || 5),
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-
-      alert('Порядок блоков сохранён');
+      const key=normalizeBlockKey(val('#homeBlockKey'));
+      if(!key) return alert('Введите ключ блока латиницей, например winter или sale');
+      const title=val('#homeBlockTitle') || key;
+      const order=Number(val('#homeBlockOrder') || 999);
+      const enabled=$('#homeBlockEnabled') ? $('#homeBlockEnabled').checked : true;
+      const existing=homeBlocksCache.find(b=>b.key===key);
+      if(existing){
+        existing.title=title; existing.order=order; existing.enabled=enabled;
+      }else{
+        homeBlocksCache.push({key,title,order,enabled});
+      }
+      await saveHomeBlocksCache();
+      editing.homeBlock=null;
+      e.target.reset();
+      setVal('#homeBlockOrder', 10);
+      if($('#homeBlockEnabled')) $('#homeBlockEnabled').checked=true;
+      $('#homeBlockKey').disabled=false;
+      alert('Блок главной сохранён');
     } catch (err) {
       console.error(err);
-      alert('Ошибка сохранения порядка блоков: ' + err.message);
+      alert('Ошибка сохранения блока: ' + err.message);
     }
+  };
+}
+if($('#newHomeBlockBtn')){
+  $('#newHomeBlockBtn').onclick=()=>{
+    editing.homeBlock=null;
+    $('#homeBlocksForm')?.reset();
+    $('#homeBlockKey').disabled=false;
+    setVal('#homeBlockOrder', 10);
+    if($('#homeBlockEnabled')) $('#homeBlockEnabled').checked=true;
   };
 }
