@@ -183,6 +183,13 @@ function renderSections(){
   });
   container.insertAdjacentHTML('beforeend', html);
   bindProductButtons(container);
+  applyHomeSectionColors(container);
+}
+function applyHomeSectionColors(container=document){
+  const sections = Array.from(container.querySelectorAll('.section-block'));
+  sections.forEach((section, index) => {
+    section.classList.toggle('section-dark', index % 2 === 0);
+  });
 }
 async function renderCatalogMenu(){
   let cats = await safeLoadCollection(COLLECTIONS.categories);
@@ -298,6 +305,17 @@ function authModal(){
   $('#loginForm')&&($('#loginForm').onsubmit=async e=>{e.preventDefault(); await signInWithEmailAndPassword(auth,$('#loginEmail').value.trim(),$('#loginPass').value); modal.classList.remove('open');});
   $('#registerForm')&&($('#registerForm').onsubmit=async e=>{e.preventDefault(); const res=await createUserWithEmailAndPassword(auth,$('#regEmail').value.trim(),$('#regPass').value); await setDoc(doc(db,COLLECTIONS.users,res.user.uid),{name:$('#regName').value.trim(),email:$('#regEmail').value.trim(),role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(res.user); alert('Аккаунт создан. Проверьте письмо на почте.'); modal.classList.remove('open');});
   onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; $('#userEmail')&&($('#userEmail').textContent=u.email); $('#logout')&&($('#logout').onclick=()=>signOut(auth));}}else{authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
-  $('#accountBtn')&&($('#accountBtn').onclick=()=>$('#accountDrop').classList.toggle('open'));
+  const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
+  if (accBtn && accDrop && !accDrop.dataset.closeReady) {
+    accDrop.dataset.closeReady = '1';
+    accBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      accDrop.classList.toggle('open');
+    };
+    accDrop.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => accDrop.classList.remove('open'));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') accDrop.classList.remove('open'); });
+  }
 }
 authModal(); setupSearch(); setupExpand(); renderHome().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
