@@ -39,8 +39,8 @@ let allCatsCache = [];
 let allProductsCache = [];
 let allHomeBlocksCache = [];
 let allPromoCardsCache = [];
-const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
-const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_homeBlocks';
+const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promoCards';
 
 function val(id) {
   const el = $(id);
@@ -1000,33 +1000,39 @@ async function renderPromoCardsAdmin() {
 if ($('#promoCardsForm')) {
   $('#promoCardsForm').onsubmit = async e => {
     e.preventDefault();
-    const title = val('#pcTitle');
-    const key = val('#pcKey') || slugifyBlock(title);
-    const data = {
-      title,
-      key,
-      text: val('#pcText'),
-      amount: val('#pcAmount'),
-      link: val('#pcLink') || '#',
-      order: Number(val('#pcOrder') || 999),
-      enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
-      updatedAt: new Date().toISOString()
-    };
 
-    if (!data.title) return alert('Введите название карточки');
+    try {
+      const title = val('#pcTitle');
+      const key = val('#pcKey') || slugifyBlock(title);
+      const data = {
+        title,
+        key,
+        text: val('#pcText'),
+        amount: val('#pcAmount'),
+        link: val('#pcLink') || '#',
+        order: Number(val('#pcOrder') || 999),
+        enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
+        updatedAt: new Date().toISOString()
+      };
 
-    if (editing.promoCard) {
-      await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
-      editing.promoCard = null;
-    } else {
-      data.createdAt = new Date().toISOString();
-      await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
+      if (!data.title) return alert('Введите название карточки');
+
+      if (editing.promoCard) {
+        await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
+        editing.promoCard = null;
+      } else {
+        data.createdAt = new Date().toISOString();
+        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
+      }
+
+      e.target.reset();
+      if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+      await renderPromoCardsAdmin();
+      alert('Промо-карточка сохранена');
+    } catch (err) {
+      console.error('Не удалось сохранить промо-карточку:', err);
+      alert('Не удалось сохранить промо-карточку. Проверь правила Firestore для коллекции: ' + PROMO_CARDS_COLLECTION);
     }
-
-    e.target.reset();
-    if ($('#pcEnabled')) $('#pcEnabled').checked = true;
-    await renderPromoCardsAdmin();
-    alert('Промо-карточка сохранена');
   };
 }
 

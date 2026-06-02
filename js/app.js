@@ -5,8 +5,8 @@ import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/fireba
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
-const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_homeBlocks';
+const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promoCards';
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let allProducts = [];
