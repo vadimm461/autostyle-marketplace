@@ -183,24 +183,3 @@
 @media(max-width:560px){
   .product-buy-card .product-actions{grid-template-columns:1fr !important;}
 }
-
-
-.product-price-row{
-display:flex!important;
-align-items:center!important;
-gap:12px!important;
-flex-wrap:wrap!important;
-}
-.product-price-big{
-white-space:nowrap!important;
-flex-shrink:0!important;
-line-height:1!important;
-}
-.product-old-price{white-space:nowrap!important;}
-.product-installment-inline{
-margin-left:auto;
-white-space:nowrap;
-display:flex;
-align-items:center;
-gap:6px;
-}
