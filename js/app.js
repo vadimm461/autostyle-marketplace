@@ -1,7 +1,7 @@
 
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, getDocs, getDoc, setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -235,3 +235,42 @@ function authModal(){
   $('#accountBtn')&&($('#accountBtn').onclick=()=>$('#accountDrop').classList.toggle('open'));
 }
 authModal(); setupSearch(); setupExpand(); renderHome();
+
+/* ===== FINAL FIX: home blocks are stored in autostyle_settings/homeBlocks.homeBlocks[] ===== */
+async function loadEditableHomeBlocksFromSettings() {
+  try {
+    const snap = await getDoc(doc(db, 'autostyle_settings', 'homeBlocks'));
+    if (!snap.exists()) return [];
+    const data = snap.data() || {};
+    const arr = Array.isArray(data.homeBlocks) ? data.homeBlocks : [];
+    return arr.map((b, i) => ({
+      id: String(b.id || b.key || `block-${i}`),
+      key: String(b.key || b.slug || b.id || `block-${i}`).trim(),
+      title: b.title || b.name || b.key || `Блок ${i + 1}`,
+      order: Number(b.order ?? i + 1),
+      enabled: b.enabled !== false,
+      recent: String(b.key || '').toLowerCase() === 'recentlyviewed'
+    })).filter(b => b.key);
+  } catch (e) {
+    console.error('homeBlocks settings load error', e);
+    return [];
+  }
+}
+
+async function renderHome() {
+  allProducts = await safeLoadCollection(COLLECTIONS.products);
+  allBlocks = mergeBlocks(await loadEditableHomeBlocksFromSettings());
+
+  let banners = await safeLoadCollection(COLLECTIONS.banners);
+  const hero = $('#hero');
+  if (hero) {
+    const b = banners[0] || {};
+    hero.innerHTML = `<div class="hero-content"><span class="hero-label">AUTO STYLE MARKET</span><h1>${b.title || 'Автотовары для стиля, комфорта и защиты'}</h1><p>${b.text || 'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p><div class="hero-actions"><a href="catalog.html" class="primary hero-btn">Смотреть каталог</a><a href="#homeBlock_bestsellers" class="hero-link">Лидеры продаж</a></div></div><div class="hero-visual"><div class="hero-car">AUTO</div></div>`;
+  }
+
+  const promoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
+  renderPromoCards(promoCards);
+  renderSections();
+  saveCart();
+  renderCatalogMenu();
+}

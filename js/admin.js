@@ -8,6 +8,7 @@ import {
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   deleteDoc,
   doc,
@@ -1201,3 +1202,127 @@ if ($('#hbReset')) {
 
 renderHomeBlocksAdmin();
 renderPromoCardsAdmin();
+
+/* ===== FINAL FIX: editable home blocks live in autostyle_settings/homeBlocks.homeBlocks[] ===== */
+const HOME_BLOCKS_SETTINGS_COLLECTION_FINAL = 'autostyle_settings';
+const HOME_BLOCKS_SETTINGS_DOC_FINAL = 'homeBlocks';
+
+function normalizeHomeBlockFinal(block, index = 0) {
+  const key = String(block.key || block.slug || block.id || `block-${index}`).trim();
+  return {
+    ...block,
+    id: key,
+    key,
+    title: block.title || block.name || key || `Блок ${index + 1}`,
+    order: Number(block.order ?? index + 1),
+    enabled: block.enabled !== false,
+    _settingsArray: true
+  };
+}
+
+async function loadHomeBlocks() {
+  try {
+    const snap = await getDoc(doc(db, HOME_BLOCKS_SETTINGS_COLLECTION_FINAL, HOME_BLOCKS_SETTINGS_DOC_FINAL));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const arr = Array.isArray(data.homeBlocks) ? data.homeBlocks : [];
+    allHomeBlocksCache = sortByOrder(arr.map(normalizeHomeBlockFinal).filter(b => b.key));
+  } catch (e) {
+    console.error('homeBlocks settings load error', e);
+    allHomeBlocksCache = [];
+  }
+}
+
+async function saveHomeBlocksSettingsFinal() {
+  const clean = sortByOrder(allHomeBlocksCache).map(b => ({
+    title: b.title || b.name || b.key,
+    key: b.key,
+    order: Number(b.order ?? 999),
+    enabled: b.enabled !== false
+  }));
+  await setDoc(doc(db, HOME_BLOCKS_SETTINGS_COLLECTION_FINAL, HOME_BLOCKS_SETTINGS_DOC_FINAL), {
+    homeBlocks: clean,
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+}
+
+function mergedHomeBlocks() {
+  return sortByOrder((allHomeBlocksCache || [])
+    .map((b, i) => normalizeHomeBlockFinal(b, i))
+    .filter(b => b.key));
+}
+
+async function renderHomeBlocksAdmin() {
+  const list = $('#homeBlockList');
+  if (!list) return;
+
+  await loadHomeBlocks();
+  renderHomeSectionOptions();
+  const blocks = mergedHomeBlocks();
+
+  list.innerHTML = blocks.length ? blocks.map(b => `
+    <div class="row admin-homeblock-row">
+      <div>
+        <b>${b.title}</b>
+        <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} · ${b.enabled === false ? 'выключен' : 'включен'}</p>
+      </div>
+      <button class="edit" data-edit-settings-hb="${b.key}">Редактировать</button>
+      <button class="danger" data-del-settings-hb="${b.key}">Удалить</button>
+    </div>
+  `).join('') : '<p class="muted">Блоков пока нет. Создай первый блок выше.</p>';
+
+  $$('[data-edit-settings-hb]').forEach(btn => btn.onclick = () => {
+    const item = allHomeBlocksCache.find(x => String(x.key) === String(btn.dataset.editSettingsHb));
+    if (!item) return;
+    editing.homeBlock = item.key;
+    setVal('#hbTitle', item.title || item.name || '');
+    setVal('#hbKey', item.key || '');
+    setVal('#hbOrder', item.order ?? '');
+    if ($('#hbEnabled')) $('#hbEnabled').checked = item.enabled !== false;
+  });
+
+  $$('[data-del-settings-hb]').forEach(btn => btn.onclick = async () => {
+    if (!confirm('Удалить блок главной? Товары не удалятся.')) return;
+    allHomeBlocksCache = allHomeBlocksCache.filter(x => String(x.key) !== String(btn.dataset.delSettingsHb));
+    await saveHomeBlocksSettingsFinal();
+    await renderHomeBlocksAdmin();
+    await renderProducts();
+  });
+}
+
+if ($('#homeBlockForm')) {
+  $('#homeBlockForm').onsubmit = async e => {
+    e.preventDefault();
+    const title = val('#hbTitle');
+    const key = val('#hbKey') || slugifyBlock(title);
+    if (!title) return alert('Введите название блока');
+
+    await loadHomeBlocks();
+    const block = {
+      title,
+      key,
+      order: Number(val('#hbOrder') || 999),
+      enabled: $('#hbEnabled') ? $('#hbEnabled').checked : true
+    };
+
+    const oldKey = editing.homeBlock || key;
+    const index = allHomeBlocksCache.findIndex(x => String(x.key) === String(oldKey));
+    if (index >= 0) allHomeBlocksCache[index] = block;
+    else allHomeBlocksCache.push(block);
+
+    await saveHomeBlocksSettingsFinal();
+    editing.homeBlock = null;
+    e.target.reset();
+    if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+    await renderHomeBlocksAdmin();
+    await renderProducts();
+    alert('Блок сохранён');
+  };
+}
+
+if ($('#hbReset')) {
+  $('#hbReset').onclick = () => {
+    editing.homeBlock = null;
+    $('#homeBlockForm')?.reset();
+    if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+  };
+}
