@@ -298,4 +298,4 @@ function authModal(){
   onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; $('#userEmail')&&($('#userEmail').textContent=u.email); $('#logout')&&($('#logout').onclick=()=>signOut(auth));}}else{authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   $('#accountBtn')&&($('#accountBtn').onclick=()=>$('#accountDrop').classList.toggle('open'));
 }
-authModal(); setupSearch(); setupExpand(); renderHome();
+authModal(); setupSearch(); setupExpand(); renderHome().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());

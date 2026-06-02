@@ -62,7 +62,7 @@ async function render() {
   document.querySelectorAll('.remove').forEach(btn => {
     btn.onclick = () => {
       cart.splice(Number(btn.dataset.index), 1);
-      render();
+      render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
     };
   });
 }
@@ -70,7 +70,7 @@ async function render() {
 if (clearBtn) {
   clearBtn.onclick = () => {
     cart = [];
-    render();
+    render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
   };
 }
 
@@ -78,4 +78,4 @@ if (checkoutBtn) {
   checkoutBtn.onclick = () => alert('Оформление заказа подключим следующим шагом.');
 }
 
-render();
+render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());

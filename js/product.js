@@ -101,4 +101,4 @@ async function loadProduct(){
     box.innerHTML = `<div class="product-message">Ошибка загрузки: ${err.message}</div>`;
   }
 }
-saveCart(); setupSearch(); loadProduct();
+saveCart(); setupSearch(); loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());

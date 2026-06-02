@@ -47,4 +47,4 @@ async function loadFavorites(){
   if(!products.length){ grid.innerHTML='<div class="notice">Товары из избранного не найдены.</div>'; return; }
   grid.innerHTML=products.map(card).join(''); bind();
 }
-updateCart(); setupSearch(); loadFavorites();
+updateCart(); setupSearch(); loadFavorites().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
