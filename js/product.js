@@ -25,10 +25,9 @@ const productPrice = p => Number(p.price || 0);
 const isInstallment = p => p.installment === true || p.installmentAvailable === true || p.credit === true || productPrice(p) >= 199;
 const installmentMonth = p => Math.ceil(productPrice(p) / 12);
 function discount(p){
-  const manual = Number(p.discount || p.discountPercent || 0);
-  const rawOp = rawOldPrice(p), op = oldPrice(p), pr = Number(p.price || 0);
-  // Если старая цена равна текущей, скидку не показываем — это защита от зависшей скидки в Firestore/кэше.
-  if (manual > 0) return (rawOp && rawOp <= pr) ? 0 : manual;
+  const manual = Number(p.discount || p.discountPercent || p.discount_percent || p.salePercent || 0);
+  if (manual > 0) return manual;
+  const op = oldPrice(p), pr = Number(p.price || 0);
   return op > pr && pr > 0 ? Math.round((op - pr) / op * 100) : 0;
 }
 
