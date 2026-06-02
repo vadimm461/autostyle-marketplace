@@ -299,12 +299,45 @@ function setupExpand(){
   });
 }
 function setupSearch(){ const input=$('#homeSearch')||$('#siteSearch'), btn=$('#homeSearchBtn')||$('#siteSearchBtn'); const go=()=>{const q=encodeURIComponent((input?.value||'').trim()); location.href=q?`catalog.html?search=${q}`:'catalog.html'}; btn&&(btn.onclick=go); input&&input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}}); }
+
+function accountInitials(name, email){
+  const base = String(name || email || 'AS').trim();
+  return (base.split(/\s+/).slice(0,2).map(x=>x[0]).join('') || 'AS').toUpperCase();
+}
+function renderAccountPanel(user){
+  const drop = document.querySelector('#accountDrop .drop');
+  if(!drop || !user) return;
+  const name = user.displayName || 'Профиль AutoStyle';
+  const email = user.email || '';
+  const photo = user.photoURL || '';
+  drop.classList.add('account-panel');
+  drop.innerHTML = `
+    <div class="account-user">
+      <div class="account-avatar">${photo ? `<img src="${photo}" alt="${name}">` : accountInitials(name, email)}</div>
+      <div>
+        <b class="account-name">${name}</b>
+        <span class="account-email">${email}</span>
+      </div>
+    </div>
+    <div class="account-status">● Вы авторизованы</div>
+    <nav class="account-menu">
+      <a class="primary-account" href="profile.html">👤 Страница профиля</a>
+      <a href="profile.html#profile">✏️ Изменить аккаунт</a>
+      <a href="profile.html#password">🔒 Изменить пароль</a>
+      <a href="profile.html#photo">📷 Добавить фото</a>
+      <a href="favorites.html">♡ Избранное</a>
+      <a href="cart.html">🛒 Корзина</a>
+      <a href="admin.html">⚙️ Админка</a>
+      <button id="logout" class="account-logout" type="button">Выйти</button>
+    </nav>`;
+}
+
 function authModal(){
   const modal=$('#authModal'); if(!modal)return; $('#openAuth')&&($('#openAuth').onclick=()=>modal.classList.add('open')); $('#closeAuth')&&($('#closeAuth').onclick=()=>modal.classList.remove('open'));
   $$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $('#loginForm').style.display=t.dataset.tab==='login'?'block':'none'; $('#registerForm').style.display=t.dataset.tab==='register'?'block':'none';});
   $('#loginForm')&&($('#loginForm').onsubmit=async e=>{e.preventDefault(); await signInWithEmailAndPassword(auth,$('#loginEmail').value.trim(),$('#loginPass').value); modal.classList.remove('open');});
   $('#registerForm')&&($('#registerForm').onsubmit=async e=>{e.preventDefault(); const res=await createUserWithEmailAndPassword(auth,$('#regEmail').value.trim(),$('#regPass').value); await setDoc(doc(db,COLLECTIONS.users,res.user.uid),{name:$('#regName').value.trim(),email:$('#regEmail').value.trim(),role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(res.user); alert('Аккаунт создан. Проверьте письмо на почте.'); modal.classList.remove('open');});
-  onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; $('#userEmail')&&($('#userEmail').textContent=u.email); $('#logout')&&($('#logout').onclick=()=>signOut(auth));}}else{authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
+  onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=()=>signOut(auth));}}else{authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
   if (accBtn && accDrop && !accDrop.dataset.closeReady) {
     accDrop.dataset.closeReady = '1';

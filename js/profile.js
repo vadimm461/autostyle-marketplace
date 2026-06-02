@@ -112,6 +112,12 @@ async function changePassword(user){
   $('#passwordForm').reset();
   message(msg, 'Пароль обновлён.', true);
 }
+function activateProfileTabFromHash(){
+  const hash = (location.hash || '').replace('#','');
+  const map = { profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', orders:'orders', favorites:'favorites' };
+  const target = map[hash];
+  if(target) document.querySelector(`[data-profile-tab="${target}"]`)?.click();
+}
 function bindTabs(){
   document.querySelectorAll('[data-profile-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -121,6 +127,8 @@ function bindTabs(){
       document.querySelector(`[data-pane="${btn.dataset.profileTab}"]`)?.classList.add('active');
     });
   });
+  setTimeout(activateProfileTabFromHash, 50);
+  window.addEventListener('hashchange', activateProfileTabFromHash);
 }
 async function renderFavorites(){
   const box = $('#profileFavorites');
