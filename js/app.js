@@ -5,8 +5,8 @@ import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/fireba
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-const HOME_BLOCKS_COLLECTION = 'autostyle_home_blocks';
-const PROMO_CARDS_COLLECTION = 'autostyle_promo_cards';
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let allProducts = [];
@@ -31,32 +31,6 @@ function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#car
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 async function loadCollection(name){ const snap = await getDocs(collection(db, name)); return snap.docs.map(d => ({id:d.id, ...d.data()})); }
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
-
-
-function defaultPromoCards(){
-  return [
-    {id:'promo_actions', title:'Акции', text:'Лучшие предложения недели', count:'', link:'catalog.html?tag=hot', order:1, enabled:true},
-    {id:'promo_new', title:'Новинки', text:'Свежие товары для твоего авто', count:'', link:'catalog.html?tag=new', order:2, enabled:true},
-    {id:'promo_top', title:'Топ товары', text:'Популярный выбор покупателей', count:'', link:'catalog.html?tag=best', order:3, enabled:true}
-  ];
-}
-function promoCardsList(custom){
-  const arr = Array.isArray(custom) && custom.length ? custom : defaultPromoCards();
-  return [...arr]
-    .filter(x => x && x.enabled !== false)
-    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
-}
-function renderPromoCard(card){
-  const href = card.link || '#';
-  const count = String(card.count ?? '').trim();
-  return `<a class="mini-banner promo-card" href="${href}">
-    <div>
-      <h3>${card.title || 'Блок'}</h3>
-      <p class="muted">${card.text || ''}</p>
-    </div>
-    ${count ? `<b class="promo-count">${count}</b>` : ''}
-  </a>`;
-}
 
 function defaultBlocks(){
   return [
@@ -94,6 +68,43 @@ function productsForBlock(block){
   return [];
 }
 
+
+function defaultPromoCards(){
+  return [
+    {key:'sale', title:'Акции', text:'Лучшие предложения недели', amount:'', link:'#homeBlock_hot', order:1, enabled:true},
+    {key:'new', title:'Новинки', text:'Свежие товары для твоего авто', amount:'', link:'#homeBlock_new', order:2, enabled:true},
+    {key:'top', title:'Топ товары', text:'Популярный выбор покупателей', amount:'', link:'#homeBlock_bestsellers', order:3, enabled:true}
+  ];
+}
+function mergePromoCards(custom){
+  const byKey = new Map();
+  defaultPromoCards().forEach(c => byKey.set(c.key, c));
+  (custom || []).forEach(c => {
+    const key = c.key || c.slug || c.id;
+    if (!key) return;
+    byKey.set(key, {
+      key,
+      title: c.title || c.name || key,
+      text: c.text || c.description || '',
+      amount: c.amount || c.countText || '',
+      link: c.link || c.url || '#',
+      order: Number(c.order ?? 999),
+      enabled: c.enabled !== false
+    });
+  });
+  return [...byKey.values()].filter(c => c.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+}
+function renderPromoCards(cards){
+  const box = $('#banners');
+  if (!box) return;
+  box.innerHTML = cards.map(c => `
+    <a class="mini-banner promo-card" href="${c.link || '#'}">
+      ${c.amount ? `<span class="promo-card-count">${c.amount}</span>` : ''}
+      <h3>${c.title || ''}</h3>
+      <p class="muted">${c.text || ''}</p>
+    </a>
+  `).join('');
+}
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
   const installment = p.installment === true || p.installmentAvailable === true || p.credit === true;
@@ -103,7 +114,7 @@ function card(p){
       <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
       <div class="product-title">${title(p)}</div>
       <div class="product-group">${group(p)}</div>
-      ${installment ? '<div class="installment-badge">Доступно в рассрочку</div>' : ''}
+      <div class="product-badges">${installment ? '<span class="installment-badge">Доступно в рассрочку</span>' : ''}</div>
       <div class="product-spacer"></div>
       <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
     </a>
@@ -157,7 +168,8 @@ async function renderHome(){
   allBlocks = mergeBlocks(customBlocks);
   let banners = await safeLoadCollection(COLLECTIONS.banners);
   const hero=$('#hero'); if(hero){ const b=banners[0]||{}; hero.innerHTML=`<div class="hero-content"><span class="hero-label">AUTO STYLE MARKET</span><h1>${b.title||'Автотовары для стиля, комфорта и защиты'}</h1><p>${b.text||'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p><div class="hero-actions"><a href="catalog.html" class="primary hero-btn">Смотреть каталог</a><a href="#homeBlock_bestsellers" class="hero-link">Лидеры продаж</a></div></div><div class="hero-visual"><div class="hero-car">AUTO</div></div>`; }
-  const bannersBox=$('#banners'); if(bannersBox){ const promoCards = promoCardsList(await safeLoadCollection(PROMO_CARDS_COLLECTION)); bannersBox.innerHTML = promoCards.map(renderPromoCard).join(''); }
+  const promoCards = mergePromoCards(await safeLoadCollection(PROMO_CARDS_COLLECTION));
+  renderPromoCards(promoCards);
   renderSections(); saveCart(); renderCatalogMenu();
 }
 function setupExpand(){

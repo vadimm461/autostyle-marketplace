@@ -31,14 +31,16 @@ let editing = {
   product: null,
   cat: null,
   banner: null,
+  homeBlock: null,
   promoCard: null
 };
 
 let allCatsCache = [];
 let allProductsCache = [];
 let allHomeBlocksCache = [];
-const HOME_BLOCKS_COLLECTION = 'autostyle_home_blocks';
-const PROMO_CARDS_COLLECTION = 'autostyle_promo_cards';
+let allPromoCardsCache = [];
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 
 function val(id) {
   const el = $(id);
@@ -103,6 +105,45 @@ function renderHomeSectionOptions() {
     if (current && [...select.options].some(o => o.value === current)) select.value = current;
   });
 }
+
+function defaultPromoCards() {
+  return [
+    { id: 'sale', key: 'sale', title: 'Акции', text: 'Лучшие предложения недели', amount: '', link: '#homeBlock_hot', order: 1, enabled: true, builtin: true },
+    { id: 'new', key: 'new', title: 'Новинки', text: 'Свежие товары для твоего авто', amount: '', link: '#homeBlock_new', order: 2, enabled: true, builtin: true },
+    { id: 'top', key: 'top', title: 'Топ товары', text: 'Популярный выбор покупателей', amount: '', link: '#homeBlock_bestsellers', order: 3, enabled: true, builtin: true }
+  ];
+}
+
+async function loadPromoCards() {
+  try {
+    allPromoCardsCache = sortByOrder(await getCollection(PROMO_CARDS_COLLECTION));
+  } catch (e) {
+    console.warn('promo cards load error', e);
+    allPromoCardsCache = [];
+  }
+}
+
+function mergedPromoCards() {
+  const map = new Map();
+  defaultPromoCards().forEach(card => map.set(card.key, card));
+  allPromoCardsCache.forEach(card => {
+    const key = card.key || card.slug || card.id;
+    if (!key) return;
+    map.set(key, {
+      ...card,
+      key,
+      title: card.title || card.name || key,
+      text: card.text || card.description || '',
+      amount: card.amount || card.countText || '',
+      link: card.link || card.url || '#',
+      order: Number(card.order ?? 999),
+      enabled: card.enabled !== false,
+      builtin: false
+    });
+  });
+  return [...map.values()].filter(card => card.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+}
+
 
 async function getCollection(name) {
   const snap = await getDocs(collection(db, name));
@@ -200,7 +241,6 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
-  renderPromoCardsAdmin();
 });
 
 /* CATEGORY OPTIONS */
@@ -823,106 +863,6 @@ if ($('#bannerForm')) {
   };
 }
 
-
-/* PROMO CARDS ON MAIN PAGE */
-function defaultPromoCardsAdmin() {
-  return [
-    { id: 'default-actions', title: 'Акции', text: 'Лучшие предложения недели', count: '', link: 'catalog.html?tag=hot', order: 1, enabled: true, system: true },
-    { id: 'default-new', title: 'Новинки', text: 'Свежие товары для твоего авто', count: '', link: 'catalog.html?tag=new', order: 2, enabled: true, system: true },
-    { id: 'default-top', title: 'Топ товары', text: 'Популярный выбор покупателей', count: '', link: 'catalog.html?tag=best', order: 3, enabled: true, system: true }
-  ];
-}
-
-async function renderPromoCardsAdmin() {
-  const list = $('#promoCardList');
-  if (!list) return;
-
-  try {
-    const saved = sortByOrder(await getCollection(PROMO_CARDS_COLLECTION));
-    const arr = saved.length ? saved : defaultPromoCardsAdmin();
-
-    list.innerHTML = arr.map(x => `
-      <div class="row">
-        <div>
-          <b>${x.title || 'Без названия'}</b>
-          <p class="muted">${x.text || ''}</p>
-          <p class="muted">Метка: ${x.count || 'не указана'} · ссылка: ${x.link || '#'} · порядок: ${Number(x.order ?? 999)}</p>
-        </div>
-        ${x.system ? '<span class="admin-badge">По умолчанию</span>' : `<button class="edit" data-editpromo="${x.id}">Редактировать</button><button class="danger" data-delpromo="${x.id}">Удалить</button>`}
-      </div>
-    `).join('');
-
-    $$('[data-delpromo]').forEach(btn => {
-      btn.onclick = async () => {
-        if (!confirm('Удалить промо-блок?')) return;
-        await deleteDoc(doc(db, PROMO_CARDS_COLLECTION, btn.dataset.delpromo));
-        await renderPromoCardsAdmin();
-      };
-    });
-
-    $$('[data-editpromo]').forEach(btn => {
-      btn.onclick = () => {
-        const item = saved.find(x => x.id === btn.dataset.editpromo);
-        if (!item) return;
-        editing.promoCard = item.id;
-        setVal('#promoTitle', item.title || '');
-        setVal('#promoText', item.text || '');
-        setVal('#promoCount', item.count || '');
-        setVal('#promoLink', item.link || '');
-        setVal('#promoOrder', item.order ?? '');
-        if ($('#promoEnabled')) $('#promoEnabled').checked = item.enabled !== false;
-      };
-    });
-  } catch (err) {
-    console.error(err);
-    alert('Ошибка загрузки промо-блоков: ' + err.message);
-  }
-}
-
-if ($('#promoCardForm')) {
-  $('#promoCardForm').onsubmit = async e => {
-    e.preventDefault();
-
-    try {
-      const data = {
-        title: val('#promoTitle'),
-        text: val('#promoText'),
-        count: val('#promoCount'),
-        link: val('#promoLink') || '#',
-        order: Number(val('#promoOrder') || 999),
-        enabled: $('#promoEnabled') ? $('#promoEnabled').checked : true,
-        updatedAt: new Date().toISOString()
-      };
-
-      if (!data.title) return alert('Введите название промо-блока');
-
-      if (editing.promoCard) {
-        await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
-        editing.promoCard = null;
-      } else {
-        data.createdAt = new Date().toISOString();
-        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
-      }
-
-      e.target.reset();
-      if ($('#promoEnabled')) $('#promoEnabled').checked = true;
-      await renderPromoCardsAdmin();
-      alert('Промо-блок сохранён');
-    } catch (err) {
-      console.error(err);
-      alert('Ошибка сохранения промо-блока: ' + err.message);
-    }
-  };
-}
-
-if ($('#promoReset')) {
-  $('#promoReset').onclick = () => {
-    editing.promoCard = null;
-    $('#promoCardForm')?.reset();
-    if ($('#promoEnabled')) $('#promoEnabled').checked = true;
-  };
-}
-
 /* MEDIA */
 
 if ($('#mediaForm')) {
@@ -1012,6 +952,94 @@ if ($('#settingsForm')) {
 });
 
 /* HOME BLOCKS */
+
+
+async function renderPromoCardsAdmin() {
+  const list = $('#promoCardList');
+  if (!list) return;
+
+  await loadPromoCards();
+  const cards = mergedPromoCards();
+
+  list.innerHTML = cards.map(card => `
+    <div class="row">
+      <div>
+        <b>${card.title}</b>
+        <p class="muted">
+          Ключ: ${card.key} · порядок: ${Number(card.order ?? 999)}
+          ${card.amount ? ` · ${card.amount}` : ''}
+          ${card.link ? ` · ссылка: ${card.link}` : ''}
+          ${card.builtin ? ' · системная' : ''}
+        </p>
+        <p class="muted">${card.text || ''}</p>
+      </div>
+      ${card.builtin
+        ? '<span class="admin-badge">Системная</span>'
+        : `<button class="edit" data-editpc="${card.id}">Редактировать</button><button class="danger" data-delpc="${card.id}">Удалить</button>`}
+    </div>
+  `).join('');
+
+  $$('[data-delpc]').forEach(btn => btn.onclick = async () => {
+    if (!confirm('Удалить промо-карточку?')) return;
+    await deleteDoc(doc(db, PROMO_CARDS_COLLECTION, btn.dataset.delpc));
+    await renderPromoCardsAdmin();
+  });
+
+  $$('[data-editpc]').forEach(btn => btn.onclick = () => {
+    const item = allPromoCardsCache.find(x => x.id === btn.dataset.editpc);
+    if (!item) return;
+    editing.promoCard = item.id;
+    setVal('#pcTitle', item.title || item.name || '');
+    setVal('#pcKey', item.key || item.slug || '');
+    setVal('#pcText', item.text || item.description || '');
+    setVal('#pcAmount', item.amount || item.countText || '');
+    setVal('#pcLink', item.link || item.url || '');
+    setVal('#pcOrder', item.order ?? '');
+    if ($('#pcEnabled')) $('#pcEnabled').checked = item.enabled !== false;
+  });
+}
+
+if ($('#promoCardsForm')) {
+  $('#promoCardsForm').onsubmit = async e => {
+    e.preventDefault();
+    const title = val('#pcTitle');
+    const key = val('#pcKey') || slugifyBlock(title);
+    const data = {
+      title,
+      key,
+      text: val('#pcText'),
+      amount: val('#pcAmount'),
+      link: val('#pcLink') || '#',
+      order: Number(val('#pcOrder') || 999),
+      enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (!data.title) return alert('Введите название карточки');
+
+    if (editing.promoCard) {
+      await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
+      editing.promoCard = null;
+    } else {
+      data.createdAt = new Date().toISOString();
+      await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
+    }
+
+    e.target.reset();
+    if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+    await renderPromoCardsAdmin();
+    alert('Промо-карточка сохранена');
+  };
+}
+
+if ($('#pcReset')) {
+  $('#pcReset').onclick = () => {
+    editing.promoCard = null;
+    $('#promoCardsForm')?.reset();
+    if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+  };
+}
+
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');
   if (!list) return;

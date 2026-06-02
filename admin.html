@@ -24,6 +24,7 @@
       <button data-section="categories">Категории</button>
       <button data-section="banners">Баннеры</button>
       <button data-section="homeblocks">Блоки главной</button>
+      <button data-section="promocards">Промо карточки</button>
       <button data-section="orders">Заказы</button>
       <button data-section="media">Медиа</button>
       <button data-section="pages">Страницы</button>
@@ -219,24 +220,6 @@
         </form>
 
         <div id="bannerList" class="list"></div>
-
-        <hr style="border:0;border-top:1px solid var(--line);margin:28px 0">
-
-        <h2>Промо-блоки главной</h2>
-        <p class="muted">Это отдельные карточки «Акции / Новинки / Топ товары». Они не связаны с товарными блоками ниже.</p>
-
-        <form id="promoCardForm" class="grid2">
-          <label class="field">Название карточки<input id="promoTitle" placeholder="Например: Акции" required></label>
-          <label class="field">Количество / метка<input id="promoCount" placeholder="Например: 120 товаров / -30% / 5 акций"></label>
-          <label class="field">Ссылка<input id="promoLink" placeholder="catalog.html?tag=hot"></label>
-          <label class="field">Порядковый номер<input id="promoOrder" type="number" placeholder="1"></label>
-          <label class="field check-field"><span>Включен</span><input id="promoEnabled" type="checkbox" checked></label>
-          <label class="field" style="grid-column:1/-1">Описание<textarea id="promoText" placeholder="Лучшие предложения недели"></textarea></label>
-          <button class="primary">Сохранить промо-блок</button>
-          <button id="promoReset" type="button" class="edit">Новый промо-блок</button>
-        </form>
-
-        <div id="promoCardList" class="list"></div>
       </div>
     </section>
 
@@ -254,6 +237,28 @@
           <button id="hbReset" type="button" class="edit">Новый блок</button>
         </form>
         <div id="homeBlockList" class="list"></div>
+      </div>
+    </section>
+
+
+    <section id="promocards" class="admin-section">
+      <div class="admin-card">
+        <h2>Промо-карточки на главной</h2>
+        <p class="muted">Это отдельные карточки “Акции / Новинки / Топ товары” под главным баннером. Они не связаны с товарными блоками ниже.</p>
+
+        <form id="promoCardsForm" class="grid2">
+          <label class="field">Название карточки<input id="pcTitle" placeholder="Например: Акции" required></label>
+          <label class="field">Ключ<input id="pcKey" placeholder="sale / new / top"></label>
+          <label class="field">Описание<input id="pcText" placeholder="Лучшие предложения недели"></label>
+          <label class="field">Количество / метка<input id="pcAmount" placeholder="Например: 120 товаров"></label>
+          <label class="field">Ссылка<input id="pcLink" placeholder="catalog.html?promo=sale"></label>
+          <label class="field">Порядковый номер<input id="pcOrder" type="number" placeholder="1"></label>
+          <label class="field check-field"><span>Включена</span><input id="pcEnabled" type="checkbox" checked></label>
+          <button class="primary">Сохранить карточку</button>
+          <button id="pcReset" type="button" class="edit">Новая карточка</button>
+        </form>
+
+        <div id="promoCardList" class="list"></div>
       </div>
     </section>
 
