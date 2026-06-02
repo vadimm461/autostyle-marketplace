@@ -87,20 +87,43 @@ function slugifyBlock(text) {
     .replace(/^-+|-+$/g, '') || `block-${Date.now()}`;
 }
 
-function mergedHomeBlocks() {
+function mergedHomeBlocks(includeDisabled = false) {
   const map = new Map();
   defaultHomeBlocks().forEach(b => map.set(b.key, b));
   allHomeBlocksCache.forEach(b => {
     const key = b.key || b.slug || b.id;
     if (!key) return;
     const base = map.get(key) || {};
-    map.set(key, { ...base, ...b, key, title: b.title || b.name || base.title || key, order: Number(b.order ?? base.order ?? 999), enabled: b.enabled !== false });
+    map.set(key, {
+      ...base,
+      ...b,
+      id: b.id || base.id || key,
+      key,
+      title: b.title || b.name || base.title || key,
+      order: Number(b.order ?? base.order ?? 999),
+      enabled: b.enabled !== false,
+      builtin: base.builtin === true || b.builtin === true
+    });
   });
-  return [...map.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+  return [...map.values()]
+    .filter(b => includeDisabled || b.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999) || String(a.title || '').localeCompare(String(b.title || ''), 'ru'));
 }
 
 async function loadHomeBlocks() {
-  try { allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION)); }
+  try {
+    allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION));
+
+    // Чтобы системные блоки тоже нормально редактировались, создаём для них документы в Firestore,
+    // если их ещё нет. После этого порядок/название сохраняются как обычные данные.
+    const existingKeys = new Set(allHomeBlocksCache.map(b => b.key || b.slug || b.id).filter(Boolean));
+    for (const block of defaultHomeBlocks()) {
+      if (!existingKeys.has(block.key)) {
+        await setDoc(doc(db, HOME_BLOCKS_COLLECTION, block.key), { ...block, updatedAt: new Date().toISOString() }, { merge: true });
+      }
+    }
+    allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION));
+  }
   catch (e) { console.warn('home blocks load error', e); allHomeBlocksCache = []; }
 }
 
@@ -1081,7 +1104,7 @@ async function renderHomeBlocksAdmin() {
   if (!list) return;
   await loadHomeBlocks();
   renderHomeSectionOptions();
-  const blocks = mergedHomeBlocks();
+  const blocks = mergedHomeBlocks(true);
   list.innerHTML = blocks.map(b => `
     <div class="row">
       <div>
@@ -1131,28 +1154,39 @@ if ($('#homeBlockForm')) {
       updatedAt: new Date().toISOString()
     };
     if (!data.title) return alert('Введите название блока');
-    if (editing.homeBlock) {
-      if (editing.homeBlockBuiltin) {
-        await setDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlockKey || key), { ...data, builtin: true }, { merge: true });
-      } else {
-        await updateDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlock), data);
+
+    try {
+      const oldDocId = editing.homeBlock || null;
+      const docId = key;
+
+      if (oldDocId && oldDocId !== docId && !editing.homeBlockBuiltin) {
+        await deleteDoc(doc(db, HOME_BLOCKS_COLLECTION, oldDocId));
       }
+
+      await setDoc(doc(db, HOME_BLOCKS_COLLECTION, docId), {
+        ...data,
+        id: docId,
+        builtin: editing.homeBlockBuiltin === true || defaultHomeBlocks().some(b => b.key === docId),
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+
       editing.homeBlock = null;
       editing.homeBlockKey = null;
       editing.homeBlockBuiltin = false;
-    } else {
-      data.createdAt = new Date().toISOString();
-      await addDoc(collection(db, HOME_BLOCKS_COLLECTION), data);
+      e.target.reset();
+      const keyInput = $('#hbKey');
+      if (keyInput) keyInput.readOnly = false;
+      if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+      await renderHomeBlocksAdmin();
+      renderPromoCardsAdmin();
+      alert('Блок сохранён');
+    } catch (err) {
+      console.error('home block save error', err);
+      alert('Ошибка сохранения блока: ' + (err?.message || err));
     }
-    e.target.reset();
-    const keyInput = $('#hbKey');
-    if (keyInput) keyInput.readOnly = false;
-    if ($('#hbEnabled')) $('#hbEnabled').checked = true;
-    await renderHomeBlocksAdmin();
-renderPromoCardsAdmin();
-    alert('Блок сохранён');
   };
 }
+
 
 if ($('#hbReset')) {
   $('#hbReset').onclick = () => {
