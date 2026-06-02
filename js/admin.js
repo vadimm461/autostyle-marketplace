@@ -228,19 +228,22 @@ function buildCategoryOptions(cats) {
     });
   });
 
-  // 2) Категории из самих товаров.
-  // Именно отсюда берутся "Автохимия LAVR", "Автохимия MANNOL" и т.д.
+  // 2) Все группы/категории из самих товаров.
+  // Отсюда берутся не только основные категории, но и подгруппы:
+  // "Автохимия 3TON", "Автохимия ATAS", "Автохимия LAVR" и т.д.
   (allProductsCache || []).forEach(product => {
-    const title = normalizeCatTitle(product.category);
-    if (!title || title === 'Без категории') return;
+    [product.category, product.group, product.categoryName].forEach(rawTitle => {
+      const title = normalizeCatTitle(rawTitle);
+      if (!title || title === 'Без категории' || title === 'Без группы') return;
 
-    if (!map.has(title.toLowerCase())) {
-      map.set(title.toLowerCase(), {
-        value: title,
-        label: title,
-        order: 999999
-      });
-    }
+      if (!map.has(title.toLowerCase())) {
+        map.set(title.toLowerCase(), {
+          value: title,
+          label: title,
+          order: 999999
+        });
+      }
+    });
   });
 
   return [...map.values()]
@@ -317,7 +320,7 @@ function renderProductList() {
   const arr = allProductsCache.filter(p => {
     const text = `${p.code || ''} ${p.title || ''} ${p.category || ''} ${p.description || ''}`.toLowerCase();
     if (queryText && !text.includes(queryText)) return false;
-    if (category && p.category !== category) return false;
+    if (category && p.category !== category && p.group !== category && p.categoryName !== category) return false;
     if (tag && p.tag !== tag) return false;
     return true;
   });

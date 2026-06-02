@@ -92,9 +92,13 @@ function makeSection(block, products){
   return `<section id="${id}" class="section-block product-section-carousel" data-block="${block.key}">
     <div class="section-head">
       <h2>${block.title}</h2>
-      <div class="section-actions"><button class="carousel-arrow" data-scroll-left="${id}" type="button">‹</button><button class="carousel-arrow" data-scroll-right="${id}" type="button">›</button><button class="show-section-btn" data-expand="${id}" type="button">Смотреть все</button></div>
+      <button class="show-section-btn" data-expand="${id}" type="button">Смотреть все</button>
     </div>
-    <div class="products carousel-products" data-limit="5">${products.length ? products.map(card).join('') : `<div class="notice">Товары для этого блока пока не выбраны.</div>`}</div>
+    <div class="carousel-shell">
+      <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
+      <div class="products carousel-products" data-limit="5">${products.length ? products.map(card).join('') : `<div class="notice">Товары для этого блока пока не выбраны.</div>`}</div>
+      <button class="carousel-arrow carousel-arrow-right" data-scroll-right="${id}" type="button" aria-label="Листать вправо">›</button>
+    </div>
   </section>`;
 }
 function renderSections(){
