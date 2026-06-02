@@ -250,57 +250,6 @@ function uploadImage(inputId, folder, targetInputId, statusId) {
       }
     );
   });
-
-
-function uploadImageFromElements(input, folder, targetInput, statusBox) {
-  return new Promise((resolve, reject) => {
-    if (!input || !input.files || !input.files[0]) {
-      resolve('');
-      return;
-    }
-
-    const file = input.files[0];
-    const safeName = file.name.replace(/[^\w.\-а-яА-ЯёЁ]/g, '_');
-    const fileName = `${folder}/${Date.now()}-${safeName}`;
-    const fileRef = ref(storage, fileName);
-
-    if (statusBox) {
-      statusBox.innerHTML = `
-        <div class="upload-status">
-          <div class="upload-status-top">
-            <b>Загрузка фото...</b>
-            <span>0%</span>
-          </div>
-          <div class="upload-progress"><div style="width:0%"></div></div>
-        </div>
-      `;
-    }
-
-    const task = uploadBytesResumable(fileRef, file);
-    task.on(
-      'state_changed',
-      snapshot => {
-        const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        if (statusBox) {
-          const bar = statusBox.querySelector('.upload-progress div');
-          const text = statusBox.querySelector('.upload-status-top span');
-          if (bar) bar.style.width = percent + '%';
-          if (text) text.textContent = percent + '%';
-        }
-      },
-      error => {
-        if (statusBox) statusBox.innerHTML = `<div class="upload-error">Ошибка загрузки: ${error.message}</div>`;
-        reject(error);
-      },
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        if (targetInput) targetInput.value = url;
-        if (statusBox) statusBox.innerHTML = `<div class="upload-success">Фото загружено. URL вставлен в поле.</div>`;
-        resolve(url);
-      }
-    );
-  });
-}
 }
 
 /* MENU */
@@ -489,7 +438,6 @@ function renderProductList() {
 
         <button class="edit" data-editp="${x.id}">Редактировать</button>
         <button class="danger" data-delp="${x.id}">Удалить</button>
-        <div class="inline-product-editor-slot" data-editor-slot="${x.id}"></div>
       </div>
     `).join('')
     : '<p class="muted">Товары не найдены</p>';
@@ -508,153 +456,25 @@ function renderProductList() {
     btn.onclick = () => {
       const item = allProductsCache.find(x => x.id === btn.dataset.editp);
       if (!item) return;
-      openInlineProductEditor(item, btn.closest('.admin-product-row'));
+
+      editing.product = item.id;
+
+      setVal('#pTitle', item.title);
+      setVal('#pGroup', item.group || item.category || '');
+      setVal('#pPrice', item.price);
+      setVal('#pStock', item.stock ?? item.quantity ?? item.count ?? '');
+      setVal('#pOldPrice', item.oldPrice || item.priceOld || item.compareAtPrice || item.priceBefore || '');
+      setVal('#pDiscount', item.discount || item.discountPercent || item.discount_percent || item.salePercent || '');
+      setVal('#pCategory', item.category);
+      setVal('#pImage', item.image);
+      setVal('#pDesc', item.description);
+
+      if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
+      if ($('#pHomeSection')) $('#pHomeSection').value = item.homeSection || item.tag || 'hot';
+      if ($('#pShowHome')) $('#pShowHome').checked = item.showOnHome === true;
+      if ($('#pInstallment')) $('#pInstallment').checked = item.installment === true || item.installmentAvailable === true;
     };
   });
-}
-
-function inlineProductField(form, name) {
-  const el = form.querySelector(`[name="${name}"]`);
-  return el ? String(el.value || '').trim() : '';
-}
-
-function inlineProductChecked(form, name) {
-  const el = form.querySelector(`[name="${name}"]`);
-  return el ? el.checked : false;
-}
-
-function openInlineProductEditor(item, row) {
-  if (!row) return;
-
-  document.querySelectorAll('.inline-product-editor-slot').forEach(slot => {
-    slot.innerHTML = '';
-  });
-
-  row.classList.add('admin-product-row-editing');
-  const slot = row.querySelector('[data-editor-slot]');
-  if (!slot) return;
-
-  const categoryOptions = buildCategoryOptions(allCatsCache);
-  const currentCategory = item.category || item.group || '';
-  const currentTag = item.tag || 'hot';
-  const currentHomeSection = item.homeSection || item.tag || 'hot';
-  const oldPrice = item.oldPrice || item.priceOld || item.compareAtPrice || item.priceBefore || '';
-  const discount = item.discount || item.discountPercent || item.discount_percent || item.salePercent || '';
-
-  slot.innerHTML = `
-    <form class="inline-product-editor">
-      <div class="inline-editor-head">
-        <div>
-          <b>Редактирование товара</b>
-          <span>${item.title || 'Без названия'}</span>
-        </div>
-        <button type="button" class="inline-editor-close">Закрыть</button>
-      </div>
-
-      <div class="inline-editor-grid">
-        <label class="field field-wide">Название<input name="title" required value="${String(item.title || '').replace(/"/g, '&quot;')}"></label>
-        <label class="field field-wide">Группа<input name="group" value="${String(item.group || item.category || '').replace(/"/g, '&quot;')}"></label>
-
-        <label class="field field-four">Цена<input name="price" type="number" required value="${Number(item.price || 0)}"></label>
-        <label class="field field-four">Скидка, %<input name="discount" type="number" value="${discount}"></label>
-        <label class="field field-four">Старая цена<input name="oldPrice" type="number" value="${oldPrice}"></label>
-        <label class="field field-four">Наличие, шт.<input name="stock" type="number" value="${item.stock ?? item.quantity ?? item.count ?? ''}"></label>
-
-        <label class="field">Категория<select name="category"><option value="">Выберите категорию</option>${categoryOptions}</select></label>
-        <label class="field">Блок на главной<select name="homeSection"><option value="hot">Горячие предложения</option><option value="new">Новинки</option><option value="bestsellers">Лидеры продаж</option></select></label>
-        <label class="field">Метка товара<select name="tag"><option value="hot">Горячие предложения</option><option value="new">Новинки</option><option value="best">Лидеры продаж</option></select></label>
-
-        <div class="checks-row inline-checks">
-          <label class="field check-field"><span>Показывать на главной</span><input name="showOnHome" type="checkbox" ${item.showOnHome === true ? 'checked' : ''}></label>
-          <label class="field check-field"><span>Доступно в рассрочку</span><input name="installment" type="checkbox" ${(item.installment || item.installmentAvailable) ? 'checked' : ''}></label>
-        </div>
-
-        <label class="field field-full">Фото URL<input name="image" value="${String(item.image || '').replace(/"/g, '&quot;')}"></label>
-        <label class="field field-full">Загрузить фото<input name="file" type="file" accept="image/*"></label>
-        <div class="upload-box inline-upload-status field-full"></div>
-        <label class="field field-full">Описание<textarea name="description">${String(item.description || '').replace(/</g, '&lt;')}</textarea></label>
-      </div>
-
-      <div class="inline-editor-actions">
-        <button class="primary" type="submit">Сохранить изменения</button>
-        <button class="edit" type="button" data-cancel-inline>Отмена</button>
-      </div>
-    </form>
-  `;
-
-  const form = slot.querySelector('form');
-  const catSelect = form.querySelector('[name="category"]');
-  const tagSelect = form.querySelector('[name="tag"]');
-  const homeSelect = form.querySelector('[name="homeSection"]');
-  if (catSelect) catSelect.value = currentCategory;
-  if (tagSelect) tagSelect.value = currentTag;
-  if (homeSelect) homeSelect.value = currentHomeSection;
-
-  slot.querySelector('.inline-editor-close').onclick = () => closeInlineProductEditor(row);
-  slot.querySelector('[data-cancel-inline]').onclick = () => closeInlineProductEditor(row);
-
-  form.onsubmit = async e => {
-    e.preventDefault();
-    await saveInlineProductEditor(item.id, form);
-  };
-}
-
-function closeInlineProductEditor(row) {
-  if (row) row.classList.remove('admin-product-row-editing');
-  document.querySelectorAll('.inline-product-editor-slot').forEach(slot => { slot.innerHTML = ''; });
-}
-
-async function saveInlineProductEditor(productId, form) {
-  try {
-    let imageUrl = inlineProductField(form, 'image');
-    const uploaded = await uploadImageFromElements(
-      form.querySelector('[name="file"]'),
-      'products',
-      form.querySelector('[name="image"]'),
-      form.querySelector('.inline-upload-status')
-    );
-    if (uploaded) imageUrl = uploaded;
-
-    const oldPriceRaw = inlineProductField(form, 'oldPrice');
-    const discountRaw = inlineProductField(form, 'discount');
-    const oldPriceValue = oldPriceRaw === '' ? 0 : Number(oldPriceRaw || 0);
-    const discountValue = discountRaw === '' ? 0 : Number(discountRaw || 0);
-
-    const data = {
-      title: inlineProductField(form, 'title'),
-      group: inlineProductField(form, 'group'),
-      price: Number(inlineProductField(form, 'price') || 0),
-      stock: Number(inlineProductField(form, 'stock') || 0),
-      oldPrice: oldPriceValue ? oldPriceValue : deleteField(),
-      priceOld: oldPriceValue ? oldPriceValue : deleteField(),
-      compareAtPrice: oldPriceValue ? oldPriceValue : deleteField(),
-      priceBefore: oldPriceValue ? oldPriceValue : deleteField(),
-      discount: discountValue ? discountValue : deleteField(),
-      discountPercent: discountValue ? discountValue : deleteField(),
-      discount_percent: discountValue ? discountValue : deleteField(),
-      salePercent: discountValue ? discountValue : deleteField(),
-      category: inlineProductField(form, 'category'),
-      image: imageUrl,
-      description: inlineProductField(form, 'description'),
-      tag: inlineProductField(form, 'tag') || 'hot',
-      homeSection: inlineProductField(form, 'homeSection') || inlineProductField(form, 'tag') || 'hot',
-      showOnHome: inlineProductChecked(form, 'showOnHome'),
-      installment: inlineProductChecked(form, 'installment'),
-      installmentAvailable: inlineProductChecked(form, 'installment'),
-      updatedAt: new Date().toISOString()
-    };
-
-    if (!data.title) return alert('Введите название товара');
-    if (!data.category) return alert('Выберите категорию');
-
-    await updateDoc(doc(db, COLLECTIONS.products, productId), data);
-    await markSiteDataChanged();
-    try { Object.keys(localStorage).forEach(k => { if (k.startsWith('as_cache_')) localStorage.removeItem(k); }); } catch(e) {}
-    await renderProducts();
-  } catch (err) {
-    console.error(err);
-    alert('Ошибка сохранения товара: ' + err.message);
-  }
 }
 
 if ($('#productForm')) {
