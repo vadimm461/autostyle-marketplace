@@ -11,15 +11,28 @@ function catId(c){ return String(c.id || c.externalId || '').trim(); }
 function catParent(c){ return String(c.parentId || c.parent || c.parentExternalId || '').trim(); }
 function sortCats(a,b){ return Number(a.order ?? 999) - Number(b.order ?? 999) || catName(a).localeCompare(catName(b), 'ru'); }
 function isServiceGroup(c){ return /^\s*\d+[.)-]?\s*/.test(catName(c)); }
+function normCatText(text){return String(text||'').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[\s_-]+/g,' ')}
+function isBlockedCatalogName(text){const n=normCatText(text);return n==='тмц'||n==='я мусорка'||n==='ямусорка'||n.includes('мусорка')}
+function isBlockedCategory(c){return isBlockedCatalogName(catName(c))}
+function showInTopCatalog(c){return c.showInTopCatalog!==false && c.hideFromTopCatalog!==true && !isBlockedCategory(c) && !isServiceGroup(c)}
 function childrenOf(parent){
   const ids = [catId(parent), String(parent.externalId || '').trim()].filter(Boolean);
-  return categories.filter(c => ids.includes(catParent(c))).sort(sortCats);
+  return categories.filter(c => ids.includes(catParent(c)) && !isBlockedCategory(c)).sort(sortCats);
 }
-function getParents(){
-  let parents = categories.filter(c => childrenOf(c).length > 0 && !isServiceGroup(c));
-  if (!parents.length) parents = categories.filter(c => !catParent(c) && !isServiceGroup(c));
-  if (!parents.length) parents = categories.filter(c => !catParent(c));
-  return parents.sort(sortCats);
+function getParents(forTopCatalog=false){
+  const allowed = c => forTopCatalog ? showInTopCatalog(c) : (!isBlockedCategory(c) && !isServiceGroup(c));
+  const byId = new Map();
+  categories.forEach(c => { [catId(c), String(c.externalId || '').trim()].filter(Boolean).forEach(id => byId.set(id, c)); });
+  const parentOf = c => byId.get(catParent(c));
+  const list = categories.filter(c => {
+    if (!allowed(c)) return false;
+    const p = parentOf(c);
+    if (!p) return !catParent(c) || childrenOf(c).length > 0;
+    if (isServiceGroup(p)) return true;
+    return childrenOf(c).length > 0;
+  });
+  const seen = new Set();
+  return list.filter(c => { const key = catId(c) || catName(c).toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; }).sort(sortCats);
 }
 function shortChildName(child, parent){
   let childName = catName(child);
@@ -27,6 +40,20 @@ function shortChildName(child, parent){
   const re = new RegExp('^' + parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+', 'i');
   childName = childName.replace(re, '').trim();
   return childName || catName(child);
+}
+function parentAllLabel(parent){
+  const raw = catName(parent).trim();
+  const lower = raw.toLocaleLowerCase('ru-RU');
+  const map = {
+    'инструмент':'инструменты',
+    'аккумулятор':'аккумуляторы',
+    'ароматизатор':'ароматизаторы',
+    'лампочка':'лампочки',
+    'колпак':'колпаки',
+    'коврик':'коврики',
+    'фильтр':'фильтры'
+  };
+  return 'Все ' + (map[lower] || lower);
 }
 function categoryNamesFor(value){
   if (!value) return [];
@@ -38,15 +65,12 @@ function categoryNamesFor(value){
 async function renderCatalogMenu(){
   const pb=$('#catalogParents'), cb=$('#catalogChildren'), tb=$('#megaTitle');
   if(!pb||!cb||!tb)return;
-  const parents=getParents();
+  const parents=getParents(true);
   function render(parent){
-    const list=childrenOf(parent);
+    const list=childrenOf(parent).filter(showInTopCatalog);
     tb.textContent=catName(parent);
-    if(!list.length){
-      cb.innerHTML=`<a href="catalog.html?category=${encodeURIComponent(catName(parent))}" class="mega-child"><div><b>Все товары</b><small>${catName(parent)}</small></div></a>`;
-      return;
-    }
-    cb.innerHTML=list.map(ch=>`<a href="catalog.html?category=${encodeURIComponent(catName(ch))}" class="mega-child"><div><b>${shortChildName(ch,parent)}</b><small>${catName(ch)}</small></div></a>`).join('');
+    const allItem = `<a href="catalog.html?category=${encodeURIComponent(catName(parent))}" class="mega-child mega-child-all"><div><b>${parentAllLabel(parent)}</b><small>Основная категория и все подкатегории</small></div></a>`;
+    cb.innerHTML = allItem + list.map(ch=>`<a href="catalog.html?category=${encodeURIComponent(catName(ch))}" class="mega-child"><div><b>${shortChildName(ch,parent)}</b><small>${catName(ch)}</small></div></a>`).join('');
   }
   pb.innerHTML=parents.length?parents.map((p,i)=>`<button class="mega-parent ${i?'':'active'}" type="button" data-parent="${catId(p)}">${catName(p)}</button>`).join(''):'<p class="muted">Категорий пока нет</p>';
   if(parents[0])render(parents[0]);
@@ -63,14 +87,14 @@ function renderCategoryFilter(){
     box.className='category-tree-filter';
     field.insertAdjacentElement('afterend', box);
   }
-  const parents=getParents();
+  const parents=getParents(false);
   let activeParent = parents.find(p => categoryNamesFor(cat?.value||'').includes(catName(p))) || parents.find(p => childrenOf(p).some(ch => catName(ch) === (cat?.value||''))) || parents[0];
   function drawChildren(parent){
     const list=childrenOf(parent);
     const cval=cat?.value||'';
     const right=box.querySelector('.cat-tree-children');
     if(!right) return;
-    right.innerHTML=`<button type="button" class="cat-tree-child ${cval===catName(parent)?'active':''}" data-cat="${catName(parent)}">Все ${catName(parent)}</button>`+
+    right.innerHTML=`<button type="button" class="cat-tree-child ${cval===catName(parent)?'active':''}" data-cat="${catName(parent)}">${parentAllLabel(parent)}</button>`+
       (list.length?list.map(ch=>`<button type="button" class="cat-tree-child ${cval===catName(ch)?'active':''}" data-cat="${catName(ch)}">${shortChildName(ch,parent)}</button>`).join(''):'<span class="muted">Подкатегорий нет</span>');
     right.querySelectorAll('[data-cat]').forEach(btn=>btn.onclick=()=>{cat.value=btn.dataset.cat; render(); renderCategoryFilter();});
   }
@@ -80,7 +104,7 @@ function renderCategoryFilter(){
   if(activeParent) drawChildren(activeParent);
 }
 function setupAuth(){const modal=$('#authModal');$('#openAuth')&&modal&&($('#openAuth').onclick=()=>modal.classList.add('open'));$('#closeAuth')&&modal&&($('#closeAuth').onclick=()=>modal.classList.remove('open'));$$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('#loginForm').style.display=t.dataset.tab==='login'?'block':'none';$('#registerForm').style.display=t.dataset.tab==='register'?'block':'none'});$('#loginForm')&&($('#loginForm').onsubmit=async e=>{e.preventDefault();await signInWithEmailAndPassword(auth,$('#loginEmail').value.trim(),$('#loginPass').value);modal.classList.remove('open')});$('#registerForm')&&($('#registerForm').onsubmit=async e=>{e.preventDefault();const res=await createUserWithEmailAndPassword(auth,$('#regEmail').value.trim(),$('#regPass').value);await setDoc(doc(db,COLLECTIONS.users,res.user.uid),{name:$('#regName').value.trim(),email:$('#regEmail').value.trim(),role:'user',createdAt:new Date().toISOString()});await sendEmailVerification(res.user);alert('Аккаунт создан. Проверьте почту.');modal.classList.remove('open')});onAuthStateChanged(auth,u=>{const ob=$('#openAuth'),dd=$('#accountDrop');if(u){ob&&(ob.style.display='none');dd&&(dd.style.display='block');$('#userEmail')&&($('#userEmail').textContent=u.email);$('#logout')&&($('#logout').onclick=()=>signOut(auth))}else{ob&&(ob.style.display='inline-block');dd&&(dd.style.display='none')}});$('#accountBtn')&&($('#accountBtn').onclick=()=>$('#accountDrop').classList.toggle('open'))}
-async function load(){items=await getCollection(COLLECTIONS.products);try{categories=await getCollection(COLLECTIONS.categories)}catch(e){}categories.sort((a,b)=>Number(a.order??999)-Number(b.order??999)||String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'ru'));const opts=new Map();categories.forEach(c=>opts.set((c.title||c.name||'').toLowerCase(),c.title||c.name));items.forEach(p=>{const g=group(p);if(g&&g!=='Без группы')opts.set(g.toLowerCase(),g)});cat&&(cat.innerHTML='<option value="">Все группы</option>'+[...opts.values()].map(x=>`<option value="${x}">${x}</option>`).join(''));await renderCatalogMenu();const params=new URLSearchParams(location.search);if(params.get('category'))cat.value=params.get('category');if(params.get('search')){search.value=params.get('search');topSearch&&(topSearch.value=params.get('search'))}renderCategoryFilter();updateCart();render()}
+async function load(){items=await getCollection(COLLECTIONS.products);try{categories=await getCollection(COLLECTIONS.categories)}catch(e){}categories=categories.filter(c=>!isBlockedCategory(c));categories.sort((a,b)=>Number(a.order??999)-Number(b.order??999)||String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'ru'));const opts=new Map();categories.forEach(c=>opts.set((c.title||c.name||'').toLowerCase(),c.title||c.name));items.forEach(p=>{const g=group(p);if(g&&g!=='Без группы'&&!isBlockedCatalogName(g))opts.set(g.toLowerCase(),g)});cat&&(cat.innerHTML='<option value="">Все группы</option>'+[...opts.values()].map(x=>`<option value="${x}">${x}</option>`).join(''));await renderCatalogMenu();const params=new URLSearchParams(location.search);if(params.get('category'))cat.value=params.get('category');if(params.get('search')){search.value=params.get('search');topSearch&&(topSearch.value=params.get('search'))}renderCategoryFilter();updateCart();render()}
 function card(p){const d=discount(p),op=oldPrice(p);return `<article class="catalog-card"><button class="fav-btn ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button><a class="catalog-card-link" href="product.html?id=${p.id}"><div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div><div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="catalog-card-stock">${stock(p)>0?'В наличии: '+stock(p):'Нет в наличии'}</div></div></a><button class="catalog-cart-btn" data-cart="${p.id}" type="button">В корзину</button></article>`}
 function render(){const q=(search?.value||'').toLowerCase(),c=cat?.value||'',pf=Number($('#priceFrom')?.value||0),pt=Number($('#priceTo')?.value||999999999);let list=items.filter(p=>{const text=`${title(p)} ${p.description||''} ${group(p)} ${p.code||''}`.toLowerCase();const pr=Number(p.price||0);if(c&&!categoryNamesFor(c).includes(group(p)))return false;if(q&&!text.includes(q))return false;if(pr<pf||pr>pt)return false;if(!showZero&&stock(p)<=0)return false;return true});if(sort?.value==='priceAsc')list.sort((a,b)=>Number(a.price||0)-Number(b.price||0));if(sort?.value==='priceDesc')list.sort((a,b)=>Number(b.price||0)-Number(a.price||0));if(sort?.value==='nameAsc')list.sort((a,b)=>title(a).localeCompare(title(b),'ru'));count&&(count.textContent=`${list.length} товаров`);$('#zeroNotice')&&($('#zeroNotice').textContent=showZero?'Показаны все товары':'Товары с нулевым остатком скрыты');grid.innerHTML=list.length?list.map(card).join(''):'<div class="notice">Товары не найдены.</div>';bind()}
 function bind(){$$('[data-cart]').forEach(b=>b.onclick=e=>{e.preventDefault();cart.push(b.dataset.cart);updateCart();b.textContent='Добавлено';setTimeout(()=>b.textContent='В корзину',900)});$$('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const id=b.dataset.fav;favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];b.classList.toggle('active',favs.includes(id));saveFav()})}

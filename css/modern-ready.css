@@ -87,3 +87,13 @@ header.topbar{
     grid-template-columns:1fr !important;
   }
 }
+
+/* Пункт "Все раздел" в меню каталога */
+.mega-child-all{
+  background:#05070d !important;
+  color:#fff !important;
+  border-color:#05070d !important;
+}
+.mega-child-all small{color:rgba(255,255,255,.72) !important;}
+.mega-child-all:hover{background:#21e51d !important;color:#061009 !important;border-color:#21e51d !important;}
+.mega-child-all:hover small{color:rgba(6,16,9,.72) !important;}

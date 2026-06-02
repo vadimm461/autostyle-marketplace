@@ -622,6 +622,15 @@ if ($('#importExcelBtn')) {
   };
 }
 
+function normalizeCategoryText(text) {
+  return String(text || '').trim().toLocaleLowerCase('ru-RU').replace(/ё/g, 'е').replace(/[\s_-]+/g, ' ');
+}
+
+function isBlockedCatalogCategory(title) {
+  const n = normalizeCategoryText(title);
+  return n === 'тмц' || n === 'я мусорка' || n === 'ямусорка' || n.includes('мусорка');
+}
+
 /* CATEGORIES */
 
 async function renderCats() {
@@ -693,7 +702,9 @@ function renderCategoryTree() {
       order: Number(cat.order ?? 999999),
       parentId: cat.parentId || '',
       parentTitle,
-      type: cat.parentId ? 'Подкатегория' : 'Основная категория'
+      type: cat.parentId ? 'Подкатегория' : 'Основная категория',
+      showInTopCatalog: cat.showInTopCatalog !== false,
+      blocked: isBlockedCatalogCategory(title)
     });
   });
 
@@ -746,6 +757,8 @@ function renderCategoryTree() {
             <span>${row.type}</span>
             ${row.parentTitle ? `<span>Родитель: ${row.parentTitle}</span>` : ''}
             ${row.order !== 999999 ? `<span>Порядок: ${row.order}</span>` : '<span>Порядок: как в товарах</span>'}
+            ${row.real ? `<span>${row.showInTopCatalog ? 'В верхнем каталоге' : 'Скрыта в верхнем каталоге'}</span>` : ''}
+            ${row.blocked ? '<span>Не попадает в каталоги</span>' : ''}
           </div>
         </div>
 
@@ -801,6 +814,7 @@ function renderCategoryTree() {
       setVal('#cOrder', item.order ?? '');
 
       if ($('#cParent')) $('#cParent').value = item.parentId || '';
+      if ($('#cShowTop')) $('#cShowTop').checked = item.showInTopCatalog !== false;
       $('#cTitle')?.focus();
     };
   });
@@ -816,6 +830,7 @@ if ($('#catForm')) {
         icon: val('#cIcon'),
         order: Number(val('#cOrder') || 0),
         parentId: val('#cParent'),
+        showInTopCatalog: $('#cShowTop') ? $('#cShowTop').checked : true,
         updatedAt: new Date().toISOString()
       };
 
@@ -848,6 +863,7 @@ if ($('#catReset')) {
   $('#catReset').onclick = () => {
     editing.cat = null;
     $('#catForm')?.reset();
+    if ($('#cShowTop')) $('#cShowTop').checked = true;
   };
 }
 

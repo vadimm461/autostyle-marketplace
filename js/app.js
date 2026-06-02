@@ -195,38 +195,65 @@ async function renderCatalogMenu(){
   const parentKey = c => String(c.parentId || c.parent || c.parentExternalId || '').trim();
   const sortCats = (a,b) => Number(a.order ?? 999) - Number(b.order ?? 999) || name(a).localeCompare(name(b), 'ru');
   const isServiceGroup = c => /^\s*\d+[.)-]?\s*/.test(name(c));
+  const normCatText = text => String(text || '').trim().toLocaleLowerCase('ru-RU').replace(/ё/g, 'е').replace(/[\s_-]+/g, ' ');
+  const isBlockedCatalogName = text => {
+    const n = normCatText(text);
+    return n === 'тмц' || n === 'я мусорка' || n === 'ямусорка' || n.includes('мусорка');
+  };
+  const isBlockedCategory = c => isBlockedCatalogName(name(c));
+  const showInTopCatalog = c => c.showInTopCatalog !== false && c.hideFromTopCatalog !== true && !isBlockedCategory(c) && !isServiceGroup(c);
 
-  cats = cats.filter(c => name(c).trim()).sort(sortCats);
+  cats = cats.filter(c => name(c).trim() && !isBlockedCategory(c)).sort(sortCats);
 
   function childrenOf(parent){
     const ids = [catId(parent), String(parent.externalId || '').trim()].filter(Boolean);
-    return cats.filter(c => ids.includes(parentKey(c))).sort(sortCats);
+    return cats.filter(c => ids.includes(parentKey(c)) && showInTopCatalog(c)).sort(sortCats);
   }
 
-  // Для главного окна каталога показываем не служебные группы «1. ПЕРВЫЙ / 2. ВТОРОЙ»,
-  // а реальные разделы магазина: АВТОХИМИЯ, АККУМУЛЯТОРЫ и т.д.
-  let parents = cats.filter(c => childrenOf(c).length > 0 && !isServiceGroup(c));
-
-  // Если в базе нет вложенности, показываем обычные основные категории.
-  if (!parents.length) parents = cats.filter(c => !parentKey(c) && !isServiceGroup(c));
-  if (!parents.length) parents = cats.filter(c => !parentKey(c));
+  // В верхнем каталоге показываем категории, разрешённые в админке.
+  // Служебные группы «1. ПЕРВЫЙ / 2. ВТОРОЙ» не показываем,
+  // а их дочерние реальные разделы считаем верхним уровнем.
+  // ТМЦ и Я мусорка всегда исключаются, даже после обновления Firestore.
+  const byId = new Map();
+  cats.forEach(c => { [catId(c), String(c.externalId || '').trim()].filter(Boolean).forEach(id => byId.set(id, c)); });
+  const parentOf = c => byId.get(parentKey(c));
+  let parents = cats.filter(c => {
+    if (!showInTopCatalog(c)) return false;
+    const p = parentOf(c);
+    if (!p) return !parentKey(c) || childrenOf(c).length > 0;
+    if (isServiceGroup(p)) return true;
+    return childrenOf(c).length > 0;
+  });
+  const seenParents = new Set();
+  parents = parents.filter(c => { const key = catId(c) || name(c).toLowerCase(); if (seenParents.has(key)) return false; seenParents.add(key); return true; }).sort(sortCats);
 
   function shortChildName(child, parent){
     let childName = name(child).trim();
     const parentName = name(parent).trim();
-    const re = new RegExp('^' + parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\s+', 'i');
+    const re = new RegExp('^' + parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+', 'i');
     childName = childName.replace(re, '').trim();
     return childName || name(child);
+  }
+  function parentAllLabel(parent){
+    const raw = name(parent).trim();
+    const lower = raw.toLocaleLowerCase('ru-RU');
+    const map = {
+      'инструмент':'инструменты',
+      'аккумулятор':'аккумуляторы',
+      'ароматизатор':'ароматизаторы',
+      'лампочка':'лампочки',
+      'колпак':'колпаки',
+      'коврик':'коврики',
+      'фильтр':'фильтры'
+    };
+    return 'Все ' + (map[lower] || lower);
   }
 
   function render(parent){
     const list = childrenOf(parent);
     tb.textContent = name(parent);
-    if (!list.length) {
-      cb.innerHTML = `<a href="catalog.html?category=${encodeURIComponent(name(parent))}" class="mega-child"><div><b>Все товары</b><small>${name(parent)}</small></div></a>`;
-      return;
-    }
-    cb.innerHTML = list.map(ch => `
+    const allItem = `<a href="catalog.html?category=${encodeURIComponent(name(parent))}" class="mega-child mega-child-all"><div><b>${parentAllLabel(parent)}</b><small>Основная категория и все подкатегории</small></div></a>`;
+    cb.innerHTML = allItem + list.map(ch => `
       <a href="catalog.html?category=${encodeURIComponent(name(ch))}" class="mega-child">
         <div><b>${shortChildName(ch, parent)}</b><small>${name(ch)}</small></div>
       </a>
