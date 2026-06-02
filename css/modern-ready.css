@@ -97,3 +97,5 @@ header.topbar{
 .mega-child-all small{color:rgba(255,255,255,.72) !important;}
 .mega-child-all:hover{background:#21e51d !important;color:#061009 !important;border-color:#21e51d !important;}
 .mega-child-all:hover small{color:rgba(6,16,9,.72) !important;}
+
+.section-dark .product-card{background:#fff!important;color:#111!important;border:1px solid #e5e7eb!important}

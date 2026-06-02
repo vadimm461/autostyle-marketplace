@@ -396,3 +396,5 @@ h1,.catalog-hero h1{
 @media (max-width:430px){
   .products,#catalogGrid,#productsGrid{gap:10px!important}.catalog-card-photo,.product-img{height:108px!important}.search button{display:none!important}.catalog-card-price,.price,.home-price{font-size:17px!important}.catalog-card h3,.product-title{font-size:13px!important}.catalog-cart-btn{font-size:12px!important}
 }
+
+.section-dark .product-card{background:#fff!important;color:#111!important;border:1px solid #e5e7eb!important}
