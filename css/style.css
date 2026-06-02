@@ -1422,3 +1422,14 @@ header.topbar{
 @media(max-width:1180px){.carousel-products .product-card{flex-basis:calc((100% - 54px)/4)!important}.product-section-carousel.expanded .carousel-products{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(max-width:920px){.carousel-products .product-card{flex-basis:calc((100% - 18px)/2)!important}.product-section-carousel.expanded .carousel-products{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:560px){.carousel-products .product-card{flex-basis:82%!important;min-width:240px!important}.product-section-carousel.expanded .carousel-products{grid-template-columns:1fr!important}.carousel-arrow{width:38px;height:38px;font-size:24px}.section-actions{gap:6px!important}.show-section-btn{padding:10px 12px!important}}
+
+
+/* CHATGPT FIX card equal heights and side arrows */
+.product-card{display:flex!important;flex-direction:column!important;}
+.product-badges{min-height:32px;display:flex;align-items:center;gap:6px;margin:8px 0;}
+.product-title{min-height:72px!important;}
+.product-price,.price{margin-top:auto;}
+.home-section,.products-section,.section-products{position:relative!important;}
+.section-arrow,.slider-arrow{position:absolute!important;top:50%!important;transform:translateY(-50%)!important;z-index:30!important;}
+.section-arrow.prev,.slider-arrow.prev{left:-24px!important;}
+.section-arrow.next,.slider-arrow.next{right:-24px!important;}
