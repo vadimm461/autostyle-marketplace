@@ -1067,8 +1067,12 @@ if ($('#promoCardsForm')) {
         editing.promoCard = null;
         editing.promoCardCollection = null;
       } else {
+        const docId = key;
         data.createdAt = new Date().toISOString();
-        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
+        await setDoc(doc(db, PROMO_CARDS_COLLECTION, docId), {
+          ...data,
+          id: docId
+        }, { merge: true });
       }
 
       e.target.reset();
@@ -1084,10 +1088,27 @@ if ($('#promoCardsForm')) {
 
 if ($('#pcReset')) {
   $('#pcReset').onclick = () => {
-    editing.promoCard = null;
-    editing.promoCardCollection = null;
-    $('#promoCardsForm')?.reset();
+    const form = $('#promoCardsForm');
+
+    // Если редактировали существующую карточку — кнопка переводит форму в режим создания новой.
+    if (editing.promoCard) {
+      editing.promoCard = null;
+      editing.promoCardCollection = null;
+      form?.reset();
+      if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+      $('#pcTitle')?.focus();
+      return;
+    }
+
+    // Если поля заполнены — создаём новую карточку этой же кнопкой.
+    if (val('#pcTitle')) {
+      form?.requestSubmit();
+      return;
+    }
+
+    form?.reset();
     if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+    $('#pcTitle')?.focus();
   };
 }
 
@@ -1182,13 +1203,32 @@ if ($('#homeBlockForm')) {
 
 if ($('#hbReset')) {
   $('#hbReset').onclick = () => {
-    editing.homeBlock = null;
-    editing.homeBlockKey = null;
-    editing.homeBlockBuiltin = false;
-    $('#homeBlockForm')?.reset();
+    const form = $('#homeBlockForm');
+
+    // Если редактировали существующий блок — кнопка переводит форму в режим создания нового.
+    if (editing.homeBlock) {
+      editing.homeBlock = null;
+      editing.homeBlockKey = null;
+      editing.homeBlockBuiltin = false;
+      form?.reset();
+      const keyInput = $('#hbKey');
+      if (keyInput) keyInput.readOnly = false;
+      if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+      $('#hbTitle')?.focus();
+      return;
+    }
+
+    // Если поля заполнены — создаём новый блок этой же кнопкой.
+    if (val('#hbTitle')) {
+      form?.requestSubmit();
+      return;
+    }
+
+    form?.reset();
     const keyInput = $('#hbKey');
     if (keyInput) keyInput.readOnly = false;
     if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+    $('#hbTitle')?.focus();
   };
 }
 
