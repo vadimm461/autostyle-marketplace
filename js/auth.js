@@ -1,4 +1,4 @@
-import { auth, db } from './firebase.js';
+import { auth, db, COLLECTIONS } from './firebase.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -31,7 +31,7 @@ registerForm?.addEventListener('submit', async e=>{
   try{
     setMsg('Создаём аккаунт...');
     const res = await createUserWithEmailAndPassword(auth,email,password);
-    await setDoc(doc(db,'users',res.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()});
+    await setDoc(doc(db, COLLECTIONS.users || 'autostyle_users', res.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()});
     await sendEmailVerification(res.user);
     await signOut(auth);
     setMsg('Мы отправили письмо подтверждения. Проверьте почту и папку Спам, потом войдите.');
@@ -58,7 +58,7 @@ onAuthStateChanged(auth, async user=>{
   if(!authBtn) return;
   if(user){
     let label = user.email;
-    try{ const s = await getDoc(doc(db,'users',user.uid)); if(s.exists() && s.data().name) label = s.data().name; }catch(e){}
+    try{ const s = await getDoc(doc(db, COLLECTIONS.users || 'autostyle_users', user.uid)); if(s.exists() && s.data().name) label = s.data().name; }catch(e){}
     if(userChip) userChip.textContent = label;
     authBtn.textContent = 'Выйти';
   }else{ if(userChip) userChip.textContent=''; authBtn.textContent='Войти'; }

@@ -1,18 +1,111 @@
-<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Кабинет — AutoStyle</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/modern-ready.css"><script type="module" src="js/app.js"></script><script type="module" src="js/auth.js"></script><link rel="stylesheet" href="css/page-loader.css"><link rel="stylesheet" href="css/profile-enhanced.css"></head><body><script src="js/page-loader.js"></script><header class="nav"><div class="container navin"><a class="logo" href="index.html"><span class="mark">AS</span><span>AUTO<span class="grad">STYLE</span></span></a><nav class="menu"><a href="index.html">Главная</a><a href="catalog.html">Каталог</a><a class="active" href="profile.html">Кабинет</a><a href="admin.html">Админка</a></nav><div class="actions"><button data-user data-logout class="btn primary hidden">Выйти</button></div></div></header>
-<main class="page"><div class="container">
-<div class="profile-page">
-<h1>Личный кабинет</h1>
-<div class="profile-card">
-<div class="profile-avatar">
-<img id="profilePreview" src="https://via.placeholder.com/140x140?text=AS">
-<input type="file" id="profilePhoto">
-</div>
-<div class="profile-actions">
-<button class="btn primary">Изменить профиль</button>
-<button class="btn">Изменить пароль</button>
-<button class="btn">Мои заказы</button>
-<button class="btn">Избранное</button>
-</div>
-</div>
-</div>
-</div></main></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Профиль — AutoStyle</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/modern-ready.css">
+  <link rel="stylesheet" href="css/shop-pages.css">
+  <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/page-loader.css">
+</head>
+<body>
+<script src="js/page-loader.js"></script>
+<header class="topbar dark-topbar">
+  <div class="bar">
+    <a class="logo" href="index.html"><div class="logo-mark">AS</div>AUTO<span>STYLE</span></a>
+    <a class="catalog-btn" href="catalog.html">☰ Каталог</a>
+    <form class="search"><input id="siteSearch" placeholder="Я ищу автотовары..."><button type="button" id="siteSearchBtn">Найти</button></form>
+    <a class="icon-btn active" href="profile.html">Аккаунт</a>
+    <a class="icon-btn" href="favorites.html">♡ Избранное</a>
+    <a class="icon-btn" href="cart.html">Корзина <b id="cartCount">0</b></a>
+  </div>
+</header>
+
+<main class="container profile-page">
+  <div class="profile-head">
+    <div>
+      <p class="profile-eyebrow">AUTO STYLE MARKET</p>
+      <h1>Личный кабинет</h1>
+      <p class="muted">Профиль, фото, пароль, заказы и избранное.</p>
+    </div>
+    <button id="profileLogout" class="profile-logout" type="button">Выйти</button>
+  </div>
+
+  <section id="profileGuest" class="profile-card profile-guest" hidden>
+    <h2>Войдите в аккаунт</h2>
+    <p class="muted">Профиль доступен только авторизованным пользователям.</p>
+    <a class="profile-primary-link" href="login.html">Войти</a>
+  </section>
+
+  <section id="profileApp" class="profile-layout" hidden>
+    <aside class="profile-sidebar">
+      <div class="avatar-box">
+        <div id="profileAvatar" class="profile-avatar">AS</div>
+        <h2 id="profileNameTitle">Пользователь</h2>
+        <p id="profileEmailTitle" class="muted"></p>
+        <label class="avatar-upload">
+          <input id="avatarInput" type="file" accept="image/*">
+          Добавить фото
+        </label>
+        <div id="avatarMsg" class="profile-msg"></div>
+      </div>
+      <nav class="profile-tabs" aria-label="Разделы профиля">
+        <button class="active" data-profile-tab="account" type="button">Изменить аккаунт</button>
+        <button data-profile-tab="password" type="button">Изменить пароль</button>
+        <button data-profile-tab="orders" type="button">Мои заказы</button>
+        <button data-profile-tab="favorites" type="button">Избранное</button>
+      </nav>
+    </aside>
+
+    <div class="profile-content">
+      <section class="profile-card profile-pane active" data-pane="account">
+        <div class="profile-card-head">
+          <div><h2>Данные аккаунта</h2><p class="muted">Имя, телефон, адрес и email сохраняются в Firebase.</p></div>
+        </div>
+        <form id="profileForm" class="profile-form">
+          <label>Имя<input id="profileName" autocomplete="name" placeholder="Ваше имя"></label>
+          <label>Email<input id="profileEmail" type="email" autocomplete="email" placeholder="email@example.com"></label>
+          <label>Телефон<input id="profilePhone" autocomplete="tel" placeholder="+7 ..."></label>
+          <label>Город<input id="profileCity" placeholder="Ваш город"></label>
+          <label class="profile-wide">Адрес<textarea id="profileAddress" rows="3" placeholder="Адрес доставки"></textarea></label>
+          <label class="profile-wide">Текущий пароль <small>нужен только если меняете email</small><input id="profileCurrentPassword" type="password" autocomplete="current-password" placeholder="Введите текущий пароль"></label>
+          <button class="profile-save" type="submit">Сохранить изменения</button>
+          <div id="profileMsg" class="profile-msg profile-wide"></div>
+        </form>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="password">
+        <div class="profile-card-head"><div><h2>Изменить пароль</h2><p class="muted">Для безопасности укажи текущий пароль.</p></div></div>
+        <form id="passwordForm" class="profile-form">
+          <label>Текущий пароль<input id="oldPassword" type="password" autocomplete="current-password" required></label>
+          <label>Новый пароль<input id="newPassword" type="password" autocomplete="new-password" minlength="6" required></label>
+          <label>Повторите пароль<input id="newPassword2" type="password" autocomplete="new-password" minlength="6" required></label>
+          <button class="profile-save" type="submit">Обновить пароль</button>
+          <div id="passwordMsg" class="profile-msg profile-wide"></div>
+        </form>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="orders">
+        <div class="profile-card-head"><div><h2>Мои заказы</h2><p class="muted">Здесь будут отображаться заказы из Firebase.</p></div></div>
+        <div id="ordersList" class="profile-list"><div class="profile-empty">Заказов пока нет.</div></div>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="favorites">
+        <div class="profile-card-head"><div><h2>Избранное</h2><p class="muted">Товары, которые ты добавил в избранное.</p></div><a class="profile-small-link" href="favorites.html">Открыть страницу</a></div>
+        <div id="profileFavorites" class="profile-favorites"><div class="profile-empty">Избранное пока пустое.</div></div>
+      </section>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-group"><h3>AutoStyle</h3><a href="contacts.html">Контакты</a><a href="about.html">Про нас</a><a href="contacts.html#addresses">Адреса</a></div>
+    <div class="footer-group"><h3>Выгода</h3><a href="installment.html">Рассрочка</a><a href="certificates.html">Подарочные сертификаты</a></div>
+  </div>
+</footer>
+<script type="module" src="js/profile.js"></script>
+</body>
+</html>
