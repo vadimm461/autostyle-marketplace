@@ -186,12 +186,64 @@ async function renderCatalogMenu(){
   let cats = await safeLoadCollection(COLLECTIONS.categories);
   const fromProducts = [...new Set(allProducts.map(p => group(p)).filter(Boolean))].map((name,i)=>({id:'g'+i,title:name,icon:'',order:1000+i}));
   if (!cats.length) cats = fromProducts;
-  cats.sort((a,b)=>Number(a.order??999)-Number(b.order??999)||String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'ru'));
-  const pb=$('#catalogParents'), cb=$('#catalogChildren'), tb=$('#megaTitle'); if(!pb||!cb||!tb)return;
-  const parents=cats.filter(c=>!c.parentId), children=cats.filter(c=>c.parentId); const name=c=>c.title||c.name||'Без названия';
-  function render(parent){ const list=children.filter(c=>c.parentId===parent.id||c.parentId===parent.externalId); tb.textContent=name(parent); cb.innerHTML=(list.length?list:[parent]).map(ch=>`<a href="catalog.html?category=${encodeURIComponent(name(ch))}" class="mega-child"><div><b>${list.length?name(ch):'Все товары группы'}</b><small>${name(ch)}</small></div></a>`).join(''); }
-  pb.innerHTML=parents.length?parents.map((p,i)=>`<button class="mega-parent ${i?'':'active'}" data-parent="${p.id}" type="button">${name(p)}</button>`).join(''):'<p class="muted">Категорий пока нет</p>';
-  if(parents[0]) render(parents[0]); $$('.mega-parent').forEach(btn=>btn.onmouseenter=btn.onclick=()=>{ $$('.mega-parent').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const p=parents.find(x=>x.id===btn.dataset.parent); if(p)render(p); });
+
+  const pb = $('#catalogParents'), cb = $('#catalogChildren'), tb = $('#megaTitle');
+  if (!pb || !cb || !tb) return;
+
+  const name = c => c.title || c.name || 'Без названия';
+  const catId = c => String(c.id || c.externalId || '').trim();
+  const parentKey = c => String(c.parentId || c.parent || c.parentExternalId || '').trim();
+  const sortCats = (a,b) => Number(a.order ?? 999) - Number(b.order ?? 999) || name(a).localeCompare(name(b), 'ru');
+  const isServiceGroup = c => /^\s*\d+[.)-]?\s*/.test(name(c));
+
+  cats = cats.filter(c => name(c).trim()).sort(sortCats);
+
+  function childrenOf(parent){
+    const ids = [catId(parent), String(parent.externalId || '').trim()].filter(Boolean);
+    return cats.filter(c => ids.includes(parentKey(c))).sort(sortCats);
+  }
+
+  // Для главного окна каталога показываем не служебные группы «1. ПЕРВЫЙ / 2. ВТОРОЙ»,
+  // а реальные разделы магазина: АВТОХИМИЯ, АККУМУЛЯТОРЫ и т.д.
+  let parents = cats.filter(c => childrenOf(c).length > 0 && !isServiceGroup(c));
+
+  // Если в базе нет вложенности, показываем обычные основные категории.
+  if (!parents.length) parents = cats.filter(c => !parentKey(c) && !isServiceGroup(c));
+  if (!parents.length) parents = cats.filter(c => !parentKey(c));
+
+  function shortChildName(child, parent){
+    let childName = name(child).trim();
+    const parentName = name(parent).trim();
+    const re = new RegExp('^' + parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\s+', 'i');
+    childName = childName.replace(re, '').trim();
+    return childName || name(child);
+  }
+
+  function render(parent){
+    const list = childrenOf(parent);
+    tb.textContent = name(parent);
+    if (!list.length) {
+      cb.innerHTML = `<a href="catalog.html?category=${encodeURIComponent(name(parent))}" class="mega-child"><div><b>Все товары</b><small>${name(parent)}</small></div></a>`;
+      return;
+    }
+    cb.innerHTML = list.map(ch => `
+      <a href="catalog.html?category=${encodeURIComponent(name(ch))}" class="mega-child">
+        <div><b>${shortChildName(ch, parent)}</b><small>${name(ch)}</small></div>
+      </a>
+    `).join('');
+  }
+
+  pb.innerHTML = parents.length
+    ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" type="button">${name(p)}</button>`).join('')
+    : '<p class="muted">Категорий пока нет</p>';
+
+  if (parents[0]) render(parents[0]);
+  $$('.mega-parent').forEach(btn => btn.onmouseenter = btn.onclick = () => {
+    $$('.mega-parent').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = parents.find(x => catId(x) === btn.dataset.parent);
+    if (p) render(p);
+  });
 }
 async function renderHome(){
   allProducts = await safeLoadCollection(COLLECTIONS.products);
