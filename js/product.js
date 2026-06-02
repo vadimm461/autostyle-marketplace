@@ -1,5 +1,5 @@
 import { db, COLLECTIONS } from './firebase.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const $ = s => document.querySelector(s);
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -20,6 +20,77 @@ function discount(p){
   const op = oldPrice(p), pr = Number(p.price || 0);
   return op > pr && pr > 0 ? Math.round((op - pr) / op * 100) : 0;
 }
+
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+function productHref(p){ return `product.html?id=${encodeURIComponent(p.id)}`; }
+function relatedCard(p){
+  const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p);
+  const favActive = favs.includes(p.id);
+  return `
+    <article class="related-card product-card" data-id="${escapeHtml(p.id)}">
+      <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
+      <a class="product-card-link" href="${productHref(p)}">
+        <div class="product-img related-img">
+          ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
+          ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(name)}">` : `<div class="photo-empty">Фото</div>`}
+        </div>
+        <div class="product-title">${escapeHtml(name)}</div>
+        <div class="product-group">${escapeHtml(group(p))}</div>
+        <div class="price-row-card">
+          <div class="price">${money(p.price)}</div>
+          ${op ? `<div class="old-price">${money(op)}</div>` : ''}
+        </div>
+        ${s > 0 ? `<div class="catalog-card-stock">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
+      </a>
+      <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''}>В корзину</button>
+    </article>`;
+}
+function setupRelatedActions(){
+  document.querySelectorAll('.related-cart').forEach(btn => {
+    btn.onclick = (e) => {
+      const card = e.currentTarget.closest('.related-card');
+      const id = card?.dataset.id;
+      if (!id) return;
+      cart.push(id); saveCart();
+      e.currentTarget.textContent = '✓ Добавлено';
+      setTimeout(() => e.currentTarget.textContent = 'В корзину', 1000);
+    };
+  });
+  document.querySelectorAll('.related-fav').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const card = e.currentTarget.closest('.related-card');
+      const id = card?.dataset.id;
+      if (!id) return;
+      favs = favs.includes(id) ? favs.filter(x => x !== id) : [...favs, id];
+      saveFav();
+      e.currentTarget.classList.toggle('active', favs.includes(id));
+      e.currentTarget.textContent = favs.includes(id) ? '♥' : '♡';
+    };
+  });
+}
+async function renderRelated(current){
+  const box = document.getElementById('relatedProducts');
+  if (!box) return;
+  try{
+    const snap = await getDocs(collection(db, COLLECTIONS.products));
+    const products = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    const currentGroup = group(current).toLowerCase().trim();
+    const currentParent = (current.parentCategory || current.parentGroup || current.categoryParent || '').toLowerCase().trim();
+    let related = products.filter(p => p.id !== current.id && group(p).toLowerCase().trim() === currentGroup);
+    if (related.length < 4 && currentParent){
+      const extra = products.filter(p => p.id !== current.id && !related.some(x => x.id === p.id) && String(p.parentCategory || p.parentGroup || p.categoryParent || '').toLowerCase().trim() === currentParent);
+      related = [...related, ...extra];
+    }
+    if (!related.length){ box.innerHTML = ''; return; }
+    related = related.slice(0, 8);
+    box.innerHTML = `<section class="related-section"><div class="section-head related-head"><h2>Похожие товары</h2><a href="catalog.html?category=${encodeURIComponent(group(current))}">Смотреть все</a></div><div class="related-grid products">${related.map(relatedCard).join('')}</div></section>`;
+    setupRelatedActions();
+  }catch(e){ box.innerHTML = ''; }
+}
+
 function saveCart(){
   localStorage.setItem('cart', JSON.stringify(cart));
   $('#cartCount') && ($('#cartCount').textContent = cart.length);
@@ -86,7 +157,8 @@ async function loadProduct(){
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
           ${d ? `<div class="spec"><span>Скидка</span><b>${d}%</b></div>` : ''}
         </section>
-      </div>`;
+      </div>
+      <div id="relatedProducts" class="product-related-wrap"></div>`;
     $('#addToCart') && ($('#addToCart').onclick = () => {
       if (s <= 0) return;
       cart.push(p.id); saveCart();
@@ -99,6 +171,7 @@ async function loadProduct(){
       $('#favProduct').classList.toggle('active', favs.includes(p.id));
       $('#favProduct').textContent = favs.includes(p.id) ? '♥ В избранном' : '♡ В избранное';
     });
+    renderRelated(p);
   } catch (err) {
     box.innerHTML = `<div class="product-message">Ошибка загрузки: ${err.message}</div>`;
   }
