@@ -45,15 +45,17 @@ async function getHomeBlocksConfig(){
     return DEFAULT_HOME_BLOCKS;
   }
 }
+function bool(v){return v===true||v==='true'||v===1||v==='1'||v==='yes'||v==='Да'||v==='да'}
 function productInBlock(p,key){
-  const hs=String(p.homeSection||p.homeBlock||'').toLowerCase();
-  const tag=String(p.tag||'').toLowerCase();
-  const k=String(key||'').toLowerCase();
+  const hs=String(p.homeSection||p.homeBlock||p.mainBlock||'').toLowerCase().trim();
+  const tag=String(p.tag||p.label||p.badge||'').toLowerCase().trim();
+  const k=String(key||'').toLowerCase().trim();
+  const onHome=bool(p.showOnHome)||bool(p.home)||bool(p.onHome)||bool(p.mainPage);
   if(k==='recentlyviewed') return false;
-  if(k==='new') return p.showOnHome===true&&(hs==='new'||tag==='new');
-  if(k==='bestsellers') return p.showOnHome===true&&(hs==='bestsellers'||hs==='best'||tag==='best'||tag==='bestseller');
-  if(k==='hot') return p.showOnHome===true&&(!hs||hs==='hot'||tag==='hot'||!tag);
-  return p.showOnHome===true&&hs===k;
+  if(k==='new') return hs==='new'||hs==='novinki'||tag==='new'||tag==='новинка'||bool(p.isNew)||onHome&&tag==='new';
+  if(k==='bestsellers') return hs==='bestsellers'||hs==='best'||hs==='leaders'||hs==='lideri'||tag==='best'||tag==='bestseller'||tag==='лидер'||tag==='хит'||bool(p.isBestseller)||bool(p.bestSeller);
+  if(k==='hot') return hs==='hot'||hs==='sale'||tag==='hot'||tag==='sale'||tag==='акция'||tag==='горячее'||onHome||(!hs&&!tag);
+  return hs===k || tag===k;
 }
 function ensureHomeSections(blocks){
   const main=document.querySelector('main.container');
@@ -102,7 +104,7 @@ async function renderHome(){
     if(b.key==='recentlyViewed'||b.special==='recentlyViewed'){
       await renderRecentlyViewed(products, gridId);
     }else{
-      renderGrid(gridId, products.filter(p=>productInBlock(p,b.key)), `В админке отметьте товары: показывать на главной + блок “${b.title}”.`);
+      { let list=products.filter(p=>productInBlock(p,b.key)); if((b.key==='hot'||b.key==='products'||b.key==='offers') && !list.length) list=products; renderGrid(gridId, list, `В админке отметьте товары: показывать на главной + блок “${b.title}”.`); }
     }
   }
   saveCart()
