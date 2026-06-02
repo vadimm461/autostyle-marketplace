@@ -141,12 +141,18 @@ async function loadProduct(){
   try {
     let productsCache = [];
     try { productsCache = await getProducts(); } catch(e) { productsCache = []; }
-    let p = productsCache.find(x => String(x.id) === String(id));
-    if (!p) {
+
+    // На странице товара берём сам товар напрямую из Firestore,
+    // чтобы правки цены/скидки не зависали из старого кэша.
+    let p = null;
+    try {
       const snap = await getDoc(doc(db, COLLECTIONS.products, id));
-      if (!snap.exists()) { box.innerHTML = '<div class="product-message">Товар удалён или не найден.</div>'; return; }
-      p = { id: snap.id, ...snap.data() };
+      if (snap.exists()) p = { id: snap.id, ...snap.data() };
+    } catch(e) {
+      console.warn('Не удалось загрузить товар напрямую, используем кэш', e);
     }
+    if (!p) p = productsCache.find(x => String(x.id) === String(id));
+    if (!p) { box.innerHTML = '<div class="product-message">Товар удалён или не найден.</div>'; return; }
     const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p), inst = isInstallment(p);
     saveViewed(p.id);
     document.title = `${name} — AutoStyle`;

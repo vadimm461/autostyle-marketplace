@@ -16,7 +16,8 @@ import {
   setDoc,
   query,
   where,
-  limit
+  limit,
+  deleteField
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 import {
@@ -484,13 +485,21 @@ if ($('#productForm')) {
       const uploaded = await uploadImage('#pFile', 'products', '#pImage', '#pUploadStatus');
       if (uploaded) imageUrl = uploaded;
 
+      const oldPriceRaw = val('#pOldPrice').trim();
+      const discountRaw = val('#pDiscount').trim();
+      const oldPriceValue = oldPriceRaw === '' ? 0 : Number(oldPriceRaw || 0);
+      const discountValue = discountRaw === '' ? 0 : Number(discountRaw || 0);
+
       const data = {
         title: val('#pTitle'),
         group: val('#pGroup'),
         price: Number(val('#pPrice') || 0),
         stock: Number(val('#pStock') || 0),
-        oldPrice: Number(val('#pOldPrice') || 0),
-        discount: Number(val('#pDiscount') || 0),
+        oldPrice: oldPriceValue,
+        priceOld: oldPriceValue ? oldPriceValue : deleteField(),
+        compareAtPrice: oldPriceValue ? oldPriceValue : deleteField(),
+        discount: discountValue,
+        discountPercent: discountValue ? discountValue : deleteField(),
         category: val('#pCategory'),
         image: imageUrl,
         description: val('#pDesc'),
@@ -509,8 +518,13 @@ if ($('#productForm')) {
         await updateDoc(doc(db, COLLECTIONS.products, editing.product), data);
         editing.product = null;
       } else {
-        data.createdAt = new Date().toISOString();
-        await addDoc(collection(db, COLLECTIONS.products), data);
+        const createData = { ...data, createdAt: new Date().toISOString() };
+        if (!oldPriceValue) {
+          delete createData.priceOld;
+          delete createData.compareAtPrice;
+        }
+        if (!discountValue) delete createData.discountPercent;
+        await addDoc(collection(db, COLLECTIONS.products), createData);
       }
 
       e.target.reset();
