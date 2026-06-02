@@ -6,6 +6,7 @@ import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/fireba
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const HOME_BLOCKS_COLLECTION = 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTION = 'autostyle_promo_cards';
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let allProducts = [];
@@ -30,6 +31,32 @@ function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#car
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 async function loadCollection(name){ const snap = await getDocs(collection(db, name)); return snap.docs.map(d => ({id:d.id, ...d.data()})); }
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
+
+
+function defaultPromoCards(){
+  return [
+    {id:'promo_actions', title:'Акции', text:'Лучшие предложения недели', count:'', link:'catalog.html?tag=hot', order:1, enabled:true},
+    {id:'promo_new', title:'Новинки', text:'Свежие товары для твоего авто', count:'', link:'catalog.html?tag=new', order:2, enabled:true},
+    {id:'promo_top', title:'Топ товары', text:'Популярный выбор покупателей', count:'', link:'catalog.html?tag=best', order:3, enabled:true}
+  ];
+}
+function promoCardsList(custom){
+  const arr = Array.isArray(custom) && custom.length ? custom : defaultPromoCards();
+  return [...arr]
+    .filter(x => x && x.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+}
+function renderPromoCard(card){
+  const href = card.link || '#';
+  const count = String(card.count ?? '').trim();
+  return `<a class="mini-banner promo-card" href="${href}">
+    <div>
+      <h3>${card.title || 'Блок'}</h3>
+      <p class="muted">${card.text || ''}</p>
+    </div>
+    ${count ? `<b class="promo-count">${count}</b>` : ''}
+  </a>`;
+}
 
 function defaultBlocks(){
   return [
@@ -130,7 +157,7 @@ async function renderHome(){
   allBlocks = mergeBlocks(customBlocks);
   let banners = await safeLoadCollection(COLLECTIONS.banners);
   const hero=$('#hero'); if(hero){ const b=banners[0]||{}; hero.innerHTML=`<div class="hero-content"><span class="hero-label">AUTO STYLE MARKET</span><h1>${b.title||'Автотовары для стиля, комфорта и защиты'}</h1><p>${b.text||'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p><div class="hero-actions"><a href="catalog.html" class="primary hero-btn">Смотреть каталог</a><a href="#homeBlock_bestsellers" class="hero-link">Лидеры продаж</a></div></div><div class="hero-visual"><div class="hero-car">AUTO</div></div>`; }
-  const bannersBox=$('#banners'); if(bannersBox){ const defs=[{title:'Акции',text:'Лучшие предложения недели'},{title:'Новинки',text:'Свежие товары для твоего авто'},{title:'Топ товары',text:'Популярный выбор покупателей'}]; const list=banners.slice(1,4).length?banners.slice(1,4):defs; bannersBox.innerHTML=list.map(b=>`<a class="mini-banner" href="${b.link||'#homeBlock_hot'}"><h3>${b.title}</h3><p class="muted">${b.text||''}</p></a>`).join(''); }
+  const bannersBox=$('#banners'); if(bannersBox){ const promoCards = promoCardsList(await safeLoadCollection(PROMO_CARDS_COLLECTION)); bannersBox.innerHTML = promoCards.map(renderPromoCard).join(''); }
   renderSections(); saveCart(); renderCatalogMenu();
 }
 function setupExpand(){

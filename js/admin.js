@@ -30,13 +30,15 @@ const $$ = s => document.querySelectorAll(s);
 let editing = {
   product: null,
   cat: null,
-  banner: null
+  banner: null,
+  promoCard: null
 };
 
 let allCatsCache = [];
 let allProductsCache = [];
 let allHomeBlocksCache = [];
 const HOME_BLOCKS_COLLECTION = 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTION = 'autostyle_promo_cards';
 
 function val(id) {
   const el = $(id);
@@ -198,6 +200,7 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
+  renderPromoCardsAdmin();
 });
 
 /* CATEGORY OPTIONS */
@@ -817,6 +820,106 @@ if ($('#bannerForm')) {
       console.error(err);
       alert('Ошибка сохранения баннера: ' + err.message);
     }
+  };
+}
+
+
+/* PROMO CARDS ON MAIN PAGE */
+function defaultPromoCardsAdmin() {
+  return [
+    { id: 'default-actions', title: 'Акции', text: 'Лучшие предложения недели', count: '', link: 'catalog.html?tag=hot', order: 1, enabled: true, system: true },
+    { id: 'default-new', title: 'Новинки', text: 'Свежие товары для твоего авто', count: '', link: 'catalog.html?tag=new', order: 2, enabled: true, system: true },
+    { id: 'default-top', title: 'Топ товары', text: 'Популярный выбор покупателей', count: '', link: 'catalog.html?tag=best', order: 3, enabled: true, system: true }
+  ];
+}
+
+async function renderPromoCardsAdmin() {
+  const list = $('#promoCardList');
+  if (!list) return;
+
+  try {
+    const saved = sortByOrder(await getCollection(PROMO_CARDS_COLLECTION));
+    const arr = saved.length ? saved : defaultPromoCardsAdmin();
+
+    list.innerHTML = arr.map(x => `
+      <div class="row">
+        <div>
+          <b>${x.title || 'Без названия'}</b>
+          <p class="muted">${x.text || ''}</p>
+          <p class="muted">Метка: ${x.count || 'не указана'} · ссылка: ${x.link || '#'} · порядок: ${Number(x.order ?? 999)}</p>
+        </div>
+        ${x.system ? '<span class="admin-badge">По умолчанию</span>' : `<button class="edit" data-editpromo="${x.id}">Редактировать</button><button class="danger" data-delpromo="${x.id}">Удалить</button>`}
+      </div>
+    `).join('');
+
+    $$('[data-delpromo]').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Удалить промо-блок?')) return;
+        await deleteDoc(doc(db, PROMO_CARDS_COLLECTION, btn.dataset.delpromo));
+        await renderPromoCardsAdmin();
+      };
+    });
+
+    $$('[data-editpromo]').forEach(btn => {
+      btn.onclick = () => {
+        const item = saved.find(x => x.id === btn.dataset.editpromo);
+        if (!item) return;
+        editing.promoCard = item.id;
+        setVal('#promoTitle', item.title || '');
+        setVal('#promoText', item.text || '');
+        setVal('#promoCount', item.count || '');
+        setVal('#promoLink', item.link || '');
+        setVal('#promoOrder', item.order ?? '');
+        if ($('#promoEnabled')) $('#promoEnabled').checked = item.enabled !== false;
+      };
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка загрузки промо-блоков: ' + err.message);
+  }
+}
+
+if ($('#promoCardForm')) {
+  $('#promoCardForm').onsubmit = async e => {
+    e.preventDefault();
+
+    try {
+      const data = {
+        title: val('#promoTitle'),
+        text: val('#promoText'),
+        count: val('#promoCount'),
+        link: val('#promoLink') || '#',
+        order: Number(val('#promoOrder') || 999),
+        enabled: $('#promoEnabled') ? $('#promoEnabled').checked : true,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (!data.title) return alert('Введите название промо-блока');
+
+      if (editing.promoCard) {
+        await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
+        editing.promoCard = null;
+      } else {
+        data.createdAt = new Date().toISOString();
+        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
+      }
+
+      e.target.reset();
+      if ($('#promoEnabled')) $('#promoEnabled').checked = true;
+      await renderPromoCardsAdmin();
+      alert('Промо-блок сохранён');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка сохранения промо-блока: ' + err.message);
+    }
+  };
+}
+
+if ($('#promoReset')) {
+  $('#promoReset').onclick = () => {
+    editing.promoCard = null;
+    $('#promoCardForm')?.reset();
+    if ($('#promoEnabled')) $('#promoEnabled').checked = true;
   };
 }
 

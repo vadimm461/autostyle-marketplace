@@ -219,6 +219,24 @@
         </form>
 
         <div id="bannerList" class="list"></div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:28px 0">
+
+        <h2>Промо-блоки главной</h2>
+        <p class="muted">Это отдельные карточки «Акции / Новинки / Топ товары». Они не связаны с товарными блоками ниже.</p>
+
+        <form id="promoCardForm" class="grid2">
+          <label class="field">Название карточки<input id="promoTitle" placeholder="Например: Акции" required></label>
+          <label class="field">Количество / метка<input id="promoCount" placeholder="Например: 120 товаров / -30% / 5 акций"></label>
+          <label class="field">Ссылка<input id="promoLink" placeholder="catalog.html?tag=hot"></label>
+          <label class="field">Порядковый номер<input id="promoOrder" type="number" placeholder="1"></label>
+          <label class="field check-field"><span>Включен</span><input id="promoEnabled" type="checkbox" checked></label>
+          <label class="field" style="grid-column:1/-1">Описание<textarea id="promoText" placeholder="Лучшие предложения недели"></textarea></label>
+          <button class="primary">Сохранить промо-блок</button>
+          <button id="promoReset" type="button" class="edit">Новый промо-блок</button>
+        </form>
+
+        <div id="promoCardList" class="list"></div>
       </div>
     </section>
 
