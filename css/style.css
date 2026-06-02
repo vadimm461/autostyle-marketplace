@@ -1678,3 +1678,153 @@ header.topbar{
     width:100% !important;
   }
 }
+
+/* ===== FIX: независимые колонки верхнего каталога ===== */
+.catalog-popup.mega-catalog,
+.catalog-popup.mega-catalog.active,
+.mega-catalog,
+.mega-catalog.active{
+  height: min(720px, calc(100vh - 120px)) !important;
+  min-height: 560px !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: 300px minmax(0,1fr) !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.catalog-popup.mega-catalog .mega-left,
+.mega-catalog .mega-left{
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 20px 16px 20px 20px !important;
+  background: #f3f5f7 !important;
+  border-right: 1px solid #e5eaf0 !important;
+}
+
+.catalog-popup.mega-catalog .mega-right,
+.mega-catalog .mega-right{
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 20px 24px !important;
+  background: #fff !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.catalog-popup.mega-catalog .mega-left h3,
+.catalog-popup.mega-catalog .mega-right h3,
+.mega-catalog .mega-left h3,
+.mega-catalog .mega-right h3{
+  flex: 0 0 auto !important;
+  margin: 0 0 14px !important;
+  line-height: 1.2 !important;
+}
+
+.catalog-popup.mega-catalog .mega-parent-list,
+.mega-catalog .mega-parent-list{
+  height: calc(100% - 42px) !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 4px !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 9px !important;
+  scrollbar-width: none !important;
+}
+
+.catalog-popup.mega-catalog .mega-child-grid,
+.mega-catalog .mega-child-grid{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 2px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(220px,1fr)) !important;
+  align-content: start !important;
+  gap: 12px !important;
+  scrollbar-width: none !important;
+}
+
+.catalog-popup.mega-catalog .mega-parent-list::-webkit-scrollbar,
+.catalog-popup.mega-catalog .mega-child-grid::-webkit-scrollbar,
+.mega-catalog .mega-parent-list::-webkit-scrollbar,
+.mega-catalog .mega-child-grid::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+.catalog-popup.mega-catalog .mega-parent,
+.mega-catalog .mega-parent{
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  background: #fff !important;
+  border: 1px solid transparent !important;
+  color: #111318 !important;
+  white-space: normal !important;
+  line-height: 1.15 !important;
+}
+
+.catalog-popup.mega-catalog .mega-parent.active,
+.catalog-popup.mega-catalog .mega-parent:hover,
+.mega-catalog .mega-parent.active,
+.mega-catalog .mega-parent:hover{
+  background: #21e51d !important;
+  border-color: #21e51d !important;
+  color: #061009 !important;
+}
+
+.catalog-popup.mega-catalog .mega-child,
+.mega-catalog .mega-child{
+  min-height: 66px !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  background: #f4f6f8 !important;
+  border: 1px solid #e5eaf0 !important;
+  color: #111318 !important;
+}
+
+.catalog-popup.mega-catalog .mega-child:hover,
+.mega-catalog .mega-child:hover{
+  background: #111318 !important;
+  border-color: #111318 !important;
+  color: #fff !important;
+}
+
+.catalog-popup.mega-catalog .mega-child small,
+.mega-catalog .mega-child small{
+  display: block !important;
+  margin-top: 3px !important;
+  color: #687386 !important;
+}
+
+.catalog-popup.mega-catalog .mega-child:hover small,
+.mega-catalog .mega-child:hover small{
+  color: rgba(255,255,255,.68) !important;
+}
+
+@media (max-width: 760px){
+  .catalog-popup.mega-catalog,
+  .mega-catalog{
+    height: calc(100vh - 98px) !important;
+    min-height: 0 !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 46% 54% !important;
+  }
+  .catalog-popup.mega-catalog .mega-left,
+  .mega-catalog .mega-left{
+    border-right: 0 !important;
+    border-bottom: 1px solid #e5eaf0 !important;
+  }
+  .catalog-popup.mega-catalog .mega-child-grid,
+  .mega-catalog .mega-child-grid{
+    grid-template-columns: 1fr !important;
+  }
+}
