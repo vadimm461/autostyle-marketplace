@@ -321,13 +321,9 @@ function renderAccountPanel(user){
     </div>
     <div class="account-status">● Вы авторизованы</div>
     <nav class="account-menu">
-      <a class="primary-account" href="profile.html">👤 Страница профиля</a>
-      <a href="profile.html#profile">✏️ Изменить аккаунт</a>
-      <a href="profile.html#password">🔒 Изменить пароль</a>
-      <a href="profile.html#photo">📷 Добавить фото</a>
+      <a class="primary-account" href="profile.html">👤 Редактировать профиль</a>
       <a href="favorites.html">♡ Избранное</a>
       <a href="cart.html">🛒 Корзина</a>
-      <a href="admin.html">⚙️ Админка</a>
       <button id="logout" class="account-logout" type="button">Выйти</button>
     </nav>`;
 }
