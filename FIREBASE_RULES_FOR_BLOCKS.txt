@@ -1,0 +1,23 @@
+ВАЖНО: если на сайте в консоли Chrome есть ошибка
+FirebaseError: Missing or insufficient permissions,
+то код сайта уже пытается сохранить данные, но Firestore запрещает создание/изменение документов.
+
+Открой Firebase Console → Firestore Database → Rules и добавь/проверь эти коллекции:
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /autostyle_products/{document=**} { allow read, write: if true; }
+    match /autostyle_categories/{document=**} { allow read, write: if true; }
+    match /autostyle_banners/{document=**} { allow read, write: if true; }
+    match /autostyle_settings/{document=**} { allow read, write: if true; }
+    match /autostyle_pages/{document=**} { allow read, write: if true; }
+    match /autostyle_media/{document=**} { allow read, write: if true; }
+
+    match /autostyle_home_blocks/{document=**} { allow read, write: if true; }
+    match /autostyle_promo_cards/{document=**} { allow read, write: if true; }
+  }
+}
+
+После публикации правил обнови admin.html через Ctrl+F5.

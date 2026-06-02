@@ -112,16 +112,8 @@ function mergedHomeBlocks(includeDisabled = false) {
 
 async function loadHomeBlocks() {
   try {
-    allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION));
-
-    // Чтобы системные блоки тоже нормально редактировались, создаём для них документы в Firestore,
-    // если их ещё нет. После этого порядок/название сохраняются как обычные данные.
-    const existingKeys = new Set(allHomeBlocksCache.map(b => b.key || b.slug || b.id).filter(Boolean));
-    for (const block of defaultHomeBlocks()) {
-      if (!existingKeys.has(block.key)) {
-        await setDoc(doc(db, HOME_BLOCKS_COLLECTION, block.key), { ...block, updatedAt: new Date().toISOString() }, { merge: true });
-      }
-    }
+    // Только читаем блоки. Не создаём системные документы автоматически,
+    // потому что при закрытых правилах Firestore это ломало страницу ошибкой permissions.
     allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION));
   }
   catch (e) { console.warn('home blocks load error', e); allHomeBlocksCache = []; }
