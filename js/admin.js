@@ -491,6 +491,10 @@ async function renderCats() {
 
   try {
     allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
+    // Важно: часть групп у тебя живет не в коллекции категорий,
+    // а прямо в товарах Firestore. Подтягиваем товары, чтобы админка
+    // показывала ВСЕ группы, которые реально есть на сайте.
+    allProductsCache = await getCollection(COLLECTIONS.products);
 
     const parents = allCatsCache.filter(c => !c.parentId);
 
@@ -533,6 +537,29 @@ function renderCategoryTree() {
   const parents = allCatsCache.filter(c => !c.parentId);
   const children = allCatsCache.filter(c => c.parentId);
 
+  const knownTitles = new Set(
+    allCatsCache
+      .map(c => normalizeCatTitle(c.title || c.name).toLowerCase())
+      .filter(Boolean)
+  );
+
+  // Группы, которые уже есть в товарах, но еще не заведены отдельной категорией.
+  // Именно из-за этого в каталоге они видны, а в админке раньше не отображались.
+  const productGroupsMap = new Map();
+  (allProductsCache || []).forEach(product => {
+    const title = normalizeCatTitle(product.category || product.group);
+    if (!title || title === 'Без категории') return;
+    const key = title.toLowerCase();
+    if (knownTitles.has(key)) return;
+
+    const current = productGroupsMap.get(key) || { title, count: 0 };
+    current.count += 1;
+    productGroupsMap.set(key, current);
+  });
+
+  const productGroups = [...productGroupsMap.values()]
+    .sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+
   function matches(cat) {
     return String(cat.title || '').toLowerCase().includes(queryText)
       || String(cat.icon || '').toLowerCase().includes(queryText)
@@ -564,7 +591,7 @@ function renderCategoryTree() {
       <div class="tree-parent">
         <div class="tree-row">
           <div>
-            <b>${parent.icon ? parent.icon + ' ' : ''}${parent.title || 'Без названия'}</b>
+            <b>${parent.title || 'Без названия'}</b>
             <small>Основная категория · порядок: ${Number(parent.order ?? 0)}</small>
           </div>
 
@@ -580,7 +607,7 @@ function renderCategoryTree() {
               ? visibleChildren.map(child => `
                 <div class="tree-row child">
                   <div>
-                    <b>${child.icon ? child.icon + ' ' : ''}${child.title || 'Без названия'}</b>
+                    <b>${child.title || 'Без названия'}</b>
                     <small>Подкатегория · порядок: ${Number(child.order ?? 0)}</small>
                   </div>
 
@@ -597,7 +624,60 @@ function renderCategoryTree() {
     `;
   });
 
+  const visibleProductGroups = productGroups.filter(group => {
+    if (parentFilter) return false;
+    if (queryText && !group.title.toLowerCase().includes(queryText)) return false;
+    return true;
+  });
+
+  if (visibleProductGroups.length) {
+    html += `
+      <div class="tree-parent product-groups-block">
+        <div class="tree-row product-groups-head">
+          <div>
+            <b>Группы из товаров</b>
+            <small>Эти группы уже есть в твоих товарах Firestore, но не были заведены как категории.</small>
+          </div>
+        </div>
+        <div class="tree-children">
+          ${visibleProductGroups.map(group => `
+            <div class="tree-row child product-group-row">
+              <div>
+                <b>${group.title}</b>
+                <small>Найдено товаров: ${group.count}</small>
+              </div>
+              <div class="tree-actions">
+                <button class="edit" data-create-cat-from-product="${encodeURIComponent(group.title)}">Добавить в категории</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   list.innerHTML = html || '<p class="muted">Ничего не найдено</p>';
+
+  $$('[data-create-cat-from-product]').forEach(btn => {
+    btn.onclick = async () => {
+      const title = decodeURIComponent(btn.dataset.createCatFromProduct || '');
+      if (!title) return;
+      if (!confirm(`Добавить группу «${title}» в категории?`)) return;
+
+      await addDoc(collection(db, COLLECTIONS.categories), {
+        title,
+        icon: '',
+        order: 999,
+        parentId: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      await renderCats();
+      await renderCategoryOptions();
+      alert('Группа добавлена в категории');
+    };
+  });
 
   $$('[data-delc]').forEach(btn => {
     btn.onclick = async () => {
