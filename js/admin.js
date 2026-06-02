@@ -33,8 +33,7 @@ let editing = {
   banner: null,
   homeBlock: null,
   promoCard: null,
-  homeBlockCollection: null,
-  promoCardCollection: null
+  homeBlockCollection: null
 };
 
 let allCatsCache = [];
@@ -47,7 +46,9 @@ const HOME_BLOCKS_COLLECTIONS = [...new Set([
   'autostyle_home_blocks',
   'autostyle_homeBlocks',
   'autostyle_homeSections',
+  'autostyle_home_sections',
   'homeBlocks',
+  'home_blocks',
   'homeSections'
 ].filter(Boolean))];
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
@@ -80,8 +81,7 @@ function sortByOrder(arr) {
 }
 
 function defaultHomeBlocks() {
-  // Системные блоки больше не создаются в коде.
-  // Главная и админка берут блоки только из Firestore.
+  // Системные блоки отключены: список берется только из Firestore.
   return [];
 }
 
@@ -96,25 +96,17 @@ function slugifyBlock(text) {
 
 function mergedHomeBlocks() {
   const map = new Map();
-
-  defaultHomeBlocks().forEach(b => map.set(b.key, b));
-
-  allHomeBlocksCache.forEach(b => {
+  (allHomeBlocksCache || []).forEach(b => {
     const key = String(b.key || b.slug || b.id || '').trim();
     if (!key) return;
-
-    const prev = map.get(key) || {};
-    map.set(key, {
-      ...prev,
+    map.set(key.toLowerCase(), {
       ...b,
       key,
-      title: b.title || b.name || prev.title || key,
-      order: Number(b.order ?? prev.order ?? 999),
-      enabled: b.enabled !== false,
-      builtin: false
+      title: b.title || b.name || key,
+      order: Number(b.order ?? 999),
+      enabled: b.enabled !== false
     });
   });
-
   return [...map.values()]
     .filter(b => b.enabled !== false)
     .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
@@ -122,7 +114,6 @@ function mergedHomeBlocks() {
 
 async function loadHomeBlocks() {
   const result = [];
-
   for (const colName of HOME_BLOCKS_COLLECTIONS) {
     try {
       const rows = await getCollection(colName);
@@ -131,10 +122,9 @@ async function loadHomeBlocks() {
       console.warn('home blocks load error', colName, e);
     }
   }
-
   const seen = new Set();
   allHomeBlocksCache = sortByOrder(result.filter(block => {
-    const key = String(block.key || block.slug || block.id || '').trim();
+    const key = String(block.key || block.slug || block.id || '').trim().toLowerCase();
     const uniq = key || `${block._collection}:${block.id}`;
     if (seen.has(uniq)) return false;
     seen.add(uniq);
@@ -405,7 +395,6 @@ async function renderProducts() {
 
     allProductsCache = await getCollection(COLLECTIONS.products);
     await renderCategoryOptions();
-    renderCategoryTree();
     renderProductList();
   } catch (err) {
     console.error(err);
@@ -653,7 +642,28 @@ async function renderCats() {
   if (!list) return;
 
   try {
-    allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
+    const catsFromFirestore = sortByOrder(await getCollection(COLLECTIONS.categories));
+    if (!allProductsCache.length) {
+      try { allProductsCache = await getCollection(COLLECTIONS.products); } catch (e) { allProductsCache = []; }
+    }
+    const catMap = new Map();
+    catsFromFirestore.forEach(c => catMap.set(String(c.title || c.name || '').trim().toLowerCase(), c));
+    (allProductsCache || []).forEach((p, i) => {
+      [p.category, p.group, p.categoryName].forEach(raw => {
+        const title = String(raw || '').trim();
+        if (!title || title === 'Без категории' || title === 'Без группы') return;
+        const key = title.toLowerCase();
+        if (!catMap.has(key)) {
+          catMap.set(key, {
+            id: `product-group-${i}-${key.replace(/[^a-zа-я0-9]+/gi,'-')}`,
+            title,
+            order: 999999 + i,
+            fromProduct: true
+          });
+        }
+      });
+    });
+    allCatsCache = sortByOrder([...catMap.values()]);
 
     const parents = allCatsCache.filter(c => !c.parentId);
 
@@ -732,8 +742,7 @@ function renderCategoryTree() {
           </div>
 
           <div class="tree-actions">
-            <button class="edit" data-editc="${parent.id}">Редактировать</button>
-            <button class="danger" data-delc="${parent.id}">Удалить</button>
+            ${parent.fromProduct ? '<span class="admin-badge">из товаров</span>' : `<button class="edit" data-editc="${parent.id}">Редактировать</button><button class="danger" data-delc="${parent.id}">Удалить</button>`}
           </div>
         </div>
 
@@ -748,8 +757,7 @@ function renderCategoryTree() {
                   </div>
 
                   <div class="tree-actions">
-                    <button class="edit" data-editc="${child.id}">Редактировать</button>
-                    <button class="danger" data-delc="${child.id}">Удалить</button>
+                    ${child.fromProduct ? '<span class="admin-badge">из товаров</span>' : `<button class="edit" data-editc="${child.id}">Редактировать</button><button class="danger" data-delc="${child.id}">Удалить</button>`}
                   </div>
                 </div>
               `).join('')
@@ -759,43 +767,6 @@ function renderCategoryTree() {
       </div>
     `;
   });
-
-  const existingNames = new Set(allCatsCache.map(c => normalizeCatTitle(c.title || c.name).toLowerCase()).filter(Boolean));
-  const virtualGroups = [...new Set((allProductsCache || []).flatMap(product => [product.group, product.category, product.categoryName]).map(normalizeCatTitle).filter(Boolean))]
-    .filter(title => !existingNames.has(title.toLowerCase()))
-    .filter(title => {
-      if (parentFilter && parentFilter !== 'root') return false;
-      if (parentFilter === 'root') return true;
-      if (!queryText) return true;
-      return title.toLowerCase().includes(queryText);
-    })
-    .sort((a, b) => a.localeCompare(b, 'ru'));
-
-  if (virtualGroups.length) {
-    html += `
-      <div class="tree-parent">
-        <div class="tree-row">
-          <div>
-            <b>Группы из товаров</b>
-            <small>Найдены в товарах Firestore. Их можно создать как категории одним нажатием.</small>
-          </div>
-        </div>
-        <div class="tree-children">
-          ${virtualGroups.map(title => `
-            <div class="tree-row child">
-              <div>
-                <b>${title}</b>
-                <small>Группа из товара</small>
-              </div>
-              <div class="tree-actions">
-                <button class="edit" data-createc="${title.replace(/"/g, '&quot;')}">Создать / редактировать</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
 
   list.innerHTML = html || '<p class="muted">Ничего не найдено</p>';
 
@@ -829,17 +800,6 @@ function renderCategoryTree() {
       setVal('#cOrder', item.order ?? '');
 
       if ($('#cParent')) $('#cParent').value = item.parentId || '';
-    };
-  });
-
-  $$('[data-createc]').forEach(btn => {
-    btn.onclick = () => {
-      editing.cat = null;
-      setVal('#cTitle', btn.dataset.createc || '');
-      setVal('#cIcon', '');
-      setVal('#cOrder', '999');
-      if ($('#cParent')) $('#cParent').value = '';
-      document.getElementById('catForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
   });
 }
@@ -1166,36 +1126,34 @@ if ($('#pcReset')) {
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');
   if (!list) return;
-
   await loadHomeBlocks();
   renderHomeSectionOptions();
-
   const blocks = mergedHomeBlocks();
 
   list.innerHTML = blocks.length ? blocks.map(b => `
-    <div class=\"row\">
+    <div class="row admin-homeblock-row">
       <div>
         <b>${b.title}</b>
-        <p class=\"muted\">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} ${b.enabled === false ? '· выключен' : ''}</p>
+        <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} · коллекция: ${b._collection || HOME_BLOCKS_COLLECTION}</p>
       </div>
-      <button class=\"edit\" data-edithb=\"${b.id}\" data-hbcol=\"${b._collection || HOME_BLOCKS_COLLECTION}\">Редактировать</button>
-      <button class=\"danger\" data-delhb=\"${b.id}\" data-hbcol=\"${b._collection || HOME_BLOCKS_COLLECTION}\">Удалить</button>
+      <button class="edit" data-edithb="${b.id}" data-hbcol="${b._collection || HOME_BLOCKS_COLLECTION}">Редактировать</button>
+      <button class="danger" data-delhb="${b.id}" data-hbcol="${b._collection || HOME_BLOCKS_COLLECTION}">Удалить</button>
     </div>
-  `).join('') : '<p class=\"muted\">Блоков пока нет. Создай первый блок выше.</p>';
+  `).join('') : '<p class="muted">Блоков пока нет. Создай первый блок выше.</p>';
 
   $$('[data-delhb]').forEach(btn => btn.onclick = async () => {
     if (!confirm('Удалить блок главной? Товары не удалятся.')) return;
     await deleteDoc(doc(db, btn.dataset.hbcol || HOME_BLOCKS_COLLECTION, btn.dataset.delhb));
     await renderHomeBlocksAdmin();
+    await renderProducts();
   });
 
   $$('[data-edithb]').forEach(btn => btn.onclick = () => {
-    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb && (x._collection || HOME_BLOCKS_COLLECTION) === (btn.dataset.hbcol || HOME_BLOCKS_COLLECTION));
+    const col = btn.dataset.hbcol || HOME_BLOCKS_COLLECTION;
+    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb && (x._collection || HOME_BLOCKS_COLLECTION) === col);
     if (!item) return;
-
     editing.homeBlock = item.id;
     editing.homeBlockCollection = item._collection || HOME_BLOCKS_COLLECTION;
-
     setVal('#hbTitle', item.title || item.name || '');
     setVal('#hbKey', item.key || item.slug || '');
     setVal('#hbOrder', item.order ?? '');

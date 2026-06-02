@@ -11,7 +11,9 @@ const HOME_BLOCKS_COLLECTIONS = [...new Set([
   'autostyle_home_blocks',
   'autostyle_homeBlocks',
   'autostyle_homeSections',
+  'autostyle_home_sections',
   'homeBlocks',
+  'home_blocks',
   'homeSections'
 ].filter(Boolean))];
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
@@ -49,7 +51,8 @@ async function loadCollection(name){ const snap = await getDocs(collection(db, n
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
 
 function defaultBlocks(){
-  // Все товарные блоки главной приходят из Firestore и редактируются в админке.
+  // Блоки главной больше не подставляются как системные.
+  // На главной выводятся только блоки, которые есть в Firestore.
   return [];
 }
 async function safeLoadCollections(names) {
@@ -70,21 +73,22 @@ async function safeLoadCollections(names) {
 
 function mergeBlocks(custom){
   const byKey = new Map();
-  defaultBlocks().forEach(b => byKey.set(b.key, b));
   (custom || []).forEach(b => {
-    const key = b.key || b.slug || b.id;
+    const key = String(b.key || b.slug || b.id || '').trim();
     if (!key) return;
-    byKey.set(key, {
-      id:b.id,
+    byKey.set(key.toLowerCase(), {
+      id: b.id,
+      _collection: b._collection,
       key,
-      title:b.title || b.name || key,
-      order:Number(b.order ?? 999),
-      enabled:b.enabled !== false,
-      builtin:false,
-      recent: normalizeKey(key) === 'recentlyviewed' || normalizeKey(key) === 'recent'
+      title: b.title || b.name || key,
+      order: Number(b.order ?? 999),
+      enabled: b.enabled !== false,
+      recent: key.toLowerCase() === 'recentlyviewed' || key.toLowerCase() === 'recent'
     });
   });
-  return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+  return [...byKey.values()]
+    .filter(b => b.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
 function productsForBlock(block){
   const key = normalizeKey(block.key);
