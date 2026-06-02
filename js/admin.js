@@ -13,6 +13,7 @@ import {
   doc,
   updateDoc,
   setDoc,
+  getDoc,
   query,
   where,
   limit
@@ -151,6 +152,7 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
+  loadHomeBlocksSettings();
 });
 
 /* CATEGORY OPTIONS */
@@ -287,6 +289,8 @@ function renderProductList() {
             <span class="admin-badge">Группа: ${x.group || x.category || 'Без группы'}</span>
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
+            <span class="admin-badge">Наличие: ${Number(x.stock ?? x.quantity ?? x.count ?? 0)} шт.</span>
+            ${(x.installment || x.installmentAvailable) ? `<span class="admin-badge admin-badge-home">Рассрочка</span>` : ''}
             ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
           </div>
@@ -318,6 +322,7 @@ function renderProductList() {
       setVal('#pTitle', item.title);
       setVal('#pGroup', item.group || item.category || '');
       setVal('#pPrice', item.price);
+      setVal('#pStock', item.stock ?? item.quantity ?? item.count ?? '');
       setVal('#pOldPrice', item.oldPrice || item.priceOld || '');
       setVal('#pDiscount', item.discount || item.discountPercent || '');
       setVal('#pCategory', item.category);
@@ -327,6 +332,7 @@ function renderProductList() {
       if ($('#pTag')) $('#pTag').value = item.tag || 'hot';
       if ($('#pHomeSection')) $('#pHomeSection').value = item.homeSection || item.tag || 'hot';
       if ($('#pShowHome')) $('#pShowHome').checked = item.showOnHome === true;
+      if ($('#pInstallment')) $('#pInstallment').checked = item.installment === true || item.installmentAvailable === true;
     };
   });
 }
@@ -344,6 +350,8 @@ if ($('#productForm')) {
         title: val('#pTitle'),
         group: val('#pGroup'),
         price: Number(val('#pPrice') || 0),
+        stock: Number(val('#pStock') || 0),
+        quantity: Number(val('#pStock') || 0),
         oldPrice: Number(val('#pOldPrice') || 0),
         discount: Number(val('#pDiscount') || 0),
         category: val('#pCategory'),
@@ -352,6 +360,8 @@ if ($('#productForm')) {
         tag: $('#pTag') ? $('#pTag').value : 'hot',
         homeSection: $('#pHomeSection') ? $('#pHomeSection').value : ($('#pTag') ? $('#pTag').value : 'hot'),
         showOnHome: $('#pShowHome') ? $('#pShowHome').checked : false,
+        installment: $('#pInstallment') ? $('#pInstallment').checked : false,
+        installmentAvailable: $('#pInstallment') ? $('#pInstallment').checked : false,
         updatedAt: new Date().toISOString()
       };
 
@@ -453,6 +463,8 @@ if ($('#importExcelBtn')) {
           description: '',
           tag,
           showOnHome: false,
+          installment: $('#importInstallment') ? $('#importInstallment').checked : false,
+          installmentAvailable: $('#importInstallment') ? $('#importInstallment').checked : false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
@@ -953,3 +965,42 @@ if ($('#settingsForm')) {
     el.addEventListener('change', renderProductList);
   }
 });
+
+/* HOME BLOCK ORDER SETTINGS */
+async function loadHomeBlocksSettings() {
+  try {
+    const form = $('#homeBlocksForm');
+    if (!form) return;
+
+    const snap = await getDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'));
+    const data = snap.exists() ? snap.data() : {};
+
+    setVal('#homeOrderBestsellers', data.bestsellers ?? 1);
+    setVal('#homeOrderNew', data.new ?? 2);
+    setVal('#homeOrderHot', data.hot ?? 3);
+    setVal('#homeOrderRecent', data.recentlyViewed ?? 5);
+  } catch (err) {
+    console.error('Ошибка загрузки порядка блоков:', err);
+  }
+}
+
+if ($('#homeBlocksForm')) {
+  $('#homeBlocksForm').onsubmit = async e => {
+    e.preventDefault();
+
+    try {
+      await setDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'), {
+        bestsellers: Number(val('#homeOrderBestsellers') || 1),
+        new: Number(val('#homeOrderNew') || 2),
+        hot: Number(val('#homeOrderHot') || 3),
+        recentlyViewed: Number(val('#homeOrderRecent') || 5),
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      alert('Порядок блоков сохранён');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка сохранения порядка блоков: ' + err.message);
+    }
+  };
+}

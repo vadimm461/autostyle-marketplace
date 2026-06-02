@@ -1416,3 +1416,16 @@ header.topbar{
 .products-grid {
   align-items: stretch !important;
 }
+
+
+/* ===== ADMIN + HOME ORDER + INSTALLMENT FIXES ===== */
+.container{display:flex;flex-direction:column;}
+.section-block{width:100%;}
+.installment-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin:6px 0 8px;padding:6px 10px;border-radius:999px;background:rgba(52,226,31,.14);color:#16830b;font-size:12px;font-weight:900;line-height:1;}
+.product-installment{margin-top:10px;font-size:14px;}
+.admin-product-meta .admin-badge{white-space:nowrap;}
+.check-field{display:flex !important;align-items:center;justify-content:space-between;gap:12px;min-height:70px;padding:14px 16px;border:1px solid var(--line);border-radius:18px;background:#fff;}
+.check-field input[type="checkbox"]{width:22px;height:22px;accent-color:var(--green);}
+.product-card,.catalog-card{display:flex !important;flex-direction:column !important;}
+.product-card-link,.catalog-card-link{display:flex !important;flex-direction:column !important;flex:1 1 auto !important;}
+.product-card .cart,.catalog-card .catalog-cart-btn,.catalog-cart-btn{margin-top:auto !important;}
