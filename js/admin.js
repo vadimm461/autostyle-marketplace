@@ -630,6 +630,11 @@ async function renderCats() {
 
   try {
     allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
+    try {
+      allProductsCache = await getCollection(COLLECTIONS.products);
+    } catch (e) {
+      allProductsCache = allProductsCache || [];
+    }
 
     const parents = allCatsCache.filter(c => !c.parentId);
 
@@ -669,74 +674,102 @@ function renderCategoryTree() {
   const queryText = val('#catSearch').toLowerCase();
   const parentFilter = val('#catParentFilter');
 
-  const parents = allCatsCache.filter(c => !c.parentId);
-  const children = allCatsCache.filter(c => c.parentId);
+  const cats = sortByOrder(allCatsCache || []);
+  const parentById = new Map(cats.filter(c => !c.parentId).map(c => [c.id, c]));
+  const realTitles = new Set(cats.map(c => normalizeCatTitle(c.title || c.name).toLowerCase()).filter(Boolean));
 
-  function matches(cat) {
-    return String(cat.title || '').toLowerCase().includes(queryText)
-      || String(cat.icon || '').toLowerCase().includes(queryText)
-      || String(cat.order || '').includes(queryText);
-  }
+  const rows = [];
 
-  let html = '';
+  cats.forEach(cat => {
+    const title = normalizeCatTitle(cat.title || cat.name) || 'Без названия';
+    const parent = cat.parentId ? parentById.get(cat.parentId) : null;
+    const parentTitle = parent ? normalizeCatTitle(parent.title || parent.name) : '';
 
-  parents.forEach(parent => {
-    const childList = children.filter(c => c.parentId === parent.id);
+    rows.push({
+      id: cat.id,
+      real: true,
+      title,
+      icon: cat.icon || '',
+      order: Number(cat.order ?? 999999),
+      parentId: cat.parentId || '',
+      parentTitle,
+      type: cat.parentId ? 'Подкатегория' : 'Основная категория'
+    });
+  });
 
-    const visibleChildren = childList.filter(child => {
-      if (queryText && !matches(child)) return false;
-      if (parentFilter && parentFilter !== 'root' && child.parentId !== parentFilter) return false;
+  // В каталоге выпадающий список собирается не только из коллекции категорий,
+  // но и из групп товаров. Поэтому здесь показываем такие же названия,
+  // чтобы админка совпадала с сайтом.
+  (allProductsCache || []).forEach(product => {
+    [product.group, product.category, product.categoryName].forEach(raw => {
+      const title = normalizeCatTitle(raw);
+      if (!title || title === 'Без группы' || title === 'Без категории') return;
+      if (realTitles.has(title.toLowerCase())) return;
+      if (rows.some(r => r.title.toLowerCase() === title.toLowerCase())) return;
+
+      rows.push({
+        id: '',
+        real: false,
+        title,
+        icon: '',
+        order: 999999,
+        parentId: '',
+        parentTitle: '',
+        type: 'Из товаров'
+      });
+    });
+  });
+
+  const filtered = rows
+    .filter(row => {
+      const text = `${row.title} ${row.parentTitle} ${row.type} ${row.order}`.toLowerCase();
+      if (queryText && !text.includes(queryText)) return false;
+      if (parentFilter === 'root' && row.parentId) return false;
+      if (parentFilter && parentFilter !== 'root' && row.parentId !== parentFilter) return false;
       return true;
+    })
+    .sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      if (a.parentTitle !== b.parentTitle) return a.parentTitle.localeCompare(b.parentTitle, 'ru');
+      return a.title.localeCompare(b.title, 'ru');
     });
 
-    const showParent =
-      (!queryText && !parentFilter) ||
-      (parentFilter === 'root') ||
-      (parentFilter === parent.id) ||
-      matches(parent) ||
-      visibleChildren.length;
-
-    if (!showParent) return;
-    if (parentFilter === 'root' && queryText && !matches(parent)) return;
-
-    html += `
-      <div class="tree-parent">
-        <div class="tree-row">
-          <div>
-            <b>${parent.icon ? parent.icon + ' ' : ''}${parent.title || 'Без названия'}</b>
-            <small>Основная категория · порядок: ${Number(parent.order ?? 0)}</small>
+  list.innerHTML = filtered.length
+    ? filtered.map(row => `
+      <div class="cat-flat-row ${row.parentId ? 'is-child' : ''} ${row.real ? '' : 'is-derived'}">
+        <div class="cat-flat-main">
+          <div class="cat-flat-title">
+            ${row.icon ? `<span class="cat-flat-icon">${row.icon}</span>` : ''}
+            <b>${row.title}</b>
           </div>
-
-          <div class="tree-actions">
-            <button class="edit" data-editc="${parent.id}">Редактировать</button>
-            <button class="danger" data-delc="${parent.id}">Удалить</button>
+          <div class="cat-flat-meta">
+            <span>${row.type}</span>
+            ${row.parentTitle ? `<span>Родитель: ${row.parentTitle}</span>` : ''}
+            ${row.order !== 999999 ? `<span>Порядок: ${row.order}</span>` : '<span>Порядок: как в товарах</span>'}
           </div>
         </div>
 
-        <div class="tree-children">
-          ${
-            visibleChildren.length
-              ? visibleChildren.map(child => `
-                <div class="tree-row child">
-                  <div>
-                    <b>${child.icon ? child.icon + ' ' : ''}${child.title || 'Без названия'}</b>
-                    <small>Подкатегория · порядок: ${Number(child.order ?? 0)}</small>
-                  </div>
-
-                  <div class="tree-actions">
-                    <button class="edit" data-editc="${child.id}">Редактировать</button>
-                    <button class="danger" data-delc="${child.id}">Удалить</button>
-                  </div>
-                </div>
-              `).join('')
-              : '<div class="tree-empty">Подкатегорий нет</div>'
+        <div class="tree-actions">
+          ${row.real
+            ? `<button class="edit" data-editc="${row.id}">Редактировать</button>
+               <button class="danger" data-delc="${row.id}">Удалить</button>`
+            : `<button class="edit" type="button" data-create-derived="${row.title}">Создать категорию</button>`
           }
         </div>
       </div>
-    `;
-  });
+    `).join('')
+    : '<p class="muted">Ничего не найдено</p>';
 
-  list.innerHTML = html || '<p class="muted">Ничего не найдено</p>';
+  $$('[data-create-derived]').forEach(btn => {
+    btn.onclick = () => {
+      editing.cat = null;
+      setVal('#cTitle', btn.dataset.createDerived || '');
+      setVal('#cIcon', '');
+      setVal('#cOrder', '');
+      if ($('#cParent')) $('#cParent').value = '';
+      $('#cTitle')?.focus();
+    };
+  });
 
   $$('[data-delc]').forEach(btn => {
     btn.onclick = async () => {
@@ -768,6 +801,7 @@ function renderCategoryTree() {
       setVal('#cOrder', item.order ?? '');
 
       if ($('#cParent')) $('#cParent').value = item.parentId || '';
+      $('#cTitle')?.focus();
     };
   });
 }
