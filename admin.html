@@ -6,7 +6,6 @@
   <title>Admin AutoStyle</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/modern-ready.css">
-  <link rel="stylesheet" href="css/admin-modern.css">
   <link rel="stylesheet" href="css/admin-extra.css">
   <link rel="stylesheet" href="css/admin-restored.css">
 </head>
@@ -21,7 +20,6 @@
 
     <nav class="admin-nav">
       <button class="active" data-section="dashboard">Главная</button>
-      <button data-section="content">Редактор сайта</button>
       <button data-section="products">Товары</button>
       <button data-section="categories">Категории</button>
       <button data-section="banners">Баннеры</button>
@@ -46,86 +44,6 @@
         <div class="admin-card"><h2>Импорт</h2><p class="muted">Загрузка товаров из Excel по коду и названию.</p></div>
         <div class="admin-card"><h2>Медиа</h2><p class="muted">Загрузка изображений в Firebase Storage.</p></div>
       </div>
-    </section>
-
-
-    <section id="content" class="admin-section">
-      <div class="admin-topline">
-        <div>
-          <h2>Редактор сайта</h2>
-          <p class="muted">Здесь редактируются тексты, названия блоков, кнопки, футер и видимые элементы главной страницы.</p>
-        </div>
-        <button id="loadContentDefaults" class="edit" type="button">Заполнить стандартно</button>
-      </div>
-
-      <form id="siteContentForm" class="admin-editor-grid">
-        <div class="admin-card editor-card">
-          <h3>Шапка сайта</h3>
-          <label class="field">Логотип / название<input id="ctLogoText" placeholder="AUTO STYLE"></label>
-          <label class="field">Кнопка каталога<input id="ctCatalogButton" placeholder="☰ Каталог"></label>
-          <label class="field">Подсказка поиска<input id="ctSearchPlaceholder" placeholder="Я ищу автотовары..."></label>
-          <label class="field">Кнопка поиска<input id="ctSearchButton" placeholder="Найти"></label>
-          <label class="field">Аккаунт<input id="ctAccountButton" placeholder="Аккаунт"></label>
-          <label class="field">Избранное<input id="ctFavoritesButton" placeholder="♡ Избранное"></label>
-          <label class="field">Корзина<input id="ctCartButton" placeholder="Корзина"></label>
-        </div>
-
-        <div class="admin-card editor-card">
-          <h3>Главный баннер</h3>
-          <label class="field">Метка<input id="ctHeroLabel" placeholder="AUTO STYLE MARKET"></label>
-          <label class="field">Заголовок<textarea id="ctHeroTitle" placeholder="Автотовары для стиля, комфорта и защиты"></textarea></label>
-          <label class="field">Описание<textarea id="ctHeroText" placeholder="Подбери аксессуары..."></textarea></label>
-          <label class="field">Главная кнопка<input id="ctHeroButton" placeholder="Смотреть каталог"></label>
-          <label class="field">Вторая кнопка<input id="ctHeroSecondButton" placeholder="Лидеры продаж"></label>
-          <label class="field">Текст справа / визуал<input id="ctHeroVisual" placeholder="AUTO"></label>
-        </div>
-
-        <div class="admin-card editor-card">
-          <h3>Промо-блок справа</h3>
-          <label class="field">Заголовок<input id="ctPromoTitle" placeholder="Промо"></label>
-          <label class="field">Текст<textarea id="ctPromoText" placeholder="Баннеры, тексты и товары управляются в админке."></textarea></label>
-        </div>
-
-        <div class="admin-card editor-card">
-          <h3>Заголовки товарных блоков</h3>
-          <label class="field">Новинки<input id="ctNewTitle" placeholder="Новинки"></label>
-          <label class="field">Недавно просмотренные<input id="ctRecentTitle" placeholder="Недавно просмотренные"></label>
-          <label class="field">Лидеры продаж<input id="ctLeadersTitle" placeholder="Лидеры продаж"></label>
-          <label class="field">Горячие предложения<input id="ctPopularTitle" placeholder="Горячие предложения"></label>
-          <label class="field">Кнопка “Смотреть все”<input id="ctSeeAll" placeholder="Смотреть все"></label>
-          <label class="field">Кнопка “Свернуть”<input id="ctCollapse" placeholder="Свернуть"></label>
-        </div>
-
-        <div class="admin-card editor-card">
-          <h3>Мини-баннеры по умолчанию</h3>
-          <label class="field">Баннер 1 заголовок<input id="ctMini1Title"></label>
-          <label class="field">Баннер 1 текст<input id="ctMini1Text"></label>
-          <label class="field">Баннер 2 заголовок<input id="ctMini2Title"></label>
-          <label class="field">Баннер 2 текст<input id="ctMini2Text"></label>
-          <label class="field">Баннер 3 заголовок<input id="ctMini3Title"></label>
-          <label class="field">Баннер 3 текст<input id="ctMini3Text"></label>
-        </div>
-
-        <div class="admin-card editor-card">
-          <h3>Футер</h3>
-          <label class="field">Бренд футера<input id="ctFooterBrand" placeholder="AutoStyle"></label>
-          <label class="field">Колонка 1<input id="ctFooterCol1" placeholder="Покупателям"></label>
-          <label class="field">Колонка 2<input id="ctFooterCol2" placeholder="Выгода"></label>
-          <label class="field">Копирайт<input id="ctFooterCopyright" placeholder="© 2025 AutoStyle"></label>
-        </div>
-
-        <div class="admin-card editor-card" style="grid-column:1/-1">
-          <h3>Настройки отображения товаров</h3>
-          <div class="grid2">
-            <label class="field">Текст пустого блока “Новинки”<input id="ctEmptyNew"></label>
-            <label class="field">Текст пустого блока “Лидеры”<input id="ctEmptyBestsellers"></label>
-            <label class="field">Текст пустого блока “Горячие”<input id="ctEmptyHot"></label>
-            <label class="field">Текст пустого блока “Недавно просмотренные”<input id="ctEmptyRecent"></label>
-          </div>
-          <button class="primary" type="submit">Сохранить весь контент сайта</button>
-          <div id="siteContentStatus" class="muted" style="margin-top:12px"></div>
-        </div>
-      </form>
     </section>
 
     <section id="products" class="admin-section">
