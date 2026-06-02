@@ -107,11 +107,9 @@ function renderHomeSectionOptions() {
 }
 
 function defaultPromoCards() {
-  return [
-    { id: 'sale', key: 'sale', title: 'Акции', text: 'Лучшие предложения недели', amount: '', link: '#homeBlock_hot', order: 1, enabled: true, builtin: true },
-    { id: 'new', key: 'new', title: 'Новинки', text: 'Свежие товары для твоего авто', amount: '', link: '#homeBlock_new', order: 2, enabled: true, builtin: true },
-    { id: 'top', key: 'top', title: 'Топ товары', text: 'Популярный выбор покупателей', amount: '', link: '#homeBlock_bestsellers', order: 3, enabled: true, builtin: true }
-  ];
+  // Старые системные промо-карточки убраны.
+  // В админке отображаются и редактируются только карточки из Firestore.
+  return [];
 }
 
 async function loadPromoCards() {

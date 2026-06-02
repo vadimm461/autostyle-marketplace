@@ -70,11 +70,9 @@ function productsForBlock(block){
 
 
 function defaultPromoCards(){
-  return [
-    {key:'sale', title:'Акции', text:'Лучшие предложения недели', amount:'', link:'#homeBlock_hot', order:1, enabled:true},
-    {key:'new', title:'Новинки', text:'Свежие товары для твоего авто', amount:'', link:'#homeBlock_new', order:2, enabled:true},
-    {key:'top', title:'Топ товары', text:'Популярный выбор покупателей', amount:'', link:'#homeBlock_bestsellers', order:3, enabled:true}
-  ];
+  // Старые промо-карточки на главной убраны.
+  // Теперь показываются только карточки, созданные в админке / Firestore.
+  return [];
 }
 function mergePromoCards(custom){
   const byKey = new Map();
