@@ -70,7 +70,8 @@ function mergeBlocks(custom){
   custom.forEach(b => {
     const key = b.key || b.slug || b.id;
     if (!key) return;
-    byKey.set(key, { id:b.id, key, title:b.title || b.name || key, order:Number(b.order ?? 999), enabled:b.enabled !== false, builtin:false });
+    const base = byKey.get(key) || {};
+    byKey.set(key, { ...base, id:b.id || base.id, key, title:b.title || b.name || base.title || key, order:Number(b.order ?? base.order ?? 999), enabled:b.enabled !== false, builtin:base.builtin === true });
   });
   return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }

@@ -93,7 +93,8 @@ function mergedHomeBlocks() {
   allHomeBlocksCache.forEach(b => {
     const key = b.key || b.slug || b.id;
     if (!key) return;
-    map.set(key, { ...b, key, title: b.title || b.name || key, order: Number(b.order ?? 999), enabled: b.enabled !== false });
+    const base = map.get(key) || {};
+    map.set(key, { ...base, ...b, key, title: b.title || b.name || base.title || key, order: Number(b.order ?? base.order ?? 999), enabled: b.enabled !== false });
   });
   return [...map.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
@@ -1087,23 +1088,33 @@ async function renderHomeBlocksAdmin() {
         <b>${b.title}</b>
         <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} ${b.builtin ? '· системный' : ''}</p>
       </div>
-      ${b.builtin ? '<span class="admin-badge">Системный</span>' : `<button class="edit" data-edithb="${b.id}">Редактировать</button><button class="danger" data-delhb="${b.id}">Удалить</button>`}
+      <div class="row-actions">
+        ${b.builtin ? '<span class="admin-badge">Системный</span>' : ''}
+        <button class="edit" data-edithb="${b.id || b.key}" data-hbkey="${b.key}">Редактировать</button>
+        ${b.builtin ? '' : `<button class="danger" data-delhb="${b.id}">Удалить</button>`}
+      </div>
     </div>
   `).join('');
   $$('[data-delhb]').forEach(btn => btn.onclick = async () => {
     if (!confirm('Удалить блок главной? Товары не удалятся.')) return;
     await deleteDoc(doc(db, HOME_BLOCKS_COLLECTION, btn.dataset.delhb));
     await renderHomeBlocksAdmin();
-renderPromoCardsAdmin();
+    renderPromoCardsAdmin();
   });
   $$('[data-edithb]').forEach(btn => btn.onclick = () => {
-    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb);
+    const key = btn.dataset.hbkey || btn.dataset.edithb;
+    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb || x.key === key || x.slug === key)
+      || defaultHomeBlocks().find(x => x.key === key || x.id === key);
     if (!item) return;
-    editing.homeBlock = item.id;
+    editing.homeBlock = item.id || item.key;
+    editing.homeBlockKey = item.key || item.slug || item.id;
+    editing.homeBlockBuiltin = item.builtin === true;
     setVal('#hbTitle', item.title || item.name || '');
-    setVal('#hbKey', item.key || item.slug || '');
+    setVal('#hbKey', item.key || item.slug || item.id || '');
     setVal('#hbOrder', item.order ?? '');
     if ($('#hbEnabled')) $('#hbEnabled').checked = item.enabled !== false;
+    const keyInput = $('#hbKey');
+    if (keyInput) keyInput.readOnly = item.builtin === true;
   });
 }
 
@@ -1121,13 +1132,21 @@ if ($('#homeBlockForm')) {
     };
     if (!data.title) return alert('Введите название блока');
     if (editing.homeBlock) {
-      await updateDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlock), data);
+      if (editing.homeBlockBuiltin) {
+        await setDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlockKey || key), { ...data, builtin: true }, { merge: true });
+      } else {
+        await updateDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlock), data);
+      }
       editing.homeBlock = null;
+      editing.homeBlockKey = null;
+      editing.homeBlockBuiltin = false;
     } else {
       data.createdAt = new Date().toISOString();
       await addDoc(collection(db, HOME_BLOCKS_COLLECTION), data);
     }
     e.target.reset();
+    const keyInput = $('#hbKey');
+    if (keyInput) keyInput.readOnly = false;
     if ($('#hbEnabled')) $('#hbEnabled').checked = true;
     await renderHomeBlocksAdmin();
 renderPromoCardsAdmin();
@@ -1138,7 +1157,11 @@ renderPromoCardsAdmin();
 if ($('#hbReset')) {
   $('#hbReset').onclick = () => {
     editing.homeBlock = null;
+    editing.homeBlockKey = null;
+    editing.homeBlockBuiltin = false;
     $('#homeBlockForm')?.reset();
+    const keyInput = $('#hbKey');
+    if (keyInput) keyInput.readOnly = false;
     if ($('#hbEnabled')) $('#hbEnabled').checked = true;
   };
 }
