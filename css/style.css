@@ -1852,3 +1852,67 @@ header.topbar{
 .catalog-installment-badge{margin:8px 0 2px!important;}
 .product-price-big{font-weight:950!important;}
 .product-price-box{display:flex;flex-direction:column;align-items:flex-start;}
+
+
+/* Product page final tidy */
+.product-page .back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:42px;
+  padding:0 16px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #e5eaf0;
+  color:#111827!important;
+  box-shadow:0 10px 28px rgba(16,18,23,.06);
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+.product-page .back-link:hover{
+  background:#34e21f;
+  border-color:#34e21f;
+  color:#071009!important;
+}
+.product-info-clean .product-meta-row .product-installment-pill{display:none!important;}
+.product-buy-card .product-installment-box{display:none!important;}
+.product-buy-card .product-price-row{
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:wrap;
+  gap:10px 12px;
+}
+.product-installment-inline{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(52,226,31,.13);
+  border:1px solid rgba(52,226,31,.25);
+  color:#16830b;
+  font-weight:950;
+  white-space:nowrap;
+}
+.product-installment-inline b{font-size:12px;}
+.product-installment-inline span{font-size:13px;font-weight:900;}
+.product-actions{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:10px!important;
+}
+.product-action-btn,.product-fav-btn{
+  width:100%!important;
+  height:52px!important;
+  min-height:52px!important;
+  padding:0 16px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  font-size:14px!important;
+}
+.product-info-panel .spec-installment{display:none!important;}
+@media(max-width:560px){
+  .product-actions{grid-template-columns:1fr!important;}
+  .product-installment-inline{width:100%;justify-content:center;}
+}
