@@ -485,15 +485,16 @@ if ($('#importExcelBtn')) {
 
 /* CATEGORIES */
 
+
 async function renderCats() {
   const list = $('#catList');
   if (!list) return;
 
   try {
     allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
-    // Важно: часть групп у тебя живет не в коллекции категорий,
-    // а прямо в товарах Firestore. Подтягиваем товары, чтобы админка
-    // показывала ВСЕ группы, которые реально есть на сайте.
+
+    // ВАЖНО: дополнительно читаем товары, потому что у тебя группы уже записаны
+    // внутри товаров в Firestore, а не все они созданы как документы categories.
     allProductsCache = await getCollection(COLLECTIONS.products);
 
     const parents = allCatsCache.filter(c => !c.parentId);
@@ -512,8 +513,9 @@ async function renderCats() {
     if (parentFilter) {
       const current = parentFilter.value;
       parentFilter.innerHTML = `
-        <option value="">Все категории</option>
-        <option value="root">Только основные</option>
+        <option value="">Все категории и группы</option>
+        <option value="root">Только основные категории</option>
+        <option value="productGroups">Группы из товаров</option>
         ${parents.map(c => `<option value="${c.id}">${c.title || 'Без названия'}</option>`).join('')}
       `;
       parentFilter.value = current;
@@ -527,6 +529,44 @@ async function renderCats() {
   }
 }
 
+function getProductGroupsFromProducts() {
+  const existing = new Set(
+    allCatsCache
+      .map(c => String(c.title || c.name || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const map = new Map();
+
+  (allProductsCache || []).forEach(product => {
+    const names = [product.group, product.category]
+      .map(v => String(v || '').trim())
+      .filter(Boolean);
+
+    names.forEach(name => {
+      if (!name || name === 'Без категории' || name === 'Без группы') return;
+
+      const key = name.toLowerCase();
+
+      if (!map.has(key)) {
+        map.set(key, {
+          id: `product-group-${key}`,
+          title: name,
+          icon: '',
+          order: 999999,
+          fromProducts: true,
+          productsCount: 0,
+          alreadyCategory: existing.has(key)
+        });
+      }
+
+      map.get(key).productsCount += 1;
+    });
+  });
+
+  return [...map.values()].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+}
+
 function renderCategoryTree() {
   const list = $('#catList');
   if (!list) return;
@@ -536,29 +576,7 @@ function renderCategoryTree() {
 
   const parents = allCatsCache.filter(c => !c.parentId);
   const children = allCatsCache.filter(c => c.parentId);
-
-  const knownTitles = new Set(
-    allCatsCache
-      .map(c => normalizeCatTitle(c.title || c.name).toLowerCase())
-      .filter(Boolean)
-  );
-
-  // Группы, которые уже есть в товарах, но еще не заведены отдельной категорией.
-  // Именно из-за этого в каталоге они видны, а в админке раньше не отображались.
-  const productGroupsMap = new Map();
-  (allProductsCache || []).forEach(product => {
-    const title = normalizeCatTitle(product.category || product.group);
-    if (!title || title === 'Без категории') return;
-    const key = title.toLowerCase();
-    if (knownTitles.has(key)) return;
-
-    const current = productGroupsMap.get(key) || { title, count: 0 };
-    current.count += 1;
-    productGroupsMap.set(key, current);
-  });
-
-  const productGroups = [...productGroupsMap.values()]
-    .sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+  const productGroups = getProductGroupsFromProducts();
 
   function matches(cat) {
     return String(cat.title || '').toLowerCase().includes(queryText)
@@ -568,113 +586,120 @@ function renderCategoryTree() {
 
   let html = '';
 
-  parents.forEach(parent => {
-    const childList = children.filter(c => c.parentId === parent.id);
+  if (parentFilter !== 'productGroups') {
+    parents.forEach(parent => {
+      const childList = children.filter(c => c.parentId === parent.id);
 
-    const visibleChildren = childList.filter(child => {
-      if (queryText && !matches(child)) return false;
-      if (parentFilter && parentFilter !== 'root' && child.parentId !== parentFilter) return false;
+      const visibleChildren = childList.filter(child => {
+        if (queryText && !matches(child)) return false;
+        if (parentFilter && parentFilter !== 'root' && child.parentId !== parentFilter) return false;
+        return true;
+      });
+
+      const showParent =
+        (!queryText && !parentFilter) ||
+        (parentFilter === 'root') ||
+        (parentFilter === parent.id) ||
+        matches(parent) ||
+        visibleChildren.length;
+
+      if (!showParent) return;
+      if (parentFilter === 'root' && queryText && !matches(parent)) return;
+
+      html += `
+        <div class="tree-parent">
+          <div class="tree-row">
+            <div>
+              <b>${parent.icon ? parent.icon + ' ' : ''}${parent.title || 'Без названия'}</b>
+              <small>Основная категория · порядок: ${Number(parent.order ?? 0)}</small>
+            </div>
+
+            <div class="tree-actions">
+              <button class="edit" data-editc="${parent.id}">Редактировать</button>
+              <button class="danger" data-delc="${parent.id}">Удалить</button>
+            </div>
+          </div>
+
+          <div class="tree-children">
+            ${
+              visibleChildren.length
+                ? visibleChildren.map(child => `
+                  <div class="tree-row child">
+                    <div>
+                      <b>${child.icon ? child.icon + ' ' : ''}${child.title || 'Без названия'}</b>
+                      <small>Подкатегория · порядок: ${Number(child.order ?? 0)}</small>
+                    </div>
+
+                    <div class="tree-actions">
+                      <button class="edit" data-editc="${child.id}">Редактировать</button>
+                      <button class="danger" data-delc="${child.id}">Удалить</button>
+                    </div>
+                  </div>
+                `).join('')
+                : '<div class="tree-empty">Подкатегорий нет</div>'
+            }
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // Группы, которые уже есть у товаров, но не отображались в админке как категории.
+  if (parentFilter !== 'root') {
+    const visibleGroups = productGroups.filter(group => {
+      if (parentFilter && parentFilter !== 'productGroups') return false;
+      if (queryText && !matches(group)) return false;
       return true;
     });
 
-    const showParent =
-      (!queryText && !parentFilter) ||
-      (parentFilter === 'root') ||
-      (parentFilter === parent.id) ||
-      matches(parent) ||
-      visibleChildren.length;
-
-    if (!showParent) return;
-    if (parentFilter === 'root' && queryText && !matches(parent)) return;
-
-    html += `
-      <div class="tree-parent">
-        <div class="tree-row">
-          <div>
-            <b>${parent.title || 'Без названия'}</b>
-            <small>Основная категория · порядок: ${Number(parent.order ?? 0)}</small>
-          </div>
-
-          <div class="tree-actions">
-            <button class="edit" data-editc="${parent.id}">Редактировать</button>
-            <button class="danger" data-delc="${parent.id}">Удалить</button>
-          </div>
-        </div>
-
-        <div class="tree-children">
-          ${
-            visibleChildren.length
-              ? visibleChildren.map(child => `
-                <div class="tree-row child">
-                  <div>
-                    <b>${child.title || 'Без названия'}</b>
-                    <small>Подкатегория · порядок: ${Number(child.order ?? 0)}</small>
-                  </div>
-
-                  <div class="tree-actions">
-                    <button class="edit" data-editc="${child.id}">Редактировать</button>
-                    <button class="danger" data-delc="${child.id}">Удалить</button>
-                  </div>
-                </div>
-              `).join('')
-              : '<div class="tree-empty">Подкатегорий нет</div>'
-          }
-        </div>
-      </div>
-    `;
-  });
-
-  const visibleProductGroups = productGroups.filter(group => {
-    if (parentFilter) return false;
-    if (queryText && !group.title.toLowerCase().includes(queryText)) return false;
-    return true;
-  });
-
-  if (visibleProductGroups.length) {
-    html += `
-      <div class="tree-parent product-groups-block">
-        <div class="tree-row product-groups-head">
-          <div>
-            <b>Группы из товаров</b>
-            <small>Эти группы уже есть в твоих товарах Firestore, но не были заведены как категории.</small>
-          </div>
-        </div>
-        <div class="tree-children">
-          ${visibleProductGroups.map(group => `
-            <div class="tree-row child product-group-row">
-              <div>
-                <b>${group.title}</b>
-                <small>Найдено товаров: ${group.count}</small>
-              </div>
-              <div class="tree-actions">
-                <button class="edit" data-create-cat-from-product="${encodeURIComponent(group.title)}">Добавить в категории</button>
-              </div>
+    if (visibleGroups.length) {
+      html += `
+        <div class="tree-parent product-groups-block">
+          <div class="tree-row product-groups-title">
+            <div>
+              <b>Группы из товаров Firestore</b>
+              <small>Эти группы уже стоят у твоих товаров. Если группы нет выше, нажми “Добавить в категории”.</small>
             </div>
-          `).join('')}
+          </div>
+
+          <div class="tree-children">
+            ${visibleGroups.map(group => `
+              <div class="tree-row child product-group-row">
+                <div>
+                  <b>${group.title}</b>
+                  <small>${group.productsCount} товар(ов) · ${group.alreadyCategory ? 'уже есть в категориях' : 'только в товарах'}</small>
+                </div>
+                <div class="tree-actions">
+                  ${group.alreadyCategory
+                    ? '<span class="admin-badge">Уже добавлена</span>'
+                    : `<button class="edit" data-createcatfromgroup="${encodeURIComponent(group.title)}">Добавить в категории</button>`
+                  }
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
   }
 
   list.innerHTML = html || '<p class="muted">Ничего не найдено</p>';
 
-  $$('[data-create-cat-from-product]').forEach(btn => {
+  $$('[data-createcatfromgroup]').forEach(btn => {
     btn.onclick = async () => {
-      const title = decodeURIComponent(btn.dataset.createCatFromProduct || '');
+      const title = decodeURIComponent(btn.dataset.createcatfromgroup || '');
       if (!title) return;
-      if (!confirm(`Добавить группу «${title}» в категории?`)) return;
 
       await addDoc(collection(db, COLLECTIONS.categories), {
         title,
         icon: '',
-        order: 999,
+        order: 999999,
         parentId: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
 
       await renderCats();
-      await renderCategoryOptions();
       alert('Группа добавлена в категории');
     };
   });
