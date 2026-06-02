@@ -27,5 +27,9 @@ service cloud.firestore {
     match /autostyle_promoCards/{document=**} { allow read, write: if true; }
     match /autostyle_home_sections/{document=**} { allow read, write: if true; }
     match /autostyle_home_settings/{document=**} { allow read, write: if true; }
+
+    match /autostyle_home_cards/{document=**} { allow read, write: if true; }
+    match /promoCards/{document=**} { allow read, write: if true; }
+    match /homeCards/{document=**} { allow read, write: if true; }
   }
 }

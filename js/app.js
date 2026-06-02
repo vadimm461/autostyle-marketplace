@@ -7,6 +7,14 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
+const PROMO_CARDS_COLLECTIONS = [...new Set([
+  PROMO_CARDS_COLLECTION,
+  'autostyle_promo_cards',
+  'autostyle_promoCards',
+  'autostyle_home_cards',
+  'promoCards',
+  'homeCards'
+].filter(Boolean))];
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let allProducts = [];
@@ -40,6 +48,22 @@ function defaultBlocks(){
     {id:'hot', key:'hot', title:'Горячие предложения', order:4, builtin:true}
   ];
 }
+async function safeLoadCollections(names) {
+  const all = [];
+  for (const name of names) {
+    const rows = await safeLoadCollection(name);
+    rows.forEach(row => all.push({ ...row, _collection: name }));
+  }
+  const seen = new Set();
+  return all.filter(card => {
+    const key = String(card.key || card.slug || card.id || '').trim();
+    const uniq = key || `${card._collection}:${card.id}`;
+    if (seen.has(uniq)) return false;
+    seen.add(uniq);
+    return true;
+  });
+}
+
 function mergeBlocks(custom){
   const byKey = new Map();
   defaultBlocks().forEach(b => byKey.set(b.key, b));
@@ -174,7 +198,7 @@ async function renderHome(){
   allBlocks = mergeBlocks(customBlocks);
   let banners = await safeLoadCollection(COLLECTIONS.banners);
   const hero=$('#hero'); if(hero){ const b=banners[0]||{}; hero.innerHTML=`<div class="hero-content"><span class="hero-label">AUTO STYLE MARKET</span><h1>${b.title||'Автотовары для стиля, комфорта и защиты'}</h1><p>${b.text||'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p><div class="hero-actions"><a href="catalog.html" class="primary hero-btn">Смотреть каталог</a><a href="#homeBlock_bestsellers" class="hero-link">Лидеры продаж</a></div></div><div class="hero-visual"><div class="hero-car">AUTO</div></div>`; }
-  const promoCards = mergePromoCards(await safeLoadCollection(PROMO_CARDS_COLLECTION));
+  const promoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
   renderPromoCards(promoCards);
   renderSections(); saveCart(); renderCatalogMenu();
 }
