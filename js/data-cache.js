@@ -30,9 +30,20 @@ async function getRemoteVersion(){
     return null;
   }
 }
+
+function normalizeProductRow(row){
+  const price = Number(row?.price || 0);
+  const old = Number(row?.oldPrice || row?.priceOld || row?.compareAtPrice || 0);
+  if (old && old <= price) {
+    return { ...row, oldPrice: 0, priceOld: 0, compareAtPrice: 0, discount: 0, discountPercent: 0 };
+  }
+  return row;
+}
+
 async function fetchCollection(name){
   const snap = await getDocs(collection(db, name));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return name === (COLLECTIONS.products || 'autostyle_products') ? rows.map(normalizeProductRow) : rows;
 }
 
 export async function bumpCacheVersion(reason='update'){

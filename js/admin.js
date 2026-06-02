@@ -447,6 +447,7 @@ function renderProductList() {
       if (!confirm('Удалить товар?')) return;
       await deleteDoc(doc(db, COLLECTIONS.products, btn.dataset.delp));
       await markSiteDataChanged();
+      try { Object.keys(localStorage).forEach(k => { if (k.startsWith('as_cache_')) localStorage.removeItem(k); }); } catch(e) {}
       await renderProducts();
     };
   });
@@ -462,8 +463,8 @@ function renderProductList() {
       setVal('#pGroup', item.group || item.category || '');
       setVal('#pPrice', item.price);
       setVal('#pStock', item.stock ?? item.quantity ?? item.count ?? '');
-      setVal('#pOldPrice', item.oldPrice || item.priceOld || '');
-      setVal('#pDiscount', item.discount || item.discountPercent || '');
+      setVal('#pOldPrice', item.oldPrice || item.priceOld || item.compareAtPrice || item.priceBefore || '');
+      setVal('#pDiscount', item.discount || item.discountPercent || item.discount_percent || item.salePercent || '');
       setVal('#pCategory', item.category);
       setVal('#pImage', item.image);
       setVal('#pDesc', item.description);
@@ -495,11 +496,14 @@ if ($('#productForm')) {
         group: val('#pGroup'),
         price: Number(val('#pPrice') || 0),
         stock: Number(val('#pStock') || 0),
-        oldPrice: oldPriceValue,
+        oldPrice: oldPriceValue ? oldPriceValue : deleteField(),
         priceOld: oldPriceValue ? oldPriceValue : deleteField(),
         compareAtPrice: oldPriceValue ? oldPriceValue : deleteField(),
-        discount: discountValue,
+        priceBefore: oldPriceValue ? oldPriceValue : deleteField(),
+        discount: discountValue ? discountValue : deleteField(),
         discountPercent: discountValue ? discountValue : deleteField(),
+        discount_percent: discountValue ? discountValue : deleteField(),
+        salePercent: discountValue ? discountValue : deleteField(),
         category: val('#pCategory'),
         image: imageUrl,
         description: val('#pDesc'),
@@ -531,6 +535,7 @@ if ($('#productForm')) {
       setVal('#pImage', '');
       if ($('#pUploadStatus')) $('#pUploadStatus').innerHTML = '';
       await markSiteDataChanged();
+      try { Object.keys(localStorage).forEach(k => { if (k.startsWith('as_cache_')) localStorage.removeItem(k); }); } catch(e) {}
       await renderProducts();
       alert('Товар сохранён');
     } catch (err) {
@@ -627,6 +632,7 @@ if ($('#importExcelBtn')) {
       }
 
       if (imported > 0) await markSiteDataChanged();
+      try { Object.keys(localStorage).forEach(k => { if (k.startsWith('as_cache_')) localStorage.removeItem(k); }); } catch(e) {}
       await renderProducts();
 
       if (status) {

@@ -17,7 +17,8 @@ const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? 0);
 const title = p => p.title || p.name || 'Товар';
 const image = p => p.image || p.imageUrl || p.photo || '';
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
-const oldPrice = p => Number(p.oldPrice || p.priceOld || p.compareAtPrice || 0);
+const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.compareAtPrice || 0);
+const oldPrice = p => { const op = rawOldPrice(p), pr = Number(p.price || 0); return op > pr ? op : 0; };
 function discount(p){ const d=Number(p.discount||p.discountPercent||0); if(d>0)return d; const op=oldPrice(p), pr=Number(p.price||0); return op>pr&&pr>0?Math.round((op-pr)/op*100):0; }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function updateCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#cartCount') && ($('#cartCount').textContent = cart.length); }

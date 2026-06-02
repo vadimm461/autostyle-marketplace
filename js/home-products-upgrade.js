@@ -9,7 +9,8 @@ let products = [];
 function stock(p){ return Number(p.stock ?? p.quantity ?? p.count ?? 0); }
 function title(p){ return p.title || p.name || 'Товар'; }
 function image(p){ return p.image || p.imageUrl || p.photo || ''; }
-function oldPrice(p){ return Number(p.oldPrice || p.priceBefore || p.compareAtPrice || 0); }
+function rawOldPrice(p){ return Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0); }
+function oldPrice(p){ const op=rawOldPrice(p), price=Number(p.price||0); return op>price?op:0; }
 
 function discountPercent(p){
   const manual = Number(p.discountPercent || p.discount || 0);
