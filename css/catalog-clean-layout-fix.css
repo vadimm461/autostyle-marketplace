@@ -1,0 +1,43 @@
+/* Catalog page clean layout: same product style as home + useful zero-stock button placement */
+.catalog-top{
+  min-height:72px;
+}
+.catalog-top h1{
+  margin:0;
+  font-size:32px;
+  line-height:1.1;
+}
+.catalog-top #zeroNotice{
+  box-shadow:none;
+  border:1px solid var(--line, #e5e7eb);
+  background:#fff;
+  white-space:nowrap;
+}
+.catalog-top #zeroNotice:hover{
+  background:var(--green, #34e21f);
+  color:#071009;
+}
+.catalog-filters #zeroNotice{
+  display:none!important;
+}
+.catalog-card{
+  min-height:100%;
+  display:flex;
+  flex-direction:column;
+}
+.catalog-card-link{
+  display:block;
+  flex:1;
+}
+.catalog-cart-btn{
+  margin-top:auto;
+}
+@media(max-width:700px){
+  .catalog-top{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .catalog-top #zeroNotice{
+    width:100%;
+  }
+}
