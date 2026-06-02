@@ -11,7 +11,9 @@ const title = p => p.title || p.name || 'Без названия';
 const image = p => p.image || p.imageUrl || p.photo || '';
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
 const oldPrice = p => Number(p.oldPrice || p.priceOld || p.compareAtPrice || 0);
-const isInstallment = p => p.installment === true || p.installmentAvailable === true || p.credit === true;
+const productPrice = p => Number(p.price || 0);
+const isInstallment = p => p.installment === true || p.installmentAvailable === true || p.credit === true || productPrice(p) >= 199;
+const installmentMonth = p => Math.ceil(productPrice(p) / 12);
 function discount(p){
   const d = Number(p.discount || p.discountPercent || 0);
   if (d > 0) return d;
@@ -61,7 +63,7 @@ async function loadProduct(){
       <div class="product-info-panel product-card-clean product-info-clean">
         <div class="breadcrumbs product-breadcrumbs"><a href="index.html">Главная</a> / <a href="catalog.html">Каталог</a> / <span>${group(p)}</span></div>
         <h1>${name}</h1>
-        <div class="product-meta-row"><span class="product-category-pill">${group(p)}</span>${d ? `<span class="product-discount-pill">Скидка ${d}%</span>` : ''}${inst ? `<span class="product-installment-pill">Доступно в рассрочку</span>` : ''}</div>
+        <div class="product-meta-row"><span class="product-category-pill">${group(p)}</span>${d ? `<span class="product-discount-pill">Скидка ${d}%</span>` : ''}${inst ? `<span class="product-installment-pill">Рассрочка от ${money(installmentMonth(p))}/мес</span>` : ''}</div>
         <div class="buy-card product-buy-card">
           <div class="product-price-box">
             <div class="price-row-card product-price-row">
@@ -69,6 +71,7 @@ async function loadProduct(){
               ${op ? `<div class="old-price product-old-price">${money(op)}</div>` : ''}
             </div>
             ${s > 0 ? `<div class="stock-ok product-stock-ok">В наличии: ${s}</div>` : `<div class="stock-zero product-stock-zero">Нет в наличии</div>`}
+            ${inst ? `<div class="product-installment-box"><b>Рассрочка доступна</b><span>от ${money(installmentMonth(p))} в мес. на 12 месяцев</span></div>` : ''}
           </div>
           <div class="product-actions">
             <button id="addToCart" class="buy-btn product-action-btn" ${s <= 0 ? 'disabled' : ''}>В корзину</button>
@@ -81,7 +84,7 @@ async function loadProduct(){
           <div class="spec"><span>Группа</span><b>${group(p)}</b></div>
           <div class="spec"><span>Остаток</span><b>${s}</b></div>
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
-          ${inst ? `<div class="spec"><span>Рассрочка</span><b>Доступна</b></div>` : ''}
+          ${inst ? `<div class="spec spec-installment"><span>Рассрочка</span><b>от ${money(installmentMonth(p))} в мес.</b></div>` : ''}
           ${d ? `<div class="spec"><span>Скидка</span><b>${d}%</b></div>` : ''}
         </section>
       </div>`;

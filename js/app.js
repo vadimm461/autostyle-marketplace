@@ -138,14 +138,16 @@ function renderPromoCards(cards){
 }
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
-  const installment = p.installment === true || p.installmentAvailable === true || p.credit === true;
+  const priceNum = Number(p.price || 0);
+  const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
+  const monthPay = Math.ceil(priceNum / 12);
   return `<article class="product-card">
     <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
     <a class="product-card-link" href="product.html?id=${p.id}">
       <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
       <div class="product-title">${title(p)}</div>
       <div class="product-group">${group(p)}</div>
-      <div class="product-badges">${installment ? '<span class="installment-badge">Доступно в рассрочку</span>' : ''}</div>
+      <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : ''}</div>
       <div class="product-spacer"></div>
       <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
     </a>
