@@ -323,3 +323,55 @@ body:has(.admin-layout){
   .admin-main > h1{font-size:32px!important;padding-right:0!important;}
   .admin-main > #logout{position:static!important;margin-bottom:18px!important;}
 }
+
+/* ===== ADMIN FINAL FIXES: sidebar full height, no site design changes ===== */
+body:has(.admin-layout){
+  min-height:100vh!important;
+}
+
+body:has(.admin-layout) .admin-layout{
+  display:block!important;
+  min-height:100vh!important;
+  background:var(--admin-bg)!important;
+}
+
+body:has(.admin-layout) .admin-side{
+  position:fixed!important;
+  top:0!important;
+  left:0!important;
+  bottom:0!important;
+  width:280px!important;
+  height:auto!important;
+  min-height:100vh!important;
+  overflow-y:auto!important;
+  background:linear-gradient(180deg,#05070d 0%,#0b1018 100%)!important;
+}
+
+body:has(.admin-layout) .admin-main{
+  margin-left:280px!important;
+  min-height:100vh!important;
+}
+
+.admin-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  width:max-content!important;
+  padding:5px 10px!important;
+  border-radius:999px!important;
+  background:#edf2f7!important;
+  color:#475467!important;
+  font-weight:900!important;
+  font-size:12px!important;
+}
+
+@media(max-width:980px){
+  body:has(.admin-layout) .admin-side{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+  body:has(.admin-layout) .admin-main{
+    margin-left:0!important;
+  }
+}

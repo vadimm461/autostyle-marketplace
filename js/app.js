@@ -41,12 +41,8 @@ async function loadCollection(name){ const snap = await getDocs(collection(db, n
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
 
 function defaultBlocks(){
-  return [
-    {id:'new', key:'new', title:'Новинки', order:1, builtin:true},
-    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:2, builtin:true, recent:true},
-    {id:'bestsellers', key:'bestsellers', title:'Лидеры продаж', order:3, builtin:true},
-    {id:'hot', key:'hot', title:'Горячие предложения', order:4, builtin:true}
-  ];
+  // Системные товарные блоки отключены. Главная выводит только блоки, созданные в админке / Firestore.
+  return [];
 }
 async function safeLoadCollections(names) {
   const all = [];

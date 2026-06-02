@@ -70,12 +70,8 @@ function sortByOrder(arr) {
 }
 
 function defaultHomeBlocks() {
-  return [
-    { id: 'new', key: 'new', title: 'Новинки', order: 1, builtin: true, enabled: true },
-    { id: 'recentlyViewed', key: 'recentlyViewed', title: 'Недавно просмотренные', order: 2, builtin: true, enabled: true },
-    { id: 'bestsellers', key: 'bestsellers', title: 'Лидеры продаж', order: 3, builtin: true, enabled: true },
-    { id: 'hot', key: 'hot', title: 'Горячие предложения', order: 4, builtin: true, enabled: true }
-  ];
+  // Системные блоки отключены: все блоки главной должны создаваться и редактироваться в админке.
+  return [];
 }
 
 function slugifyBlock(text) {
@@ -93,7 +89,7 @@ function mergedHomeBlocks() {
   allHomeBlocksCache.forEach(b => {
     const key = b.key || b.slug || b.id;
     if (!key) return;
-    map.set(key, { ...b, key, title: b.title || b.name || key, order: Number(b.order ?? 999), enabled: b.enabled !== false });
+    map.set(key, { ...b, key, title: b.title || b.name || key, order: Number(b.order ?? 999), enabled: b.enabled !== false, builtin: false });
   });
   return [...map.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
@@ -608,14 +604,43 @@ if ($('#importExcelBtn')) {
 
 /* CATEGORIES */
 
+function mergeCategoriesWithProductGroups(cats, products) {
+  const result = [...(cats || [])];
+  const seen = new Set(result.map(c => String(c.title || c.name || '').trim().toLowerCase()).filter(Boolean));
+
+  (products || []).forEach(product => {
+    [product.group, product.category, product.categoryName].forEach(raw => {
+      const title = normalizeCatTitle(raw);
+      if (!title || title === 'Без категории' || title === 'Без группы') return;
+      const key = title.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push({
+        id: `product-group-${slugifyBlock(title)}`,
+        title,
+        icon: '',
+        order: 999999,
+        parentId: '',
+        _fromProducts: true
+      });
+    });
+  });
+
+  return sortByOrder(result);
+}
+
 async function renderCats() {
   const list = $('#catList');
   if (!list) return;
 
   try {
-    allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
+    const firestoreCats = sortByOrder(await getCollection(COLLECTIONS.categories));
+    if (!allProductsCache.length) {
+      try { allProductsCache = await getCollection(COLLECTIONS.products); } catch (e) { allProductsCache = []; }
+    }
+    allCatsCache = mergeCategoriesWithProductGroups(firestoreCats, allProductsCache);
 
-    const parents = allCatsCache.filter(c => !c.parentId);
+    const parents = allCatsCache.filter(c => !c.parentId && !c._fromProducts);
 
     const parentSelect = $('#cParent');
     if (parentSelect) {
@@ -692,8 +717,7 @@ function renderCategoryTree() {
           </div>
 
           <div class="tree-actions">
-            <button class="edit" data-editc="${parent.id}">Редактировать</button>
-            <button class="danger" data-delc="${parent.id}">Удалить</button>
+            ${parent._fromProducts ? '<span class="admin-badge">Из товаров</span>' : `<button class="edit" data-editc="${parent.id}">Редактировать</button><button class="danger" data-delc="${parent.id}">Удалить</button>`}
           </div>
         </div>
 
@@ -708,8 +732,7 @@ function renderCategoryTree() {
                   </div>
 
                   <div class="tree-actions">
-                    <button class="edit" data-editc="${child.id}">Редактировать</button>
-                    <button class="danger" data-delc="${child.id}">Удалить</button>
+                    ${child._fromProducts ? '<span class="admin-badge">Из товаров</span>' : `<button class="edit" data-editc="${child.id}">Редактировать</button><button class="danger" data-delc="${child.id}">Удалить</button>`}
                   </div>
                 </div>
               `).join('')
@@ -1085,9 +1108,9 @@ async function renderHomeBlocksAdmin() {
     <div class="row">
       <div>
         <b>${b.title}</b>
-        <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} ${b.builtin ? '· системный' : ''}</p>
+        <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)}</p>
       </div>
-      ${b.builtin ? '<span class="admin-badge">Системный</span>' : `<button class="edit" data-edithb="${b.id}">Редактировать</button><button class="danger" data-delhb="${b.id}">Удалить</button>`}
+      <button class="edit" data-edithb="${b.id}">Редактировать</button><button class="danger" data-delhb="${b.id}">Удалить</button>
     </div>
   `).join('');
   $$('[data-delhb]').forEach(btn => btn.onclick = async () => {
