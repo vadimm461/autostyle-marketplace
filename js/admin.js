@@ -13,7 +13,6 @@ import {
   doc,
   updateDoc,
   setDoc,
-  getDoc,
   query,
   where,
   limit
@@ -31,13 +30,13 @@ const $$ = s => document.querySelectorAll(s);
 let editing = {
   product: null,
   cat: null,
-  banner: null,
-  homeBlock: null
+  banner: null
 };
 
 let allCatsCache = [];
 let allProductsCache = [];
-let homeBlocksCache = [];
+let allHomeBlocksCache = [];
+const HOME_BLOCKS_COLLECTION = 'autostyle_home_blocks';
 
 function val(id) {
   const el = $(id);
@@ -54,7 +53,52 @@ function sortByOrder(arr) {
     const ao = Number(a.order ?? 999999);
     const bo = Number(b.order ?? 999999);
     if (ao !== bo) return ao - bo;
-    return String(a.title || '').localeCompare(String(b.title || ''), 'ru');
+    return String(a.title || '').localeCompare(String(b.title || b.name || ''), 'ru');
+  });
+}
+
+function defaultHomeBlocks() {
+  return [
+    { id: 'new', key: 'new', title: 'Новинки', order: 1, builtin: true, enabled: true },
+    { id: 'recentlyViewed', key: 'recentlyViewed', title: 'Недавно просмотренные', order: 2, builtin: true, enabled: true },
+    { id: 'bestsellers', key: 'bestsellers', title: 'Лидеры продаж', order: 3, builtin: true, enabled: true },
+    { id: 'hot', key: 'hot', title: 'Горячие предложения', order: 4, builtin: true, enabled: true }
+  ];
+}
+
+function slugifyBlock(text) {
+  return String(text || '')
+    .trim()
+    .toLowerCase()
+    .replace(/ё/g, 'e')
+    .replace(/[^a-zа-я0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '') || `block-${Date.now()}`;
+}
+
+function mergedHomeBlocks() {
+  const map = new Map();
+  defaultHomeBlocks().forEach(b => map.set(b.key, b));
+  allHomeBlocksCache.forEach(b => {
+    const key = b.key || b.slug || b.id;
+    if (!key) return;
+    map.set(key, { ...b, key, title: b.title || b.name || key, order: Number(b.order ?? 999), enabled: b.enabled !== false });
+  });
+  return [...map.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+}
+
+async function loadHomeBlocks() {
+  try { allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION)); }
+  catch (e) { console.warn('home blocks load error', e); allHomeBlocksCache = []; }
+}
+
+function renderHomeSectionOptions() {
+  const selects = [$('#pHomeSection')].filter(Boolean);
+  if (!selects.length) return;
+  const opts = mergedHomeBlocks().map(b => `<option value="${b.key}">${b.title}</option>`).join('');
+  selects.forEach(select => {
+    const current = select.value;
+    select.innerHTML = opts;
+    if (current && [...select.options].some(o => o.value === current)) select.value = current;
   });
 }
 
@@ -154,7 +198,6 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
-  loadHomeBlocksSettings();
 });
 
 /* CATEGORY OPTIONS */
@@ -210,6 +253,8 @@ function buildCategoryOptions(cats) {
 }
 
 async function renderCategoryOptions() {
+  await loadHomeBlocks();
+  renderHomeSectionOptions();
   const select = $('#pCategory');
   const filter = $('#productCategoryFilter');
   const importCategory = $('#importCategory');
@@ -292,8 +337,8 @@ function renderProductList() {
             <span class="admin-badge">${x.category || 'Без категории'}</span>
             <span class="admin-badge">${x.tag || 'hot'}</span>
             <span class="admin-badge">Наличие: ${Number(x.stock ?? x.quantity ?? x.count ?? 0)} шт.</span>
-            ${(x.installment || x.installmentAvailable) ? `<span class="admin-badge admin-badge-home">Рассрочка</span>` : ''}
-            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной: ${getBlockTitleByKey(x.homeSection || x.tag || 'hot')}</span>` : ''}
+            ${x.showOnHome ? `<span class="admin-badge admin-badge-home">На главной</span>` : ''}
+            ${(x.installment || x.installmentAvailable) ? `<span class="admin-badge">Рассрочка</span>` : ''}
             <span class="admin-price">${Number(x.price || 0).toLocaleString('ru-RU')} ₽</span>
           </div>
 
@@ -353,7 +398,6 @@ if ($('#productForm')) {
         group: val('#pGroup'),
         price: Number(val('#pPrice') || 0),
         stock: Number(val('#pStock') || 0),
-        quantity: Number(val('#pStock') || 0),
         oldPrice: Number(val('#pOldPrice') || 0),
         discount: Number(val('#pDiscount') || 0),
         category: val('#pCategory'),
@@ -465,8 +509,6 @@ if ($('#importExcelBtn')) {
           description: '',
           tag,
           showOnHome: false,
-          installment: $('#importInstallment') ? $('#importInstallment').checked : false,
-          installmentAvailable: $('#importInstallment') ? $('#importInstallment').checked : false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
@@ -499,17 +541,12 @@ if ($('#importExcelBtn')) {
 
 /* CATEGORIES */
 
-
 async function renderCats() {
   const list = $('#catList');
   if (!list) return;
 
   try {
     allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
-
-    // ВАЖНО: дополнительно читаем товары, потому что у тебя группы уже записаны
-    // внутри товаров в Firestore, а не все они созданы как документы categories.
-    allProductsCache = await getCollection(COLLECTIONS.products);
 
     const parents = allCatsCache.filter(c => !c.parentId);
 
@@ -527,9 +564,8 @@ async function renderCats() {
     if (parentFilter) {
       const current = parentFilter.value;
       parentFilter.innerHTML = `
-        <option value="">Все категории и группы</option>
-        <option value="root">Только основные категории</option>
-        <option value="productGroups">Группы из товаров</option>
+        <option value="">Все категории</option>
+        <option value="root">Только основные</option>
         ${parents.map(c => `<option value="${c.id}">${c.title || 'Без названия'}</option>`).join('')}
       `;
       parentFilter.value = current;
@@ -543,44 +579,6 @@ async function renderCats() {
   }
 }
 
-function getProductGroupsFromProducts() {
-  const existing = new Set(
-    allCatsCache
-      .map(c => String(c.title || c.name || '').trim().toLowerCase())
-      .filter(Boolean)
-  );
-
-  const map = new Map();
-
-  (allProductsCache || []).forEach(product => {
-    const names = [product.group, product.category]
-      .map(v => String(v || '').trim())
-      .filter(Boolean);
-
-    names.forEach(name => {
-      if (!name || name === 'Без категории' || name === 'Без группы') return;
-
-      const key = name.toLowerCase();
-
-      if (!map.has(key)) {
-        map.set(key, {
-          id: `product-group-${key}`,
-          title: name,
-          icon: '',
-          order: 999999,
-          fromProducts: true,
-          productsCount: 0,
-          alreadyCategory: existing.has(key)
-        });
-      }
-
-      map.get(key).productsCount += 1;
-    });
-  });
-
-  return [...map.values()].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
-}
-
 function renderCategoryTree() {
   const list = $('#catList');
   if (!list) return;
@@ -590,7 +588,6 @@ function renderCategoryTree() {
 
   const parents = allCatsCache.filter(c => !c.parentId);
   const children = allCatsCache.filter(c => c.parentId);
-  const productGroups = getProductGroupsFromProducts();
 
   function matches(cat) {
     return String(cat.title || '').toLowerCase().includes(queryText)
@@ -600,123 +597,63 @@ function renderCategoryTree() {
 
   let html = '';
 
-  if (parentFilter !== 'productGroups') {
-    parents.forEach(parent => {
-      const childList = children.filter(c => c.parentId === parent.id);
+  parents.forEach(parent => {
+    const childList = children.filter(c => c.parentId === parent.id);
 
-      const visibleChildren = childList.filter(child => {
-        if (queryText && !matches(child)) return false;
-        if (parentFilter && parentFilter !== 'root' && child.parentId !== parentFilter) return false;
-        return true;
-      });
-
-      const showParent =
-        (!queryText && !parentFilter) ||
-        (parentFilter === 'root') ||
-        (parentFilter === parent.id) ||
-        matches(parent) ||
-        visibleChildren.length;
-
-      if (!showParent) return;
-      if (parentFilter === 'root' && queryText && !matches(parent)) return;
-
-      html += `
-        <div class="tree-parent">
-          <div class="tree-row">
-            <div>
-              <b>${parent.icon ? parent.icon + ' ' : ''}${parent.title || 'Без названия'}</b>
-              <small>Основная категория · порядок: ${Number(parent.order ?? 0)}</small>
-            </div>
-
-            <div class="tree-actions">
-              <button class="edit" data-editc="${parent.id}">Редактировать</button>
-              <button class="danger" data-delc="${parent.id}">Удалить</button>
-            </div>
-          </div>
-
-          <div class="tree-children">
-            ${
-              visibleChildren.length
-                ? visibleChildren.map(child => `
-                  <div class="tree-row child">
-                    <div>
-                      <b>${child.icon ? child.icon + ' ' : ''}${child.title || 'Без названия'}</b>
-                      <small>Подкатегория · порядок: ${Number(child.order ?? 0)}</small>
-                    </div>
-
-                    <div class="tree-actions">
-                      <button class="edit" data-editc="${child.id}">Редактировать</button>
-                      <button class="danger" data-delc="${child.id}">Удалить</button>
-                    </div>
-                  </div>
-                `).join('')
-                : '<div class="tree-empty">Подкатегорий нет</div>'
-            }
-          </div>
-        </div>
-      `;
-    });
-  }
-
-  // Группы, которые уже есть у товаров, но не отображались в админке как категории.
-  if (parentFilter !== 'root') {
-    const visibleGroups = productGroups.filter(group => {
-      if (parentFilter && parentFilter !== 'productGroups') return false;
-      if (queryText && !matches(group)) return false;
+    const visibleChildren = childList.filter(child => {
+      if (queryText && !matches(child)) return false;
+      if (parentFilter && parentFilter !== 'root' && child.parentId !== parentFilter) return false;
       return true;
     });
 
-    if (visibleGroups.length) {
-      html += `
-        <div class="tree-parent product-groups-block">
-          <div class="tree-row product-groups-title">
-            <div>
-              <b>Группы из товаров Firestore</b>
-              <small>Эти группы уже стоят у твоих товаров. Если группы нет выше, нажми “Добавить в категории”.</small>
-            </div>
+    const showParent =
+      (!queryText && !parentFilter) ||
+      (parentFilter === 'root') ||
+      (parentFilter === parent.id) ||
+      matches(parent) ||
+      visibleChildren.length;
+
+    if (!showParent) return;
+    if (parentFilter === 'root' && queryText && !matches(parent)) return;
+
+    html += `
+      <div class="tree-parent">
+        <div class="tree-row">
+          <div>
+            <b>${parent.icon ? parent.icon + ' ' : ''}${parent.title || 'Без названия'}</b>
+            <small>Основная категория · порядок: ${Number(parent.order ?? 0)}</small>
           </div>
 
-          <div class="tree-children">
-            ${visibleGroups.map(group => `
-              <div class="tree-row child product-group-row">
-                <div>
-                  <b>${group.title}</b>
-                  <small>${group.productsCount} товар(ов) · ${group.alreadyCategory ? 'уже есть в категориях' : 'только в товарах'}</small>
-                </div>
-                <div class="tree-actions">
-                  ${group.alreadyCategory
-                    ? '<span class="admin-badge">Уже добавлена</span>'
-                    : `<button class="edit" data-createcatfromgroup="${encodeURIComponent(group.title)}">Добавить в категории</button>`
-                  }
-                </div>
-              </div>
-            `).join('')}
+          <div class="tree-actions">
+            <button class="edit" data-editc="${parent.id}">Редактировать</button>
+            <button class="danger" data-delc="${parent.id}">Удалить</button>
           </div>
         </div>
-      `;
-    }
-  }
+
+        <div class="tree-children">
+          ${
+            visibleChildren.length
+              ? visibleChildren.map(child => `
+                <div class="tree-row child">
+                  <div>
+                    <b>${child.icon ? child.icon + ' ' : ''}${child.title || 'Без названия'}</b>
+                    <small>Подкатегория · порядок: ${Number(child.order ?? 0)}</small>
+                  </div>
+
+                  <div class="tree-actions">
+                    <button class="edit" data-editc="${child.id}">Редактировать</button>
+                    <button class="danger" data-delc="${child.id}">Удалить</button>
+                  </div>
+                </div>
+              `).join('')
+              : '<div class="tree-empty">Подкатегорий нет</div>'
+          }
+        </div>
+      </div>
+    `;
+  });
 
   list.innerHTML = html || '<p class="muted">Ничего не найдено</p>';
-
-  $$('[data-createcatfromgroup]').forEach(btn => {
-    btn.onclick = async () => {
-      const title = decodeURIComponent(btn.dataset.createcatfromgroup || '');
-      if (!title) return;
-
-      await addDoc(collection(db, COLLECTIONS.categories), {
-        title,
-        icon: '',
-        order: 999999,
-        parentId: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-
-      await renderCats();
-      alert('Группа добавлена в категории');
-    };
-  });
 
   $$('[data-delc]').forEach(btn => {
     btn.onclick = async () => {
@@ -968,128 +905,71 @@ if ($('#settingsForm')) {
   }
 });
 
-/* HOME BLOCKS SETTINGS */
-const DEFAULT_HOME_BLOCKS = [
-  { key:'bestsellers', title:'Лидеры продаж', order:1, enabled:true },
-  { key:'new', title:'Новинки', order:2, enabled:true },
-  { key:'hot', title:'Горячие предложения', order:3, enabled:true },
-  { key:'recentlyViewed', title:'Недавно просмотренные', order:5, enabled:true, special:'recentlyViewed' }
-];
-function normalizeBlockKey(v){
-  return String(v||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-}
-function getBlockTitleByKey(key){
-  return (homeBlocksCache.find(b=>b.key===key)||{}).title || key;
-}
-function fillHomeSectionOptions(){
-  const select=$('#pHomeSection');
-  if(!select) return;
-  const current=select.value;
-  const blocks=(homeBlocksCache.length?homeBlocksCache:DEFAULT_HOME_BLOCKS).filter(b=>b.key!=='recentlyViewed');
-  select.innerHTML=blocks.map(b=>`<option value="${b.key}">${b.title}</option>`).join('');
-  if(current && blocks.some(b=>b.key===current)) select.value=current;
-}
-async function loadHomeBlocksSettings() {
-  try {
-    if (!$('#homeBlocksForm')) return;
-    const snap = await getDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'));
-    const data = snap.exists() ? snap.data() : {};
-    if(Array.isArray(data.blocks) && data.blocks.length){
-      homeBlocksCache=data.blocks.map((b,i)=>({
-        key: normalizeBlockKey(b.key || b.id || ('block_'+i)),
-        title: b.title || b.name || b.key || 'Блок товаров',
-        order: Number(b.order ?? 999),
-        enabled: b.enabled !== false,
-        special: b.special || ''
-      })).filter(b=>b.key);
-    }else{
-      homeBlocksCache=DEFAULT_HOME_BLOCKS.map(b=>({
-        ...b,
-        order:Number(data[b.key] ?? b.order),
-        enabled:data[b.key+'Enabled'] !== false
-      }));
-    }
-    homeBlocksCache.sort((a,b)=>a.order-b.order || a.title.localeCompare(b.title,'ru'));
-    renderHomeBlocksList();
-    fillHomeSectionOptions();
-  } catch (err) {
-    console.error('Ошибка загрузки блоков главной:', err);
-  }
-}
-function renderHomeBlocksList(){
-  const list=$('#homeBlocksList'); if(!list) return;
-  list.innerHTML=homeBlocksCache.map(b=>`
-    <div class="row admin-home-block-row">
+/* HOME BLOCKS */
+async function renderHomeBlocksAdmin() {
+  const list = $('#homeBlockList');
+  if (!list) return;
+  await loadHomeBlocks();
+  renderHomeSectionOptions();
+  const blocks = mergedHomeBlocks();
+  list.innerHTML = blocks.map(b => `
+    <div class="row">
       <div>
         <b>${b.title}</b>
-        <div class="muted">Ключ: ${b.key} · порядок: ${b.order} · ${b.enabled?'показывается':'скрыт'}${b.special?' · системный блок':''}</div>
+        <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} ${b.builtin ? '· системный' : ''}</p>
       </div>
-      <button class="edit" type="button" data-edit-home-block="${b.key}">Редактировать</button>
-      ${b.special?'<button class="danger" type="button" disabled>Системный</button>':`<button class="danger" type="button" data-delete-home-block="${b.key}">Удалить</button>`}
+      ${b.builtin ? '<span class="admin-badge">Системный</span>' : `<button class="edit" data-edithb="${b.id}">Редактировать</button><button class="danger" data-delhb="${b.id}">Удалить</button>`}
     </div>
-  `).join('') || '<p class="muted">Блоков пока нет</p>';
-  $$('[data-edit-home-block]').forEach(btn=>btn.onclick=()=>{
-    const b=homeBlocksCache.find(x=>x.key===btn.dataset.editHomeBlock); if(!b) return;
-    editing.homeBlock=b.key;
-    setVal('#homeBlockKey', b.key); $('#homeBlockKey').disabled = !!b.special;
-    setVal('#homeBlockTitle', b.title);
-    setVal('#homeBlockOrder', b.order);
-    if($('#homeBlockEnabled')) $('#homeBlockEnabled').checked=b.enabled!==false;
+  `).join('');
+  $$('[data-delhb]').forEach(btn => btn.onclick = async () => {
+    if (!confirm('Удалить блок главной? Товары не удалятся.')) return;
+    await deleteDoc(doc(db, HOME_BLOCKS_COLLECTION, btn.dataset.delhb));
+    await renderHomeBlocksAdmin();
   });
-  $$('[data-delete-home-block]').forEach(btn=>btn.onclick=async()=>{
-    if(!confirm('Удалить блок главной? Товары не удалятся, только сам блок.')) return;
-    homeBlocksCache=homeBlocksCache.filter(b=>b.key!==btn.dataset.deleteHomeBlock);
-    await saveHomeBlocksCache();
+  $$('[data-edithb]').forEach(btn => btn.onclick = () => {
+    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb);
+    if (!item) return;
+    editing.homeBlock = item.id;
+    setVal('#hbTitle', item.title || item.name || '');
+    setVal('#hbKey', item.key || item.slug || '');
+    setVal('#hbOrder', item.order ?? '');
+    if ($('#hbEnabled')) $('#hbEnabled').checked = item.enabled !== false;
   });
 }
-async function saveHomeBlocksCache(){
-  homeBlocksCache.sort((a,b)=>a.order-b.order || a.title.localeCompare(b.title,'ru'));
-  await setDoc(doc(db, COLLECTIONS.settings, 'homeBlocks'), {
-    blocks: homeBlocksCache,
-    // старые поля оставлены для совместимости
-    bestsellers: Number((homeBlocksCache.find(b=>b.key==='bestsellers')||{}).order ?? 1),
-    new: Number((homeBlocksCache.find(b=>b.key==='new')||{}).order ?? 2),
-    hot: Number((homeBlocksCache.find(b=>b.key==='hot')||{}).order ?? 3),
-    recentlyViewed: Number((homeBlocksCache.find(b=>b.key==='recentlyViewed')||{}).order ?? 5),
-    updatedAt: new Date().toISOString()
-  }, { merge: true });
-  renderHomeBlocksList();
-  fillHomeSectionOptions();
-}
-if ($('#homeBlocksForm')) {
-  $('#homeBlocksForm').onsubmit = async e => {
+
+if ($('#homeBlockForm')) {
+  $('#homeBlockForm').onsubmit = async e => {
     e.preventDefault();
-    try {
-      const key=normalizeBlockKey(val('#homeBlockKey'));
-      if(!key) return alert('Введите ключ блока латиницей, например winter или sale');
-      const title=val('#homeBlockTitle') || key;
-      const order=Number(val('#homeBlockOrder') || 999);
-      const enabled=$('#homeBlockEnabled') ? $('#homeBlockEnabled').checked : true;
-      const existing=homeBlocksCache.find(b=>b.key===key);
-      if(existing){
-        existing.title=title; existing.order=order; existing.enabled=enabled;
-      }else{
-        homeBlocksCache.push({key,title,order,enabled});
-      }
-      await saveHomeBlocksCache();
-      editing.homeBlock=null;
-      e.target.reset();
-      setVal('#homeBlockOrder', 10);
-      if($('#homeBlockEnabled')) $('#homeBlockEnabled').checked=true;
-      $('#homeBlockKey').disabled=false;
-      alert('Блок главной сохранён');
-    } catch (err) {
-      console.error(err);
-      alert('Ошибка сохранения блока: ' + err.message);
+    const title = val('#hbTitle');
+    const key = val('#hbKey') || slugifyBlock(title);
+    const data = {
+      title,
+      key,
+      order: Number(val('#hbOrder') || 999),
+      enabled: $('#hbEnabled') ? $('#hbEnabled').checked : true,
+      updatedAt: new Date().toISOString()
+    };
+    if (!data.title) return alert('Введите название блока');
+    if (editing.homeBlock) {
+      await updateDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlock), data);
+      editing.homeBlock = null;
+    } else {
+      data.createdAt = new Date().toISOString();
+      await addDoc(collection(db, HOME_BLOCKS_COLLECTION), data);
     }
+    e.target.reset();
+    if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+    await renderHomeBlocksAdmin();
+    alert('Блок сохранён');
   };
 }
-if($('#newHomeBlockBtn')){
-  $('#newHomeBlockBtn').onclick=()=>{
-    editing.homeBlock=null;
-    $('#homeBlocksForm')?.reset();
-    $('#homeBlockKey').disabled=false;
-    setVal('#homeBlockOrder', 10);
-    if($('#homeBlockEnabled')) $('#homeBlockEnabled').checked=true;
+
+if ($('#hbReset')) {
+  $('#hbReset').onclick = () => {
+    editing.homeBlock = null;
+    $('#homeBlockForm')?.reset();
+    if ($('#hbEnabled')) $('#hbEnabled').checked = true;
   };
 }
+
+renderHomeBlocksAdmin();

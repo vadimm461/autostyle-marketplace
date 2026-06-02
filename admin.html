@@ -23,6 +23,7 @@
       <button data-section="products">Товары</button>
       <button data-section="categories">Категории</button>
       <button data-section="banners">Баннеры</button>
+      <button data-section="homeblocks">Блоки главной</button>
       <button data-section="orders">Заказы</button>
       <button data-section="media">Медиа</button>
       <button data-section="pages">Страницы</button>
@@ -44,21 +45,7 @@
         <div class="admin-card"><h2>Импорт</h2><p class="muted">Загрузка товаров из Excel по коду и названию.</p></div>
         <div class="admin-card"><h2>Медиа</h2><p class="muted">Загрузка изображений в Firebase Storage.</p></div>
       </div>
-    
-      <div class="admin-card">
-        <h2>Порядок блоков на главной</h2>
-        <p class="muted">Меньшее число — блок выше. Например: Лидеры продаж = 1, Недавно просмотренные = 5.</p>
-        <form id="homeBlocksForm" class="grid2">
-          <label class="field">Ключ блока <input id="homeBlockKey" placeholder="bestsellers / sale / winter"></label>
-          <label class="field">Название блока <input id="homeBlockTitle" placeholder="Например: Зимние товары"></label>
-          <label class="field">Порядковый номер <input id="homeBlockOrder" type="number" value="10"></label>
-          <label class="field check-field"><span>Показывать блок</span><input id="homeBlockEnabled" type="checkbox" checked></label>
-          <button id="saveHomeBlockBtn" class="primary" type="submit">Сохранить / создать блок</button>
-          <button id="newHomeBlockBtn" class="edit" type="button">Новый блок</button>
-        </form>
-        <div id="homeBlocksList" class="list"></div>
-      </div>
-</section>
+    </section>
 
     <section id="products" class="admin-section">
       <div class="admin-card">
@@ -68,10 +55,7 @@
           <label class="field">Название<input id="pTitle" required></label>
           <label class="field">Группа<input id="pGroup" placeholder="Например: Автохимия / Свет / Аксессуары"></label>
 
-          <label class="field">Наличие, шт.<input id="pStock" type="number" min="0" placeholder="Например: 12"></label>
-          <label class="field check-field"><span>Доступно в рассрочку</span><input id="pInstallment" type="checkbox"></label>
-
-          <label class="field">Цена<input id="pPrice" type="number" required></label><label class="field">Старая цена / цена до скидки<input id="pOldPrice" type="number" placeholder="Например: 5990"></label><label class="field">Скидка, %<input id="pDiscount" type="number" placeholder="Например: 15"></label>
+          <label class="field">Цена<input id="pPrice" type="number" required></label><label class="field">Наличие, шт.<input id="pStock" type="number" placeholder="Например: 15"></label><label class="field">Старая цена / цена до скидки<input id="pOldPrice" type="number" placeholder="Например: 5990"></label><label class="field">Скидка, %<input id="pDiscount" type="number" placeholder="Например: 15"></label>
 
           <label class="field">
             Категория
@@ -101,6 +85,11 @@
           <label class="field check-field">
             <span>Показывать на главной</span>
             <input id="pShowHome" type="checkbox">
+          </label>
+
+          <label class="field check-field">
+            <span>Доступно в рассрочку</span>
+            <input id="pInstallment" type="checkbox">
           </label>
 
           <label class="field" style="grid-column:1/-1">Фото URL<input id="pImage"></label>
@@ -146,16 +135,6 @@
             <label class="field">
               Цена по умолчанию
               <input id="importPrice" type="number" value="0">
-            </label>
-
-            <label class="field">
-              Наличие по умолчанию
-              <input id="importStock" type="number" value="1" min="0">
-            </label>
-
-            <label class="field check-field">
-              <span>Импортировать как доступные в рассрочку</span>
-              <input id="importInstallment" type="checkbox">
             </label>
           </div>
 
@@ -240,6 +219,23 @@
         </form>
 
         <div id="bannerList" class="list"></div>
+      </div>
+    </section>
+
+
+    <section id="homeblocks" class="admin-section">
+      <div class="admin-card">
+        <h2>Блоки главной страницы</h2>
+        <p class="muted">Создавай свои блоки товаров и выставляй порядок. Потом выбери этот блок у товара в разделе “Товары”.</p>
+        <form id="homeBlockForm" class="grid2">
+          <label class="field">Название блока<input id="hbTitle" placeholder="Например: Зимние товары" required></label>
+          <label class="field">Ключ блока<input id="hbKey" placeholder="winter"></label>
+          <label class="field">Порядковый номер<input id="hbOrder" type="number" placeholder="1"></label>
+          <label class="field check-field"><span>Включен</span><input id="hbEnabled" type="checkbox" checked></label>
+          <button class="primary">Сохранить блок</button>
+          <button id="hbReset" type="button" class="edit">Новый блок</button>
+        </form>
+        <div id="homeBlockList" class="list"></div>
       </div>
     </section>
 
