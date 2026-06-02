@@ -6,7 +6,7 @@ export function productStock(p){ return Number(p.stock ?? p.quantity ?? p.count 
 export function stockText(p){ const s=productStock(p); if(s>10)return 'В наличии больше 10'; if(s>0)return 'В наличии меньше 10'; return 'Нет в наличии'; }
 export function rawOldPrice(p){ return Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0); }
 export function oldPrice(p){ const op=rawOldPrice(p), price=Number(p.price||0); return op>price?op:0; }
-export function discountPercent(p){ const m=Number(p.discountPercent || p.discount || 0), rawOld=rawOldPrice(p), old=oldPrice(p), price=Number(p.price||0); if(m>0)return rawOld&&rawOld<=price?0:m; return old>price&&price>0?Math.round((old-price)/old*100):0; }
+export function discountPercent(p){ const m=Number(p.discountPercent || p.discount || p.discount_percent || p.salePercent || 0), rawOld=rawOldPrice(p), old=oldPrice(p), price=Number(p.price||0); if(m>0)return m; return old>price&&price>0?Math.round((old-price)/old*100):0; }
 export function priceHtml(p, cls=''){ const price=Number(p.price||0), old=oldPrice(p), d=discountPercent(p); return `<div class="${cls}price-wrap">${old>price&&old>0?`<span class="${cls}oldprice old-price">${fmtPrice(old)}</span>`:''}<span class="${cls}price price">${fmtPrice(price)}</span>${d>0?`<span class="${cls}discount discount-badge">-${d}%</span>`:''}</div>`; }
 export function cart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
 export function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartCount(); }

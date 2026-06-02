@@ -13,7 +13,7 @@ function rawOldPrice(p){ return Number(p.oldPrice || p.priceOld || p.priceBefore
 function oldPrice(p){ const op=rawOldPrice(p), price=Number(p.price||0); return op>price?op:0; }
 
 function discountPercent(p){
-  const manual = Number(p.discountPercent || p.discount || 0);
+  const manual = Number(p.discountPercent || p.discount || p.discount_percent || p.salePercent || 0);
   if (manual > 0) return manual;
   const old = oldPrice(p);
   const price = Number(p.price || 0);

@@ -15,12 +15,12 @@ const img = p => p.image || p.imageUrl || p.photo || p.photoUrl || '';
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
 const price = p => Number(p.price || 0);
-const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.compareAtPrice || 0);
+const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0);
 const oldPrice = p => rawOldPrice(p) > price(p) ? rawOldPrice(p) : 0;
 const discount = p => {
-  const op = oldPrice(p), pr = price(p), manual = Number(p.discount || p.discountPercent || 0);
+  const op = oldPrice(p), pr = price(p), manual = Number(p.discount || p.discountPercent || p.discount_percent || p.salePercent || 0);
+  if (manual > 0) return manual;
   if (op > pr && pr > 0) return Math.round((op - pr) / op * 100);
-  if (manual > 0 && (!rawOldPrice(p) || rawOldPrice(p) > pr)) return manual;
   return 0;
 };
 const available = p => stock(p) > 0;

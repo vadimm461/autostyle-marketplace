@@ -1,7 +1,7 @@
 import { db, COLLECTIONS } from './firebase.js';
 import { collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const CACHE_PREFIX = 'as_cache_v2:';
+const CACHE_PREFIX = 'as_cache_v3:';
 const VERSION_KEY = CACHE_PREFIX + 'version';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
@@ -33,9 +33,9 @@ async function getRemoteVersion(){
 
 function normalizeProductRow(row){
   const price = Number(row?.price || 0);
-  const old = Number(row?.oldPrice || row?.priceOld || row?.compareAtPrice || 0);
+  const old = Number(row?.oldPrice || row?.priceOld || row?.priceBefore || row?.compareAtPrice || 0);
   if (old && old <= price) {
-    return { ...row, oldPrice: 0, priceOld: 0, compareAtPrice: 0, discount: 0, discountPercent: 0 };
+    return { ...row, oldPrice: 0, priceOld: 0, priceBefore: 0, compareAtPrice: 0 };
   }
   return row;
 }
