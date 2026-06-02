@@ -39,8 +39,8 @@ let allCatsCache = [];
 let allProductsCache = [];
 let allHomeBlocksCache = [];
 let allPromoCardsCache = [];
-const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_homeBlocks';
-const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promoCards';
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 
 function val(id) {
   const el = $(id);
@@ -134,6 +134,8 @@ function mergedPromoCards() {
       text: card.text || card.description || '',
       amount: card.amount || card.countText || '',
       link: card.link || card.url || '#',
+      width: Number(card.width || card.cardWidth || 0) || '',
+      height: Number(card.height || card.cardHeight || 0) || '',
       order: Number(card.order ?? 999),
       enabled: card.enabled !== false,
       builtin: false
@@ -967,6 +969,8 @@ async function renderPromoCardsAdmin() {
           Ключ: ${card.key} · порядок: ${Number(card.order ?? 999)}
           ${card.amount ? ` · ${card.amount}` : ''}
           ${card.link ? ` · ссылка: ${card.link}` : ''}
+          ${card.width ? ` · ширина: ${card.width}px` : ''}
+          ${card.height ? ` · высота: ${card.height}px` : ''}
           ${card.builtin ? ' · системная' : ''}
         </p>
         <p class="muted">${card.text || ''}</p>
@@ -993,6 +997,8 @@ async function renderPromoCardsAdmin() {
     setVal('#pcAmount', item.amount || item.countText || '');
     setVal('#pcLink', item.link || item.url || '');
     setVal('#pcOrder', item.order ?? '');
+    setVal('#pcWidth', item.width || item.cardWidth || '');
+    setVal('#pcHeight', item.height || item.cardHeight || '');
     if ($('#pcEnabled')) $('#pcEnabled').checked = item.enabled !== false;
   });
 }
@@ -1000,39 +1006,35 @@ async function renderPromoCardsAdmin() {
 if ($('#promoCardsForm')) {
   $('#promoCardsForm').onsubmit = async e => {
     e.preventDefault();
+    const title = val('#pcTitle');
+    const key = val('#pcKey') || slugifyBlock(title);
+    const data = {
+      title,
+      key,
+      text: val('#pcText'),
+      amount: val('#pcAmount'),
+      link: val('#pcLink') || '#',
+      order: Number(val('#pcOrder') || 999),
+      width: Number(val('#pcWidth') || 0) || '',
+      height: Number(val('#pcHeight') || 0) || '',
+      enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
+      updatedAt: new Date().toISOString()
+    };
 
-    try {
-      const title = val('#pcTitle');
-      const key = val('#pcKey') || slugifyBlock(title);
-      const data = {
-        title,
-        key,
-        text: val('#pcText'),
-        amount: val('#pcAmount'),
-        link: val('#pcLink') || '#',
-        order: Number(val('#pcOrder') || 999),
-        enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
-        updatedAt: new Date().toISOString()
-      };
+    if (!data.title) return alert('Введите название карточки');
 
-      if (!data.title) return alert('Введите название карточки');
-
-      if (editing.promoCard) {
-        await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
-        editing.promoCard = null;
-      } else {
-        data.createdAt = new Date().toISOString();
-        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
-      }
-
-      e.target.reset();
-      if ($('#pcEnabled')) $('#pcEnabled').checked = true;
-      await renderPromoCardsAdmin();
-      alert('Промо-карточка сохранена');
-    } catch (err) {
-      console.error('Не удалось сохранить промо-карточку:', err);
-      alert('Не удалось сохранить промо-карточку. Проверь правила Firestore для коллекции: ' + PROMO_CARDS_COLLECTION);
+    if (editing.promoCard) {
+      await updateDoc(doc(db, PROMO_CARDS_COLLECTION, editing.promoCard), data);
+      editing.promoCard = null;
+    } else {
+      data.createdAt = new Date().toISOString();
+      await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
     }
+
+    e.target.reset();
+    if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+    await renderPromoCardsAdmin();
+    alert('Промо-карточка сохранена');
   };
 }
 

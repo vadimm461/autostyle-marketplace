@@ -5,8 +5,8 @@ import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/fireba
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
-const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_homeBlocks';
-const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promoCards';
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let allProducts = [];
@@ -86,6 +86,8 @@ function mergePromoCards(custom){
       text: c.text || c.description || '',
       amount: c.amount || c.countText || '',
       link: c.link || c.url || '#',
+      width: Number(c.width || c.cardWidth || 0) || '',
+      height: Number(c.height || c.cardHeight || 0) || '',
       order: Number(c.order ?? 999),
       enabled: c.enabled !== false
     });
@@ -95,13 +97,19 @@ function mergePromoCards(custom){
 function renderPromoCards(cards){
   const box = $('#banners');
   if (!box) return;
-  box.innerHTML = cards.map(c => `
-    <a class="mini-banner promo-card" href="${c.link || '#'}">
-      ${c.amount ? `<span class="promo-card-count">${c.amount}</span>` : ''}
-      <h3>${c.title || ''}</h3>
-      <p class="muted">${c.text || ''}</p>
-    </a>
-  `).join('');
+  box.innerHTML = cards.map(c => {
+    const style = [
+      c.width ? `--promo-card-width:${Number(c.width)}px` : '',
+      c.height ? `--promo-card-height:${Number(c.height)}px` : ''
+    ].filter(Boolean).join(';');
+    return `
+      <a class="mini-banner promo-card" href="${c.link || '#'}" ${style ? `style="${style}"` : ''}>
+        ${c.amount ? `<span class="promo-card-count">${c.amount}</span>` : ''}
+        <h3>${c.title || ''}</h3>
+        <p class="muted">${c.text || ''}</p>
+      </a>
+    `;
+  }).join('');
 }
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);

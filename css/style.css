@@ -1661,3 +1661,20 @@ header.topbar{
   .product-img{height:145px !important;min-height:145px !important;max-height:145px !important;flex-basis:145px !important;}
   .product-title{min-height:64px !important;max-height:64px !important;font-size:14px !important;}
 }
+
+
+/* ===== PROMO CARD SIZE FROM ADMIN ===== */
+.banner-row{
+  align-items:stretch !important;
+}
+.promo-card{
+  width:var(--promo-card-width, auto) !important;
+  min-height:var(--promo-card-height, 140px) !important;
+  height:var(--promo-card-height, auto) !important;
+  max-width:100% !important;
+}
+@media(max-width:980px){
+  .promo-card{
+    width:100% !important;
+  }
+}

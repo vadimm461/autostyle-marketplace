@@ -4,79 +4,28 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /* ===== СТАРЫЙ САЙТ ===== */
-
-    match /site/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /products/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /salary/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /users/{userId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /categories/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /banners/{document=**} {
-      allow read, write: if true;
-    }
+    match /site/{document=**} { allow read, write: if true; }
+    match /products/{document=**} { allow read, write: if true; }
+    match /salary/{document=**} { allow read, write: if true; }
+    match /users/{userId} { allow read, write: if request.auth != null; }
+    match /categories/{document=**} { allow read, write: if true; }
+    match /banners/{document=**} { allow read, write: if true; }
 
     /* ===== AUTOSTYLE ===== */
+    match /autostyle_products/{document=**} { allow read, write: if true; }
+    match /autostyle_categories/{document=**} { allow read, write: if true; }
+    match /autostyle_banners/{document=**} { allow read, write: if true; }
+    match /autostyle_users/{document=**} { allow read, write: if request.auth != null; }
+    match /autostyle_settings/{document=**} { allow read, write: if true; }
+    match /autostyle_pages/{document=**} { allow read, write: if true; }
+    match /autostyle_media/{document=**} { allow read, write: if true; }
 
-    match /autostyle_products/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_categories/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_banners/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_users/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /autostyle_settings/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_pages/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_media/{document=**} {
-      allow read, write: if true;
-    }
-
-    /* ===== БЛОКИ ГЛАВНОЙ И ПРОМО-КАРТОЧКИ ===== */
-
-    match /autostyle_homeBlocks/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_promoCards/{document=**} {
-      allow read, write: if true;
-    }
-
-    /* Старые варианты названий — оставлены для совместимости, если где-то остались в коде */
-    match /autostyle_home_blocks/{document=**} {
-      allow read, write: if true;
-    }
-
-    match /autostyle_promo_cards/{document=**} {
-      allow read, write: if true;
-    }
-
+    /* ===== НОВЫЕ БЛОКИ AUTOSTYLE ===== */
+    match /autostyle_home_blocks/{document=**} { allow read, write: if true; }
+    match /autostyle_promo_cards/{document=**} { allow read, write: if true; }
+    match /autostyle_homeBlocks/{document=**} { allow read, write: if true; }
+    match /autostyle_promoCards/{document=**} { allow read, write: if true; }
+    match /autostyle_home_sections/{document=**} { allow read, write: if true; }
+    match /autostyle_home_settings/{document=**} { allow read, write: if true; }
   }
 }

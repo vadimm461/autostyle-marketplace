@@ -34,6 +34,6 @@ export const COLLECTIONS = {
   settings: 'autostyle_settings',
   pages: 'autostyle_pages',
   media: 'autostyle_media',
-  homeBlocks: 'autostyle_homeBlocks',
-  promoCards: 'autostyle_promoCards'
+  homeBlocks: 'autostyle_home_blocks',
+  promoCards: 'autostyle_promo_cards'
 };
