@@ -1,7 +1,8 @@
 
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getCollectionCached, getProducts } from './data-cache.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -44,7 +45,7 @@ function normalizeKey(v){ return String(v || '').trim().toLowerCase(); }
 function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
 function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#cartCount') && ($('#cartCount').textContent = cart.length); }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
-async function loadCollection(name){ const snap = await getDocs(collection(db, name)); return snap.docs.map(d => ({id:d.id, ...d.data()})); }
+async function loadCollection(name){ return await getCollectionCached(name); }
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
 
 function defaultBlocks(){
@@ -151,7 +152,7 @@ function card(p){
   return `<article class="product-card">
     <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
     <a class="product-card-link" href="product.html?id=${p.id}">
-      <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
+      <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
       <div class="product-title">${title(p)}</div>
       <div class="product-group">${group(p)}</div>
       <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : ''}</div>
@@ -289,7 +290,7 @@ async function renderCatalogMenu(){
   });
 }
 async function renderHome(){
-  allProducts = await safeLoadCollection(COLLECTIONS.products);
+  allProducts = await getProducts();
   const customBlocks = await safeLoadCollection(HOME_BLOCKS_COLLECTION);
   allBlocks = mergeBlocks(customBlocks);
   let banners = await safeLoadCollection(COLLECTIONS.banners);
@@ -320,7 +321,7 @@ function renderAccountPanel(user){
   drop.classList.add('account-panel');
   drop.innerHTML = `
     <div class="account-user">
-      <div class="account-avatar">${photo ? `<img src="${photo}" alt="${name}">` : accountInitials(name, email)}</div>
+      <div class="account-avatar">${photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : accountInitials(name, email)}</div>
       <div>
         <b class="account-name">${name}</b>
         <span class="account-email">${email}</span>

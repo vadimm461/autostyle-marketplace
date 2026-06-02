@@ -1,4 +1,5 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
+import { bumpCacheVersion, clearDataCache } from './data-cache.js';
 
 import {
   onAuthStateChanged,
@@ -26,6 +27,12 @@ import {
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+
+async function markSiteDataChanged(){
+  try { await bumpCacheVersion('admin-update'); } catch(e) { console.warn('Не удалось обновить версию кэша', e); }
+  try { clearDataCache(); } catch(e) {}
+}
+
 
 let editing = {
   product: null,
@@ -438,6 +445,7 @@ function renderProductList() {
     btn.onclick = async () => {
       if (!confirm('Удалить товар?')) return;
       await deleteDoc(doc(db, COLLECTIONS.products, btn.dataset.delp));
+      await markSiteDataChanged();
       await renderProducts();
     };
   });
@@ -508,6 +516,7 @@ if ($('#productForm')) {
       e.target.reset();
       setVal('#pImage', '');
       if ($('#pUploadStatus')) $('#pUploadStatus').innerHTML = '';
+      await markSiteDataChanged();
       await renderProducts();
       alert('Товар сохранён');
     } catch (err) {
@@ -603,6 +612,7 @@ if ($('#importExcelBtn')) {
         }
       }
 
+      if (imported > 0) await markSiteDataChanged();
       await renderProducts();
 
       if (status) {
@@ -797,6 +807,7 @@ function renderCategoryTree() {
       if (!confirm('Удалить категорию?')) return;
 
       await deleteDoc(doc(db, COLLECTIONS.categories, catId));
+      await markSiteDataChanged();
       await renderCats();
       await renderProducts();
     };
@@ -849,6 +860,7 @@ if ($('#catForm')) {
       }
 
       e.target.reset();
+      await markSiteDataChanged();
       await renderCats();
       await renderProducts();
       alert('Категория сохранена');
@@ -890,6 +902,7 @@ async function renderBanners() {
       btn.onclick = async () => {
         if (!confirm('Удалить баннер?')) return;
         await deleteDoc(doc(db, COLLECTIONS.banners, btn.dataset.delb));
+        await markSiteDataChanged();
         await renderBanners();
       };
     });
@@ -941,6 +954,7 @@ if ($('#bannerForm')) {
 
       e.target.reset();
       if ($('#bUploadStatus')) $('#bUploadStatus').innerHTML = '';
+      await markSiteDataChanged();
       await renderBanners();
       alert('Баннер сохранён');
     } catch (err) {
@@ -992,6 +1006,7 @@ if ($('#pageForm')) {
         updatedAt: new Date().toISOString()
       });
 
+      await markSiteDataChanged();
       alert('Страница сохранена');
     } catch (err) {
       alert('Ошибка сохранения страницы: ' + err.message);
@@ -1013,6 +1028,7 @@ if ($('#settingsForm')) {
         updatedAt: new Date().toISOString()
       });
 
+      await markSiteDataChanged();
       alert('Настройки сохранены');
     } catch (err) {
       alert('Ошибка сохранения настроек: ' + err.message);
@@ -1071,6 +1087,7 @@ async function renderPromoCardsAdmin() {
   $$('[data-delpc]').forEach(btn => btn.onclick = async () => {
     if (!confirm('Удалить промо-карточку?')) return;
     await deleteDoc(doc(db, btn.dataset.pccol || PROMO_CARDS_COLLECTION, btn.dataset.delpc));
+    await markSiteDataChanged();
     await renderPromoCardsAdmin();
   });
 
@@ -1127,6 +1144,7 @@ if ($('#promoCardsForm')) {
 
       e.target.reset();
       if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+      await markSiteDataChanged();
       await renderPromoCardsAdmin();
       alert('Промо-карточка сохранена');
     } catch (err) {
@@ -1184,6 +1202,7 @@ async function renderHomeBlocksAdmin() {
   $$('[data-delhb]').forEach(btn => btn.onclick = async () => {
     if (!confirm('Удалить блок главной? Товары не удалятся.')) return;
     await deleteDoc(doc(db, HOME_BLOCKS_COLLECTION, btn.dataset.delhb));
+    await markSiteDataChanged();
     await renderHomeBlocksAdmin();
     renderPromoCardsAdmin();
   });
@@ -1240,6 +1259,7 @@ if ($('#homeBlockForm')) {
       const keyInput = $('#hbKey');
       if (keyInput) keyInput.readOnly = false;
       if ($('#hbEnabled')) $('#hbEnabled').checked = true;
+      await markSiteDataChanged();
       await renderHomeBlocksAdmin();
       renderPromoCardsAdmin();
       alert('Блок сохранён');

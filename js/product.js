@@ -1,6 +1,7 @@
 import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getProducts } from './data-cache.js';
 
 const $ = s => document.querySelector(s);
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -42,7 +43,7 @@ function relatedCard(p){
       <a class="product-card-link" href="${productHref(p)}">
         <div class="product-img related-img">
           ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
-          ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(name)}">` : `<div class="photo-empty">Фото</div>`}
+          ${img ? `<img loading="lazy" decoding="async" src="${escapeHtml(img)}" alt="${escapeHtml(name)}">` : `<div class="photo-empty">Фото</div>`}
         </div>
         <div class="product-title">${escapeHtml(name)}</div>
         <div class="product-group">${escapeHtml(group(p))}</div>
@@ -95,8 +96,7 @@ async function renderRelated(current){
   const box = document.getElementById('relatedProducts');
   if (!box) return;
   try{
-    const snap = await getDocs(collection(db, COLLECTIONS.products));
-    const products = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    const products = await getProducts();
     const currentGroup = group(current).toLowerCase().trim();
     const currentParent = (current.parentCategory || current.parentGroup || current.categoryParent || '').toLowerCase().trim();
     let related = products.filter(p => p.id !== current.id && stock(p) > 0 && group(p).toLowerCase().trim() === currentGroup);
@@ -139,9 +139,14 @@ async function loadProduct(){
   const id = new URLSearchParams(location.search).get('id');
   if (!id) { box.innerHTML = '<div class="product-message">Товар не найден.</div>'; return; }
   try {
-    const snap = await getDoc(doc(db, COLLECTIONS.products, id));
-    if (!snap.exists()) { box.innerHTML = '<div class="product-message">Товар удалён или не найден.</div>'; return; }
-    const p = { id: snap.id, ...snap.data() };
+    let productsCache = [];
+    try { productsCache = await getProducts(); } catch(e) { productsCache = []; }
+    let p = productsCache.find(x => String(x.id) === String(id));
+    if (!p) {
+      const snap = await getDoc(doc(db, COLLECTIONS.products, id));
+      if (!snap.exists()) { box.innerHTML = '<div class="product-message">Товар удалён или не найден.</div>'; return; }
+      p = { id: snap.id, ...snap.data() };
+    }
     const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p), inst = isInstallment(p);
     saveViewed(p.id);
     document.title = `${name} — AutoStyle`;
@@ -150,7 +155,7 @@ async function loadProduct(){
       <div class="product-gallery product-card-clean">
         <div class="main-photo product-main-photo">
           ${d ? `<span class="discount-badge product-sale-badge">-${d}%</span>` : ''}
-          ${img ? `<img src="${img}" alt="${name}">` : `<div class="photo-empty">Фото</div>`}
+          ${img ? `<img loading="lazy" decoding="async" src="${img}" alt="${name}">` : `<div class="photo-empty">Фото</div>`}
         </div>
       </div>
       <div class="product-info-panel product-card-clean product-info-clean">

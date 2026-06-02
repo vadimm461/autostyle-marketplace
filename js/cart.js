@@ -1,10 +1,7 @@
 import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-import {
-  doc,
-  getDoc
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getProducts } from './data-cache.js';
 
 const cartList = document.querySelector('#cartList');
 const totalBox = document.querySelector('#cartTotal');
@@ -31,10 +28,10 @@ function save() {
   if (cartCount) cartCount.textContent = cart.length;
 }
 
+let productsCache = null;
 async function loadProduct(id) {
-  const snap = await getDoc(doc(db, COLLECTIONS.products, id));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() };
+  if (!productsCache) productsCache = await getProducts();
+  return productsCache.find(p => String(p.id) === String(id)) || null;
 }
 
 async function render() {
@@ -54,7 +51,7 @@ async function render() {
 
   cartList.innerHTML = products.map((p, index) => `
     <div class="cart-row">
-      <div class="cart-img">${p.image ? `<img src="${p.image}" alt="${p.title || p.name}">` : 'Фото'}</div>
+      <div class="cart-img">${p.image ? `<img loading="lazy" decoding="async" src="${p.image}" alt="${p.title || p.name}">` : 'Фото'}</div>
       <div>
         <b>${p.title || p.name || 'Товар'}</b>
         <p class="muted">${p.category || 'Без категории'} ${p.code ? `· код: ${p.code}` : ''}</p>

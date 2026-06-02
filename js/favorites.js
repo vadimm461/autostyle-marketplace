@@ -1,6 +1,6 @@
 import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getProducts } from './data-cache.js';
 
 const $ = s => document.querySelector(s);
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -31,7 +31,7 @@ function card(p){
   return `<article class="catalog-card favorite-card">
     <button class="fav-btn active" data-fav="${p.id}" type="button">♥</button>
     <a class="catalog-card-link" href="product.html?id=${p.id}">
-      <div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div>
+      <div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div>
       <div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="catalog-card-stock">${s>0?'В наличии: '+s:'Нет в наличии'}</div></div>
     </a>
     <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''}>В корзину</button>
@@ -47,11 +47,10 @@ async function loadFavorites(){
   titleEl && (titleEl.textContent = favs.length ? `Избранное: ${favs.length}` : 'Избранное');
   if(!favs.length){ grid.innerHTML='<div class="notice">В избранном пока пусто.</div>'; return; }
   grid.innerHTML='<div class="app-loader">Загрузка избранного...</div>';
-  const products=[];
-  for(const id of favs){
-    try{ const snap=await getDoc(doc(db, COLLECTIONS.products, id)); if(snap.exists()) products.push({id:snap.id,...snap.data()}); }
-    catch(e){}
-  }
+  let allProducts = [];
+  try { allProducts = await getProducts(); } catch(e) { allProducts = []; }
+  const byId = new Map(allProducts.map(p => [String(p.id), p]));
+  const products = favs.map(id => byId.get(String(id))).filter(Boolean);
   if(!products.length){ grid.innerHTML='<div class="notice">Товары из избранного не найдены.</div>'; return; }
   grid.innerHTML=products.map(card).join(''); bind();
 }
