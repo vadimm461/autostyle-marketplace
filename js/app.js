@@ -6,6 +6,14 @@ import { collection, getDocs, setDoc, doc } from 'https://www.gstatic.com/fireba
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const HOME_BLOCKS_COLLECTIONS = [...new Set([
+  HOME_BLOCKS_COLLECTION,
+  'autostyle_home_blocks',
+  'autostyle_homeBlocks',
+  'autostyle_homeSections',
+  'homeBlocks',
+  'homeSections'
+].filter(Boolean))];
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
@@ -41,7 +49,7 @@ async function loadCollection(name){ const snap = await getDocs(collection(db, n
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
 
 function defaultBlocks(){
-  // Системные товарные блоки отключены. Главная выводит только блоки, созданные в админке / Firestore.
+  // Все товарные блоки главной приходят из Firestore и редактируются в админке.
   return [];
 }
 async function safeLoadCollections(names) {
@@ -63,10 +71,18 @@ async function safeLoadCollections(names) {
 function mergeBlocks(custom){
   const byKey = new Map();
   defaultBlocks().forEach(b => byKey.set(b.key, b));
-  custom.forEach(b => {
+  (custom || []).forEach(b => {
     const key = b.key || b.slug || b.id;
     if (!key) return;
-    byKey.set(key, { id:b.id, key, title:b.title || b.name || key, order:Number(b.order ?? 999), enabled:b.enabled !== false, builtin:false });
+    byKey.set(key, {
+      id:b.id,
+      key,
+      title:b.title || b.name || key,
+      order:Number(b.order ?? 999),
+      enabled:b.enabled !== false,
+      builtin:false,
+      recent: normalizeKey(key) === 'recentlyviewed' || normalizeKey(key) === 'recent'
+    });
   });
   return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
@@ -190,7 +206,7 @@ async function renderCatalogMenu(){
 }
 async function renderHome(){
   allProducts = await safeLoadCollection(COLLECTIONS.products);
-  const customBlocks = await safeLoadCollection(HOME_BLOCKS_COLLECTION);
+  const customBlocks = await safeLoadCollections(HOME_BLOCKS_COLLECTIONS);
   allBlocks = mergeBlocks(customBlocks);
   let banners = await safeLoadCollection(COLLECTIONS.banners);
   const hero=$('#hero'); if(hero){ const b=banners[0]||{}; hero.innerHTML=`<div class="hero-content"><span class="hero-label">AUTO STYLE MARKET</span><h1>${b.title||'Автотовары для стиля, комфорта и защиты'}</h1><p>${b.text||'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p><div class="hero-actions"><a href="catalog.html" class="primary hero-btn">Смотреть каталог</a><a href="#homeBlock_bestsellers" class="hero-link">Лидеры продаж</a></div></div><div class="hero-visual"><div class="hero-car">AUTO</div></div>`; }

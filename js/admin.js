@@ -32,7 +32,9 @@ let editing = {
   cat: null,
   banner: null,
   homeBlock: null,
-  promoCard: null
+  promoCard: null,
+  homeBlockCollection: null,
+  promoCardCollection: null
 };
 
 let allCatsCache = [];
@@ -40,6 +42,14 @@ let allProductsCache = [];
 let allHomeBlocksCache = [];
 let allPromoCardsCache = [];
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const HOME_BLOCKS_COLLECTIONS = [...new Set([
+  HOME_BLOCKS_COLLECTION,
+  'autostyle_home_blocks',
+  'autostyle_homeBlocks',
+  'autostyle_homeSections',
+  'homeBlocks',
+  'homeSections'
+].filter(Boolean))];
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
@@ -70,7 +80,8 @@ function sortByOrder(arr) {
 }
 
 function defaultHomeBlocks() {
-  // Системные блоки отключены: все блоки главной должны создаваться и редактироваться в админке.
+  // Системные блоки больше не создаются в коде.
+  // Главная и админка берут блоки только из Firestore.
   return [];
 }
 
@@ -85,18 +96,50 @@ function slugifyBlock(text) {
 
 function mergedHomeBlocks() {
   const map = new Map();
+
   defaultHomeBlocks().forEach(b => map.set(b.key, b));
+
   allHomeBlocksCache.forEach(b => {
-    const key = b.key || b.slug || b.id;
+    const key = String(b.key || b.slug || b.id || '').trim();
     if (!key) return;
-    map.set(key, { ...b, key, title: b.title || b.name || key, order: Number(b.order ?? 999), enabled: b.enabled !== false, builtin: false });
+
+    const prev = map.get(key) || {};
+    map.set(key, {
+      ...prev,
+      ...b,
+      key,
+      title: b.title || b.name || prev.title || key,
+      order: Number(b.order ?? prev.order ?? 999),
+      enabled: b.enabled !== false,
+      builtin: false
+    });
   });
-  return [...map.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+
+  return [...map.values()]
+    .filter(b => b.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
 
 async function loadHomeBlocks() {
-  try { allHomeBlocksCache = sortByOrder(await getCollection(HOME_BLOCKS_COLLECTION)); }
-  catch (e) { console.warn('home blocks load error', e); allHomeBlocksCache = []; }
+  const result = [];
+
+  for (const colName of HOME_BLOCKS_COLLECTIONS) {
+    try {
+      const rows = await getCollection(colName);
+      rows.forEach(row => result.push({ ...row, _collection: colName }));
+    } catch (e) {
+      console.warn('home blocks load error', colName, e);
+    }
+  }
+
+  const seen = new Set();
+  allHomeBlocksCache = sortByOrder(result.filter(block => {
+    const key = String(block.key || block.slug || block.id || '').trim();
+    const uniq = key || `${block._collection}:${block.id}`;
+    if (seen.has(uniq)) return false;
+    seen.add(uniq);
+    return true;
+  }));
 }
 
 function renderHomeSectionOptions() {
@@ -362,6 +405,7 @@ async function renderProducts() {
 
     allProductsCache = await getCollection(COLLECTIONS.products);
     await renderCategoryOptions();
+    renderCategoryTree();
     renderProductList();
   } catch (err) {
     console.error(err);
@@ -604,43 +648,14 @@ if ($('#importExcelBtn')) {
 
 /* CATEGORIES */
 
-function mergeCategoriesWithProductGroups(cats, products) {
-  const result = [...(cats || [])];
-  const seen = new Set(result.map(c => String(c.title || c.name || '').trim().toLowerCase()).filter(Boolean));
-
-  (products || []).forEach(product => {
-    [product.group, product.category, product.categoryName].forEach(raw => {
-      const title = normalizeCatTitle(raw);
-      if (!title || title === 'Без категории' || title === 'Без группы') return;
-      const key = title.toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      result.push({
-        id: `product-group-${slugifyBlock(title)}`,
-        title,
-        icon: '',
-        order: 999999,
-        parentId: '',
-        _fromProducts: true
-      });
-    });
-  });
-
-  return sortByOrder(result);
-}
-
 async function renderCats() {
   const list = $('#catList');
   if (!list) return;
 
   try {
-    const firestoreCats = sortByOrder(await getCollection(COLLECTIONS.categories));
-    if (!allProductsCache.length) {
-      try { allProductsCache = await getCollection(COLLECTIONS.products); } catch (e) { allProductsCache = []; }
-    }
-    allCatsCache = mergeCategoriesWithProductGroups(firestoreCats, allProductsCache);
+    allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
 
-    const parents = allCatsCache.filter(c => !c.parentId && !c._fromProducts);
+    const parents = allCatsCache.filter(c => !c.parentId);
 
     const parentSelect = $('#cParent');
     if (parentSelect) {
@@ -717,7 +732,8 @@ function renderCategoryTree() {
           </div>
 
           <div class="tree-actions">
-            ${parent._fromProducts ? '<span class="admin-badge">Из товаров</span>' : `<button class="edit" data-editc="${parent.id}">Редактировать</button><button class="danger" data-delc="${parent.id}">Удалить</button>`}
+            <button class="edit" data-editc="${parent.id}">Редактировать</button>
+            <button class="danger" data-delc="${parent.id}">Удалить</button>
           </div>
         </div>
 
@@ -732,7 +748,8 @@ function renderCategoryTree() {
                   </div>
 
                   <div class="tree-actions">
-                    ${child._fromProducts ? '<span class="admin-badge">Из товаров</span>' : `<button class="edit" data-editc="${child.id}">Редактировать</button><button class="danger" data-delc="${child.id}">Удалить</button>`}
+                    <button class="edit" data-editc="${child.id}">Редактировать</button>
+                    <button class="danger" data-delc="${child.id}">Удалить</button>
                   </div>
                 </div>
               `).join('')
@@ -742,6 +759,43 @@ function renderCategoryTree() {
       </div>
     `;
   });
+
+  const existingNames = new Set(allCatsCache.map(c => normalizeCatTitle(c.title || c.name).toLowerCase()).filter(Boolean));
+  const virtualGroups = [...new Set((allProductsCache || []).flatMap(product => [product.group, product.category, product.categoryName]).map(normalizeCatTitle).filter(Boolean))]
+    .filter(title => !existingNames.has(title.toLowerCase()))
+    .filter(title => {
+      if (parentFilter && parentFilter !== 'root') return false;
+      if (parentFilter === 'root') return true;
+      if (!queryText) return true;
+      return title.toLowerCase().includes(queryText);
+    })
+    .sort((a, b) => a.localeCompare(b, 'ru'));
+
+  if (virtualGroups.length) {
+    html += `
+      <div class="tree-parent">
+        <div class="tree-row">
+          <div>
+            <b>Группы из товаров</b>
+            <small>Найдены в товарах Firestore. Их можно создать как категории одним нажатием.</small>
+          </div>
+        </div>
+        <div class="tree-children">
+          ${virtualGroups.map(title => `
+            <div class="tree-row child">
+              <div>
+                <b>${title}</b>
+                <small>Группа из товара</small>
+              </div>
+              <div class="tree-actions">
+                <button class="edit" data-createc="${title.replace(/"/g, '&quot;')}">Создать / редактировать</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
 
   list.innerHTML = html || '<p class="muted">Ничего не найдено</p>';
 
@@ -775,6 +829,17 @@ function renderCategoryTree() {
       setVal('#cOrder', item.order ?? '');
 
       if ($('#cParent')) $('#cParent').value = item.parentId || '';
+    };
+  });
+
+  $$('[data-createc]').forEach(btn => {
+    btn.onclick = () => {
+      editing.cat = null;
+      setVal('#cTitle', btn.dataset.createc || '');
+      setVal('#cIcon', '');
+      setVal('#cOrder', '999');
+      if ($('#cParent')) $('#cParent').value = '';
+      document.getElementById('catForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
   });
 }
@@ -1101,28 +1166,36 @@ if ($('#pcReset')) {
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');
   if (!list) return;
+
   await loadHomeBlocks();
   renderHomeSectionOptions();
+
   const blocks = mergedHomeBlocks();
-  list.innerHTML = blocks.map(b => `
-    <div class="row">
+
+  list.innerHTML = blocks.length ? blocks.map(b => `
+    <div class=\"row\">
       <div>
         <b>${b.title}</b>
-        <p class="muted">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)}</p>
+        <p class=\"muted\">Ключ: ${b.key} · порядок: ${Number(b.order ?? 999)} ${b.enabled === false ? '· выключен' : ''}</p>
       </div>
-      <button class="edit" data-edithb="${b.id}">Редактировать</button><button class="danger" data-delhb="${b.id}">Удалить</button>
+      <button class=\"edit\" data-edithb=\"${b.id}\" data-hbcol=\"${b._collection || HOME_BLOCKS_COLLECTION}\">Редактировать</button>
+      <button class=\"danger\" data-delhb=\"${b.id}\" data-hbcol=\"${b._collection || HOME_BLOCKS_COLLECTION}\">Удалить</button>
     </div>
-  `).join('');
+  `).join('') : '<p class=\"muted\">Блоков пока нет. Создай первый блок выше.</p>';
+
   $$('[data-delhb]').forEach(btn => btn.onclick = async () => {
     if (!confirm('Удалить блок главной? Товары не удалятся.')) return;
-    await deleteDoc(doc(db, HOME_BLOCKS_COLLECTION, btn.dataset.delhb));
+    await deleteDoc(doc(db, btn.dataset.hbcol || HOME_BLOCKS_COLLECTION, btn.dataset.delhb));
     await renderHomeBlocksAdmin();
-renderPromoCardsAdmin();
   });
+
   $$('[data-edithb]').forEach(btn => btn.onclick = () => {
-    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb);
+    const item = allHomeBlocksCache.find(x => x.id === btn.dataset.edithb && (x._collection || HOME_BLOCKS_COLLECTION) === (btn.dataset.hbcol || HOME_BLOCKS_COLLECTION));
     if (!item) return;
+
     editing.homeBlock = item.id;
+    editing.homeBlockCollection = item._collection || HOME_BLOCKS_COLLECTION;
+
     setVal('#hbTitle', item.title || item.name || '');
     setVal('#hbKey', item.key || item.slug || '');
     setVal('#hbOrder', item.order ?? '');
@@ -1144,8 +1217,9 @@ if ($('#homeBlockForm')) {
     };
     if (!data.title) return alert('Введите название блока');
     if (editing.homeBlock) {
-      await updateDoc(doc(db, HOME_BLOCKS_COLLECTION, editing.homeBlock), data);
+      await updateDoc(doc(db, editing.homeBlockCollection || HOME_BLOCKS_COLLECTION, editing.homeBlock), data);
       editing.homeBlock = null;
+      editing.homeBlockCollection = null;
     } else {
       data.createdAt = new Date().toISOString();
       await addDoc(collection(db, HOME_BLOCKS_COLLECTION), data);
@@ -1161,6 +1235,7 @@ renderPromoCardsAdmin();
 if ($('#hbReset')) {
   $('#hbReset').onclick = () => {
     editing.homeBlock = null;
+    editing.homeBlockCollection = null;
     $('#homeBlockForm')?.reset();
     if ($('#hbEnabled')) $('#hbEnabled').checked = true;
   };
