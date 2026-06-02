@@ -54,24 +54,18 @@
         <h2>Товар</h2>
 
         <form id="productForm" class="grid2">
-          <label class="field">Название<input id="pTitle" required></label>
-          <label class="field">Группа<input id="pGroup" placeholder="Например: Автохимия / Свет / Аксессуары"></label>
+          <label class="field field-wide">Название<input id="pTitle" required></label>
+          <label class="field field-wide">Группа<input id="pGroup" placeholder="Например: Автохимия / Свет / Аксессуары"></label>
 
-          <label class="field">Цена<input id="pPrice" type="number" required></label><label class="field">Наличие, шт.<input id="pStock" type="number" placeholder="Например: 15"></label><label class="field">Старая цена / цена до скидки<input id="pOldPrice" type="number" placeholder="Например: 5990"></label><label class="field">Скидка, %<input id="pDiscount" type="number" placeholder="Например: 15"></label>
+          <label class="field field-four">Цена<input id="pPrice" type="number" required></label>
+          <label class="field field-four">Скидка, %<input id="pDiscount" type="number" placeholder="Например: 15"></label>
+          <label class="field field-four">Старая цена<input id="pOldPrice" type="number" placeholder="Например: 5990"></label>
+          <label class="field field-four">Наличие, шт.<input id="pStock" type="number" placeholder="Например: 15"></label>
 
           <label class="field">
             Категория
             <select id="pCategory">
               <option value="">Выберите категорию</option>
-            </select>
-          </label>
-
-          <label class="field">
-            Метка товара
-            <select id="pTag">
-              <option value="hot">Горячие предложения</option>
-              <option value="new">Новинки</option>
-              <option value="best">Лидеры продаж</option>
             </select>
           </label>
 
@@ -84,15 +78,26 @@
             </select>
           </label>
 
-          <label class="field check-field">
-            <span>Показывать на главной</span>
-            <input id="pShowHome" type="checkbox">
+          <label class="field">
+            Метка товара
+            <select id="pTag">
+              <option value="hot">Горячие предложения</option>
+              <option value="new">Новинки</option>
+              <option value="best">Лидеры продаж</option>
+            </select>
           </label>
 
-          <label class="field check-field">
-            <span>Доступно в рассрочку</span>
-            <input id="pInstallment" type="checkbox">
-          </label>
+          <div class="checks-row">
+            <label class="field check-field">
+              <span>Показывать на главной</span>
+              <input id="pShowHome" type="checkbox">
+            </label>
+
+            <label class="field check-field">
+              <span>Доступно в рассрочку</span>
+              <input id="pInstallment" type="checkbox">
+            </label>
+          </div>
 
           <label class="field" style="grid-column:1/-1">Фото URL<input id="pImage"></label>
 
