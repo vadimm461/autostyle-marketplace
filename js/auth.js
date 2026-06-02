@@ -19,7 +19,7 @@ function mode(m){
   loginForm?.classList.toggle('hide', m!=='login'); registerForm?.classList.toggle('hide', m!=='register');
   loginTab?.classList.toggle('active', m==='login'); registerTab?.classList.toggle('active', m==='register'); setMsg('');
 }
-authBtn?.addEventListener('click', async()=>{ if(auth.currentUser){ await signOut(auth); location.reload(); } else openAuth(); });
+authBtn?.addEventListener('click', async()=>{ if(auth.currentUser){ clearCartAndFavorites(); await signOut(auth); location.reload(); } else openAuth(); });
 closeAuth?.addEventListener('click', close); modal?.addEventListener('click',e=>{ if(e.target===modal) close(); });
 loginTab?.addEventListener('click',()=>mode('login')); registerTab?.addEventListener('click',()=>mode('register'));
 

@@ -1,9 +1,17 @@
-import { db, COLLECTIONS } from './firebase.js';
+import { db, COLLECTIONS, auth } from './firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const $ = s => document.querySelector(s);
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+function clearCartAndFavorites(){
+  localStorage.removeItem('cart');
+  localStorage.removeItem('favorites');
+  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+}
+
 
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? 0);
@@ -190,4 +198,10 @@ async function loadProduct(){
     box.innerHTML = `<div class="product-message">Ошибка загрузки: ${err.message}</div>`;
   }
 }
-saveCart(); setupSearch(); loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
+setupSearch();
+onAuthStateChanged(auth, user => {
+  if (!user) { clearCartAndFavorites(); cart = []; favs = []; }
+  else { cart = JSON.parse(localStorage.getItem('cart') || '[]'); favs = JSON.parse(localStorage.getItem('favorites') || '[]'); }
+  saveCart();
+  loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
+});

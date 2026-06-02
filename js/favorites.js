@@ -1,9 +1,17 @@
-import { db, COLLECTIONS } from './firebase.js';
+import { db, COLLECTIONS, auth } from './firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const $ = s => document.querySelector(s);
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+function clearCartAndFavorites(){
+  localStorage.removeItem('cart');
+  localStorage.removeItem('favorites');
+  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+}
+
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? 0);
 const title = p => p.title || p.name || 'Товар';
@@ -47,4 +55,10 @@ async function loadFavorites(){
   if(!products.length){ grid.innerHTML='<div class="notice">Товары из избранного не найдены.</div>'; return; }
   grid.innerHTML=products.map(card).join(''); bind();
 }
-updateCart(); setupSearch(); loadFavorites().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
+setupSearch();
+onAuthStateChanged(auth, user => {
+  if (!user) { clearCartAndFavorites(); cart = []; favs = []; }
+  else { cart = JSON.parse(localStorage.getItem('cart') || '[]'); favs = JSON.parse(localStorage.getItem('favorites') || '[]'); }
+  updateCart();
+  loadFavorites().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
+});

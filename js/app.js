@@ -17,6 +17,13 @@ const PROMO_CARDS_COLLECTIONS = [...new Set([
 ].filter(Boolean))];
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+function clearCartAndFavorites(){
+  localStorage.removeItem('cart');
+  localStorage.removeItem('favorites');
+  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+}
+
 let allProducts = [];
 let allBlocks = [];
 
@@ -333,7 +340,7 @@ function authModal(){
   $$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $('#loginForm').style.display=t.dataset.tab==='login'?'block':'none'; $('#registerForm').style.display=t.dataset.tab==='register'?'block':'none';});
   $('#loginForm')&&($('#loginForm').onsubmit=async e=>{e.preventDefault(); await signInWithEmailAndPassword(auth,$('#loginEmail').value.trim(),$('#loginPass').value); modal.classList.remove('open');});
   $('#registerForm')&&($('#registerForm').onsubmit=async e=>{e.preventDefault(); const res=await createUserWithEmailAndPassword(auth,$('#regEmail').value.trim(),$('#regPass').value); await setDoc(doc(db,COLLECTIONS.users,res.user.uid),{name:$('#regName').value.trim(),email:$('#regEmail').value.trim(),role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(res.user); alert('Аккаунт создан. Проверьте письмо на почте.'); modal.classList.remove('open');});
-  onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=()=>signOut(auth));}}else{authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
+  onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
   if (accBtn && accDrop && !accDrop.dataset.closeReady) {
     accDrop.dataset.closeReady = '1';

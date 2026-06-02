@@ -4,7 +4,7 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase
 
 document.documentElement.classList.add('admin-locked');
 
-function showAdminScreen(message = 'Войдите аккаунтом администратора Firebase.') {
+function showAdminScreen(message = '') {
   const old = document.getElementById('adminRoleScreen');
   if (old) old.remove();
   document.body.insertAdjacentHTML('afterbegin', `
@@ -12,7 +12,7 @@ function showAdminScreen(message = 'Войдите аккаунтом админ
       <form class="admin-password-card" id="adminRoleForm">
         <a class="admin-password-logo" href="index.html"><span>AS</span> AUTO <b>STYLE</b></a>
         <h1>Вход в админку</h1>
-        <p>${message}</p>
+        ${message ? `<p>${message}</p>` : ''}
         <label>Email
           <input id="adminEmailInput" type="email" autocomplete="username" placeholder="admin@email.com" autofocus>
         </label>
@@ -67,7 +67,7 @@ async function unlockAdmin() {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    showAdminScreen('Войдите аккаунтом администратора Firebase. Пароль админки больше не хранится в коде сайта.');
+    showAdminScreen();
     return;
   }
 

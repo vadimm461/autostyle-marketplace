@@ -1,4 +1,5 @@
-import { db, COLLECTIONS } from './firebase.js';
+import { db, COLLECTIONS, auth } from './firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import {
   doc,
@@ -13,6 +14,13 @@ const clearBtn = document.querySelector('#clearCart');
 const checkoutBtn = document.querySelector('#checkoutBtn');
 
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+function clearCartAndFavorites(){
+  localStorage.removeItem('cart');
+  localStorage.removeItem('favorites');
+  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+}
+
 
 function money(v) {
   return `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
@@ -78,4 +86,8 @@ if (checkoutBtn) {
   checkoutBtn.onclick = () => alert('Оформление заказа подключим следующим шагом.');
 }
 
-render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
+onAuthStateChanged(auth, user => {
+  if (!user) { clearCartAndFavorites(); cart = []; }
+  else { cart = JSON.parse(localStorage.getItem('cart') || '[]'); }
+  render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
+});

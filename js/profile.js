@@ -13,6 +13,13 @@ import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/fireba
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
 
 const $ = s => document.querySelector(s);
+
+function clearCartAndFavorites(){
+  localStorage.removeItem('cart');
+  localStorage.removeItem('favorites');
+  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+}
+
 const usersCollection = COLLECTIONS.users || 'autostyle_users';
 const productsCollection = COLLECTIONS.products || 'autostyle_products';
 
@@ -180,7 +187,7 @@ onAuthStateChanged(auth, async user => {
     $('#profileGuest').hidden = true;
     $('#profileApp').hidden = false;
     $('#profileLogout').style.display='inline-flex';
-    $('#profileLogout').onclick = async () => { await signOut(auth); location.href = 'index.html'; };
+    $('#profileLogout').onclick = async () => { clearCartAndFavorites(); await signOut(auth); location.href = 'index.html'; };
     const current = await getUserDoc(user.uid);
     fillProfile(user, current.data);
     $('#profileForm').onsubmit = async e => { e.preventDefault(); try{ await saveProfile(user); }catch(err){ message($('#profileMsg'), 'Ошибка: ' + (err.message || err), false); } };
