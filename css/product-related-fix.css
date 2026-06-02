@@ -113,3 +113,24 @@
   .related-carousel .related-card{flex-basis:82%;}
   .related-nav{display:none;}
 }
+
+/* equal action buttons */
+.product-actions{display:flex;gap:12px;align-items:stretch}
+.product-action-btn,.product-fav-btn{
+ flex:1 !important;
+ width:50%;
+ min-height:58px;
+ display:flex!important;
+ align-items:center;
+ justify-content:center;
+ box-sizing:border-box;
+}
+.product-fav-btn{margin:0!important}
+.back-link{
+ display:inline-flex;align-items:center;justify-content:center;
+ padding:12px 18px;border-radius:14px;
+ background:#fff;border:1px solid rgba(16,24,40,.08);
+ color:#101828;font-weight:700;text-decoration:none;
+ box-shadow:0 6px 16px rgba(16,24,40,.06);
+}
+.back-link:hover{background:#22e119;color:#06100a}
