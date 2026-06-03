@@ -1079,6 +1079,33 @@ if ($('#catReset')) {
   };
 }
 
+
+function bindBannerDimensionPreview(fileSelector, statusSelector, recommendedText) {
+  const input = $(fileSelector);
+  const statusBox = $(statusSelector);
+  if (!input || !statusBox) return;
+  input.addEventListener('change', () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      statusBox.innerHTML = '<div class="upload-error">Выберите файл изображения.</div>';
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      statusBox.innerHTML = `<div class="upload-info">Загружено: <b>${img.naturalWidth}×${img.naturalHeight} px</b><br>${recommendedText}</div>`;
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => {
+      statusBox.innerHTML = '<div class="upload-error">Не удалось прочитать размер изображения.</div>';
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+bindBannerDimensionPreview('#bFile', '#bUploadStatus', 'Рекомендуется: <b>1600×700 px</b> для главного баннера.');
+bindBannerDimensionPreview('#pcFile', '#pcUploadStatus', 'Рекомендуется: <b>600×700 px</b> для промо-баннера.');
+
 /* BANNERS */
 
 async function renderBanners() {

@@ -718,3 +718,11 @@
 .admin-banner-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .banner-admin-form .check-field{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:52px;border:1px solid var(--line);border-radius:16px;padding:0 14px;margin-top:25px;}
 @media(max-width:980px){.home-hero-grid .premium-hero,.hero-image-slider,.promo-image-card,.promo-image-slider{min-height:260px!important}.banner-admin-list .banner-row-admin{grid-template-columns:86px 1fr}.banner-row-admin .edit,.banner-row-admin .danger{grid-column:auto}}
+
+
+/* Banner admin size hints and stable banner image fit */
+.banner-size-hint{display:block;margin-top:8px;color:#667085;font-size:13px;font-weight:700;line-height:1.45;background:#f4f6f8;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;}
+.upload-info{background:#eef9ea;border:1px solid rgba(52,226,31,.35);border-radius:14px;padding:12px 14px;color:#1f2937;font-weight:700;line-height:1.45;}
+.image-banner-slider,.hero-image-slider,.promo-image-slider{overflow:hidden;}
+.image-banner-slide img{width:100%;height:100%;display:block;object-fit:cover!important;object-position:center center;}
+.admin-banner-thumb img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;}
