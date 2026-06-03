@@ -120,6 +120,7 @@ function mergePromoCards(custom){
       title: c.title || c.name || key,
       text: c.text || c.description || '',
       amount: c.amount || c.countText || '',
+      image: c.image || c.imageUrl || c.photoUrl || '',
       link: c.link || c.url || '#',
       width: Number(c.width || c.cardWidth || 0) || '',
       height: Number(c.height || c.cardHeight || 0) || '',
@@ -129,23 +130,38 @@ function mergePromoCards(custom){
   });
   return [...byKey.values()].filter(c => c.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
 }
+function renderImageSlides(items, className, fallbackText){
+  const slides = (items || []).filter(x => x && x.image && x.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  if (!slides.length) return `<div class="home-banner-placeholder">${fallbackText || 'Добавьте баннер в админке'}</div>`;
+  return `<div class="image-banner-slider ${className || ''}">
+    ${slides.map((b,i)=>`<a class="image-banner-slide ${i===0?'active':''}" href="${b.link || '#'}" data-slide="${i}"><img loading="lazy" decoding="async" src="${b.image}" alt="${b.title || 'Баннер'}"></a>`).join('')}
+    ${slides.length > 1 ? `<div class="image-banner-dots">${slides.map((_,i)=>`<span class="${i===0?'active':''}" data-dot="${i}"></span>`).join('')}</div>` : ''}
+  </div>`;
+}
+
+function initImageBannerSliders(scope=document){
+  scope.querySelectorAll('.image-banner-slider').forEach(slider => {
+    const slides = Array.from(slider.querySelectorAll('.image-banner-slide'));
+    const dots = Array.from(slider.querySelectorAll('[data-dot]'));
+    if (slides.length <= 1 || slider.dataset.ready) return;
+    slider.dataset.ready = '1';
+    let index = 0;
+    const show = next => {
+      index = (next + slides.length) % slides.length;
+      slides.forEach((s,i)=>s.classList.toggle('active', i === index));
+      dots.forEach((d,i)=>d.classList.toggle('active', i === index));
+    };
+    dots.forEach((dot,i)=>dot.onclick = e => { e.preventDefault(); show(i); });
+    setInterval(()=>show(index + 1), 6000);
+  });
+}
+
 function renderPromoCards(cards){
   const box = $('#banners');
   if (!box) return;
-  box.innerHTML = cards.map(c => {
-    const style = [
-      c.width ? `--promo-card-width:${Number(c.width)}px` : '',
-      c.height ? `--promo-card-height:${Number(c.height)}px` : ''
-    ].filter(Boolean).join(';');
-    return `
-      <a class="mini-banner promo-card" href="${c.link || '#'}" ${style ? `style="${style}"` : ''}>
-        ${c.amount ? `<span class="promo-card-count">${c.amount}</span>` : ''}
-        <h3>${c.title || ''}</h3>
-        <p class="muted">${c.text || ''}</p>
-      </a>
-    `;
-  }).join('');
+  box.innerHTML = '';
 }
+
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
   const priceNum = Number(p.price || 0);
@@ -295,10 +311,17 @@ async function renderHome(){
   allProducts = await getProducts();
   const customBlocks = await safeLoadCollection(HOME_BLOCKS_COLLECTION);
   allBlocks = mergeBlocks(customBlocks);
-  let banners = await safeLoadCollection(COLLECTIONS.banners);
-  const hero=$('#hero'); if(hero){ const b=banners[0]||{}; hero.innerHTML=`<div class="hero-content"><span class="hero-label">AUTO STYLE MARKET</span><h1>${b.title||'Автотовары для стиля, комфорта и защиты'}</h1><p>${b.text||'Подбери аксессуары, автохимию и полезные товары для своего автомобиля в пару кликов.'}</p><div class="hero-actions"><a href="catalog.html" class="primary hero-btn">Смотреть каталог</a><a href="#homeBlock_bestsellers" class="hero-link">Лидеры продаж</a></div></div><div class="hero-visual"><div class="hero-car">AUTO</div></div>`; }
+  let banners = (await safeLoadCollection(COLLECTIONS.banners)).filter(b => b.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  const hero=$('#hero');
+  if(hero){
+    const normalizedBanners = banners.map(b => ({...b, image: b.image || b.imageUrl || b.photoUrl || ''}));
+    hero.innerHTML = renderImageSlides(normalizedBanners, 'hero-image-slider', 'Загрузите главный баннер в админке');
+  }
   const promoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
+  const sidePromo = document.getElementById('homePromoBanner');
+  if (sidePromo) sidePromo.innerHTML = renderImageSlides(promoCards, 'promo-image-slider', 'Загрузите промо в админке');
   renderPromoCards(promoCards);
+  initImageBannerSliders(document);
   renderSections(); saveCart(); renderCatalogMenu();
 }
 function setupExpand(){

@@ -178,6 +178,7 @@ function mergedPromoCards() {
       title: card.title || card.name || key,
       text: card.text || card.description || '',
       amount: card.amount || card.countText || '',
+      image: card.image || card.imageUrl || card.photoUrl || '',
       link: card.link || card.url || '#',
       width: Number(card.width || card.cardWidth || 0) || '',
       height: Number(card.height || card.cardHeight || 0) || '',
@@ -1085,17 +1086,21 @@ async function renderBanners() {
   if (!list) return;
 
   try {
-    const arr = await getCollection(COLLECTIONS.banners);
+    const arr = sortByOrder(await getCollection(COLLECTIONS.banners));
 
     list.innerHTML = arr.length
       ? arr.map(x => `
-        <div class="row">
-          <b>${x.title || 'Без названия'}</b>
+        <div class="row banner-row-admin">
+          <div class="admin-banner-thumb">${(x.image || x.imageUrl || x.photoUrl) ? `<img src="${x.image || x.imageUrl || x.photoUrl}" alt="${x.title || 'Баннер'}">` : '<span>Фото</span>'}</div>
+          <div>
+            <b>${x.title || 'Баннер'}</b>
+            <p class="muted">Порядок: ${Number(x.order ?? 999)} · ${x.enabled === false ? 'выключен' : 'включен'}${x.link ? ` · ссылка: ${x.link}` : ''}</p>
+          </div>
           <button class="edit" data-editb="${x.id}">Редактировать</button>
           <button class="danger" data-delb="${x.id}">Удалить</button>
         </div>
       `).join('')
-      : '<p class="muted">Пока пусто</p>';
+      : '<p class="muted">Пока нет главных баннеров</p>';
 
     $$('[data-delb]').forEach(btn => {
       btn.onclick = async () => {
@@ -1112,10 +1117,12 @@ async function renderBanners() {
         if (!item) return;
 
         editing.banner = item.id;
-        setVal('#bTitle', item.title);
-        setVal('#bText', item.text);
-        setVal('#bImage', item.image);
-        setVal('#bLink', item.link);
+        setVal('#bTitle', item.title || '');
+        setVal('#bImage', item.image || item.imageUrl || item.photoUrl || '');
+        setVal('#bLink', item.link || item.url || '');
+        setVal('#bOrder', item.order ?? '');
+        if ($('#bEnabled')) $('#bEnabled').checked = item.enabled !== false;
+        $('#bTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
       };
     });
   } catch (err) {
@@ -1134,14 +1141,15 @@ if ($('#bannerForm')) {
       if (uploaded) imageUrl = uploaded;
 
       const data = {
-        title: val('#bTitle'),
-        text: val('#bText'),
+        title: val('#bTitle') || `Баннер ${Date.now()}`,
         image: imageUrl,
-        link: val('#bLink'),
+        link: val('#bLink') || '#',
+        order: Number(val('#bOrder') || 999),
+        enabled: $('#bEnabled') ? $('#bEnabled').checked : true,
         updatedAt: new Date().toISOString()
       };
 
-      if (!data.title) return alert('Введите заголовок баннера');
+      if (!data.image) return alert('Загрузите фото или вставьте Фото URL');
 
       if (editing.banner) {
         await updateDoc(doc(db, COLLECTIONS.banners, editing.banner), data);
@@ -1152,6 +1160,7 @@ if ($('#bannerForm')) {
       }
 
       e.target.reset();
+      if ($('#bEnabled')) $('#bEnabled').checked = true;
       if ($('#bUploadStatus')) $('#bUploadStatus').innerHTML = '';
       await markSiteDataChanged();
       await renderBanners();
@@ -1160,6 +1169,16 @@ if ($('#bannerForm')) {
       console.error(err);
       alert('Ошибка сохранения баннера: ' + err.message);
     }
+  };
+}
+
+if ($('#bReset')) {
+  $('#bReset').onclick = () => {
+    editing.banner = null;
+    $('#bannerForm')?.reset();
+    if ($('#bEnabled')) $('#bEnabled').checked = true;
+    if ($('#bUploadStatus')) $('#bUploadStatus').innerHTML = '';
+    $('#bTitle')?.focus();
   };
 }
 
@@ -1263,28 +1282,23 @@ async function renderPromoCardsAdmin() {
   await loadPromoCards();
   const cards = mergedPromoCards();
 
-  list.innerHTML = cards.map(card => `
-    <div class="row">
+  list.innerHTML = cards.length ? cards.map(card => `
+    <div class="row banner-row-admin">
+      <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
       <div>
-        <b>${card.title}</b>
+        <b>${card.title || 'Промо'}</b>
         <p class="muted">
-          Ключ: ${card.key} · порядок: ${Number(card.order ?? 999)}
-          ${card.amount ? ` · ${card.amount}` : ''}
+          Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}
           ${card.link ? ` · ссылка: ${card.link}` : ''}
-          ${card.width ? ` · ширина: ${card.width}px` : ''}
-          ${card.height ? ` · высота: ${card.height}px` : ''}
-          ${card.builtin ? ' · системная' : ''}
         </p>
-        <p class="muted">${card.text || ''}</p>
       </div>
-      ${card.builtin
-        ? '<span class="admin-badge">Системная</span>'
-        : `<button class="edit" data-editpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Редактировать</button><button class="danger" data-delpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Удалить</button>`}
+      <button class="edit" data-editpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Редактировать</button>
+      <button class="danger" data-delpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Удалить</button>
     </div>
-  `).join('');
+  `).join('') : '<p class="muted">Пока нет промо-баннеров</p>';
 
   $$('[data-delpc]').forEach(btn => btn.onclick = async () => {
-    if (!confirm('Удалить промо-карточку?')) return;
+    if (!confirm('Удалить промо-баннер?')) return;
     await deleteDoc(doc(db, btn.dataset.pccol || PROMO_CARDS_COLLECTION, btn.dataset.delpc));
     await markSiteDataChanged();
     await renderPromoCardsAdmin();
@@ -1296,36 +1310,35 @@ async function renderPromoCardsAdmin() {
     editing.promoCard = item.id;
     editing.promoCardCollection = item._collection || PROMO_CARDS_COLLECTION;
     setVal('#pcTitle', item.title || item.name || '');
-    setVal('#pcKey', item.key || item.slug || '');
-    setVal('#pcText', item.text || item.description || '');
-    setVal('#pcAmount', item.amount || item.countText || '');
+    setVal('#pcImage', item.image || item.imageUrl || item.photoUrl || '');
     setVal('#pcLink', item.link || item.url || '');
     setVal('#pcOrder', item.order ?? '');
-    setVal('#pcWidth', item.width || item.cardWidth || '');
-    setVal('#pcHeight', item.height || item.cardHeight || '');
     if ($('#pcEnabled')) $('#pcEnabled').checked = item.enabled !== false;
+    $('#pcTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
   });
 }
 
 if ($('#promoCardsForm')) {
   $('#promoCardsForm').onsubmit = async e => {
     e.preventDefault();
-    const title = val('#pcTitle');
-    const key = val('#pcKey') || slugifyBlock(title);
+
+    let imageUrl = val('#pcImage');
+    const uploaded = await uploadImage('#pcFile', 'promo-cards', '#pcImage', '#pcUploadStatus');
+    if (uploaded) imageUrl = uploaded;
+
+    const title = val('#pcTitle') || `Промо ${Date.now()}`;
+    const key = slugifyBlock(title);
     const data = {
       title,
       key,
-      text: val('#pcText'),
-      amount: val('#pcAmount'),
+      image: imageUrl,
       link: val('#pcLink') || '#',
       order: Number(val('#pcOrder') || 999),
-      width: Number(val('#pcWidth') || 0) || '',
-      height: Number(val('#pcHeight') || 0) || '',
       enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
       updatedAt: new Date().toISOString()
     };
 
-    if (!data.title) return alert('Введите название карточки');
+    if (!data.image) return alert('Загрузите фото или вставьте Фото URL');
 
     try {
       if (editing.promoCard) {
@@ -1333,48 +1346,30 @@ if ($('#promoCardsForm')) {
         editing.promoCard = null;
         editing.promoCardCollection = null;
       } else {
-        const docId = key;
         data.createdAt = new Date().toISOString();
-        await setDoc(doc(db, PROMO_CARDS_COLLECTION, docId), {
-          ...data,
-          id: docId
-        }, { merge: true });
+        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
       }
 
       e.target.reset();
       if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+      if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
       await markSiteDataChanged();
       await renderPromoCardsAdmin();
-      alert('Промо-карточка сохранена');
+      alert('Промо-баннер сохранён');
     } catch (err) {
-      console.error('promo card save error', err);
-      alert('Ошибка сохранения промо-карточки: ' + (err?.message || err));
+      console.error('promo banner save error', err);
+      alert('Ошибка сохранения промо-баннера: ' + (err?.message || err));
     }
   };
 }
 
 if ($('#pcReset')) {
   $('#pcReset').onclick = () => {
-    const form = $('#promoCardsForm');
-
-    // Если редактировали существующую карточку — кнопка переводит форму в режим создания новой.
-    if (editing.promoCard) {
-      editing.promoCard = null;
-      editing.promoCardCollection = null;
-      form?.reset();
-      if ($('#pcEnabled')) $('#pcEnabled').checked = true;
-      $('#pcTitle')?.focus();
-      return;
-    }
-
-    // Если поля заполнены — создаём новую карточку этой же кнопкой.
-    if (val('#pcTitle')) {
-      form?.requestSubmit();
-      return;
-    }
-
-    form?.reset();
+    editing.promoCard = null;
+    editing.promoCardCollection = null;
+    $('#promoCardsForm')?.reset();
     if ($('#pcEnabled')) $('#pcEnabled').checked = true;
+    if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
     $('#pcTitle')?.focus();
   };
 }

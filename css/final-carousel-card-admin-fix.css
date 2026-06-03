@@ -697,3 +697,24 @@
   background:#f3f5f7 !important;
   color:#111318 !important;
 }
+
+/* Final override: image-only banners on home */
+.home-hero-grid .premium-hero{padding:0!important;background:#111318!important;min-height:420px!important;overflow:hidden!important;}
+.home-hero-grid .premium-hero::after,.home-hero-grid .premium-hero .hero-content,.home-hero-grid .premium-hero .hero-visual{display:none!important;}
+.image-banner-slider{position:relative;width:100%;height:100%;min-height:inherit;border-radius:inherit;overflow:hidden;background:#f3f5f7;}
+.image-banner-slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .35s ease;display:block;}
+.image-banner-slide.active{opacity:1;visibility:visible;}
+.image-banner-slide img{width:100%;height:100%;display:block;object-fit:cover;}
+.hero-image-slider{min-height:420px;}
+.promo-image-card{padding:0!important;overflow:hidden!important;min-height:420px!important;background:#f3f5f7!important;}
+.promo-image-slider{min-height:420px;}
+.image-banner-dots{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;z-index:4;padding:7px 9px;border-radius:999px;background:rgba(0,0,0,.22);backdrop-filter:blur(10px);}
+.image-banner-dots span{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.55);cursor:pointer;transition:.2s;}
+.image-banner-dots span.active{width:22px;background:#34e21f;}
+.home-banner-placeholder{height:100%;min-height:inherit;display:grid;place-items:center;color:#667085;font-weight:900;background:#f3f5f7;border-radius:inherit;}
+.banner-admin-list .banner-row-admin{grid-template-columns:120px 1fr auto auto;}
+.admin-banner-thumb{width:112px;height:70px;border-radius:14px;overflow:hidden;background:#f3f5f7;display:grid;place-items:center;color:#667085;font-weight:900;border:1px solid var(--line);}
+.admin-banner-thumb-small{height:86px;width:86px;}
+.admin-banner-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.banner-admin-form .check-field{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:52px;border:1px solid var(--line);border-radius:16px;padding:0 14px;margin-top:25px;}
+@media(max-width:980px){.home-hero-grid .premium-hero,.hero-image-slider,.promo-image-card,.promo-image-slider{min-height:260px!important}.banner-admin-list .banner-row-admin{grid-template-columns:86px 1fr}.banner-row-admin .edit,.banner-row-admin .danger{grid-column:auto}}

@@ -97,8 +97,12 @@ function productInCategory(p, selected){
 async function initData(){ products=(await getProducts()).filter(available); categories=await getCategories(); }
 async function renderHome(){
   setupShell('home'); await initData();
-  const banners=await getBanners().catch(()=>[]); const b=banners[0]||{};
-  $('#mHero').innerHTML=`<div><span class="m-label">AUTO STYLE MARKET</span><h1>${b.title||'AutoStyle'}</h1><p>${b.text||'Автотовары, аксессуары и автохимия в пару кликов.'}</p></div><div class="m-hero-actions"><a class="m-btn green" href="mobile-catalog.html">Смотреть каталог</a><a class="m-btn" href="#mBest">Лидеры продаж</a></div>`;
+  const banners=(await getBanners().catch(()=>[])).filter(b=>b.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  const b=banners.find(x=>x.image||x.imageUrl||x.photoUrl)||{};
+  const bImg=b.image||b.imageUrl||b.photoUrl||'';
+  $('#mHero').innerHTML = bImg
+    ? `<a class="m-hero-image" href="${b.link||'mobile-catalog.html'}"><img loading="eager" decoding="async" src="${bImg}" alt="${b.title||'AutoStyle'}"></a>`
+    : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
   const hot=products.slice(0,10), best=products.filter(p=>['best','bestsellers','leader','leaders'].includes(norm(p.tag))).slice(0,10);
   $('#mNew').innerHTML=hot.slice(0,6).map(card).join('')||'<div class="m-empty">Товары пока загружаются</div>';
   $('#mBest').innerHTML=(best.length?best:hot).slice(0,8).map(card).join('');

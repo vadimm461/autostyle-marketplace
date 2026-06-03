@@ -173,13 +173,16 @@
 
     <section id="banners" class="admin-section">
       <div class="admin-card">
-        <h2>Баннер</h2>
+        <h2>Главные баннеры</h2>
+        <p class="muted">Большой баннер на главной теперь управляется только изображениями. Можно добавить несколько фото, задать порядок и ссылку.</p>
 
-        <form id="bannerForm" class="grid2">
-          <label class="field">Заголовок<input id="bTitle" required></label>
-          <label class="field">Ссылка<input id="bLink" placeholder="catalog.html"></label>
+        <form id="bannerForm" class="grid2 banner-admin-form">
+          <label class="field">Название для админки<input id="bTitle" placeholder="Например: Главный баннер 1"></label>
+          <label class="field">Ссылка при клике<input id="bLink" placeholder="catalog.html"></label>
+          <label class="field">Порядок<input id="bOrder" type="number" placeholder="1"></label>
+          <label class="field check-field"><span>Включен</span><input id="bEnabled" type="checkbox" checked></label>
 
-          <label class="field" style="grid-column:1/-1">Фото URL<input id="bImage"></label>
+          <label class="field" style="grid-column:1/-1">Фото URL<input id="bImage" placeholder="https://..."></label>
 
           <label class="field" style="grid-column:1/-1">
             Загрузить фото
@@ -188,12 +191,11 @@
 
           <div id="bUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
 
-          <label class="field" style="grid-column:1/-1">Текст<textarea id="bText"></textarea></label>
-
           <button class="primary">Сохранить баннер</button>
+          <button id="bReset" type="button" class="edit">Новый баннер</button>
         </form>
 
-        <div id="bannerList" class="list"></div>
+        <div id="bannerList" class="list banner-admin-list"></div>
       </div>
     </section>
 
@@ -217,24 +219,27 @@
 
     <section id="promocards" class="admin-section">
       <div class="admin-card">
-        <h2>Промо-карточки на главной</h2>
-        <p class="muted">Это отдельные карточки “Акции / Новинки / Топ товары” под главным баннером. Они не связаны с товарными блоками ниже.</p>
+        <h2>Правые промо-баннеры</h2>
+        <p class="muted">Маленький блок “Промо” справа от главного баннера теперь тоже картинка. Можно загрузить несколько фото, менять порядок и ссылку.</p>
 
-        <form id="promoCardsForm" class="grid2">
-          <label class="field">Название карточки<input id="pcTitle" placeholder="Например: Акции" required></label>
-          <label class="field">Ключ<input id="pcKey" placeholder="sale / new / top"></label>
-          <label class="field">Описание<input id="pcText" placeholder="Лучшие предложения недели"></label>
-          <label class="field">Количество / метка<input id="pcAmount" placeholder="Например: 120 товаров"></label>
-          <label class="field">Ссылка<input id="pcLink" placeholder="catalog.html?promo=sale"></label>
-          <label class="field">Порядковый номер<input id="pcOrder" type="number" placeholder="1"></label>
-          <label class="field">Ширина карточки, px<input id="pcWidth" type="number" min="120" placeholder="например: 360"></label>
-          <label class="field">Высота карточки, px<input id="pcHeight" type="number" min="80" placeholder="например: 140"></label>
+        <form id="promoCardsForm" class="grid2 banner-admin-form">
+          <label class="field">Название для админки<input id="pcTitle" placeholder="Например: Промо 1"></label>
+          <label class="field">Ссылка при клике<input id="pcLink" placeholder="catalog.html?promo=sale"></label>
+          <label class="field">Порядок<input id="pcOrder" type="number" placeholder="1"></label>
           <label class="field check-field"><span>Включена</span><input id="pcEnabled" type="checkbox" checked></label>
-          <button class="primary">Сохранить карточку</button>
-          <button id="pcReset" type="button" class="edit" title="Если поля заполнены — создаст новую карточку. Если редактируешь — очистит форму.">Новая карточка</button>
+
+          <label class="field" style="grid-column:1/-1">Фото URL<input id="pcImage" placeholder="https://..."></label>
+          <label class="field" style="grid-column:1/-1">
+            Загрузить фото
+            <input id="pcFile" type="file" accept="image/*">
+          </label>
+          <div id="pcUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+
+          <button class="primary">Сохранить промо</button>
+          <button id="pcReset" type="button" class="edit" title="Если поля заполнены — создаст новый промо-баннер. Если редактируешь — очистит форму.">Новый промо</button>
         </form>
 
-        <div id="promoCardList" class="list"></div>
+        <div id="promoCardList" class="list banner-admin-list"></div>
       </div>
     </section>
 
