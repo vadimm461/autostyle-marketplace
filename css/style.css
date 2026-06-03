@@ -2038,3 +2038,43 @@ html.admin-locked .admin-layout{display:none!important;}
 .image-banner-slider,.hero-image-slider,.promo-image-slider{overflow:hidden;}
 .image-banner-slide img{width:100%;height:100%;display:block;object-fit:cover!important;object-position:center center;}
 .admin-banner-thumb img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;}
+
+/* Banner display final fix: keep hero size, remove side spots, show promo fully */
+.home-hero-grid .premium-hero,
+.home-hero-grid .premium-hero .hero-image-slider,
+.home-hero-grid .premium-hero .image-banner-slider{
+  background:#fff !important;
+}
+.home-hero-grid .premium-hero .image-banner-slide img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  background:#fff !important;
+}
+.promo-image-card{
+  background:#fff !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+.promo-image-card .promo-image-slider,
+.promo-image-card .image-banner-slider{
+  width:100% !important;
+  height:100% !important;
+  background:#fff !important;
+}
+.promo-image-card .image-banner-slide{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:#fff !important;
+}
+.promo-image-card .image-banner-slide img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  background:#fff !important;
+}
