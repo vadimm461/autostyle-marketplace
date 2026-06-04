@@ -32,11 +32,26 @@
       <h2>Итого</h2>
       <div class="summary-row"><span>Товары</span><b id="cartItemsCount">0</b></div>
       <div class="summary-row"><span>Сумма</span><b id="cartTotal">0 ₽</b></div>
-      <button id="checkoutBtn" class="primary">Оформить заказ</button>
+      <details class="installment-box"><summary>Рассчитать рассрочку</summary>
+<div id="installmentResults" class="muted">Выберите товары в корзине</div>
+</details>
+<div class="cart-summary-actions">
+        <button id="checkoutBtn" class="primary">Оформить заказ</button>
+        <button id="discountCardBtn" class="discount-card-btn" type="button">Применить скидочную карту</button>
+      </div>
+      <a class="continue-shopping-btn" href="catalog.html">← Продолжить покупки</a>
       <button id="clearCart" class="secondary-btn" type="button">Очистить корзину</button>
     </aside>
   </section>
 </main>
+
+<div id="quickProductModal" class="quick-modal" aria-hidden="true">
+  <div class="quick-modal-backdrop" data-close="1"></div>
+  <div class="quick-modal-card" role="dialog" aria-modal="true">
+    <button class="quick-modal-close" type="button" aria-label="Закрыть">×</button>
+    <div id="quickProductContent"></div>
+  </div>
+</div>
 
 <footer class="footer">
   <div class="footer-inner">
