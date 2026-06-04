@@ -27,6 +27,7 @@
       <button data-section="homeblocks">Блоки главной</button>
       <button data-section="promocards">Промо карточки</button>
       <button data-section="orders">Заказы</button>
+      <button data-section="discountCards">Скидочные карты</button>
       <button data-section="media">Медиа</button>
       <button data-section="pages">Страницы</button>
       <button data-section="settings">Настройки</button>
@@ -250,6 +251,19 @@
         <h2>Заказы</h2>
         <p class="muted">Новые заказы с сайта появляются здесь. Можно смотреть состав заказа, покупателя и менять статус.</p>
         <div id="orderList" class="list"></div>
+      </div>
+    </section>
+
+
+    <section id="discountCards" class="admin-section">
+      <div class="admin-card">
+        <h2>Скидочные карты</h2>
+        <p class="muted">Карты клиентов, активированные в личном кабинете. Поиск по имени, телефону, email, автомобилю или номеру карты.</p>
+        <div class="admin-search-row">
+          <input id="discountCardSearch" type="search" placeholder="Поиск карты...">
+          <button id="discountCardSearchBtn" class="secondary" type="button">Найти</button>
+        </div>
+        <div id="discountCardsList" class="list"></div>
       </div>
     </section>
 

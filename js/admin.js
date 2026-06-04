@@ -339,6 +339,7 @@ onAuthStateChanged(auth, user => {
   renderProducts();
   renderBanners();
   renderOrdersAdmin();
+  renderDiscountCardsAdmin();
 });
 
 
@@ -401,6 +402,7 @@ function formatDate(value) {
   }
 }
 
+
 async function renderOrdersAdmin() {
   const list = $('#orderList');
   if (!list) return;
@@ -422,47 +424,33 @@ async function renderOrdersAdmin() {
       return;
     }
 
-    list.innerHTML = orders.map(order => {
-      const items = Array.isArray(order.items) ? order.items : [];
+    const statusGroups = [
+      ['new', 'Новые'],
+      ['processing', 'В обработке'],
+      ['ready', 'Готовые к выдаче'],
+      ['completed', 'Выполненные'],
+      ['cancelled', 'Отменённые']
+    ];
+    const grouped = new Map(statusGroups.map(([key]) => [key, []]));
+    orders.forEach(order => {
       const status = normalizeOrderStatus(order.status);
-      const payment = paymentSummary(order);
-      return `
-        <article class="admin-order-card ${status === 'new' ? 'is-new' : ''}">
-          <div class="admin-order-head">
-            <div>
-              <h3>${esc(order.orderNumber || order.id)}</h3>
-              <p>${formatDate(order.createdAt || order.createdAtText)} · ${esc(order.userName || order.userEmail || 'Покупатель')}</p>
-              <p class="admin-order-payment">Способ оплаты: <b>${esc(payment)}</b></p>
-            </div>
-            <div class="admin-order-total">${formatMoney(order.total)}</div>
-          </div>
-          <div class="admin-order-user">
-            <span>Email: <b>${esc(order.userEmail || '—')}</b></span>
-            <span>Телефон: <b>${esc(order.userPhone || '—')}</b></span>
-            <span>Товаров: <b>${Number(order.totalQty || items.reduce((s, x) => s + Number(x.qty || 0), 0))}</b></span>
-          </div>
-          <div class="admin-order-items">
-            ${items.map(item => `
-              <div class="admin-order-item">
-                <div class="admin-order-item-img">${item.image ? `<img src="${esc(item.image)}" alt="">` : 'Фото'}</div>
-                <div>
-                  <b>${esc(item.title)}</b>
-                  <p>${esc(item.group || '')}${item.code ? ` · код: ${esc(item.code)}` : ''}</p>
-                </div>
-                <strong>${Number(item.qty || 1)} × ${formatMoney(item.price)} = ${formatMoney(item.lineTotal)}</strong>
-              </div>`).join('')}
-          </div>
-          <div class="admin-order-actions">
-            <label>Статус
-              <select data-order-status="${esc(order.id)}">
-                ${Object.entries(ORDER_STATUS).map(([key, title]) => `<option value="${key}" ${key === status ? 'selected' : ''}>${title}</option>`).join('')}
-              </select>
-            </label>
-            <button class="danger" type="button" data-order-delete="${esc(order.id)}">Удалить</button>
-          </div>
-        </article>`;
+      (grouped.get(status) || grouped.get('new')).push(order);
+    });
+
+    list.innerHTML = statusGroups.map(([key, title]) => {
+      const groupOrders = grouped.get(key) || [];
+      const open = key === 'new' || key === 'processing';
+      return `<details class="admin-order-group" ${open ? 'open' : ''}>
+        <summary><span>${esc(title)}</span><b>${groupOrders.length}</b></summary>
+        <div class="admin-order-group-list">
+          ${groupOrders.length ? groupOrders.map(renderAdminOrderCard).join('') : '<div class="orders-empty small">Нет заказов</div>'}
+        </div>
+      </details>`;
     }).join('');
 
+    list.querySelectorAll('[data-order-toggle]').forEach(btn => {
+      btn.onclick = () => btn.closest('.admin-order-card')?.classList.toggle('expanded');
+    });
     list.querySelectorAll('[data-order-status]').forEach(select => {
       select.onchange = async () => {
         const id = select.dataset.orderStatus;
@@ -474,7 +462,6 @@ async function renderOrdersAdmin() {
         renderOrdersAdmin();
       };
     });
-
     list.querySelectorAll('[data-order-delete]').forEach(btn => {
       btn.onclick = async () => {
         if (!confirm('Удалить заказ?')) return;
@@ -487,6 +474,103 @@ async function renderOrdersAdmin() {
     list.innerHTML = `<div class="upload-error">Ошибка загрузки заказов: ${esc(err.message || err)}</div>`;
   }
 }
+
+function renderAdminOrderCard(order) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const status = normalizeOrderStatus(order.status);
+  const payment = paymentSummary(order);
+  const qty = Number(order.totalQty || items.reduce((s, x) => s + Number(x.qty || 0), 0));
+  return `
+    <article class="admin-order-card ${status === 'new' ? 'is-new' : ''}">
+      <div class="admin-order-head compact">
+        <button class="admin-order-toggle" type="button" data-order-toggle="${esc(order.id)}">▾</button>
+        <div class="admin-order-main">
+          <h3>${esc(order.orderNumber || order.id)}</h3>
+          <p>${formatDate(order.createdAt || order.createdAtText)} · ${esc(order.userName || order.userEmail || 'Покупатель')}</p>
+        </div>
+        <div class="admin-order-summary">
+          <span>${qty} шт.</span>
+          <b>${formatMoney(order.total)}</b>
+        </div>
+      </div>
+      <div class="admin-order-collapsed">
+        <span>Email: <b>${esc(order.userEmail || '—')}</b></span>
+        <span>Телефон: <b>${esc(order.userPhone || '—')}</b></span>
+        <span>Оплата: <b>${esc(payment)}</b></span>
+      </div>
+      <div class="admin-order-details">
+        <div class="admin-order-items">
+          ${items.map(item => `
+            <div class="admin-order-item">
+              <div class="admin-order-item-img">${item.image ? `<img src="${esc(item.image)}" alt="">` : 'Фото'}</div>
+              <div>
+                <b>${esc(item.title)}</b>
+                <p>${esc(item.group || '')}${item.code ? ` · код: ${esc(item.code)}` : ''}</p>
+              </div>
+              <strong>${Number(item.qty || 1)} × ${formatMoney(item.price)} = ${formatMoney(item.lineTotal)}</strong>
+            </div>`).join('')}
+        </div>
+        <div class="admin-order-actions">
+          <label>Статус
+            <select data-order-status="${esc(order.id)}">
+              ${Object.entries(ORDER_STATUS).map(([key, title]) => `<option value="${key}" ${key === status ? 'selected' : ''}>${title}</option>`).join('')}
+            </select>
+          </label>
+          <button class="danger" type="button" data-order-delete="${esc(order.id)}">Удалить</button>
+        </div>
+      </div>
+    </article>`;
+}
+
+function discountCardSearchMatches(card, term) {
+  if (!term) return true;
+  const hay = `${card.number || ''} ${card.name || ''} ${card.email || ''} ${card.phone || ''} ${card.city || ''} ${card.car || ''}`.toLowerCase();
+  return hay.includes(term.toLowerCase());
+}
+
+async function renderDiscountCardsAdmin() {
+  const list = $('#discountCardsList');
+  if (!list) return;
+  list.innerHTML = '<div class="muted">Загружаю скидочные карты...</div>';
+  try {
+    let cards = [];
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTIONS.discountCards || 'autostyle_discountCards'), orderBy('createdAtServer', 'desc')));
+      cards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      const snap = await getDocs(collection(db, COLLECTIONS.discountCards || 'autostyle_discountCards'));
+      cards = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b)=>String(b.issuedAt||'').localeCompare(String(a.issuedAt||'')));
+    }
+    const search = $('#discountCardSearch');
+    const term = (search?.value || '').trim();
+    const filtered = cards.filter(card => discountCardSearchMatches(card, term));
+    list.innerHTML = filtered.length ? filtered.map(card => `
+      <article class="admin-discount-card-row">
+        <div>
+          <h3>${esc(card.name || 'Клиент')}</h3>
+          <p>${esc(card.email || '—')} · ${esc(card.phone || '—')}</p>
+          <p>${esc(card.city || '')}${card.address ? ` · ${esc(card.address)}` : ''}</p>
+          <p>Авто: <b>${esc(card.car || '—')}</b></p>
+        </div>
+        <div class="admin-discount-number">
+          <span>EAN13</span>
+          <b>${esc(card.number || '—')}</b>
+          <small>${formatDate(card.issuedAt || card.createdAt)}</small>
+        </div>
+      </article>`).join('') : '<div class="orders-empty">Карты не найдены.</div>';
+  } catch(err) {
+    console.error('discount cards render error', err);
+    list.innerHTML = `<div class="upload-error">Ошибка загрузки карт: ${esc(err.message || err)}</div>`;
+  }
+}
+
+document.addEventListener('input', e => {
+  if (e.target?.id === 'discountCardSearch') renderDiscountCardsAdmin();
+});
+document.addEventListener('click', e => {
+  if (e.target?.id === 'discountCardSearchBtn') renderDiscountCardsAdmin();
+});
+
 
 /* CATEGORY OPTIONS */
 

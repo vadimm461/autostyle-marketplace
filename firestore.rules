@@ -70,5 +70,12 @@ service cloud.firestore {
       allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
       allow update, delete: if isAdmin();
     }
+
+    match /autostyle_discountCards/{cardId} {
+      allow create, update: if signedIn() && request.auth.uid == cardId;
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
   }
 }

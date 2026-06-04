@@ -8,7 +8,7 @@ import {
   reauthenticateWithCredential,
   verifyBeforeUpdateEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
 
@@ -336,13 +336,14 @@ function updateDiscountCardUI(user, data={}) {
   if (active) {
     setText(title, 'Скидочная карта активна');
     setText(text, 'Карта привязана к аккаунту. При оформлении заказа можно будет применить скидку.');
-    if (button) button.hidden = true;
+    if (button) { button.hidden = true; button.style.display = 'none'; }
     if (cartLink) cartLink.hidden = false;
   } else {
     setText(title, 'Карта недоступна');
     setText(text, 'Заполните имя, телефон, город, адрес и автомобиль, чтобы получить скидочную карту.');
     if (button) {
       button.hidden = false;
+      button.style.display = '';
       button.textContent = complete ? 'ПОЛУЧИТЬ СКИДОЧНУЮ КАРТУ' : 'ЗАПОЛНИТЬ ПРОФИЛЬ';
     }
     if (cartLink) cartLink.hidden = true;
@@ -368,6 +369,23 @@ async function getDiscountCard(user) {
     return;
   }
   const number = current.data.discountCard?.number || current.data.discountCardNumber || makeDiscountCardNumber(user.uid);
+  const issuedAt = new Date().toISOString();
+  const cardData = {
+    userId: user.uid,
+    uid: user.uid,
+    number,
+    type: 'EAN13',
+    active: true,
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    city: data.city,
+    address: data.address,
+    car: data.car,
+    issuedAt,
+    updatedAt: issuedAt,
+    searchText: `${data.name} ${data.email} ${data.phone} ${number} ${data.city} ${data.car}`.toLowerCase()
+  };
   await setDoc(current.ref, {
     uid: user.uid,
     name: data.name,
@@ -376,14 +394,20 @@ async function getDiscountCard(user) {
     city: data.city,
     address: data.address,
     car: data.car,
-    discountCard: { active: true, number, type: 'EAN13', issuedAt: new Date().toISOString() },
+    discountCard: { active: true, number, type: 'EAN13', issuedAt },
     discountCardActive: true,
     discountCardNumber: number,
-    updatedAt: new Date().toISOString(),
-    createdAt: current.data.createdAt || new Date().toISOString(),
+    updatedAt: issuedAt,
+    createdAt: current.data.createdAt || issuedAt,
     role: current.data.role || 'user'
   }, { merge: true });
+  await setDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discountCards', user.uid), {
+    ...cardData,
+    createdAt: current.data.discountCard?.issuedAt || issuedAt,
+    createdAtServer: serverTimestamp()
+  }, { merge: true });
   updateDiscountCardUI(user, { ...data, discountCard: { active: true, number } });
+  message(msg, 'Скидочная карта активирована.', true);
 }
 
 function setupSearch(){
