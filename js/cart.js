@@ -1,6 +1,5 @@
-import { db, COLLECTIONS, auth } from './firebase.js';
+import { auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-
 import { getProducts } from './data-cache.js';
 
 const cartList = document.querySelector('#cartList');
@@ -13,152 +12,204 @@ const discountCardBtn = document.querySelector('#discountCardBtn');
 const quickModal = document.querySelector('#quickProductModal');
 const quickProductContent = document.querySelector('#quickProductContent');
 
-let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-cart = cart.map(i => typeof i==='object'? i : {id:i,qty:1});
+let productsCache = null;
+let cart = normalizeCart(readCart());
 
-function clearCartAndFavorites(){
-  localStorage.removeItem('cart');
-  localStorage.removeItem('favorites');
-  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+function readCart() {
+  try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
+  catch { return []; }
 }
 
-
-function money(v) {
-  return `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
+function normalizeCart(raw) {
+  const map = new Map();
+  (Array.isArray(raw) ? raw : []).forEach(item => {
+    const id = typeof item === 'object' ? item.id : item;
+    if (!id) return;
+    const qty = Math.max(1, Number(typeof item === 'object' ? item.qty : 1) || 1);
+    const key = String(id);
+    map.set(key, { id: key, qty: (map.get(key)?.qty || 0) + qty });
+  });
+  return [...map.values()];
 }
 
 function save() {
+  cart = normalizeCart(cart);
   localStorage.setItem('cart', JSON.stringify(cart));
-  if (cartCount) cartCount.textContent = cart.reduce((s,i)=>s+(i.qty||1),0);
+  updateCartCounter();
 }
 
-let productsCache = null;
-async function loadProduct(id) {
+function updateCartCounter() {
+  const count = cart.reduce((s, i) => s + (Number(i.qty) || 1), 0);
+  document.querySelectorAll('#cartCount,.cartCount').forEach(el => el.textContent = String(count));
+}
+
+function money(v) {
+  return `${Math.round(Number(v || 0)).toLocaleString('ru-RU')} ₽`;
+}
+
+function title(p) { return p.title || p.name || p.productName || 'Товар'; }
+function group(p) { return p.group || p.category || p.categoryName || 'Без категории'; }
+function image(p) { return p.image || p.imageUrl || p.photo || p.photoUrl || p.img || ''; }
+function stock(p) { return Number(p.stock ?? p.quantity ?? p.qty ?? p.balance ?? 0); }
+function code(p) { return p.code || p.sku || p.article || p.id || ''; }
+
+async function getProductMap() {
   if (!productsCache) productsCache = await getProducts();
-  return productsCache.find(p => String(p.id) === String(id)) || null;
+  return new Map(productsCache.map(p => [String(p.id), p]));
+}
+
+function calcInstallment(total) {
+  return [
+    ['Агропромбанк', {3:.955, 6:.93, 9:.9, 12:.875}],
+    ['Эксимбанк', {3:.955, 6:.93, 9:.9, 12:.886}],
+    ['Сбербанк', {3:.96, 6:.93, 9:.9, 12:.88}],
+  ].map(([bank, rates]) => ({ bank, rates }));
 }
 
 async function render() {
   save();
-
   if (!cartList) return;
 
-  if (!cart.length) {
-    cartList.innerHTML = '<div class="info-card">Корзина пустая.</div>';
+  const productMap = await getProductMap();
+  const rows = cart.map(item => ({ item, product: productMap.get(String(item.id)) })).filter(r => r.product);
+
+  // Если товар удалили из Firebase, убираем его из корзины, но не очищаем корзину из-за отсутствия авторизации.
+  if (rows.length !== cart.length) {
+    cart = rows.map(r => r.item);
+    save();
+  }
+
+  if (!rows.length) {
+    cartList.innerHTML = `
+      <div class="cart-empty-card">
+        <h2>Корзина пустая</h2>
+        <p>Добавь товары из каталога, а потом вернись к оформлению заказа.</p>
+        <a href="catalog.html">Перейти в каталог</a>
+      </div>`;
     if (totalBox) totalBox.textContent = '0 ₽';
     if (countBox) countBox.textContent = '0';
+    renderInstallments(0);
     return;
   }
 
-  const products=(await Promise.all(cart.map(i=>loadProduct(i.id)))).filter(Boolean);
-  const total = products.reduce((sum,p,idx)=>sum+Number(p.price||0)*(cart[idx]?.qty||1),0);
+  const total = rows.reduce((sum, r) => sum + Number(r.product.price || 0) * (Number(r.item.qty) || 1), 0);
+  const totalQty = rows.reduce((sum, r) => sum + (Number(r.item.qty) || 1), 0);
 
-  cartList.innerHTML = products.map((p, index) => {
-    const qty = cart[index]?.qty || 1;
-    const title = p.title || p.name || 'Товар';
+  cartList.innerHTML = rows.map(({ item, product }, index) => {
+    const qty = Number(item.qty) || 1;
+    const productTitle = title(product);
     return `
-    <div class="cart-row" data-product-id="${p.id}">
-      <button class="cart-product-open" type="button" data-index="${index}" title="Быстрый просмотр">
-        <div class="cart-img">${p.image ? `<img loading="lazy" decoding="async" src="${p.image}" alt="${title}">` : 'Фото'}</div>
-      </button>
-      <div class="cart-product-info">
-        <button class="cart-title-btn" type="button" data-index="${index}">${title}</button>
-        <p class="muted">${p.category || 'Без категории'} ${p.code ? `· код: ${p.code}` : ''}</p>
-        <div class="cart-product-bottom">
-          <div class="qty cart-qty">
+      <article class="cart-row" data-product-id="${product.id}">
+        <button class="cart-product-open" type="button" data-index="${index}" title="Быстрый просмотр">
+          <div class="cart-img">${image(product) ? `<img loading="lazy" decoding="async" src="${image(product)}" alt="${productTitle}">` : '<span>Фото</span>'}</div>
+        </button>
+        <div class="cart-product-info">
+          <button class="cart-title-btn" type="button" data-index="${index}">${productTitle}</button>
+          <p class="cart-meta">${group(product)}${code(product) ? ` · код: ${code(product)}` : ''}</p>
+          <strong class="cart-mobile-price">${money(Number(product.price || 0) * qty)}</strong>
+          <button class="quick-view-btn" type="button" data-index="${index}">👁 Быстрый просмотр</button>
+        </div>
+        <div class="cart-row-controls">
+          <div class="qty cart-qty" aria-label="Количество товара">
             <button class="minus" data-index="${index}" type="button">−</button>
             <span>${qty}</span>
             <button class="plus" data-index="${index}" type="button">+</button>
           </div>
-          <strong>${money(Number(p.price || 0) * qty)}</strong>
+          <strong class="cart-line-price">${money(Number(product.price || 0) * qty)}</strong>
         </div>
-      </div>
-      <button class="danger remove" data-index="${index}" type="button">Удалить</button>
-    </div>`;
+        <button class="danger remove" data-index="${index}" type="button">Удалить</button>
+      </article>`;
   }).join('');
 
   if (totalBox) totalBox.textContent = money(total);
-  if (countBox) countBox.textContent = String(cart.reduce((s,i)=>s+(i.qty||1),0));
-const inst=document.getElementById('installmentResults');
-if(inst){
- const banks=[['Агропромбанк',{3:.955,6:.93,9:.9,12:.875}],['Эксимбанк',{3:.955,6:.93,9:.9,12:.886}],['Сбербанк',{3:.96,6:.93,9:.9,12:.88}]];
- inst.innerHTML = banks.map(([n,r]) => `
-   <div class="installment-bank">
-     <b>${n}</b>
-     ${Object.entries(r).map(([m,k]) => `<div class="installment-row"><span>${m} мес.</span><strong>${money(Math.ceil(total * k / Number(m)))}/мес</strong></div>`).join('')}
-   </div>
- `).join('');
-}
+  if (countBox) countBox.textContent = String(totalQty);
+  renderInstallments(total);
 
-  document.querySelectorAll('.plus').forEach(btn=>btn.onclick=()=>{cart[btn.dataset.index].qty=(cart[btn.dataset.index].qty||1)+1;render();});
-  document.querySelectorAll('.minus').forEach(btn=>btn.onclick=()=>{let i=cart[btn.dataset.index];i.qty=Math.max(1,(i.qty||1)-1);render();});
-  document.querySelectorAll('.cart-product-open,.cart-title-btn').forEach(btn=>btn.onclick=()=>openQuickProduct(products[Number(btn.dataset.index)]));
- document.querySelectorAll('.remove').forEach(btn => {
-    btn.onclick = () => {
-      cart.splice(Number(btn.dataset.index),1);
-      render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
-    };
+  document.querySelectorAll('.plus').forEach(btn => btn.onclick = () => {
+    const i = Number(btn.dataset.index);
+    cart[i].qty = (Number(cart[i].qty) || 1) + 1;
+    render();
+  });
+  document.querySelectorAll('.minus').forEach(btn => btn.onclick = () => {
+    const i = Number(btn.dataset.index);
+    cart[i].qty = Math.max(1, (Number(cart[i].qty) || 1) - 1);
+    render();
+  });
+  document.querySelectorAll('.cart-product-open,.cart-title-btn,.quick-view-btn').forEach(btn => {
+    btn.onclick = () => openQuickProduct(rows[Number(btn.dataset.index)]?.product);
+  });
+  document.querySelectorAll('.remove').forEach(btn => btn.onclick = () => {
+    cart.splice(Number(btn.dataset.index), 1);
+    render().finally(() => window.AutoStyleLoader?.hide?.());
   });
 }
 
+function renderInstallments(total) {
+  const inst = document.getElementById('installmentResults');
+  if (!inst) return;
+  if (!total) {
+    inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
+    return;
+  }
+  inst.innerHTML = calcInstallment(total).map(({bank, rates}, idx) => `
+    <label class="installment-bank ${idx === 0 ? 'selected' : ''}">
+      <input type="radio" name="installmentBank" ${idx === 0 ? 'checked' : ''}>
+      <span class="bank-head"><b>${bank}</b><i></i></span>
+      <span class="bank-months">
+        ${Object.entries(rates).map(([months, k]) => `
+          <span><em>${months} мес.</em><strong>${money(Math.ceil(total * k / Number(months)))}/мес.</strong></span>`).join('')}
+      </span>
+    </label>`).join('');
+  inst.querySelectorAll('.installment-bank').forEach(card => {
+    card.addEventListener('click', () => {
+      inst.querySelectorAll('.installment-bank').forEach(x => x.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+  });
+}
 
 function openQuickProduct(product) {
   if (!product || !quickModal || !quickProductContent) return;
-  const title = product.title || product.name || 'Товар';
-  const oldPrice = Number(product.oldPrice || product.old_price || 0);
+  const productTitle = title(product);
   const price = Number(product.price || 0);
+  const oldPrice = Number(product.oldPrice || product.old_price || 0);
   const hasDiscount = oldPrice > price && price > 0;
   quickProductContent.innerHTML = `
     <div class="quick-product">
-      <div class="quick-product-img">${product.image ? `<img src="${product.image}" alt="${title}">` : 'Фото'}</div>
+      <div class="quick-product-img">${image(product) ? `<img src="${image(product)}" alt="${productTitle}">` : '<span>Фото</span>'}</div>
       <div class="quick-product-info">
-        <div class="muted">${product.category || 'Без категории'}</div>
-        <h2>${title}</h2>
-        <div class="quick-price-line">
-          <b>${money(price)}</b>
-          ${hasDiscount ? `<span>${money(oldPrice)}</span>` : ''}
-        </div>
-        <p class="quick-stock">В наличии: ${Number(product.stock || product.quantity || product.qty || 0) || '—'}</p>
-        <p class="quick-desc">${product.description || 'Описание товара пока не добавлено.'}</p>
+        <button class="quick-modal-close-inline" type="button" aria-label="Закрыть">×</button>
+        <h2>${productTitle}</h2>
+        <div class="quick-tags"><span>${group(product)}</span><span class="stock-pill">В наличии: ${stock(product) || '—'}</span></div>
+        <div class="quick-price-line"><b>${money(price)}</b>${hasDiscount ? `<span>${money(oldPrice)}</span>` : ''}</div>
+        <p class="quick-desc"><b>Описание</b><br>${product.description || 'Описание товара пока не добавлено.'}</p>
         <div class="quick-actions">
+          <a class="secondary-outline" href="catalog.html">Продолжить покупки</a>
           <a class="primary" href="product.html?id=${encodeURIComponent(product.id)}">Открыть карточку</a>
-          <a class="secondary-btn" href="catalog.html">Продолжить покупки</a>
         </div>
       </div>
     </div>`;
   quickModal.classList.add('open');
-  quickModal.setAttribute('aria-hidden','false');
+  quickModal.setAttribute('aria-hidden', 'false');
+  quickProductContent.querySelector('.quick-modal-close-inline')?.addEventListener('click', closeQuickProduct);
 }
 
 function closeQuickProduct() {
   if (!quickModal) return;
   quickModal.classList.remove('open');
-  quickModal.setAttribute('aria-hidden','true');
+  quickModal.setAttribute('aria-hidden', 'true');
 }
 
-if (quickModal) {
-  quickModal.querySelector('.quick-modal-close')?.addEventListener('click', closeQuickProduct);
-  quickModal.querySelector('.quick-modal-backdrop')?.addEventListener('click', closeQuickProduct);
-  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeQuickProduct(); });
-}
+quickModal?.querySelector('.quick-modal-close')?.addEventListener('click', closeQuickProduct);
+quickModal?.querySelector('.quick-modal-backdrop')?.addEventListener('click', closeQuickProduct);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickProduct(); });
 
-if (clearBtn) {
-  clearBtn.onclick = () => {
-    cart = [];
-    render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
-  };
-}
+clearBtn && (clearBtn.onclick = () => { cart = []; render().finally(() => window.AutoStyleLoader?.hide?.()); });
+discountCardBtn && (discountCardBtn.onclick = () => alert('Скидочную карту подключим следующим шагом.'));
+checkoutBtn && (checkoutBtn.onclick = () => alert('Оформление заказа подключим следующим шагом.'));
 
-if (discountCardBtn) {
-  discountCardBtn.onclick = () => alert('Скидочную карту подключим следующим шагом.');
-}
-
-if (checkoutBtn) {
-  checkoutBtn.onclick = () => alert('Оформление заказа подключим следующим шагом.');
-}
-
-onAuthStateChanged(auth, user => {
-  if (!user) { clearCartAndFavorites(); cart = []; }
-  else { cart = JSON.parse(localStorage.getItem('cart') || '[]'); }
-  render().finally(() => window.AutoStyleLoader && window.AutoStyleLoader.hide());
+// Важно: не очищаем корзину просто из-за гостевого режима. Очистка делается только при явном выходе из аккаунта в общем коде сайта.
+onAuthStateChanged(auth, () => {
+  cart = normalizeCart(readCart());
+  render().finally(() => window.AutoStyleLoader?.hide?.());
 });
