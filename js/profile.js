@@ -50,6 +50,10 @@ function fillProfile(user, data={}){
   $('#profilePhone').value = data.phone || '';
   $('#profileCity').value = data.city || '';
   $('#profileAddress').value = data.address || '';
+  const carValue = data.car || data.carText || [data.carBrand, data.carModel, data.carYear].filter(Boolean).join(' ');
+  const carInput = $('#profileCar');
+  if (carInput) carInput.value = carValue || '';
+  updateDiscountCardUI(user, data);
   setText($('#profileNameTitle'), name || 'Пользователь');
   setText($('#profileEmailTitle'), email);
   setText($('#discountCardEmail'), email);
@@ -62,6 +66,7 @@ async function saveProfile(user){
   const phone = $('#profilePhone').value.trim();
   const city = $('#profileCity').value.trim();
   const address = $('#profileAddress').value.trim();
+  const car = ($('#profileCar')?.value || '').trim();
   const currentPassword = $('#profileCurrentPassword').value;
   message(msg, 'Сохраняю...', true);
   if(name !== (user.displayName || '')) await updateProfile(user, { displayName: name });
@@ -79,6 +84,7 @@ async function saveProfile(user){
     phone,
     city,
     address,
+    car,
     photoURL: user.photoURL || current.data.photoURL || '',
     updatedAt: new Date().toISOString(),
     createdAt: current.data.createdAt || new Date().toISOString(),
@@ -86,6 +92,7 @@ async function saveProfile(user){
   }, { merge: true });
   setText($('#profileNameTitle'), name || 'Пользователь');
   setText($('#profileEmailTitle'), email);
+  updateDiscountCardUI(user, { ...(current.data || {}), name, email, phone, city, address, car });
   message(msg, email !== user.email ? 'Профиль сохранён. На новый email отправлено письмо подтверждения.' : 'Профиль сохранён.', true);
   $('#profileCurrentPassword').value = '';
 }
@@ -125,6 +132,10 @@ function activateProfileTabFromHash(){
   const map = { profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
   const target = map[hash];
   if(target) document.querySelector(`[data-profile-tab="${target}"]`)?.click();
+}
+function activateProfileTab(tab) {
+  const btn = document.querySelector(`[data-profile-tab="${tab}"]`);
+  if (btn) btn.click();
 }
 function bindTabs(){
   document.querySelectorAll('[data-profile-tab]').forEach(btn => {
@@ -193,11 +204,19 @@ function orderStatusTitle(status, statusTitle) {
   return statusTitle || ORDER_STATUSES[status] || status || 'Новый';
 }
 
+function normalizeBankName(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(normalizeBankName).filter(Boolean).join(', ');
+  if (typeof value === 'object') return value.name || value.bank || value.title || value.label || '';
+  return String(value);
+}
+
 function orderPaymentTitle(order) {
-  const method = order.paymentMethod || (order.installment?.bank ? 'installment' : 'cash');
+  const inst = order.installment || {};
+  const method = order.paymentMethod || (inst.bank || order.installmentBank ? 'installment' : 'cash');
   if (method === 'installment') {
-    const inst = order.installment || {};
-    const bank = order.installmentBank || inst.bank || '';
+    const bank = normalizeBankName(order.installmentBank || inst.bank || inst.bankName || '');
     const months = order.installmentMonths || inst.months || '';
     const pay = order.installmentMonthlyPayment || inst.monthlyPayment || '';
     return `Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${fmtPrice(pay)}/мес.` : ''}`;
@@ -258,6 +277,115 @@ async function renderOrders(user){
     box.innerHTML = '<div class="profile-empty">Не удалось загрузить заказы.</div>';
   }
 }
+
+function isProfileComplete(data={}) {
+  const name = (data.name || $('#profileName')?.value || '').trim();
+  const email = (data.email || $('#profileEmail')?.value || '').trim();
+  const phone = (data.phone || $('#profilePhone')?.value || '').trim();
+  const city = (data.city || $('#profileCity')?.value || '').trim();
+  const address = (data.address || $('#profileAddress')?.value || '').trim();
+  const car = (data.car || data.carText || $('#profileCar')?.value || '').trim();
+  return Boolean(name && email && phone && city && address && car);
+}
+
+function makeDiscountCardNumber(uid='') {
+  const base = String(uid).split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  let body = '29' + String(base).padStart(5,'0').slice(-5) + String(Date.now()).slice(-5);
+  body = body.slice(0,12).padEnd(12,'0');
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += Number(body[i]) * (i % 2 === 0 ? 1 : 3);
+  const check = (10 - (sum % 10)) % 10;
+  return body + check;
+}
+
+function ean13Svg(code) {
+  const L = {'0':'0001101','1':'0011001','2':'0010011','3':'0111101','4':'0100011','5':'0110001','6':'0101111','7':'0111011','8':'0110111','9':'0001011'};
+  const G = {'0':'0100111','1':'0110011','2':'0011011','3':'0100001','4':'0011101','5':'0111001','6':'0000101','7':'0010001','8':'0001001','9':'0010111'};
+  const R = {'0':'1110010','1':'1100110','2':'1101100','3':'1000010','4':'1011100','5':'1001110','6':'1010000','7':'1000100','8':'1001000','9':'1110100'};
+  const P = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+  code = String(code || '').replace(/\D/g,'').padEnd(13,'0').slice(0,13);
+  const parity = P[Number(code[0]) || 0];
+  let bits = '101';
+  for (let i=1;i<=6;i++) bits += (parity[i-1] === 'L' ? L : G)[code[i]];
+  bits += '01010';
+  for (let i=7;i<=12;i++) bits += R[code[i]];
+  bits += '101';
+  const w = 190, h = 56, barW = w / bits.length;
+  let rects = '';
+  for (let i=0;i<bits.length;i++) if(bits[i] === '1') rects += `<rect x="${(i*barW).toFixed(2)}" y="0" width="${Math.ceil(barW)+.4}" height="44"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="EAN13 ${code}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" rx="6" fill="#fff"/>${rects}<text x="${w/2}" y="53" text-anchor="middle" font-family="monospace" font-size="10" fill="#111827">${code.replace(/(\d)(\d{6})(\d{6})/,'$1 $2 $3')}</text></svg>`;
+}
+
+function updateDiscountCardUI(user, data={}) {
+  const box = $('#discountCardBox');
+  if (!box) return;
+  const complete = isProfileComplete(data);
+  const card = data.discountCard || {};
+  const active = Boolean(card.active || data.discountCardActive);
+  const number = card.number || data.discountCardNumber || makeDiscountCardNumber(user?.uid || data.uid || data.email || '');
+  const title = $('#discountCardStateTitle');
+  const text = $('#discountCardStateText');
+  const button = $('#getDiscountCardBtn');
+  const cartLink = $('#discountCartLink');
+  setText($('#discountCardName'), data.name || user?.displayName || data.email || user?.email || 'AutoStyle');
+  setText($('#discountCardNumber'), active ? number : 'Карта пока не активна');
+  const barcode = $('#discountBarcode');
+  if (barcode) barcode.innerHTML = active ? ean13Svg(number) : '<div class="discount-card-lock">Заполните профиль</div>';
+  box.classList.toggle('discount-locked', !active);
+  box.classList.toggle('discount-active', active);
+  if (active) {
+    setText(title, 'Скидочная карта активна');
+    setText(text, 'Карта привязана к аккаунту. При оформлении заказа можно будет применить скидку.');
+    if (button) button.hidden = true;
+    if (cartLink) cartLink.hidden = false;
+  } else {
+    setText(title, 'Карта недоступна');
+    setText(text, 'Заполните имя, телефон, город, адрес и автомобиль, чтобы получить скидочную карту.');
+    if (button) {
+      button.hidden = false;
+      button.textContent = complete ? 'ПОЛУЧИТЬ СКИДОЧНУЮ КАРТУ' : 'ЗАПОЛНИТЬ ПРОФИЛЬ';
+    }
+    if (cartLink) cartLink.hidden = true;
+  }
+}
+
+async function getDiscountCard(user) {
+  const msg = $('#profileMsg');
+  const current = await getUserDoc(user.uid);
+  const data = {
+    ...current.data,
+    name: $('#profileName')?.value?.trim() || current.data.name || user.displayName || '',
+    email: $('#profileEmail')?.value?.trim() || current.data.email || user.email || '',
+    phone: $('#profilePhone')?.value?.trim() || current.data.phone || '',
+    city: $('#profileCity')?.value?.trim() || current.data.city || '',
+    address: $('#profileAddress')?.value?.trim() || current.data.address || '',
+    car: $('#profileCar')?.value?.trim() || current.data.car || ''
+  };
+  if (!isProfileComplete(data)) {
+    location.hash = 'account';
+    activateProfileTab('account');
+    message(msg, 'Заполни имя, телефон, город, адрес и автомобиль, затем сохрани профиль.', false);
+    return;
+  }
+  const number = current.data.discountCard?.number || current.data.discountCardNumber || makeDiscountCardNumber(user.uid);
+  await setDoc(current.ref, {
+    uid: user.uid,
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    city: data.city,
+    address: data.address,
+    car: data.car,
+    discountCard: { active: true, number, type: 'EAN13', issuedAt: new Date().toISOString() },
+    discountCardActive: true,
+    discountCardNumber: number,
+    updatedAt: new Date().toISOString(),
+    createdAt: current.data.createdAt || new Date().toISOString(),
+    role: current.data.role || 'user'
+  }, { merge: true });
+  updateDiscountCardUI(user, { ...data, discountCard: { active: true, number } });
+}
+
 function setupSearch(){
   const input = $('#siteSearch'), btn = $('#siteSearchBtn');
   const go = () => { const q = encodeURIComponent((input?.value || '').trim()); location.href = q ? `catalog.html?search=${q}` : 'catalog.html'; };
@@ -281,6 +409,8 @@ onAuthStateChanged(auth, async user => {
     $('#profileForm').onsubmit = async e => { e.preventDefault(); try{ await saveProfile(user); }catch(err){ message($('#profileMsg'), 'Ошибка: ' + (err.message || err), false); } };
     $('#avatarInput').onchange = async e => { try{ await uploadAvatar(user, e.target.files[0]); }catch(err){ message($('#avatarMsg'), 'Ошибка загрузки: ' + (err.message || err), false); } };
     $('#passwordForm').onsubmit = async e => { e.preventDefault(); try{ await changePassword(user); }catch(err){ message($('#passwordMsg'), 'Ошибка: ' + (err.message || err), false); } };
+    const getCardBtn = $('#getDiscountCardBtn');
+    if (getCardBtn) getCardBtn.onclick = async () => { try { await getDiscountCard(user); } catch(err) { alert('Не удалось получить карту: ' + (err.message || err)); } };
     await renderFavorites();
     await renderOrders(user);
     window.AutoStyleLoader?.hide();

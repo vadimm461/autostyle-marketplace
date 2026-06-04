@@ -14,3 +14,13 @@
 .discount-card-info h3{margin:0;font-size:26px;}
 .discount-card-info p{margin:0;color:#667085;line-height:1.5;}
 @media(max-width:760px){.discount-profile-card{grid-template-columns:1fr}.discount-card-visual{min-height:210px}}
+
+/* === Discount card completion / barcode update === */
+.discount-profile-card.discount-locked .discount-card-visual{filter:grayscale(.25);opacity:.72;}
+.discount-profile-card.discount-locked .discount-card-visual:before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.08);z-index:1;}
+.discount-card-number{position:relative;z-index:2;color:#cbd5e1;font-weight:900;letter-spacing:.08em;}
+.discount-barcode{position:relative;z-index:2;width:210px;max-width:100%;min-height:62px;margin-top:12px;background:#fff;border-radius:10px;padding:6px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(0,0,0,.18);}
+.discount-barcode svg{width:100%;height:auto;display:block;fill:#111827;}
+.discount-card-lock{width:100%;height:52px;border-radius:8px;background:repeating-linear-gradient(90deg,#d0d5dd 0 4px,#fff 4px 8px);color:#111827;font-weight:950;display:flex;align-items:center;justify-content:center;text-transform:uppercase;font-size:11px;letter-spacing:.06em;}
+.discount-card-info .profile-primary-link{width:max-content;min-width:230px;text-align:center;border:0;}
+.discount-card-info .profile-primary-link.secondary{background:#101216;color:#fff;}

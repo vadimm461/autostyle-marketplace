@@ -72,6 +72,7 @@
           <label>Телефон<input id="profilePhone" autocomplete="tel" placeholder="+7 ..."></label>
           <label>Город<input id="profileCity" placeholder="Ваш город"></label>
           <label class="profile-wide">Адрес<textarea id="profileAddress" rows="3" placeholder="Адрес доставки"></textarea></label>
+          <label class="profile-wide">Автомобиль <small>марка, модель и год</small><input id="profileCar" placeholder="Например: Volkswagen Passat 2018"></label>
           <label class="profile-wide">Текущий пароль <small>нужен только если меняете email</small><input id="profileCurrentPassword" type="password" autocomplete="current-password" placeholder="Введите текущий пароль"></label>
           <button class="profile-save" type="submit">Сохранить изменения</button>
           <div id="profileMsg" class="profile-msg profile-wide"></div>
@@ -94,16 +95,19 @@
         <div class="profile-card-head">
           <div><h2>Скидочная карта</h2><p class="muted">Твоя карта постоянного покупателя AutoStyle.</p></div>
         </div>
-        <div class="discount-profile-card">
+        <div id="discountCardBox" class="discount-profile-card discount-locked">
           <div class="discount-card-visual">
             <div class="discount-card-logo">AS <span>AUTOSTYLE</span></div>
             <strong>КАРТА ПОСТОЯННОГО ПОКУПАТЕЛЯ</strong>
-            <em id="discountCardEmail">client@autostyle</em>
+            <em id="discountCardName">Заполните профиль</em>
+            <div id="discountBarcode" class="discount-barcode" aria-label="Штрихкод карты"></div>
+            <small id="discountCardNumber" class="discount-card-number">Карта пока не активна</small>
           </div>
           <div class="discount-card-info">
-            <h3>Всегда в аккаунте</h3>
-            <p>При оформлении заказа можно будет применить скидочную карту. Расчёт скидки добавим следующим шагом.</p>
-            <a class="profile-primary-link" href="cart.html">Перейти в корзину</a>
+            <h3 id="discountCardStateTitle">Карта недоступна</h3>
+            <p id="discountCardStateText">Чтобы получить скидочную карту, заполните имя, телефон, город, адрес и автомобиль в профиле.</p>
+            <button id="getDiscountCardBtn" class="profile-primary-link" type="button">ПОЛУЧИТЬ СКИДОЧНУЮ КАРТУ</button>
+            <a id="discountCartLink" class="profile-primary-link secondary" href="cart.html" hidden>Перейти в корзину</a>
           </div>
         </div>
       </section>

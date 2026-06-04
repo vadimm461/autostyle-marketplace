@@ -364,11 +364,19 @@ const PAYMENT_TITLE = {
   installment: 'Рассрочка'
 };
 
+function normalizeBankName(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(normalizeBankName).filter(Boolean).join(', ');
+  if (typeof value === 'object') return value.name || value.bank || value.title || value.label || '';
+  return String(value);
+}
+
 function paymentSummary(order) {
-  const method = order.paymentMethod || (order.installment?.bank ? 'installment' : 'cash');
+  const inst = order.installment || {};
+  const method = order.paymentMethod || (inst.bank || order.installmentBank ? 'installment' : 'cash');
   if (method === 'installment') {
-    const inst = order.installment || {};
-    const bank = order.installmentBank || inst.bank || '';
+    const bank = normalizeBankName(order.installmentBank || inst.bank || inst.bankName || '');
     const months = order.installmentMonths || inst.months || '';
     const pay = order.installmentMonthlyPayment || inst.monthlyPayment || '';
     return `🏦 Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${formatMoney(pay)}/мес.` : ''}`;

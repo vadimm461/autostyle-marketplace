@@ -281,7 +281,30 @@ quickModal?.querySelector('.quick-modal-backdrop')?.addEventListener('click', cl
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickProduct(); });
 
 clearBtn && (clearBtn.onclick = () => { cart = []; render().finally(() => window.AutoStyleLoader?.hide?.()); });
-discountCardBtn && (discountCardBtn.onclick = () => alert('Скидочную карту подключим следующим шагом.'));
+async function hasActiveDiscountCard(user) {
+  if (!user) return false;
+  const profile = await getUserProfile(user);
+  return Boolean(profile?.discountCard?.active || profile?.discountCardActive);
+}
+
+if (discountCardBtn) {
+  discountCardBtn.onclick = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Скидочная карта доступна после входа в аккаунт.');
+      location.href = 'login.html';
+      return;
+    }
+    const active = await hasActiveDiscountCard(user);
+    if (!active) {
+      alert('Сначала получите скидочную карту в личном кабинете. Заполните профиль и нажмите «Получить скидочную карту».');
+      location.href = 'profile.html#discount-card';
+      return;
+    }
+    discountCardBtn.classList.add('applied');
+    discountCardBtn.textContent = 'Скидочная карта применена';
+  };
+}
 checkoutBtn && (checkoutBtn.onclick = createOrderFromCart);
 
 async function getUserProfile(user) {
@@ -365,13 +388,20 @@ async function createOrderFromCart() {
       userEmail: user.email || '',
       userName: profile?.name || user.displayName || '',
       userPhone: profile?.phone || '',
+      userCar: profile?.car || profile?.carText || '',
       items,
       total,
       totalQty,
       paymentMethod,
       paymentMethodTitle: paymentTitle(paymentMethod),
-      installment,
-      installmentBank: installment?.bank || '',
+      installment: installment ? {
+        bank: String(installment.bank || ''),
+        months: Number(installment.months || 0),
+        monthsTitle: String(installment.monthsTitle || ''),
+        monthlyPayment: Number(installment.monthlyPayment || 0),
+        monthlyPaymentText: String(installment.monthlyPaymentText || '')
+      } : null,
+      installmentBank: installment?.bank ? String(installment.bank) : '',
       installmentMonths: installment?.months || null,
       installmentMonthlyPayment: installment?.monthlyPayment || null,
       discountCardRequested: false,
