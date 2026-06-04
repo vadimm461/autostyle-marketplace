@@ -22,5 +22,5 @@
   window.AutoStyleLoader = { hide: hide };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
   else build();
-  setTimeout(hide, 9000);
+  setTimeout(hide, 4500);
 })();

@@ -9,6 +9,13 @@ const MAX_CACHE_AGE = 7 * 24 * 60 * 60 * 1000;
 const REFRESH_INTERVAL = 5 * 60 * 1000;
 
 let versionMemo = { value:null, checkedAt:0 };
+function withTimeout(promise, ms=5500, label='Firebase request'){
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label + ' timeout')), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 function now(){ return Date.now(); }
 function key(name){ return CACHE_PREFIX + name; }
 function readJson(k, fallback=null){
@@ -20,7 +27,7 @@ function writeJson(k, value){
 async function getRemoteVersion(){
   if (versionMemo.value !== null && now() - versionMemo.checkedAt < 5000) return versionMemo.value;
   try{
-    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, VERSION_DOC));
+    const snap = await withTimeout(getDoc(doc(db, SETTINGS_COLLECTION, VERSION_DOC)), 3000, 'Cache version');
     const data = snap.exists() ? snap.data() : null;
     const value = String(data?.value || data?.updatedAt || data?.ts || '0');
     versionMemo = { value, checkedAt: now() };
@@ -41,7 +48,7 @@ function normalizeProductRow(row){
 }
 
 async function fetchCollection(name){
-  const snap = await getDocs(collection(db, name));
+  const snap = await withTimeout(getDocs(collection(db, name)), 6500, 'Collection '+name);
   const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return name === (COLLECTIONS.products || 'autostyle_products') ? rows.map(normalizeProductRow) : rows;
 }
