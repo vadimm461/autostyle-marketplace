@@ -5,7 +5,9 @@ import { getProducts, getCategories, getBanners, getCollectionCached } from './d
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-let products = [], categories = [], homeBlocks = [], promoCards = [], userNow = null;
+let products = [], categories = [], banners = [], homeBlocks = [], promoCards = [], userNow = null;
+let dataPromise = null;
+const PAGE_SIZE = 24;
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 const page = document.body.dataset.page;
@@ -15,6 +17,8 @@ const PROMO_CARDS_COLLECTIONS = [...new Set([
   COLLECTIONS.promoCards || 'autostyle_promo_cards',
   'autostyle_promo_cards', 'autostyle_promoCards', 'autostyle_home_cards', 'promoCards', 'homeCards'
 ].filter(Boolean))];
+const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
 const appUrl = url => {
   const raw = String(url || '').trim();
   if (!raw || raw === '#') return 'mobile-catalog.html';
@@ -80,10 +84,11 @@ function productsForHomeBlock(block){
 }
 function promoCard(c){
   const image = c.image || c.imageUrl || c.photoUrl || '';
-  const titleText = c.title || c.name || 'AutoStyle';
-  return `<a class="m-promo-card" href="${appUrl(c.link || c.url || 'mobile-catalog.html')}">${image ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}<span><b>${titleText}</b>${c.text || c.description ? `<small>${c.text || c.description}</small>` : ''}</span></a>`;
+  const titleText = escapeHtml(c.title || c.name || 'AutoStyle');
+  return `<a class="m-promo-card" href="${appUrl(c.link || c.url || 'mobile-catalog.html')}">${image ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span></a>`;
 }
 function renderMobileSection(block, list){
+  list = (list || []).slice(0, 12);
   const id = `mBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
   return `<section id="${id}" class="m-section m-home-block" data-block="${block.key}"><div class="m-section-head"><h2>${block.title || block.name || 'Блок'}</h2><a class="m-see" href="mobile-catalog.html">Все</a></div><div class="m-carousel m-home-products">${list.length ? list.map(card).join('') : '<div class="m-empty">Товары для этого блока пока не выбраны.</div>'}</div></section>`;
 }
@@ -129,12 +134,12 @@ function updateCounts(){ $$('#mCartCount').forEach(x=>x.textContent=cart.length)
 function addCart(id, btn){ cart.push(id); save(); if(btn){ const t=btn.textContent; btn.textContent='✓ Добавлено'; setTimeout(()=>btn.textContent=t,900); } }
 function toggleFav(id, btn){ favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; save(); if(btn) btn.classList.toggle('active', favs.includes(id)); }
 function card(p){
-  const d=discount(p), op=oldPrice(p), im=img(p);
+  const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p));
   return `<article class="m-card">
     <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
-    <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">`:'<span>Фото</span>'}</a>
-    <a class="m-card-title" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${title(p)}</a>
-    <div class="m-group">${group(p)}</div>
+    <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
+    <a class="m-card-title" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${t}</a>
+    <div class="m-group">${g}</div>
     ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
     <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
     <button class="m-cart" data-cart="${p.id}" type="button">В корзину</button>
@@ -192,10 +197,27 @@ function productInCategory(p, selected){
   const names=[norm(catName(c)),...kids];
   return names.includes(g);
 }
-async function initData(){ products=(await getProducts()).filter(available); categories=await getCategories(); homeBlocks=mergeHomeBlocks(await safeLoadCollection(HOME_BLOCKS_COLLECTION)); promoCards=await safeLoadCollections(PROMO_CARDS_COLLECTIONS); }
+async function initData(options={}){
+  if (!dataPromise || options.force) {
+    dataPromise = Promise.all([
+      getProducts(),
+      getCategories(),
+      getBanners().catch(()=>[]),
+      safeLoadCollection(HOME_BLOCKS_COLLECTION),
+      safeLoadCollections(PROMO_CARDS_COLLECTIONS)
+    ]).then(([p,c,b,h,pc])=>{
+      products=(p||[]).filter(available);
+      categories=c||[];
+      banners=(b||[]).filter(x=>x.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+      homeBlocks=mergeHomeBlocks(h||[]);
+      promoCards=pc||[];
+      return { products, categories, banners, homeBlocks, promoCards };
+    });
+  }
+  return dataPromise;
+}
 async function renderHome(){
   setupShell('home'); await initData();
-  const banners=(await getBanners().catch(()=>[])).filter(b=>b.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
   const slides=banners.map(b=>({ ...b, image:b.image||b.imageUrl||b.photoUrl||'' })).filter(b=>b.image);
   $('#mHero').innerHTML = slides.length
     ? `<div class="m-hero-slider">${slides.map((b,i)=>`<a class="m-hero-image ${i===0?'active':''}" href="${appUrl(b.link||b.url||'mobile-catalog.html')}" data-m-slide="${i}"><img loading="${i?'lazy':'eager'}" decoding="async" src="${b.image}" alt="${b.title||'AutoStyle'}"></a>`).join('')}${slides.length>1?`<div class="m-hero-dots">${slides.map((_,i)=>`<span class="${i===0?'active':''}" data-m-dot="${i}"></span>`).join('')}</div>`:''}</div>`
@@ -222,10 +244,24 @@ async function renderCatalog(){
   $('#mFilterSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); location.href=`mobile-catalog.html?search=${encodeURIComponent(e.target.value.trim())}`; }});
   let list=products.filter(p=>productInCategory(p,selected));
   if(q) list=list.filter(p=>(title(p)+' '+group(p)).toLowerCase().includes(q.toLowerCase()));
-  $('#mCatalogTitle').textContent = selected ? selected : (q ? `Поиск: ${q}` : 'Каталог товаров');
+  $('#mCatalogTitle').textContent = selected ? selected : (q ? `Поиск: ${escapeHtml(q)}` : 'Каталог товаров');
   $('#mCatalogCount').textContent = `${list.length} товаров`;
-  $('#mCatalogGrid').innerHTML=list.map(card).join('')||'<div class="m-empty">Товары не найдены</div>';
-  bind(); clearLoader();
+  renderCatalogBatch(list, 0);
+  clearLoader();
+}
+function renderCatalogBatch(list, start=0){
+  const grid = $('#mCatalogGrid');
+  if (!grid) return;
+  if (!list.length) { grid.innerHTML = '<div class="m-empty">Товары не найдены</div>'; return; }
+  if (start === 0) grid.innerHTML = '';
+  const end = Math.min(start + PAGE_SIZE, list.length);
+  grid.insertAdjacentHTML('beforeend', list.slice(start, end).map(card).join(''));
+  bind(grid);
+  const old = $('#mMoreProducts'); if (old) old.remove();
+  if (end < list.length) {
+    grid.insertAdjacentHTML('afterend', `<button id="mMoreProducts" class="m-primary" style="width:100%;margin:14px 0">Показать ещё ${Math.min(PAGE_SIZE, list.length-end)}</button>`);
+    $('#mMoreProducts').onclick = () => renderCatalogBatch(list, end);
+  }
 }
 async function renderProduct(){
   setupShell('catalog'); await initData();
@@ -234,7 +270,7 @@ async function renderProduct(){
   const im=img(p), d=discount(p), op=oldPrice(p);
   let viewed=JSON.parse(localStorage.getItem('viewedProducts')||'[]').filter(x=>x!==p.id); viewed.unshift(p.id); localStorage.setItem('viewedProducts',JSON.stringify(viewed.slice(0,30)));
   $('#mProduct').innerHTML=`<a class="m-btn" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">← Вернуться в каталог</a>
-    <div class="m-product-layout"><div class="m-photo-box"><div class="m-photo">${im?`<img src="${im}" alt="${title(p)}">`:'<span>Фото</span>'}</div></div>
+    <div class="m-product-layout"><div class="m-photo-box"><div class="m-photo">${im?`<img loading="eager" decoding="async" src="${im}" alt="${escapeHtml(title(p))}">`:'<span>Фото</span>'}</div></div>
     <div class="m-info"><div class="m-breadcrumb">Главная / Каталог / ${group(p)}</div><h1>${title(p)}</h1><span class="m-tag">${group(p)}</span>${d?` <span class="m-tag" style="background:#ffecec;color:#e3342f">Скидка ${d}%</span>`:''}
     <div class="m-buybox"><div class="m-price-line"><div class="m-big-price">${money(price(p))}</div>${op?`<span class="m-old">${money(op)}</span>`:''}${installment(p)?`<span class="m-installment">Рассрочка от ${money(monthPay(p))} в мес. на 12 мес.</span>`:''}</div><span class="m-stock">В наличии: ${stock(p)}</span>
     <div class="m-buy-actions"><button class="m-action cart" data-cart="${p.id}">В корзину</button><button class="m-action fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}">♡ ${favs.includes(p.id)?'В избранном':'В избранное'}</button></div></div></div></div>
@@ -248,7 +284,7 @@ async function renderCart(){
   const byId=new Map(products.map(p=>[p.id,p])); const counts={}; cart.forEach(id=>counts[id]=(counts[id]||0)+1);
   const rows=Object.keys(counts).map(id=>byId.get(id)).filter(Boolean);
   const total=rows.reduce((s,p)=>s+price(p)*counts[p.id],0);
-  $('#mCartList').innerHTML=rows.map(p=>`<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img src="${img(p)}" alt="${title(p)}">`:'Фото'}</a><div><b>${title(p)}</b><div class="m-group">${group(p)}</div><div class="m-qty-row"><span>${counts[p.id]} × ${money(price(p))}</span><button class="m-danger" data-remove="${p.id}">Удалить</button></div></div></div>`).join('')||'<div class="m-empty">Корзина пустая</div>';
+  $('#mCartList').innerHTML=rows.map(p=>`<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a><div><b>${title(p)}</b><div class="m-group">${group(p)}</div><div class="m-qty-row"><span>${counts[p.id]} × ${money(price(p))}</span><button class="m-danger" data-remove="${p.id}">Удалить</button></div></div></div>`).join('')||'<div class="m-empty">Корзина пустая</div>';
   $('#mTotal').textContent=money(total);
   $$('[data-remove]').forEach(b=>b.onclick=()=>{cart=cart.filter(id=>id!==b.dataset.remove); save(); renderCart();});
   clearLoader();

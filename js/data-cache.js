@@ -1,12 +1,12 @@
 import { db, COLLECTIONS } from './firebase.js';
 import { collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const CACHE_PREFIX = 'as_cache_v3:';
+const CACHE_PREFIX = 'as_cache_v4:';
 const VERSION_KEY = CACHE_PREFIX + 'version';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
-const MAX_CACHE_AGE = 24 * 60 * 60 * 1000;
-const REFRESH_INTERVAL = 2 * 60 * 1000;
+const MAX_CACHE_AGE = 7 * 24 * 60 * 60 * 1000;
+const REFRESH_INTERVAL = 5 * 60 * 1000;
 
 let versionMemo = { value:null, checkedAt:0 };
 function now(){ return Date.now(); }
@@ -64,23 +64,27 @@ export async function getCollectionCached(name, options={}){
   const force = options.force === true;
   const cacheKey = key(name);
   const cached = readJson(cacheKey, null);
-  const currentVersion = readJson(VERSION_KEY, '0');
   const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
 
-  let remoteVersion = null;
-  if (!force) remoteVersion = await getRemoteVersion();
-
-  const versionOk = remoteVersion === null || String(remoteVersion) === String(currentVersion);
-  const cacheOk = cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE && versionOk;
-  if (!force && cacheOk) {
-    if (age > REFRESH_INTERVAL && remoteVersion !== null) {
-      fetchCollection(name).then(rows => {
-        writeJson(cacheKey, { rows, savedAt: now() });
+  // Mobile-first speed: if local data exists and is not too old, return it immediately.
+  // Freshness/version checks happen quietly in the background instead of blocking first paint.
+  if (!force && cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE) {
+    if (age > REFRESH_INTERVAL) {
+      getRemoteVersion().then(remoteVersion => {
+        const currentVersion = readJson(VERSION_KEY, '0');
+        if (remoteVersion !== null && String(remoteVersion) !== String(currentVersion)) {
+          return fetchCollection(name).then(rows => {
+            writeJson(cacheKey, { rows, savedAt: now() });
+            writeJson(VERSION_KEY, remoteVersion);
+          });
+        }
       }).catch(()=>{});
     }
     return cached.rows;
   }
 
+  let remoteVersion = null;
+  if (!force) remoteVersion = await getRemoteVersion();
   try{
     const rows = await fetchCollection(name);
     writeJson(cacheKey, { rows, savedAt: now() });
