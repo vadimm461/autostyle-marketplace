@@ -156,19 +156,97 @@ async function renderFavorites(){
     }).join('');
   }catch(e){ box.innerHTML = '<div class="profile-empty">Не удалось загрузить избранное.</div>'; }
 }
+const ORDER_STATUSES = {
+  new: 'Новый',
+  processing: 'В обработке',
+  ready: 'Готов к выдаче',
+  completed: 'Выдан',
+  done: 'Выдан',
+  cancelled: 'Отменён',
+  canceled: 'Отменён'
+};
+
+const PAYMENT_TITLES = {
+  cash: 'Наличными',
+  card: 'Банковской картой',
+  installment: 'Рассрочка'
+};
+
+function orderDate(value, fallback) {
+  try {
+    const d = value?.toDate ? value.toDate() : new Date(value || fallback || Date.now());
+    return d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch { return ''; }
+}
+
+function orderStatusTitle(status, statusTitle) {
+  return statusTitle || ORDER_STATUSES[status] || status || 'Новый';
+}
+
+function orderPaymentTitle(order) {
+  const method = order.paymentMethod || (order.installment?.bank ? 'installment' : 'cash');
+  if (method === 'installment') {
+    const inst = order.installment || {};
+    const bank = order.installmentBank || inst.bank || '';
+    const months = order.installmentMonths || inst.months || '';
+    const pay = order.installmentMonthlyPayment || inst.monthlyPayment || '';
+    return `Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${fmtPrice(pay)}/мес.` : ''}`;
+  }
+  return PAYMENT_TITLES[method] || order.paymentMethodTitle || method || 'Наличными';
+}
+
 async function renderOrders(user){
   const box = $('#ordersList');
   if(!box) return;
+  box.innerHTML = '<div class="profile-empty">Загружаю заказы...</div>';
   try{
-    const ordersCollection = 'autostyle_orders';
-    const q = query(collection(db, ordersCollection), where('userId','==',user.uid), orderBy('createdAt','desc'), limit(20));
-    const snap = await getDocs(q);
-    if(snap.empty){ box.innerHTML = '<div class="profile-empty">Заказов пока нет.</div>'; return; }
-    box.innerHTML = snap.docs.map(d => {
+    const ordersCollection = COLLECTIONS.orders || 'autostyle_orders';
+    let docs = [];
+    try {
+      const q = query(collection(db, ordersCollection), where('userId','==',user.uid), orderBy('createdAt','desc'), limit(20));
+      const snap = await getDocs(q);
+      docs = snap.docs;
+    } catch(indexErr) {
+      console.warn('orders ordered query failed, fallback', indexErr);
+      const snap = await getDocs(query(collection(db, ordersCollection), where('userId','==',user.uid), limit(50)));
+      docs = snap.docs.sort((a,b) => String((b.data().createdAtText || '')).localeCompare(String((a.data().createdAtText || '')))).slice(0,20);
+    }
+    if(!docs.length){ box.innerHTML = '<div class="profile-empty">Заказов пока нет.</div>'; return; }
+
+    box.innerHTML = docs.map(d => {
       const o = d.data();
-      return `<div class="profile-order"><div><b>Заказ ${d.id.slice(0,8)}</b><span>${o.createdAt ? new Date(o.createdAt).toLocaleDateString('ru-RU') : ''}</span></div><strong>${fmtPrice(o.total || 0)}</strong><em>${o.status || 'Новый'}</em></div>`;
+      const items = Array.isArray(o.items) ? o.items : [];
+      const qty = Number(o.totalQty || items.reduce((s,x)=>s+Number(x.qty||0),0));
+      const status = orderStatusTitle(o.status, o.statusTitle);
+      return `<article class="profile-order-card">
+        <div class="profile-order-top">
+          <div>
+            <h3>Заказ ${o.orderNumber || ('#' + d.id.slice(0,8))}</h3>
+            <p>${orderDate(o.createdAt, o.createdAtText)}</p>
+          </div>
+          <span class="profile-order-status status-${o.status || 'new'}">${status}</span>
+        </div>
+        <div class="profile-order-meta">
+          <span>Товаров: <b>${qty}</b></span>
+          <span>Оплата: <b>${orderPaymentTitle(o)}</b></span>
+          <span>Сумма: <b>${fmtPrice(o.total || 0)}</b></span>
+        </div>
+        <div class="profile-order-items">
+          ${items.map(item => `<div class="profile-order-item">
+            <div class="profile-order-img">${item.image ? `<img src="${item.image}" alt="">` : '<span>Фото</span>'}</div>
+            <div>
+              <b>${item.title || 'Товар'}</b>
+              <p>${item.group || ''}${item.code ? ` · код: ${item.code}` : ''}</p>
+            </div>
+            <strong>${Number(item.qty || 1)} × ${fmtPrice(item.price || 0)}</strong>
+          </div>`).join('')}
+        </div>
+      </article>`;
     }).join('');
-  }catch(e){ box.innerHTML = '<div class="profile-empty">Заказов пока нет.</div>'; }
+  }catch(e){
+    console.error('profile orders error', e);
+    box.innerHTML = '<div class="profile-empty">Не удалось загрузить заказы.</div>';
+  }
 }
 function setupSearch(){
   const input = $('#siteSearch'), btn = $('#siteSearchBtn');

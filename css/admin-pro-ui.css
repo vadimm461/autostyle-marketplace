@@ -139,3 +139,11 @@ body:has(.admin-layout){background:var(--admin-bg)!important;font-family:Arial,s
   .inline-editor-grid{grid-template-columns:1fr;}
   .inline-editor-actions{flex-direction:column;}
 }
+
+.admin-order-payment{
+  margin:6px 0 0 !important;
+  color:#475467 !important;
+}
+.admin-order-payment b{
+  color:#111827;
+}

@@ -32,13 +32,33 @@
       <h2>Итого</h2>
       <div class="summary-row"><span>Товары</span><b id="cartItemsCount">0</b></div>
       <div class="summary-row"><span>Сумма</span><b id="cartTotal">0 ₽</b></div>
+      <div class="payment-methods">
+        <h3>Способ оплаты</h3>
+        <label class="payment-option active">
+          <input type="radio" name="paymentMethod" value="cash" checked>
+          <span class="payment-icon">₽</span>
+          <span>Наличными</span>
+        </label>
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="card">
+          <span class="payment-icon">▣</span>
+          <span>Банковской картой</span>
+        </label>
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="installment">
+          <span class="payment-icon">%</span>
+          <span>Рассрочка</span>
+        </label>
+      </div>
+
+      <details class="installment-box" id="installmentBox" open hidden><summary>Рассчитать рассрочку</summary>
+        <div id="installmentResults" class="installment-results">Выберите товары в корзине</div>
+      </details>
+
       <div class="cart-summary-actions">
         <button id="checkoutBtn" class="primary" type="button">Оформить заказ</button>
         <button id="discountCardBtn" class="discount-card-btn" type="button">Применить скидочную карту</button>
       </div>
-      <details class="installment-box" open><summary>Рассчитать рассрочку</summary>
-        <div id="installmentResults" class="installment-results">Выберите товары в корзине</div>
-      </details>
       <div class="cart-bottom-actions">
         <a class="continue-shopping-btn" href="catalog.html">← Вернуться в каталог</a>
         <a class="continue-shopping-btn" href="catalog.html">Продолжить покупки</a>

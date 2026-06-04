@@ -12,6 +12,8 @@ const checkoutBtn = document.querySelector('#checkoutBtn');
 const discountCardBtn = document.querySelector('#discountCardBtn');
 const quickModal = document.querySelector('#quickProductModal');
 const quickProductContent = document.querySelector('#quickProductContent');
+const installmentBox = document.querySelector('#installmentBox') || document.querySelector('.installment-box');
+const paymentInputs = [...document.querySelectorAll('input[name="paymentMethod"]')];
 
 let productsCache = null;
 let cart = normalizeCart(readCart());
@@ -69,6 +71,33 @@ function calcInstallment(total) {
     { bank: 'Сбербанк', className: 'sber', logo: 'assets/bank-sberbank.webp', rates: {3:.96, 6:.93, 9:.9, 12:.88} },
   ];
 }
+function getPaymentMethod() {
+  return document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cash';
+}
+
+function paymentTitle(value) {
+  return {
+    cash: 'Наличными',
+    card: 'Банковской картой',
+    installment: 'Рассрочка'
+  }[value] || value || 'Наличными';
+}
+
+function updatePaymentUI() {
+  const method = getPaymentMethod();
+  document.querySelectorAll('.payment-option').forEach(label => {
+    const input = label.querySelector('input[name="paymentMethod"]');
+    label.classList.toggle('active', input?.value === method);
+  });
+  if (installmentBox) {
+    installmentBox.hidden = method !== 'installment';
+    if (method === 'installment') installmentBox.open = true;
+  }
+}
+
+paymentInputs.forEach(input => input.addEventListener('change', updatePaymentUI));
+updatePaymentUI();
+
 
 async function render() {
   save();
@@ -157,6 +186,7 @@ function renderInstallments(total) {
   if (!inst) return;
   if (!total) {
     inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
+    updatePaymentUI();
     return;
   }
 
@@ -164,22 +194,25 @@ function renderInstallments(total) {
   inst.innerHTML = banks.map(({bank, className, logo, rates}, idx) => {
     const monthsHtml = Object.entries(rates).map(([months, k]) => {
       const payment = Math.ceil(total * k / Number(months));
-      return `<span><em>${months} мес.</em><strong>${money(payment)}/мес.</strong></span>`;
+      return `<button class="bank-month" type="button" data-months="${months}" data-payment="${payment}">
+        <em>${months} мес.</em><strong>${money(payment)}/мес.</strong>
+      </button>`;
     }).join('');
 
     return `
-      <button class="installment-bank ${className} ${idx === 0 ? 'selected' : ''}" type="button" data-bank-index="${idx}" aria-expanded="${idx === 0 ? 'true' : 'false'}">
-        <span class="bank-head">
+      <div class="installment-bank ${className} ${idx === 0 ? 'selected' : ''}" data-bank="${bank}" aria-expanded="${idx === 0 ? 'true' : 'false'}">
+        <button class="bank-head" type="button">
           <img src="${logo}" alt="${bank}">
           <b>${bank}</b>
           <i>${idx === 0 ? 'Выбрано' : 'Выбрать'}</i>
-        </span>
-        <span class="bank-months">${monthsHtml}</span>
-      </button>`;
-  }).join('') + '<button class="installment-calc-btn" type="button">Рассчитать рассрочку</button>';
+        </button>
+        <div class="bank-months">${monthsHtml}</div>
+      </div>`;
+  }).join('');
 
   inst.querySelectorAll('.installment-bank').forEach(card => {
-    card.addEventListener('click', () => {
+    const head = card.querySelector('.bank-head');
+    head?.addEventListener('click', () => {
       inst.querySelectorAll('.installment-bank').forEach(x => {
         x.classList.remove('selected');
         x.setAttribute('aria-expanded', 'false');
@@ -190,8 +223,25 @@ function renderInstallments(total) {
       card.setAttribute('aria-expanded', 'true');
       const label = card.querySelector('.bank-head i');
       if (label) label.textContent = 'Выбрано';
+      if (!card.querySelector('.bank-month.selected')) {
+        card.querySelector('.bank-month[data-months="12"]')?.classList.add('selected');
+      }
+    });
+    const defaultMonth = card.querySelector('.bank-month[data-months="12"]') || card.querySelector('.bank-month');
+    if (defaultMonth) defaultMonth.classList.add('selected');
+  });
+
+  inst.querySelectorAll('.bank-month').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const bank = btn.closest('.installment-bank');
+      bank?.querySelectorAll('.bank-month').forEach(x => x.classList.remove('selected'));
+      btn.classList.add('selected');
+      if (bank && !bank.classList.contains('selected')) bank.querySelector('.bank-head')?.click();
     });
   });
+
+  updatePaymentUI();
 }
 
 function openQuickProduct(product) {
@@ -249,11 +299,14 @@ function getSelectedInstallment() {
   const selected = document.querySelector('.installment-bank.selected');
   if (!selected) return null;
   const bank = selected.dataset.bank || selected.querySelector('.bank-head b')?.textContent?.trim() || '';
-  const months = [...selected.querySelectorAll('.bank-months span')].map(row => ({
-    months: row.querySelector('em')?.textContent?.trim() || '',
-    payment: row.querySelector('strong')?.textContent?.trim() || ''
-  }));
-  return { bank, months };
+  const month = selected.querySelector('.bank-month.selected') || selected.querySelector('.bank-month[data-months="12"]') || selected.querySelector('.bank-month');
+  return {
+    bank,
+    months: Number(month?.dataset.months || 12),
+    monthsTitle: `${Number(month?.dataset.months || 12)} мес.`,
+    monthlyPayment: Number(month?.dataset.payment || 0),
+    monthlyPaymentText: month?.querySelector('strong')?.textContent?.trim() || ''
+  };
 }
 
 async function createOrderFromCart() {
@@ -297,6 +350,12 @@ async function createOrderFromCart() {
     const total = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
     const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
     const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
+    const paymentMethod = getPaymentMethod();
+    const installment = paymentMethod === 'installment' ? getSelectedInstallment() : null;
+    if (paymentMethod === 'installment' && !installment?.bank) {
+      alert('Выберите банк для рассрочки.');
+      return;
+    }
 
     await addDoc(collection(db, COLLECTIONS.orders || 'autostyle_orders'), {
       orderNumber,
@@ -309,7 +368,12 @@ async function createOrderFromCart() {
       items,
       total,
       totalQty,
-      installment: getSelectedInstallment(),
+      paymentMethod,
+      paymentMethodTitle: paymentTitle(paymentMethod),
+      installment,
+      installmentBank: installment?.bank || '',
+      installmentMonths: installment?.months || null,
+      installmentMonthlyPayment: installment?.monthlyPayment || null,
       discountCardRequested: false,
       createdAt: serverTimestamp(),
       createdAtText: new Date().toISOString(),

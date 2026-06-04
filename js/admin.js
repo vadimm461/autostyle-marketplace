@@ -348,9 +348,33 @@ const ORDER_STATUS = {
   new: 'Новый',
   processing: 'В обработке',
   ready: 'Готов к выдаче',
-  done: 'Выдан',
-  canceled: 'Отменён'
+  completed: 'Выдан',
+  cancelled: 'Отменён'
 };
+
+function normalizeOrderStatus(status) {
+  if (status === 'done') return 'completed';
+  if (status === 'canceled') return 'cancelled';
+  return status || 'new';
+}
+
+const PAYMENT_TITLE = {
+  cash: 'Наличные',
+  card: 'Банковская карта',
+  installment: 'Рассрочка'
+};
+
+function paymentSummary(order) {
+  const method = order.paymentMethod || (order.installment?.bank ? 'installment' : 'cash');
+  if (method === 'installment') {
+    const inst = order.installment || {};
+    const bank = order.installmentBank || inst.bank || '';
+    const months = order.installmentMonths || inst.months || '';
+    const pay = order.installmentMonthlyPayment || inst.monthlyPayment || '';
+    return `🏦 Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${formatMoney(pay)}/мес.` : ''}`;
+  }
+  return method === 'card' ? '💳 Банковская карта' : '💵 Наличные';
+}
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
@@ -392,14 +416,15 @@ async function renderOrdersAdmin() {
 
     list.innerHTML = orders.map(order => {
       const items = Array.isArray(order.items) ? order.items : [];
-      const status = order.status || 'new';
-      const inst = order.installment?.bank ? ` · Рассрочка: ${esc(order.installment.bank)}` : '';
+      const status = normalizeOrderStatus(order.status);
+      const payment = paymentSummary(order);
       return `
         <article class="admin-order-card ${status === 'new' ? 'is-new' : ''}">
           <div class="admin-order-head">
             <div>
               <h3>${esc(order.orderNumber || order.id)}</h3>
-              <p>${formatDate(order.createdAt || order.createdAtText)} · ${esc(order.userName || order.userEmail || 'Покупатель')}${inst}</p>
+              <p>${formatDate(order.createdAt || order.createdAtText)} · ${esc(order.userName || order.userEmail || 'Покупатель')}</p>
+              <p class="admin-order-payment">Способ оплаты: <b>${esc(payment)}</b></p>
             </div>
             <div class="admin-order-total">${formatMoney(order.total)}</div>
           </div>

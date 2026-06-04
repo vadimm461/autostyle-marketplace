@@ -1289,3 +1289,220 @@
   .cart-row{grid-template-columns:78px 1fr !important;}
   .cart-row-controls{grid-column:1/-1 !important;justify-content:space-between !important;}
 }
+
+
+/* ===== Payment methods + order checkout final ===== */
+.payment-methods{
+  margin:16px 0 14px;
+  padding:14px;
+  border:1px solid #e7ebf0;
+  border-radius:18px;
+  background:#fbfcfe;
+}
+.payment-methods h3{
+  margin:0 0 10px;
+  font-size:16px;
+  line-height:1.1;
+}
+.payment-option{
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 11px;
+  border:1px solid #e5eaf1;
+  border-radius:14px;
+  background:#fff;
+  cursor:pointer;
+  font-weight:900;
+  font-size:14px;
+}
+.payment-option + .payment-option{margin-top:8px;}
+.payment-option input{accent-color:#25e11b;}
+.payment-option.active{
+  border-color:#25e11b;
+  background:#f1fff0;
+  box-shadow:0 8px 22px rgba(37,225,27,.08);
+}
+.payment-icon{
+  width:24px;
+  height:24px;
+  border-radius:9px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#101216;
+  color:#34e21f;
+  font-weight:950;
+}
+.installment-box[hidden]{display:none !important;}
+.installment-bank{
+  display:block !important;
+}
+.installment-bank .bank-head{
+  width:100%;
+  border:0;
+  background:transparent;
+  padding:0 26px 0 0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-align:left;
+}
+.installment-bank .bank-head i{
+  margin-left:auto;
+  font-style:normal;
+  font-size:10px;
+  color:#7a8597;
+  text-transform:none;
+}
+.bank-months{
+  display:none !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+  margin-top:12px !important;
+}
+.installment-bank.selected .bank-months{display:grid !important;}
+.bank-month{
+  display:grid;
+  gap:3px;
+  min-width:0;
+  padding:8px 7px;
+  border-radius:12px;
+  border:1px solid #edf0f3;
+  background:#f8fafc;
+  text-align:left;
+  cursor:pointer;
+}
+.bank-month.selected{
+  border-color:#25e11b;
+  background:#efffed;
+}
+.bank-month em{
+  color:#7a8597;
+  font-size:11px;
+  line-height:1.05;
+  font-style:normal;
+  font-weight:900;
+  white-space:nowrap;
+}
+.bank-month strong{
+  color:#111722;
+  font-size:11px;
+  line-height:1.15;
+  font-weight:950;
+  white-space:nowrap;
+}
+.installment-calc-btn{display:none !important;}
+@media(max-width:1100px){
+  .cart-layout{grid-template-columns:1fr;}
+  .cart-summary{position:static;}
+}
+
+/* ===== Profile detailed orders ===== */
+.profile-order-card{
+  background:#fff;
+  border:1px solid #e7ebf0;
+  border-radius:22px;
+  padding:18px;
+  box-shadow:0 16px 42px rgba(16,24,40,.06);
+}
+.profile-order-card + .profile-order-card{margin-top:14px;}
+.profile-order-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
+.profile-order-top h3{
+  margin:0 0 4px;
+  font-size:20px;
+}
+.profile-order-top p{
+  margin:0;
+  color:#697386;
+  font-weight:800;
+}
+.profile-order-status{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  background:#eef2f6;
+  color:#344054;
+  font-weight:950;
+  white-space:nowrap;
+}
+.profile-order-status.status-new{background:#fff7d6;color:#8a6200;}
+.profile-order-status.status-processing{background:#e8f1ff;color:#145bc5;}
+.profile-order-status.status-ready{background:#e9ffe7;color:#16830b;}
+.profile-order-status.status-completed,
+.profile-order-status.status-done{background:#effaf0;color:#11800a;}
+.profile-order-status.status-cancelled,
+.profile-order-status.status-canceled{background:#ffe8e8;color:#c1121f;}
+.profile-order-meta{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:14px;
+}
+.profile-order-meta span{
+  background:#f6f8fb;
+  border-radius:14px;
+  padding:10px 12px;
+  color:#697386;
+  font-weight:800;
+}
+.profile-order-meta b{
+  color:#111318;
+}
+.profile-order-items{
+  display:grid;
+  gap:10px;
+}
+.profile-order-item{
+  display:grid;
+  grid-template-columns:56px 1fr auto;
+  gap:12px;
+  align-items:center;
+  border-top:1px solid #eef1f5;
+  padding-top:10px;
+}
+.profile-order-img{
+  width:56px;
+  height:56px;
+  border-radius:14px;
+  background:#f3f5f7;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  color:#8b95a5;
+  font-size:12px;
+  font-weight:900;
+}
+.profile-order-img img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.profile-order-item b{
+  display:block;
+  line-height:1.2;
+}
+.profile-order-item p{
+  margin:4px 0 0;
+  color:#697386;
+  font-weight:700;
+}
+.profile-order-item strong{
+  white-space:nowrap;
+}
+@media(max-width:760px){
+  .profile-order-meta{grid-template-columns:1fr;}
+  .profile-order-item{grid-template-columns:48px 1fr;}
+  .profile-order-item strong{grid-column:2;}
+}
