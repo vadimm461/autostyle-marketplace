@@ -1,14 +1,106 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getProducts, getCategories, getBanners } from './data-cache.js';
+import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-let products = [], categories = [], userNow = null;
+let products = [], categories = [], homeBlocks = [], promoCards = [], userNow = null;
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 const page = document.body.dataset.page;
+
+const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
+const PROMO_CARDS_COLLECTIONS = [...new Set([
+  COLLECTIONS.promoCards || 'autostyle_promo_cards',
+  'autostyle_promo_cards', 'autostyle_promoCards', 'autostyle_home_cards', 'promoCards', 'homeCards'
+].filter(Boolean))];
+const appUrl = url => {
+  const raw = String(url || '').trim();
+  if (!raw || raw === '#') return 'mobile-catalog.html';
+  if (/^(tel:|mailto:|https?:\/\/|#)/i.test(raw)) return raw;
+  return raw
+    .replace(/^index\.html(.*)$/i, 'mobile.html$1')
+    .replace(/^catalog\.html(.*)$/i, 'mobile-catalog.html$1')
+    .replace(/^product\.html(.*)$/i, 'mobile-product.html$1')
+    .replace(/^cart\.html(.*)$/i, 'mobile-cart.html$1')
+    .replace(/^favorites\.html(.*)$/i, 'mobile-favorites.html$1')
+    .replace(/^profile\.html(.*)$/i, 'mobile-profile.html$1');
+};
+const safeLoadCollection = async name => { try { return await getCollectionCached(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
+const safeLoadCollections = async names => {
+  const all = [];
+  for (const name of names) (await safeLoadCollection(name)).forEach(row => all.push({ ...row, _collection:name }));
+  const seen = new Set();
+  return all.filter(row => { const k = String(row.key || row.slug || row.id || `${row._collection}:${row.title || row.name || Math.random()}`).trim(); if (seen.has(k)) return false; seen.add(k); return true; });
+};
+function defaultHomeBlocks(){
+  return [
+    {id:'new', key:'new', title:'Новинки', order:1, builtin:true},
+    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:2, builtin:true, recent:true},
+    {id:'bestsellers', key:'bestsellers', title:'Лидеры продаж', order:3, builtin:true},
+    {id:'hot', key:'hot', title:'Горячие предложения', order:4, builtin:true}
+  ];
+}
+function mergeHomeBlocks(custom){
+  const byKey = new Map();
+  defaultHomeBlocks().forEach(b => byKey.set(b.key, b));
+  (custom || []).forEach(b => {
+    const key = b.key || b.slug || b.id;
+    if (!key) return;
+    const base = byKey.get(key) || {};
+    byKey.set(key, { ...base, id:b.id || base.id, key, title:b.title || b.name || base.title || key, order:Number(b.order ?? base.order ?? 999), enabled:b.enabled !== false, builtin:base.builtin === true });
+  });
+  return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+}
+function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
+function productSection(p){ return String(p.homeSection || p.homeBlock || p.tag || '').toLowerCase(); }
+function productsForHomeBlock(block){
+  const key = norm(block.key);
+  const availableProducts = products.filter(available);
+  if (block.recent || key === 'recentlyviewed') {
+    const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    const byId = new Map(availableProducts.map(p => [p.id, p]));
+    return ids.map(id => byId.get(id)).filter(Boolean);
+  }
+  let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
+  if (selected.length) return selected;
+  selected = availableProducts.filter(p => norm(productSection(p)) === key || norm(p.tag) === key);
+  if (selected.length) return selected;
+  if (key === 'bestsellers' || key === 'best' || key === 'leaders') return availableProducts.filter(p => ['best','bestsellers','leader','leaders'].includes(norm(p.tag))).slice(0,20);
+  if (key === 'new') return availableProducts.filter(p => norm(p.tag) === 'new').slice(0,20);
+  if (key === 'hot') return availableProducts.filter(isMarkedForHome).concat(availableProducts).filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i).slice(0,20);
+  return availableProducts.filter(p => isMarkedForHome(p)).slice(0,20);
+}
+function promoCard(c){
+  const image = c.image || c.imageUrl || c.photoUrl || '';
+  const titleText = c.title || c.name || 'AutoStyle';
+  return `<a class="m-promo-card" href="${appUrl(c.link || c.url || 'mobile-catalog.html')}">${image ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}<span><b>${titleText}</b>${c.text || c.description ? `<small>${c.text || c.description}</small>` : ''}</span></a>`;
+}
+function renderMobileSection(block, list){
+  const id = `mBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
+  return `<section id="${id}" class="m-section m-home-block" data-block="${block.key}"><div class="m-section-head"><h2>${block.title || block.name || 'Блок'}</h2><a class="m-see" href="mobile-catalog.html">Все</a></div><div class="m-carousel m-home-products">${list.length ? list.map(card).join('') : '<div class="m-empty">Товары для этого блока пока не выбраны.</div>'}</div></section>`;
+}
+function setupMobileChrome(){
+  let lastY = window.scrollY;
+  const top = document.querySelector('.m-top');
+  const nav = document.querySelector('.m-bottom-nav');
+  const apply = () => {
+    const y = window.scrollY;
+    if (top) top.classList.toggle('m-top-hidden', y > 24 && y > lastY);
+    if (nav) nav.classList.toggle('m-nav-scrolled', y > 12);
+    lastY = Math.max(0, y);
+  };
+  apply();
+  window.addEventListener('scroll', apply, { passive:true });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (/^(https?:\/\/)/i.test(href) && !href.includes(location.host)) a.setAttribute('target', '_blank');
+  });
+}
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 const title = p => p.title || p.name || 'Без названия';
 const img = p => p.image || p.imageUrl || p.photo || p.photoUrl || '';
@@ -34,8 +126,8 @@ function card(p){
   const d=discount(p), op=oldPrice(p), im=img(p);
   return `<article class="m-card">
     <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
-    <a class="m-card-img" href="mobile-product.html?id=${encodeURIComponent(p.id)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">`:'<span>Фото</span>'}</a>
-    <a class="m-card-title" href="mobile-product.html?id=${encodeURIComponent(p.id)}">${title(p)}</a>
+    <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">`:'<span>Фото</span>'}</a>
+    <a class="m-card-title" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${title(p)}</a>
     <div class="m-group">${group(p)}</div>
     ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
     <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
@@ -94,19 +186,23 @@ function productInCategory(p, selected){
   const names=[norm(catName(c)),...kids];
   return names.includes(g);
 }
-async function initData(){ products=(await getProducts()).filter(available); categories=await getCategories(); }
+async function initData(){ products=(await getProducts()).filter(available); categories=await getCategories(); homeBlocks=mergeHomeBlocks(await safeLoadCollection(HOME_BLOCKS_COLLECTION)); promoCards=await safeLoadCollections(PROMO_CARDS_COLLECTIONS); }
 async function renderHome(){
   setupShell('home'); await initData();
   const banners=(await getBanners().catch(()=>[])).filter(b=>b.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
-  const b=banners.find(x=>x.image||x.imageUrl||x.photoUrl)||{};
-  const bImg=b.image||b.imageUrl||b.photoUrl||'';
-  $('#mHero').innerHTML = bImg
-    ? `<a class="m-hero-image" href="${b.link||'mobile-catalog.html'}"><img loading="eager" decoding="async" src="${bImg}" alt="${b.title||'AutoStyle'}"></a>`
+  const slides=banners.map(b=>({ ...b, image:b.image||b.imageUrl||b.photoUrl||'' })).filter(b=>b.image);
+  $('#mHero').innerHTML = slides.length
+    ? `<div class="m-hero-slider">${slides.map((b,i)=>`<a class="m-hero-image ${i===0?'active':''}" href="${appUrl(b.link||b.url||'mobile-catalog.html')}" data-m-slide="${i}"><img loading="${i?'lazy':'eager'}" decoding="async" src="${b.image}" alt="${b.title||'AutoStyle'}"></a>`).join('')}${slides.length>1?`<div class="m-hero-dots">${slides.map((_,i)=>`<span class="${i===0?'active':''}" data-m-dot="${i}"></span>`).join('')}</div>`:''}</div>`
     : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
-  const hot=products.slice(0,10), best=products.filter(p=>['best','bestsellers','leader','leaders'].includes(norm(p.tag))).slice(0,10);
-  $('#mNew').innerHTML=hot.slice(0,6).map(card).join('')||'<div class="m-empty">Товары пока загружаются</div>';
-  $('#mBest').innerHTML=(best.length?best:hot).slice(0,8).map(card).join('');
-  $('#mCats').innerHTML=parentsList().slice(0,12).map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
+  if (slides.length > 1) {
+    let i=0; const hero=$('#mHero'); const hs=[...hero.querySelectorAll('[data-m-slide]')], dots=[...hero.querySelectorAll('[data-m-dot]')];
+    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 5500);
+    dots.forEach((dot,n)=>dot.onclick=e=>{ e.preventDefault(); i=n; hs.forEach((x,k)=>x.classList.toggle('active',k===i)); dots.forEach((x,k)=>x.classList.toggle('active',k===i)); });
+  }
+  $('#mCats').innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
+  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
+  const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
+  $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
   bind(); clearLoader();
 }
 async function renderCatalog(){
@@ -165,6 +261,7 @@ async function renderProfile(){
 }
 (async()=>{
   try{
+    setupMobileChrome();
     if(page==='home') await renderHome();
     if(page==='catalog') await renderCatalog();
     if(page==='product') await renderProduct();
