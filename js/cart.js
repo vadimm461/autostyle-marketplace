@@ -1,5 +1,6 @@
-import { auth } from './firebase.js';
+import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
 
 const cartList = document.querySelector('#cartList');
@@ -14,6 +15,9 @@ const quickProductContent = document.querySelector('#quickProductContent');
 
 let productsCache = null;
 let cart = normalizeCart(readCart());
+let lastCartRows = [];
+let lastCartTotal = 0;
+let isCheckoutBusy = false;
 
 function readCart() {
   try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
@@ -88,12 +92,16 @@ async function render() {
       </div>`;
     if (totalBox) totalBox.textContent = '0 ₽';
     if (countBox) countBox.textContent = '0';
+    lastCartRows = [];
+    lastCartTotal = 0;
     renderInstallments(0);
     return;
   }
 
   const total = rows.reduce((sum, r) => sum + Number(r.product.price || 0) * (Number(r.item.qty) || 1), 0);
   const totalQty = rows.reduce((sum, r) => sum + (Number(r.item.qty) || 1), 0);
+  lastCartRows = rows;
+  lastCartTotal = total;
 
   cartList.innerHTML = rows.map(({ item, product }, index) => {
     const qty = Number(item.qty) || 1;
@@ -224,7 +232,105 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickPr
 
 clearBtn && (clearBtn.onclick = () => { cart = []; render().finally(() => window.AutoStyleLoader?.hide?.()); });
 discountCardBtn && (discountCardBtn.onclick = () => alert('Скидочную карту подключим следующим шагом.'));
-checkoutBtn && (checkoutBtn.onclick = () => alert('Оформление заказа подключим следующим шагом.'));
+checkoutBtn && (checkoutBtn.onclick = createOrderFromCart);
+
+async function getUserProfile(user) {
+  if (!user) return null;
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.users || 'autostyle_users', user.uid));
+    return snap.exists() ? snap.data() : null;
+  } catch (err) {
+    console.warn('user profile load error', err);
+    return null;
+  }
+}
+
+function getSelectedInstallment() {
+  const selected = document.querySelector('.installment-bank.selected');
+  if (!selected) return null;
+  const bank = selected.dataset.bank || selected.querySelector('.bank-head b')?.textContent?.trim() || '';
+  const months = [...selected.querySelectorAll('.bank-months span')].map(row => ({
+    months: row.querySelector('em')?.textContent?.trim() || '',
+    payment: row.querySelector('strong')?.textContent?.trim() || ''
+  }));
+  return { bank, months };
+}
+
+async function createOrderFromCart() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Оформить заказ можно только после входа в аккаунт.');
+    location.href = 'login.html';
+    return;
+  }
+
+  if (isCheckoutBusy) return;
+  isCheckoutBusy = true;
+  if (checkoutBtn) {
+    checkoutBtn.disabled = true;
+    checkoutBtn.textContent = 'Создаём заказ...';
+  }
+
+  try {
+    const productMap = await getProductMap();
+    const rows = normalizeCart(readCart()).map(item => ({ item, product: productMap.get(String(item.id)) })).filter(r => r.product);
+    if (!rows.length) {
+      alert('Корзина пустая. Добавь товары перед оформлением заказа.');
+      return;
+    }
+
+    const profile = await getUserProfile(user);
+    const items = rows.map(({ item, product }) => {
+      const qty = Number(item.qty) || 1;
+      const price = Number(product.price || 0);
+      return {
+        productId: String(product.id),
+        title: title(product),
+        group: group(product),
+        code: code(product),
+        image: image(product),
+        price,
+        qty,
+        lineTotal: price * qty
+      };
+    });
+    const total = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+    const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
+
+    await addDoc(collection(db, COLLECTIONS.orders || 'autostyle_orders'), {
+      orderNumber,
+      status: 'new',
+      statusTitle: 'Новый',
+      userId: user.uid,
+      userEmail: user.email || '',
+      userName: profile?.name || user.displayName || '',
+      userPhone: profile?.phone || '',
+      items,
+      total,
+      totalQty,
+      installment: getSelectedInstallment(),
+      discountCardRequested: false,
+      createdAt: serverTimestamp(),
+      createdAtText: new Date().toISOString(),
+      source: 'site-cart'
+    });
+
+    cart = [];
+    save();
+    await render();
+    alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
+  } catch (err) {
+    console.error('order create error', err);
+    alert('Не удалось оформить заказ: ' + (err?.message || err));
+  } finally {
+    isCheckoutBusy = false;
+    if (checkoutBtn) {
+      checkoutBtn.disabled = false;
+      checkoutBtn.textContent = 'Оформить заказ';
+    }
+  }
+}
 
 // Важно: не очищаем корзину просто из-за гостевого режима. Очистка делается только при явном выходе из аккаунта в общем коде сайта.
 onAuthStateChanged(auth, () => {

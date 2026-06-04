@@ -17,6 +17,7 @@ import {
   query,
   where,
   limit,
+  orderBy,
   deleteField
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -337,7 +338,122 @@ onAuthStateChanged(auth, user => {
   renderCats();
   renderProducts();
   renderBanners();
+  renderOrdersAdmin();
 });
+
+
+/* ORDERS */
+
+const ORDER_STATUS = {
+  new: 'Новый',
+  processing: 'В обработке',
+  ready: 'Готов к выдаче',
+  done: 'Выдан',
+  canceled: 'Отменён'
+};
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+
+function formatMoney(value) {
+  return `${Math.round(Number(value || 0)).toLocaleString('ru-RU')} ₽`;
+}
+
+function formatDate(value) {
+  try {
+    const date = value?.toDate ? value.toDate() : new Date(value || Date.now());
+    return date.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+async function renderOrdersAdmin() {
+  const list = $('#orderList');
+  if (!list) return;
+  list.innerHTML = '<div class="muted">Загружаю заказы...</div>';
+
+  try {
+    let orders = [];
+    try {
+      const snap = await getDocs(query(collection(db, COLLECTIONS.orders || 'autostyle_orders'), orderBy('createdAt', 'desc')));
+      orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.warn('orders ordered query failed, fallback', err);
+      orders = await getCollection(COLLECTIONS.orders || 'autostyle_orders');
+      orders.sort((a, b) => String(b.createdAtText || '').localeCompare(String(a.createdAtText || '')));
+    }
+
+    if (!orders.length) {
+      list.innerHTML = '<div class="orders-empty">Заказов пока нет.</div>';
+      return;
+    }
+
+    list.innerHTML = orders.map(order => {
+      const items = Array.isArray(order.items) ? order.items : [];
+      const status = order.status || 'new';
+      const inst = order.installment?.bank ? ` · Рассрочка: ${esc(order.installment.bank)}` : '';
+      return `
+        <article class="admin-order-card ${status === 'new' ? 'is-new' : ''}">
+          <div class="admin-order-head">
+            <div>
+              <h3>${esc(order.orderNumber || order.id)}</h3>
+              <p>${formatDate(order.createdAt || order.createdAtText)} · ${esc(order.userName || order.userEmail || 'Покупатель')}${inst}</p>
+            </div>
+            <div class="admin-order-total">${formatMoney(order.total)}</div>
+          </div>
+          <div class="admin-order-user">
+            <span>Email: <b>${esc(order.userEmail || '—')}</b></span>
+            <span>Телефон: <b>${esc(order.userPhone || '—')}</b></span>
+            <span>Товаров: <b>${Number(order.totalQty || items.reduce((s, x) => s + Number(x.qty || 0), 0))}</b></span>
+          </div>
+          <div class="admin-order-items">
+            ${items.map(item => `
+              <div class="admin-order-item">
+                <div class="admin-order-item-img">${item.image ? `<img src="${esc(item.image)}" alt="">` : 'Фото'}</div>
+                <div>
+                  <b>${esc(item.title)}</b>
+                  <p>${esc(item.group || '')}${item.code ? ` · код: ${esc(item.code)}` : ''}</p>
+                </div>
+                <strong>${Number(item.qty || 1)} × ${formatMoney(item.price)} = ${formatMoney(item.lineTotal)}</strong>
+              </div>`).join('')}
+          </div>
+          <div class="admin-order-actions">
+            <label>Статус
+              <select data-order-status="${esc(order.id)}">
+                ${Object.entries(ORDER_STATUS).map(([key, title]) => `<option value="${key}" ${key === status ? 'selected' : ''}>${title}</option>`).join('')}
+              </select>
+            </label>
+            <button class="danger" type="button" data-order-delete="${esc(order.id)}">Удалить</button>
+          </div>
+        </article>`;
+    }).join('');
+
+    list.querySelectorAll('[data-order-status]').forEach(select => {
+      select.onchange = async () => {
+        const id = select.dataset.orderStatus;
+        await updateDoc(doc(db, COLLECTIONS.orders || 'autostyle_orders', id), {
+          status: select.value,
+          statusTitle: ORDER_STATUS[select.value] || select.value,
+          updatedAt: new Date().toISOString()
+        });
+        renderOrdersAdmin();
+      };
+    });
+
+    list.querySelectorAll('[data-order-delete]').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Удалить заказ?')) return;
+        await deleteDoc(doc(db, COLLECTIONS.orders || 'autostyle_orders', btn.dataset.orderDelete));
+        renderOrdersAdmin();
+      };
+    });
+  } catch (err) {
+    console.error('orders render error', err);
+    list.innerHTML = `<div class="upload-error">Ошибка загрузки заказов: ${esc(err.message || err)}</div>`;
+  }
+}
 
 /* CATEGORY OPTIONS */
 

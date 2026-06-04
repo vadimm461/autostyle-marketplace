@@ -2078,3 +2078,28 @@ html.admin-locked .admin-layout{display:none!important;}
   object-position:center center !important;
   background:#fff !important;
 }
+
+/* ===== Orders in admin ===== */
+.orders-empty{padding:22px;border:1px dashed #d9dee7;border-radius:18px;color:#667085;font-weight:800;background:#f8fafc;}
+.admin-order-card{background:#fff;border:1px solid #e8ebef;border-radius:22px;padding:18px;box-shadow:0 14px 38px rgba(16,18,23,.06);display:grid;gap:14px;}
+.admin-order-card.is-new{border-color:rgba(52,226,31,.45);box-shadow:0 18px 44px rgba(52,226,31,.10);}
+.admin-order-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid #eef1f5;padding-bottom:12px;}
+.admin-order-head h3{margin:0 0 4px;font-size:20px;letter-spacing:-.02em;}
+.admin-order-head p{margin:0;color:#667085;font-weight:700;font-size:13px;}
+.admin-order-total{font-weight:950;font-size:22px;white-space:nowrap;color:#101217;}
+.admin-order-user{display:flex;flex-wrap:wrap;gap:8px;}
+.admin-order-user span{display:inline-flex;align-items:center;gap:5px;padding:8px 10px;border-radius:999px;background:#f5f7fa;color:#667085;font-size:13px;}
+.admin-order-user b{color:#101217;}
+.admin-order-items{display:grid;gap:8px;}
+.admin-order-item{display:grid;grid-template-columns:54px 1fr auto;gap:10px;align-items:center;border:1px solid #eef1f5;border-radius:16px;padding:10px;background:#fbfcfd;}
+.admin-order-item-img{width:54px;height:54px;border-radius:12px;background:#f1f3f6;display:grid;place-items:center;overflow:hidden;color:#98a2b3;font-size:12px;font-weight:800;}
+.admin-order-item-img img{width:100%;height:100%;object-fit:contain;}
+.admin-order-item b{display:block;font-size:14px;line-height:1.25;}
+.admin-order-item p{margin:4px 0 0;color:#667085;font-size:12px;font-weight:700;}
+.admin-order-item strong{font-size:13px;white-space:nowrap;}
+.admin-order-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #eef1f5;padding-top:12px;}
+.admin-order-actions label{display:flex;align-items:center;gap:10px;color:#667085;font-weight:900;}
+.admin-order-actions select{height:42px;border:1px solid #dfe5ee;border-radius:13px;padding:0 12px;font-weight:900;background:#fff;outline:none;}
+.admin-order-actions select:focus{border-color:#34e21f;box-shadow:0 0 0 4px rgba(52,226,31,.12);}
+#checkoutBtn:disabled{opacity:.7;cursor:not-allowed;}
+@media(max-width:760px){.admin-order-head,.admin-order-actions{display:grid;}.admin-order-item{grid-template-columns:48px 1fr;}.admin-order-item strong{grid-column:2;}.admin-order-total{font-size:18px;}}
