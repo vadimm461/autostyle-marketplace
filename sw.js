@@ -1,6 +1,6 @@
-const CACHE_NAME = 'autostyle-mobile-v1';
+const CACHE_NAME = 'autostyle-mobile-v2';
 const APP_SHELL = [
-  './', './mobile.html', './mobile-catalog.html', './mobile-product.html', './mobile-cart.html', './mobile-favorites.html', './mobile-profile.html',
+  './', './mobile.html', './mobile-catalog.html', './mobile-product.html', './mobile-cart.html', './mobile-favorites.html', './mobile-profile.html', './mobile-about.html', './mobile-contacts.html', './mobile-installment.html', './mobile-certificates.html', './mobile-more.html',
   './css/mobile-market.css', './js/mobile-app.js', './js/data-cache.js', './js/firebase.js', './assets/logo.jpeg', './assets/icon-192.png', './assets/icon-512.png', './assets/placeholder.svg', './manifest.webmanifest'
 ];
 self.addEventListener('install', event => {

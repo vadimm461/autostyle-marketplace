@@ -1,6 +1,6 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 
 const $ = s => document.querySelector(s);
@@ -25,7 +25,13 @@ const appUrl = url => {
     .replace(/^product\.html(.*)$/i, 'mobile-product.html$1')
     .replace(/^cart\.html(.*)$/i, 'mobile-cart.html$1')
     .replace(/^favorites\.html(.*)$/i, 'mobile-favorites.html$1')
-    .replace(/^profile\.html(.*)$/i, 'mobile-profile.html$1');
+    .replace(/^profile\.html(.*)$/i, 'mobile-profile.html$1')
+    .replace(/^about\.html(.*)$/i, 'mobile-about.html$1')
+    .replace(/^contacts\.html(.*)$/i, 'mobile-contacts.html$1')
+    .replace(/^installment\.html(.*)$/i, 'mobile-installment.html$1')
+    .replace(/^certificates\.html(.*)$/i, 'mobile-certificates.html$1')
+    .replace(/^login\.html(.*)$/i, 'mobile-profile.html$1')
+    .replace(/^register\.html(.*)$/i, 'mobile-profile.html$1');
 };
 const safeLoadCollection = async name => { try { return await getCollectionCached(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
 const safeLoadCollections = async names => {
@@ -251,14 +257,90 @@ async function renderFavorites(){
   setupShell('fav'); await initData(); const list=products.filter(p=>favs.includes(p.id));
   $('#mFavGrid').innerHTML=list.map(card).join('')||'<div class="m-empty">В избранном пока пусто</div>'; bind(); clearLoader();
 }
+
+const usersCollection = COLLECTIONS.users || 'autostyle_users';
+async function getUserDoc(uid){
+  const primary = doc(db, usersCollection, uid);
+  const snap = await getDoc(primary);
+  if (snap.exists()) return { ref:primary, data:snap.data() };
+  const legacy = doc(db, 'users', uid);
+  const old = await getDoc(legacy).catch(()=>null);
+  if (old && old.exists()) return { ref:primary, data:old.data() };
+  return { ref:primary, data:{} };
+}
+function isProfileCompleteData(d={}){
+  return Boolean(String(d.name||'').trim() && String(d.email||'').trim() && String(d.phone||'').trim() && String(d.city||'').trim() && String(d.address||'').trim() && String(d.car||d.carText||'').trim());
+}
+function makeDiscountCardNumber(uid=''){
+  const base = String(uid).split('').reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
+  let body = ('29' + String(base).padStart(5,'0').slice(-5) + String(Date.now()).slice(-5)).slice(0,12).padEnd(12,'0');
+  let sum=0; for(let i=0;i<12;i++) sum += Number(body[i]) * (i % 2 === 0 ? 1 : 3);
+  return body + ((10 - (sum % 10)) % 10);
+}
+function ean13Svg(code){
+  const L={'0':'0001101','1':'0011001','2':'0010011','3':'0111101','4':'0100011','5':'0110001','6':'0101111','7':'0111011','8':'0110111','9':'0001011'};
+  const G={'0':'0100111','1':'0110011','2':'0011011','3':'0100001','4':'0011101','5':'0111001','6':'0000101','7':'0010001','8':'0001001','9':'0010111'};
+  const R={'0':'1110010','1':'1100110','2':'1101100','3':'1000010','4':'1011100','5':'1001110','6':'1010000','7':'1000100','8':'1001000','9':'1110100'};
+  const P=['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+  code=String(code||'').replace(/\D/g,'').padEnd(13,'0').slice(0,13); const parity=P[Number(code[0])||0]; let bits='101';
+  for(let i=1;i<=6;i++) bits+=(parity[i-1]==='L'?L:G)[code[i]]; bits+='01010'; for(let i=7;i<=12;i++) bits+=R[code[i]]; bits+='101';
+  const w=190,h=56,bw=w/bits.length; let rects=''; for(let i=0;i<bits.length;i++) if(bits[i]==='1') rects+=`<rect x="${(i*bw).toFixed(2)}" y="0" width="${Math.ceil(bw)+.4}" height="44"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" rx="6" fill="#fff"/>${rects}<text x="${w/2}" y="53" text-anchor="middle" font-family="monospace" font-size="10" fill="#111827">${code.replace(/(\d)(\d{6})(\d{6})/,'$1 $2 $3')}</text></svg>`;
+}
+function profileDataFromForm(u, old={}){
+  return {
+    uid:u.uid,
+    name:$('#pName')?.value.trim() || old.name || u.displayName || '',
+    email:$('#pEmailEdit')?.value.trim() || old.email || u.email || '',
+    phone:$('#pPhone')?.value.trim() || old.phone || '',
+    city:$('#pCity')?.value.trim() || old.city || '',
+    address:$('#pAddress')?.value.trim() || old.address || '',
+    car:$('#pCar')?.value.trim() || old.car || old.carText || '',
+    photoURL:$('#pPhoto')?.value.trim() || old.photoURL || u.photoURL || ''
+  };
+}
+function renderDiscountCard(u, data={}){
+  const card=data.discountCard || {}; const active=Boolean(card.active || data.discountCardActive);
+  const complete=isProfileCompleteData({...data,email:data.email||u.email,name:data.name||u.displayName});
+  const number=card.number || data.discountCardNumber || makeDiscountCardNumber(u.uid);
+  return `<section class="m-discount-card ${active?'active':'locked'}"><div class="m-discount-visual"><div class="m-discount-logo">AS <span>AUTOSTYLE</span></div><em>${data.name||u.displayName||u.email||'AutoStyle'}</em><div class="m-discount-barcode">${active?ean13Svg(number):'<div class="m-discount-lock">Заполните профиль</div>'}</div><small>${active?number:'Карта пока не активна'}</small></div><div class="m-discount-info"><h2>${active?'Скидочная карта активна':'Скидочная карта'}</h2><p>${active?'Карта привязана к аккаунту и доступна в мобильном приложении.':'Заполните имя, телефон, город, адрес и автомобиль, затем получите карту.'}</p><button id="mGetDiscount" class="m-primary" style="width:100%">${complete?'Получить скидочную карту':'Заполнить профиль'}</button><a class="m-btn" style="width:100%;margin-top:10px" href="mobile-cart.html">Перейти в корзину</a></div></section>`;
+}
+async function activateDiscountCard(u, currentData){
+  const data=profileDataFromForm(u,currentData);
+  if(!isProfileCompleteData(data)){ alert('Заполните имя, телефон, город, адрес и автомобиль, затем сохраните профиль.'); return; }
+  const number=currentData.discountCard?.number || currentData.discountCardNumber || makeDiscountCardNumber(u.uid);
+  const issuedAt=new Date().toISOString();
+  const current=await getUserDoc(u.uid);
+  await setDoc(current.ref,{...data,discountCard:{active:true,number,type:'EAN13',issuedAt},discountCardActive:true,discountCardNumber:number,updatedAt:issuedAt,createdAt:current.data.createdAt||issuedAt,role:current.data.role||'user'},{merge:true});
+  await setDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discountCards', u.uid),{...data,userId:u.uid,number,type:'EAN13',active:true,issuedAt,updatedAt:issuedAt,createdAtServer:serverTimestamp(),searchText:`${data.name} ${data.email} ${data.phone} ${number} ${data.city} ${data.car}`.toLowerCase()},{merge:true}).catch(()=>{});
+  alert('Скидочная карта активирована.'); location.hash='discount-card'; location.reload();
+}
+function renderInfoShell(active='more'){ setupShell(active); clearLoader(); }
+
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
 async function renderProfile(){
   setupShell('profile');
-  onAuthStateChanged(auth,u=>{userNow=u; const box=$('#mProfileBox'); if(!u){ box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите, чтобы управлять аккаунтом.</p><input id="pEmail" class="m-input" placeholder="Email" style="margin-top:12px"><input id="pPass" class="m-input" type="password" placeholder="Пароль" style="margin-top:10px"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button><a class="m-btn" style="width:100%;margin-top:10px" href="register.html">Создать аккаунт</a>`; $('#pLogin').onclick=async()=>signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); clearLoader(); return; }
-    box.innerHTML=`<div class="m-row"><div class="m-avatar">${u.photoURL?`<img src="${u.photoURL}">`:initials(u)}</div><div><h1 style="margin:0">${u.displayName||'Профиль'}</h1><div class="m-group">${u.email||''}</div></div></div><div class="m-profile-actions"><a class="green" href="mobile-profile.html#edit">Редактировать профиль</a><a href="mobile-favorites.html">♡ Избранное</a><a href="mobile-cart.html">🛒 Корзина</a></div><div id="edit" style="margin-top:18px"><input id="nameEdit" class="m-input" value="${u.displayName||''}" placeholder="Имя"><input id="photoEdit" class="m-input" value="${u.photoURL||''}" placeholder="Фото URL" style="margin-top:10px"><input id="passEdit" class="m-input" type="password" placeholder="Новый пароль" style="margin-top:10px"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить</button><button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:10px">Выйти</button></div>`;
-    $('#saveProfile').onclick=async()=>{await updateProfile(u,{displayName:$('#nameEdit').value.trim(),photoURL:$('#photoEdit').value.trim()||null}); if($('#passEdit').value.trim()) await updatePassword(u,$('#passEdit').value.trim()); await setDoc(doc(db,COLLECTIONS.users,u.uid),{name:$('#nameEdit').value.trim(),email:u.email,photoURL:$('#photoEdit').value.trim()||''},{merge:true}); alert('Сохранено'); location.reload();};
-    $('#pLogout').onclick=async()=>{localStorage.removeItem('cart');localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'}; clearLoader(); });
+  onAuthStateChanged(auth, async u=>{
+    userNow=u; const box=$('#mProfileBox');
+    if(!u){
+      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите, чтобы управлять аккаунтом, заказами, избранным и скидочной картой.</p><input id="pEmail" class="m-input" placeholder="Email" style="margin-top:12px"><input id="pPass" class="m-input" type="password" placeholder="Пароль" style="margin-top:10px"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button><a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
+      $('#pLogin').onclick=async()=>signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value);
+      clearLoader(); return;
+    }
+    const current=await getUserDoc(u.uid); const d=current.data || {};
+    box.innerHTML=`<div class="m-row"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div><h1 style="margin:0">${d.name||u.displayName||'Профиль'}</h1><div class="m-group">${d.email||u.email||''}</div></div></div>
+    <div class="m-profile-tabs"><a href="#account">Данные</a><a href="#discount-card">Карта</a><a href="mobile-favorites.html">Избранное</a><a href="mobile-cart.html">Корзина</a></div>
+    <section id="account" class="m-profile-pane"><h2>Данные аккаунта</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
+    <section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section>
+    <section class="m-profile-pane"><h2>Все разделы</h2><div class="m-link-grid"><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-contacts.html">Контакты</a><a href="mobile-about.html">Про нас</a></div><button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:14px">Выйти</button></section>`;
+    $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
+    $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()) await updatePassword(u,$('#pPassEdit').value.trim()); await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
+    $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
+    $('#pLogout').onclick=async()=>{localStorage.removeItem('cart');localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
+    clearLoader();
+  });
 }
+
 (async()=>{
   try{
     setupMobileChrome();
@@ -268,5 +350,6 @@ async function renderProfile(){
     if(page==='cart') await renderCart();
     if(page==='favorites') await renderFavorites();
     if(page==='profile') await renderProfile();
+    if(['about','contacts','installment','certificates','more'].includes(page)) renderInfoShell(page==='more'?'profile':'home');
   }catch(e){ console.error(e); clearLoader(); }
 })();

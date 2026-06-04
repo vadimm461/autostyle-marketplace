@@ -12,7 +12,13 @@
       'product.html':'mobile-product.html',
       'cart.html':'mobile-cart.html',
       'favorites.html':'mobile-favorites.html',
-      'profile.html':'mobile-profile.html'
+      'profile.html':'mobile-profile.html',
+      'about.html':'mobile-about.html',
+      'contacts.html':'mobile-contacts.html',
+      'installment.html':'mobile-installment.html',
+      'certificates.html':'mobile-certificates.html',
+      'login.html':'mobile-profile.html',
+      'register.html':'mobile-profile.html'
     };
     if (!map[file]) return;
     var qs = location.search || '';
