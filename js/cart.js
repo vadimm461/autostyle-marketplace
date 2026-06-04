@@ -19,6 +19,8 @@ let productsCache = null;
 let cart = normalizeCart(readCart());
 let lastCartRows = [];
 let lastCartTotal = 0;
+let discountCardApplied = false;
+let discountCardPercent = 0;
 let isCheckoutBusy = false;
 
 function readCart() {
@@ -73,6 +75,20 @@ function calcInstallment(total) {
 }
 function getPaymentMethod() {
   return document.querySelector('input[name="paymentMethod"]:checked')?.value || 'cash';
+}
+
+function getDiscountedTotal(total) {
+  const pct = discountCardApplied ? Math.max(0, Math.min(100, Number(discountCardPercent || 0))) : 0;
+  return Math.max(0, Math.round(Number(total || 0) * (100 - pct) / 100));
+}
+function renderCartTotal(total) {
+  const finalTotal = getDiscountedTotal(total);
+  if (totalBox) {
+    totalBox.innerHTML = discountCardApplied && discountCardPercent > 0
+      ? `<span class="cart-total-old">${money(total)}</span> ${money(finalTotal)} <small>−${discountCardPercent}%</small>`
+      : money(total);
+  }
+  renderInstallments(finalTotal);
 }
 
 function paymentTitle(value) {
@@ -158,9 +174,8 @@ async function render() {
       </article>`;
   }).join('');
 
-  if (totalBox) totalBox.textContent = money(total);
+  renderCartTotal(total);
   if (countBox) countBox.textContent = String(totalQty);
-  renderInstallments(total);
 
   document.querySelectorAll('.plus').forEach(btn => btn.onclick = () => {
     const i = Number(btn.dataset.index);
@@ -281,10 +296,24 @@ quickModal?.querySelector('.quick-modal-backdrop')?.addEventListener('click', cl
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickProduct(); });
 
 clearBtn && (clearBtn.onclick = () => { cart = []; render().finally(() => window.AutoStyleLoader?.hide?.()); });
-async function hasActiveDiscountCard(user) {
-  if (!user) return false;
+async function getActiveDiscountCard(user) {
+  if (!user) return null;
   const profile = await getUserProfile(user);
-  return Boolean(profile?.discountCard?.active || profile?.discountCardActive);
+  const active = Boolean(profile?.discountCard?.active || profile?.discountCardActive);
+  if (!active) return null;
+  let percent = Number(profile?.discountCard?.discount ?? profile?.discountCard?.discountPercent ?? profile?.discount ?? profile?.discountPercent ?? 0) || 0;
+  try {
+    const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', user.uid));
+    if (cardSnap.exists()) {
+      const card = cardSnap.data();
+      percent = Number(card.discount ?? card.discountPercent ?? percent) || percent;
+    }
+  } catch(e) { console.warn('discount card percent load error', e); }
+  return { active:true, percent: Math.max(0, Math.min(100, Math.round(percent))) };
+}
+async function hasActiveDiscountCard(user) {
+  const card = await getActiveDiscountCard(user);
+  return Boolean(card?.active);
 }
 
 if (discountCardBtn) {
@@ -295,14 +324,17 @@ if (discountCardBtn) {
       location.href = 'login.html';
       return;
     }
-    const active = await hasActiveDiscountCard(user);
-    if (!active) {
+    const card = await getActiveDiscountCard(user);
+    if (!card?.active) {
       alert('Сначала получите скидочную карту в личном кабинете. Заполните профиль и нажмите «Получить скидочную карту».');
       location.href = 'profile.html#discount-card';
       return;
     }
+    discountCardApplied = true;
+    discountCardPercent = Number(card.percent || 0);
     discountCardBtn.classList.add('applied');
-    discountCardBtn.textContent = 'Скидочная карта применена';
+    discountCardBtn.textContent = discountCardPercent > 0 ? `Скидка ${discountCardPercent}% применена` : 'Скидочная карта применена';
+    renderCartTotal(lastCartTotal);
   };
 }
 checkoutBtn && (checkoutBtn.onclick = createOrderFromCart);
@@ -370,7 +402,8 @@ async function createOrderFromCart() {
         lineTotal: price * qty
       };
     });
-    const total = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+    const subtotal = items.reduce((sum, item) => sum + Number(item.lineTotal || 0), 0);
+    const total = getDiscountedTotal(subtotal);
     const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
     const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
     const paymentMethod = getPaymentMethod();
@@ -390,8 +423,11 @@ async function createOrderFromCart() {
       userPhone: profile?.phone || '',
       userCar: profile?.car || profile?.carText || '',
       items,
+      subtotal,
       total,
       totalQty,
+      discountCardApplied,
+      discountCardPercent: discountCardApplied ? discountCardPercent : 0,
       paymentMethod,
       paymentMethodTitle: paymentTitle(paymentMethod),
       installment: installment ? {

@@ -172,8 +172,7 @@ async function renderFavorites(){
       const img = productImage(p);
       return `<a class="profile-fav-card" href="product.html?id=${p.id}">
         <div>${img ? `<img src="${img}" alt="${productTitle(p)}">` : '<span>Фото</span>'}</div>
-        <b>${productTitle(p)}</b>
-        <em>${fmtPrice(p.price || 0)}</em>
+        <span><b>${productTitle(p)}</b><small>${p.group || p.category || p.categoryName || 'Без категории'}</small><em>${fmtPrice(p.price || 0)}</em></span>
       </a>`;
     }).join('');
     box.querySelectorAll('[data-order-toggle]').forEach(btn => btn.addEventListener('click', () => {
