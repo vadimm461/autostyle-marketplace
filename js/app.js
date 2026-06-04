@@ -174,9 +174,10 @@ function card(p){
       <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
       <div class="product-title">${title(p)}</div>
       <div class="product-group">${group(p)}</div>
-      <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : ''}</div>
-      <div class="product-spacer"></div>
-      <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
+      <div class="product-card-price-area">
+        <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
+        <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : '<span class="installment-badge"></span>'}</div>
+      </div>
     </a>
     <button class="cart" data-cart="${p.id}" type="button">В корзину</button>
   </article>`;

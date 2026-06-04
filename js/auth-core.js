@@ -36,10 +36,10 @@ export async function loginEmail(email, pass){
   await ensureUserProfile(res.user);
   return res.user;
 }
-export async function registerEmail(name, email, pass){
+export async function registerEmail(name, email, pass, phone=''){
   const res = await createUserWithEmailAndPassword(auth, email, pass);
   if(name) await updateProfile(res.user, { displayName:name });
-  await ensureUserProfile(res.user, { name, email });
+  await ensureUserProfile(res.user, { name, email, phone });
   await sendEmailVerification(res.user);
   return res.user;
 }

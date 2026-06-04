@@ -176,6 +176,11 @@ async function renderFavorites(){
         <em>${fmtPrice(p.price || 0)}</em>
       </a>`;
     }).join('');
+    box.querySelectorAll('[data-order-toggle]').forEach(btn => btn.addEventListener('click', () => {
+      const card = btn.closest('[data-order-card]');
+      const collapsed = card.classList.toggle('collapsed');
+      btn.textContent = collapsed ? 'Показать товары' : 'Скрыть товары';
+    }));
   }catch(e){ box.innerHTML = '<div class="profile-empty">Не удалось загрузить избранное.</div>'; }
 }
 const ORDER_STATUSES = {
@@ -208,21 +213,28 @@ function orderStatusTitle(status, statusTitle) {
 function normalizeBankName(value) {
   if (!value) return '';
   if (typeof value === 'string') return value;
-  if (Array.isArray(value)) return value.map(normalizeBankName).filter(Boolean).join(', ');
-  if (typeof value === 'object') return value.name || value.bank || value.title || value.label || '';
-  return String(value);
+  if (Array.isArray(value)) return value.map(normalizeBankName).filter(Boolean).filter(x => x && !/^\[?object Object\]?$/i.test(x)).join(', ');
+  if (typeof value === 'object') {
+    const picked = value.name || value.bankName || value.title || value.label || value.text || value.value || '';
+    if (typeof picked === 'object') return normalizeBankName(picked);
+    return picked ? String(picked) : '';
+  }
+  const out = String(value);
+  return /^\[?object Object\]?$/i.test(out) ? '' : out;
 }
 
 function orderPaymentTitle(order) {
-  const inst = order.installment || {};
-  const method = order.paymentMethod || (inst.bank || order.installmentBank ? 'installment' : 'cash');
-  if (method === 'installment') {
-    const bank = normalizeBankName(order.installmentBank || inst.bank || inst.bankName || '');
-    const months = order.installmentMonths || inst.months || '';
-    const pay = order.installmentMonthlyPayment || inst.monthlyPayment || '';
+  const inst = (order.installment && typeof order.installment === 'object') ? order.installment : {};
+  const rawMethod = order.paymentMethod || order.payment || order.paymentType || '';
+  const method = typeof rawMethod === 'object' ? (rawMethod.type || rawMethod.id || rawMethod.method || '') : rawMethod;
+  if (method === 'installment' || inst.bank || order.installmentBank || order.installmentMonths) {
+    const bank = normalizeBankName(order.installmentBank || inst.bank || inst.bankName || order.bank || '');
+    const months = order.installmentMonths || inst.months || inst.term || '';
+    const pay = order.installmentMonthlyPayment || inst.monthlyPayment || inst.monthly || '';
     return `Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${fmtPrice(pay)}/мес.` : ''}`;
   }
-  return PAYMENT_TITLES[method] || order.paymentMethodTitle || method || 'Наличными';
+  if (order.paymentMethodTitle) return normalizeBankName(order.paymentMethodTitle) || 'Наличными';
+  return PAYMENT_TITLES[method] || normalizeBankName(method) || 'Наличными';
 }
 
 async function renderOrders(user){
@@ -248,17 +260,20 @@ async function renderOrders(user){
       const items = Array.isArray(o.items) ? o.items : [];
       const qty = Number(o.totalQty || items.reduce((s,x)=>s+Number(x.qty||0),0));
       const status = orderStatusTitle(o.status, o.statusTitle);
-      return `<article class="profile-order-card">
+      return `<article class="profile-order-card collapsed" data-order-card>
         <div class="profile-order-top">
           <div>
             <h3>Заказ ${o.orderNumber || ('#' + d.id.slice(0,8))}</h3>
             <p>${orderDate(o.createdAt, o.createdAtText)}</p>
           </div>
-          <span class="profile-order-status status-${o.status || 'new'}">${status}</span>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+            <span class="profile-order-status status-${o.status || 'new'}">${status}</span>
+            <button class="profile-order-toggle" type="button" data-order-toggle>Показать товары</button>
+          </div>
         </div>
         <div class="profile-order-meta">
           <span>Товаров: <b>${qty}</b></span>
-          <span>Оплата: <b>${orderPaymentTitle(o)}</b></span>
+          <span class="profile-order-payment">Оплата: <b>${orderPaymentTitle(o)}</b></span>
           <span>Сумма: <b>${fmtPrice(o.total || 0)}</b></span>
         </div>
         <div class="profile-order-items">
@@ -273,6 +288,11 @@ async function renderOrders(user){
         </div>
       </article>`;
     }).join('');
+    box.querySelectorAll('[data-order-toggle]').forEach(btn => btn.addEventListener('click', () => {
+      const card = btn.closest('[data-order-card]');
+      const collapsed = card.classList.toggle('collapsed');
+      btn.textContent = collapsed ? 'Показать товары' : 'Скрыть товары';
+    }));
   }catch(e){
     console.error('profile orders error', e);
     box.innerHTML = '<div class="profile-empty">Не удалось загрузить заказы.</div>';
@@ -415,10 +435,28 @@ async function getDiscountCard(user) {
 function renderAuthSecurity(user){
   const box = $('#authSecurityBox'); if(!box || !user) return;
   const providers = userProviders(user);
+  const phoneText = user.phoneNumber || 'не привязан';
   box.innerHTML = `
-    <div class="auth-link-card"><b>Способы входа</b><div class="auth-provider-list">${providers.length ? providers.map(p=>`<span class="auth-provider-pill">${providerTitle(p)}</span>`).join('') : '<span class="auth-provider-pill">Email/пароль</span>'}</div><p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${user.phoneNumber || 'не привязан'}</span></p></div>
-    <div class="auth-link-card"><b>Подтверждение почты</b><p class="muted">Отправьте новое письмо на текущий email.</p><button id="resendProfileEmail" class="profile-save" type="button">Отправить письмо</button></div>
-    <div class="auth-link-card"><b>Привязка телефона по SMS</b><div class="auth-sms-row"><input id="profileLinkPhone" value="${user.phoneNumber||''}" placeholder="Телефон: +373..."><button id="profileSendSms" class="profile-save" type="button">SMS</button></div><div class="auth-sms-row" style="margin-top:8px"><input id="profileSmsCode" placeholder="Код из SMS"><button id="profileConfirmSms" class="profile-save" type="button">Подтвердить</button></div><div id="profile-recaptcha"></div></div>`;
+    <div class="auth-link-card">
+      <div class="auth-card-icon">🔐</div>
+      <b>Способы входа</b>
+      <div class="auth-provider-list" style="margin:12px 0">${providers.length ? providers.map(p=>`<span class="auth-provider-pill">${providerTitle(p)}</span>`).join('') : '<span class="auth-provider-pill">Email/пароль</span>'}</div>
+      <p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${phoneText}</span></p>
+    </div>
+    <div class="auth-link-card">
+      <div class="auth-card-icon">✉️</div>
+      <b>Подтверждение почты</b>
+      <p class="muted">Отправьте письмо подтверждения на текущий e-mail. После подтверждения обновите страницу.</p>
+      <button id="resendProfileEmail" class="profile-save" type="button">Отправить письмо</button>
+    </div>
+    <div class="auth-link-card">
+      <div class="auth-card-icon">📱</div>
+      <b>Привязка телефона</b>
+      <p class="muted">Введите номер в формате +373... и подтвердите кодом из SMS.</p>
+      <div class="auth-sms-row"><input id="profileLinkPhone" value="${user.phoneNumber||''}" placeholder="+373..."><button id="profileSendSms" class="profile-save" type="button">Получить код</button></div>
+      <div class="auth-sms-row" style="margin-top:8px"><input id="profileSmsCode" placeholder="Код из SMS"><button id="profileConfirmSms" class="profile-save" type="button">Подтвердить</button></div>
+      <div id="profile-recaptcha"></div>
+    </div>`;
   const msg = $('#profileAuthMsg'); const say=t=>message(msg,t,true); const fail=t=>message(msg,t,false);
   $('#resendProfileEmail')?.addEventListener('click', async()=>{try{await resendEmailVerification(); say('Письмо подтверждения отправлено.');}catch(e){fail('Ошибка: '+(e.message||e));}});
   $('#profileSendSms')?.addEventListener('click', async()=>{try{say('Отправляем SMS...'); await sendLinkSmsCode($('#profileLinkPhone').value.trim(),'profile-recaptcha'); say('Код отправлен.');}catch(e){fail('Ошибка SMS: '+(e.message||e));}});

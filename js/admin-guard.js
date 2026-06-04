@@ -59,6 +59,7 @@ async function unlockAdmin() {
   document.documentElement.classList.remove('admin-locked');
   try {
     await import('./admin.js');
+    await import('./admin-footer-editor.js');
   } catch (err) {
     console.error(err);
     alert('Не удалось загрузить админку. Проверьте консоль браузера.');
