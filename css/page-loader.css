@@ -72,3 +72,7 @@ body.as-loading .page-dim {
   0%,100% { opacity: .35; transform: translateY(0); }
   50% { opacity: 1; transform: translateY(-5px); }
 }
+
+/* Final safety: loader must never hang above already rendered content */
+.as-page-loader.hidden{opacity:0!important;visibility:hidden!important;pointer-events:none!important;display:none!important;}
+body:not(.as-loading) .as-page-loader{pointer-events:none;}
