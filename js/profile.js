@@ -212,25 +212,30 @@ function orderStatusTitle(status, statusTitle) {
 
 function normalizeBankName(value) {
   if (!value) return '';
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value)) return value.map(normalizeBankName).filter(Boolean).filter(x => x && !/^\[?object Object\]?$/i.test(x)).join(', ');
-  if (typeof value === 'object') {
-    const picked = value.name || value.bankName || value.title || value.label || value.text || value.value || '';
-    if (typeof picked === 'object') return normalizeBankName(picked);
-    return picked ? String(picked) : '';
+  if (typeof value === 'string') {
+    const out = value.replace(/\[object Object\]/gi, '').replace(/object Object/gi, '').replace(/[\[\]]/g, '').replace(/\s*,\s*,+/g, ', ').trim();
+    return out && !/^object$/i.test(out) ? out : '';
   }
-  const out = String(value);
-  return /^\[?object Object\]?$/i.test(out) ? '' : out;
+  if (Array.isArray(value)) return value.map(normalizeBankName).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    const keys = ['name','bankName','title','label','text','value','id'];
+    for (const key of keys) {
+      const picked = normalizeBankName(value[key]);
+      if (picked) return picked;
+    }
+    return '';
+  }
+  return normalizeBankName(String(value));
 }
 
 function orderPaymentTitle(order) {
   const inst = (order.installment && typeof order.installment === 'object') ? order.installment : {};
   const rawMethod = order.paymentMethod || order.payment || order.paymentType || '';
-  const method = typeof rawMethod === 'object' ? (rawMethod.type || rawMethod.id || rawMethod.method || '') : rawMethod;
-  if (method === 'installment' || inst.bank || order.installmentBank || order.installmentMonths) {
-    const bank = normalizeBankName(order.installmentBank || inst.bank || inst.bankName || order.bank || '');
-    const months = order.installmentMonths || inst.months || inst.term || '';
-    const pay = order.installmentMonthlyPayment || inst.monthlyPayment || inst.monthly || '';
+  const method = normalizeBankName(typeof rawMethod === 'object' ? (rawMethod.type || rawMethod.id || rawMethod.method || rawMethod.name || '') : rawMethod);
+  const bank = normalizeBankName(order.installmentBank || inst.bank || inst.bankName || order.bank || order.bankName || order.paymentBank || '');
+  const months = normalizeBankName(order.installmentMonths || inst.months || inst.term || order.months || '');
+  const pay = order.installmentMonthlyPayment || inst.monthlyPayment || inst.monthly || order.monthlyPayment || '';
+  if (/installment|credit|рассроч/i.test(method) || bank || months || pay) {
     return `Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${fmtPrice(pay)}/мес.` : ''}`;
   }
   if (order.paymentMethodTitle) return normalizeBankName(order.paymentMethodTitle) || 'Наличными';
