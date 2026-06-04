@@ -524,8 +524,46 @@ function renderAdminOrderCard(order) {
 
 function discountCardSearchMatches(card, term) {
   if (!term) return true;
-  const hay = `${card.number || ''} ${card.name || ''} ${card.email || ''} ${card.phone || ''} ${card.city || ''} ${card.car || ''}`.toLowerCase();
+  const hay = `${card.number || card.cardNumber || ''} ${card.name || ''} ${card.email || ''} ${card.phone || ''} ${card.city || ''} ${card.address || ''} ${card.car || ''} ${card.carBrand || ''} ${card.carModel || ''} ${card.carYear || ''}`.toLowerCase();
   return hay.includes(term.toLowerCase());
+}
+
+const DISCOUNT_CARD_COLLECTIONS = [...new Set([
+  COLLECTIONS.discountCards || 'autostyle_discount_cards',
+  'autostyle_discount_cards',
+  'autostyle_discountCards'
+].filter(Boolean))];
+
+async function getAllDiscountCardsAdmin() {
+  const byKey = new Map();
+  for (const colName of DISCOUNT_CARD_COLLECTIONS) {
+    try {
+      let snap;
+      try {
+        snap = await getDocs(query(collection(db, colName), orderBy('createdAtServer', 'desc')));
+      } catch (e) {
+        snap = await getDocs(collection(db, colName));
+      }
+      snap.docs.forEach(d => {
+        const data = { id: d.id, _collection: colName, ...d.data() };
+        const key = data.userId || data.uid || data.number || data.cardNumber || `${colName}_${d.id}`;
+        byKey.set(key, data);
+      });
+    } catch (e) {
+      console.warn('discount cards load error', colName, e);
+    }
+  }
+  return [...byKey.values()].sort((a,b) => String(b.createdAtServer?.seconds || b.issuedAt || b.createdAt || '').localeCompare(String(a.createdAtServer?.seconds || a.issuedAt || a.createdAt || '')));
+}
+
+async function saveDiscountCardPercent(cardId, collectionName, value) {
+  const discount = Math.max(0, Math.min(100, Number(value || 0)));
+  await updateDoc(doc(db, collectionName || (COLLECTIONS.discountCards || 'autostyle_discount_cards'), cardId), {
+    discount,
+    discountPercent: discount,
+    updatedAt: new Date().toISOString()
+  });
+  await renderDiscountCardsAdmin();
 }
 
 async function renderDiscountCardsAdmin() {
@@ -533,31 +571,34 @@ async function renderDiscountCardsAdmin() {
   if (!list) return;
   list.innerHTML = '<div class="muted">Загружаю скидочные карты...</div>';
   try {
-    let cards = [];
-    try {
-      const snap = await getDocs(query(collection(db, COLLECTIONS.discountCards || 'autostyle_discountCards'), orderBy('createdAtServer', 'desc')));
-      cards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (err) {
-      const snap = await getDocs(collection(db, COLLECTIONS.discountCards || 'autostyle_discountCards'));
-      cards = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b)=>String(b.issuedAt||'').localeCompare(String(a.issuedAt||'')));
-    }
+    const cards = await getAllDiscountCardsAdmin();
     const search = $('#discountCardSearch');
     const term = (search?.value || '').trim();
     const filtered = cards.filter(card => discountCardSearchMatches(card, term));
-    list.innerHTML = filtered.length ? filtered.map(card => `
+    list.innerHTML = filtered.length ? filtered.map(card => {
+      const number = card.number || card.cardNumber || '—';
+      const discount = Number(card.discount ?? card.discountPercent ?? 0) || 0;
+      const car = card.car || [card.carBrand, card.carModel, card.carYear].filter(Boolean).join(' ') || '—';
+      return `
       <article class="admin-discount-card-row">
         <div>
           <h3>${esc(card.name || 'Клиент')}</h3>
           <p>${esc(card.email || '—')} · ${esc(card.phone || '—')}</p>
           <p>${esc(card.city || '')}${card.address ? ` · ${esc(card.address)}` : ''}</p>
-          <p>Авто: <b>${esc(card.car || '—')}</b></p>
+          <p>Авто: <b>${esc(car)}</b></p>
         </div>
         <div class="admin-discount-number">
           <span>EAN13</span>
-          <b>${esc(card.number || '—')}</b>
+          <b>${esc(number)}</b>
           <small>${formatDate(card.issuedAt || card.createdAt)}</small>
+          <label class="discount-admin-percent">
+            <span>Скидка, %</span>
+            <input type="number" min="0" max="100" step="1" value="${esc(discount)}" data-discount-percent-input data-card-id="${esc(card.id)}" data-card-collection="${esc(card._collection || (COLLECTIONS.discountCards || 'autostyle_discount_cards'))}">
+          </label>
+          <button type="button" class="secondary" data-save-discount-card="${esc(card.id)}" data-card-collection="${esc(card._collection || (COLLECTIONS.discountCards || 'autostyle_discount_cards'))}">Сохранить скидку</button>
         </div>
-      </article>`).join('') : '<div class="orders-empty">Карты не найдены.</div>';
+      </article>`;
+    }).join('') : '<div class="orders-empty">Карты не найдены.</div>';
   } catch(err) {
     console.error('discount cards render error', err);
     list.innerHTML = `<div class="upload-error">Ошибка загрузки карт: ${esc(err.message || err)}</div>`;
@@ -567,8 +608,22 @@ async function renderDiscountCardsAdmin() {
 document.addEventListener('input', e => {
   if (e.target?.id === 'discountCardSearch') renderDiscountCardsAdmin();
 });
-document.addEventListener('click', e => {
+document.addEventListener('click', async e => {
   if (e.target?.id === 'discountCardSearchBtn') renderDiscountCardsAdmin();
+  const saveBtn = e.target?.closest?.('[data-save-discount-card]');
+  if (saveBtn) {
+    const cardId = saveBtn.dataset.saveDiscountCard;
+    const collectionName = saveBtn.dataset.cardCollection;
+    const input = saveBtn.closest('.admin-discount-card-row')?.querySelector('[data-discount-percent-input]');
+    saveBtn.disabled = true;
+    try {
+      await saveDiscountCardPercent(cardId, collectionName, input?.value || 0);
+    } catch (err) {
+      alert('Не удалось сохранить скидку: ' + (err.message || err));
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
 });
 
 

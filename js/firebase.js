@@ -36,5 +36,6 @@ export const COLLECTIONS = {
   media: 'autostyle_media',
   homeBlocks: 'autostyle_home_blocks',
   promoCards: 'autostyle_promo_cards',
-  orders: 'autostyle_orders'
+  orders: 'autostyle_orders',
+  discountCards: 'autostyle_discount_cards'
 };
