@@ -11,7 +11,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
-import { linkService, sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile } from './auth-core.js';
+import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile } from './auth-core.js';
 
 const $ = s => document.querySelector(s);
 
@@ -415,14 +415,11 @@ async function getDiscountCard(user) {
 function renderAuthSecurity(user){
   const box = $('#authSecurityBox'); if(!box || !user) return;
   const providers = userProviders(user);
-  const has = id => providers.includes(id);
   box.innerHTML = `
-    <div class="auth-link-card"><b>Подключено</b><div class="auth-provider-list">${providers.length ? providers.map(p=>`<span class="auth-provider-pill">${providerTitle(p)}</span>`).join('') : '<span class="auth-provider-pill">Email/пароль</span>'}</div><p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${user.phoneNumber || 'не привязан'}</span></p></div>
-    <div class="auth-link-card"><b>Социальные сервисы</b><div class="auth-services"><button class="auth-service" data-link-service="google" type="button">${has('google.com')?'✓ ':''}Google</button><button class="auth-service" data-link-service="facebook" type="button">${has('facebook.com')?'✓ ':''}Facebook</button><button class="auth-service" data-link-service="apple" type="button">${has('apple.com')?'✓ ':''}Apple</button></div></div>
+    <div class="auth-link-card"><b>Способы входа</b><div class="auth-provider-list">${providers.length ? providers.map(p=>`<span class="auth-provider-pill">${providerTitle(p)}</span>`).join('') : '<span class="auth-provider-pill">Email/пароль</span>'}</div><p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${user.phoneNumber || 'не привязан'}</span></p></div>
     <div class="auth-link-card"><b>Подтверждение почты</b><p class="muted">Отправьте новое письмо на текущий email.</p><button id="resendProfileEmail" class="profile-save" type="button">Отправить письмо</button></div>
     <div class="auth-link-card"><b>Привязка телефона по SMS</b><div class="auth-sms-row"><input id="profileLinkPhone" value="${user.phoneNumber||''}" placeholder="Телефон: +373..."><button id="profileSendSms" class="profile-save" type="button">SMS</button></div><div class="auth-sms-row" style="margin-top:8px"><input id="profileSmsCode" placeholder="Код из SMS"><button id="profileConfirmSms" class="profile-save" type="button">Подтвердить</button></div><div id="profile-recaptcha"></div></div>`;
   const msg = $('#profileAuthMsg'); const say=t=>message(msg,t,true); const fail=t=>message(msg,t,false);
-  document.querySelectorAll('[data-link-service]').forEach(b=>b.onclick=async()=>{try{say('Открываем привязку...'); await linkService(b.dataset.linkService); await auth.currentUser.reload(); await ensureUserProfile(auth.currentUser); renderAuthSecurity(auth.currentUser); say('Сервис привязан.');}catch(e){fail('Ошибка привязки: '+(e.message||e));}});
   $('#resendProfileEmail')?.addEventListener('click', async()=>{try{await resendEmailVerification(); say('Письмо подтверждения отправлено.');}catch(e){fail('Ошибка: '+(e.message||e));}});
   $('#profileSendSms')?.addEventListener('click', async()=>{try{say('Отправляем SMS...'); await sendLinkSmsCode($('#profileLinkPhone').value.trim(),'profile-recaptcha'); say('Код отправлен.');}catch(e){fail('Ошибка SMS: '+(e.message||e));}});
   $('#profileConfirmSms')?.addEventListener('click', async()=>{try{await confirmLinkSmsCode($('#profileSmsCode').value.trim()); await auth.currentUser.reload(); renderAuthSecurity(auth.currentUser); say('Телефон привязан.');}catch(e){fail('Ошибка подтверждения: '+(e.message||e));}});

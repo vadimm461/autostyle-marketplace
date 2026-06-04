@@ -1,46 +1,53 @@
-# AutoStyle — полноценная авторизация
+# AutoStyle — авторизация только по почте и телефону
 
-В проект добавлена единая авторизация для десктопной и мобильной версии через Firebase Authentication.
+В этой версии социальные входы полностью отключены из интерфейса и кода сайта.
+Оставлены только:
 
-## Что включено в код
+- регистрация по e-mail и паролю;
+- подтверждение e-mail письмом Firebase;
+- вход по e-mail и паролю;
+- вход по телефону через SMS-код;
+- привязка телефона к существующему профилю;
+- повторная отправка письма подтверждения;
+- восстановление/смена пароля в профиле.
 
-- Email/пароль с отправкой письма подтверждения.
-- Повторная отправка подтверждения email в профиле.
-- Google Sign-In.
-- Facebook Login.
-- Apple Sign-In.
-- Вход/регистрация по SMS.
-- Привязка Google/Facebook/Apple к существующему профилю.
-- Привязка телефона к существующему профилю через SMS.
-- Синхронизация профиля в Firestore `autostyle_users`.
-- Единая логика для мобильной версии и большой версии сайта.
+## Что включить в Firebase
 
-## Что нужно включить в Firebase Console
+Firebase Console → Authentication → Sign-in method:
 
-1. Authentication → Sign-in method:
-   - Email/Password: Enable.
-   - Phone: Enable.
-   - Google: Enable.
-   - Facebook: Enable и вставить App ID + App Secret.
-   - Apple: Enable и заполнить Team ID, Key ID, Service ID, private key.
+1. Email/Password — Enable.
+2. Phone — Enable.
+3. Google — Disable.
+4. Facebook — Disable.
+5. Apple — Disable.
 
-2. Authentication → Settings → Authorized domains:
-   - добавить домен сайта;
-   - добавить домен тестового хостинга, если проверяете не на основном домене.
+## Домены
 
-3. Для SMS:
-   - Firebase Phone Auth работает только на разрешённых доменах;
-   - на localhost работает для теста;
-   - для продакшена настройте реальные квоты/биллинг Firebase.
+Firebase Console → Authentication → Settings → Authorized domains:
 
-4. Для Facebook/Apple дополнительно добавьте callback URL из Firebase Console в настройках приложений Facebook/Apple.
+- добавьте основной домен сайта;
+- добавьте тестовый домен хостинга, если проверяете сайт не на основном домене.
 
-## Файлы, которые отвечают за авторизацию
+## SMS
 
-- `js/auth-core.js` — единая логика авторизации и привязок.
-- `js/auth.js` — страницы входа/регистрации.
-- `js/app.js` — десктопная главная.
-- `js/catalog.js` — десктопный каталог.
-- `js/profile.js` — профиль, привязка сервисов, подтверждения.
-- `js/mobile-app.js` — мобильный PWA-профиль и вход.
-- `css/auth-upgrade.css` — стили блоков авторизации.
+Для тестов в Phone provider можно добавить тестовый номер и тестовый код.
+Для продакшена Firebase будет отправлять реальные SMS по правилам вашего Firebase-проекта.
+
+## Файлы, которые были изменены
+
+- js/auth-core.js — оставлены только Email/Password и Phone Auth.
+- js/app.js — убран вход через сервисы на главной.
+- js/catalog.js — убран вход через сервисы в каталоге.
+- js/auth.js — убрана генерация OAuth-кнопок.
+- js/profile.js — блок безопасности теперь только почта + телефон.
+- js/mobile-app.js — мобильный профиль теперь только почта + SMS.
+- index.html/catalog.html/login.html и другие HTML — удалены кнопки Google/Facebook/Apple из модальных окон.
+
+## Проверка
+
+Откройте:
+
+- index.html — кнопка аккаунта: почта + SMS;
+- catalog.html — кнопка аккаунта: почта + SMS;
+- profile.html#security — подтверждение почты и привязка телефона;
+- mobile-profile.html — мобильный вход/регистрация по почте и SMS.

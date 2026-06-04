@@ -1,7 +1,5 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import {
-  GoogleAuthProvider, FacebookAuthProvider, OAuthProvider,
-  signInWithPopup, linkWithPopup,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   sendEmailVerification, signOut,
   RecaptchaVerifier, signInWithPhoneNumber, linkWithPhoneNumber,
@@ -10,14 +8,8 @@ import {
 import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const USERS = COLLECTIONS.users || 'autostyle_users';
-export const providerTitle = id => ({password:'Email/пароль',google:'Google',facebook:'Facebook',apple:'Apple',phone:'SMS/телефон','google.com':'Google','facebook.com':'Facebook','apple.com':'Apple','phone':'SMS/телефон'}[id] || id);
-export function userProviders(user){ return (user?.providerData || []).map(p => p.providerId).filter(Boolean); }
-function provider(name){
-  if(name === 'google') { const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt:'select_account' }); return p; }
-  if(name === 'facebook') return new FacebookAuthProvider();
-  if(name === 'apple') { const p = new OAuthProvider('apple.com'); p.addScope('email'); p.addScope('name'); return p; }
-  throw new Error('Неизвестный сервис входа');
-}
+export const providerTitle = id => ({ password:'Email/пароль', 'password':'Email/пароль', phone:'SMS/телефон', 'phone':'SMS/телефон' }[id] || id);
+export function userProviders(user){ return (user?.providerData || []).map(p => p.providerId).filter(Boolean).filter(id => id === 'password' || id === 'phone'); }
 export async function ensureUserProfile(user, extra={}){
   if(!user) return;
   const ref = doc(db, USERS, user.uid);
@@ -55,20 +47,9 @@ export async function resendEmailVerification(){
   if(!auth.currentUser) throw new Error('Сначала войдите в аккаунт.');
   await sendEmailVerification(auth.currentUser);
 }
-export async function signInService(name){
-  const res = await signInWithPopup(auth, provider(name));
-  await ensureUserProfile(res.user);
-  return res.user;
-}
-export async function linkService(name){
-  if(!auth.currentUser) throw new Error('Сначала войдите в аккаунт.');
-  await linkWithPopup(auth.currentUser, provider(name));
-  await auth.currentUser.reload();
-  await ensureUserProfile(auth.currentUser);
-  return auth.currentUser;
-}
 export async function unlinkProvider(providerId){
   if(!auth.currentUser) throw new Error('Сначала войдите в аккаунт.');
+  if(providerId !== 'phone') throw new Error('В этой версии доступны только почта и телефон.');
   await unlink(auth.currentUser, providerId);
   await auth.currentUser.reload();
   await ensureUserProfile(auth.currentUser);
