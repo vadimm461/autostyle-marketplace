@@ -990,3 +990,130 @@
   .quick-product{grid-template-columns:1fr;}
   .quick-product-img{height:220px;}
 }
+
+
+/* ===== Cart installment/banks polish ===== */
+.cart-summary-actions{
+  gap:10px;
+}
+.discount-card-btn,
+.continue-shopping-btn{
+  min-height:46px;
+  border-radius:14px;
+  border:1px solid #cfd7e3;
+  background:#fff;
+  color:#111722;
+  font-size:14px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  box-shadow:0 8px 22px rgba(16,18,23,.035);
+}
+.discount-card-btn::before{content:'▣';font-size:14px;color:#667085;}
+.cart-bottom-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:18px;
+}
+.continue-shopping-btn:first-child::before{content:'←';font-size:20px;line-height:0;}
+.continue-shopping-btn:nth-child(2)::before{content:'▢';font-size:14px;color:#667085;}
+.cart-qty{
+  grid-template-columns:38px 44px 38px;
+  height:40px;
+  border-radius:12px;
+}
+.cart-qty button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:38px;
+  min-height:40px;
+  font-size:18px;
+  line-height:1;
+  font-family:Arial, sans-serif;
+}
+.cart-qty .plus::before{content:'+';}
+.cart-qty .plus{font-size:0;}
+.cart-qty .plus::before{font-size:18px;font-weight:950;}
+.cart-qty span{font-size:15px;}
+.cart-row-controls{gap:14px;}
+.installment-box{
+  margin-top:22px;
+  padding:16px;
+  border-radius:20px;
+  border:1px solid #ccefd0;
+  background:linear-gradient(180deg,#fbfffb,#f6fff6);
+}
+.installment-box summary{
+  font-size:16px;
+  padding:0 0 14px;
+}
+.installment-bank{
+  padding:12px 12px 13px;
+  border-radius:16px;
+  overflow:hidden;
+}
+.installment-bank input{right:12px;top:15px;width:16px;height:16px;}
+.bank-head{
+  padding-right:26px;
+  font-size:13px;
+  line-height:1.1;
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.bank-head::before{display:none !important;}
+.bank-head img{
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  object-fit:cover;
+  flex:0 0 auto;
+}
+.installment-bank.agro .bank-head{color:#2184ff;}
+.installment-bank.exim .bank-head{color:#f4b000;}
+.installment-bank.sber .bank-head{color:#16b957;}
+.installment-bank.agro.selected{border-color:#2184ff;box-shadow:0 10px 26px rgba(33,132,255,.12);}
+.installment-bank.exim.selected{border-color:#f4b000;box-shadow:0 10px 26px rgba(244,176,0,.13);}
+.installment-bank.sber.selected{border-color:#16b957;box-shadow:0 10px 26px rgba(22,185,87,.12);}
+.installment-bank.agro input{accent-color:#2184ff;}
+.installment-bank.exim input{accent-color:#f4b000;}
+.installment-bank.sber input{accent-color:#16b957;}
+.bank-months{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+  margin-top:12px;
+}
+.bank-months span{min-width:0;}
+.bank-months em{
+  font-size:11px;
+  line-height:1.05;
+  white-space:nowrap;
+}
+.bank-months strong{
+  font-size:10.5px;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.installment-calc-btn{
+  width:100%;
+  min-height:48px;
+  margin-top:4px;
+  border:0;
+  border-radius:14px;
+  background:#25e11b;
+  color:#050814;
+  font-weight:950;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0 14px 30px rgba(37,225,27,.20);
+}
+.installment-calc-btn:hover{filter:brightness(.96);}
+@media(max-width:900px){
+  .cart-bottom-actions{grid-template-columns:1fr;}
+  .bank-months strong{font-size:11px;}
+}

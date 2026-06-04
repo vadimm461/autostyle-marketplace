@@ -60,10 +60,10 @@ async function getProductMap() {
 
 function calcInstallment(total) {
   return [
-    ['Агропромбанк', {3:.955, 6:.93, 9:.9, 12:.875}],
-    ['Эксимбанк', {3:.955, 6:.93, 9:.9, 12:.886}],
-    ['Сбербанк', {3:.96, 6:.93, 9:.9, 12:.88}],
-  ].map(([bank, rates]) => ({ bank, rates }));
+    { bank: 'Агропромбанк', className: 'agro', logo: 'assets/bank-agroprombank.jpg', rates: {3:.955, 6:.93, 9:.9, 12:.875} },
+    { bank: 'Эксимбанк', className: 'exim', logo: 'assets/bank-eximbank.jpg', rates: {3:.955, 6:.93, 9:.9, 12:.886} },
+    { bank: 'Сбербанк', className: 'sber', logo: 'assets/bank-sberbank.webp', rates: {3:.96, 6:.93, 9:.9, 12:.88} },
+  ];
 }
 
 async function render() {
@@ -151,15 +151,15 @@ function renderInstallments(total) {
     inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
     return;
   }
-  inst.innerHTML = calcInstallment(total).map(({bank, rates}, idx) => `
-    <label class="installment-bank ${idx === 0 ? 'selected' : ''}">
+  inst.innerHTML = calcInstallment(total).map(({bank, className, logo, rates}, idx) => `
+    <label class="installment-bank ${className} ${idx === 0 ? 'selected' : ''}">
       <input type="radio" name="installmentBank" ${idx === 0 ? 'checked' : ''}>
-      <span class="bank-head"><b>${bank}</b><i></i></span>
+      <span class="bank-head"><img src="${logo}" alt="${bank}"><b>${bank}</b></span>
       <span class="bank-months">
         ${Object.entries(rates).map(([months, k]) => `
           <span><em>${months} мес.</em><strong>${money(Math.ceil(total * k / Number(months)))}/мес.</strong></span>`).join('')}
       </span>
-    </label>`).join('');
+    </label>`).join('') + '<button class="installment-calc-btn" type="button">Рассчитать рассрочку</button>';
   inst.querySelectorAll('.installment-bank').forEach(card => {
     card.addEventListener('click', () => {
       inst.querySelectorAll('.installment-bank').forEach(x => x.classList.remove('selected'));
