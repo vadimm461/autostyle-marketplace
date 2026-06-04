@@ -123,17 +123,19 @@ function renderAccountPanel(user){
   const email = user.email || '';
   const photo = user.photoURL || '';
   drop.classList.add('account-panel');
+  const avatarHtml = photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : accountInitials(name, email);
   drop.innerHTML = `
-    <div class="account-user">
-      <div class="account-avatar">${photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : accountInitials(name, email)}</div>
+    <a class="account-user account-user-link" href="profile.html" title="Открыть профиль">
+      <div class="account-avatar">${avatarHtml}</div>
       <div>
         <b class="account-name">${name}</b>
         <span class="account-email">${email}</span>
       </div>
-    </div>
+    </a>
     <div class="account-status">● Вы авторизованы</div>
     <nav class="account-menu">
-      <a class="primary-account" href="profile.html">👤 Редактировать профиль</a>
+      <a href="profile.html#discount-card">💳 Скидочная карта</a>
+      <a href="profile.html#orders">📦 Ваши заказы</a>
       <a href="favorites.html">♡ Избранное</a>
       <a href="cart.html">🛒 Корзина</a>
       <button id="logout" class="account-logout" type="button">Выйти</button>

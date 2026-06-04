@@ -2103,3 +2103,8 @@ html.admin-locked .admin-layout{display:none!important;}
 .admin-order-actions select:focus{border-color:#34e21f;box-shadow:0 0 0 4px rgba(52,226,31,.12);}
 #checkoutBtn:disabled{opacity:.7;cursor:not-allowed;}
 @media(max-width:760px){.admin-order-head,.admin-order-actions{display:grid;}.admin-order-item{grid-template-columns:48px 1fr;}.admin-order-item strong{grid-column:2;}.admin-order-total{font-size:18px;}}
+
+/* === Account dropdown menu update: profile opens by avatar/name === */
+.account-user-link{color:#111318;text-decoration:none;cursor:pointer;border-radius:18px;transition:.18s ease;}
+.account-user-link:hover{background:#f5f7fa;transform:translateY(-1px);}
+.account-menu a.primary-account::after{content:none!important;}

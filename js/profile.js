@@ -52,6 +52,7 @@ function fillProfile(user, data={}){
   $('#profileAddress').value = data.address || '';
   setText($('#profileNameTitle'), name || 'Пользователь');
   setText($('#profileEmailTitle'), email);
+  setText($('#discountCardEmail'), email);
   avatarHtml(photo, name, email);
 }
 async function saveProfile(user){
@@ -121,7 +122,7 @@ async function changePassword(user){
 }
 function activateProfileTabFromHash(){
   const hash = (location.hash || '').replace('#','');
-  const map = { profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', orders:'orders', favorites:'favorites' };
+  const map = { profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
   const target = map[hash];
   if(target) document.querySelector(`[data-profile-tab="${target}"]`)?.click();
 }
@@ -136,6 +137,15 @@ function bindTabs(){
   });
   setTimeout(activateProfileTabFromHash, 50);
   window.addEventListener('hashchange', activateProfileTabFromHash);
+  document.querySelectorAll('[data-profile-jump]').forEach(a => {
+    a.addEventListener('click', e => {
+      const tab = a.dataset.profileJump;
+      if(!tab) return;
+      e.preventDefault();
+      location.hash = tab;
+      activateProfileTab(tab);
+    });
+  });
 }
 async function renderFavorites(){
   const box = $('#profileFavorites');
