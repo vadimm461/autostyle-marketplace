@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/shop-pages.css">
   <link rel="stylesheet" href="css/profile.css">
   <link rel="stylesheet" href="css/page-loader.css">
-<script src="js/mobile-redirect.js"></script></head>
+<script src="js/mobile-redirect.js"></script><link rel="stylesheet" href="css/auth-upgrade.css"></head>
 <body>
 <script src="js/page-loader.js"></script>
 <header class="topbar dark-topbar">
@@ -55,6 +55,7 @@
       <nav class="profile-tabs" aria-label="Разделы профиля">
         <button class="active" data-profile-tab="account" type="button">Профиль</button>
         <button data-profile-tab="discount-card" type="button">Скидочная карта</button>
+        <button data-profile-tab="security" type="button">Вход и привязки</button>
         <button data-profile-tab="orders" type="button">Мои заказы</button>
         <button data-profile-tab="favorites" type="button">Избранное</button>
         <button data-profile-tab="password" type="button">Изменить пароль</button>
@@ -111,6 +112,12 @@
           </div>
         </div>
       </section>
+      <section class="profile-card profile-pane" data-pane="security">
+        <div class="profile-card-head"><div><h2>Вход через сервисы</h2><p class="muted">Привяжите Google, Facebook, Apple, телефон по SMS и подтвердите почту.</p></div></div>
+        <div id="authSecurityBox" class="auth-security-grid"></div>
+        <div id="profileAuthMsg" class="profile-msg profile-wide"></div>
+      </section>
+
       <section class="profile-card profile-pane" data-pane="orders">
         <div class="profile-card-head"><div><h2>Мои заказы</h2><p class="muted">Здесь будут отображаться заказы из Firebase.</p></div></div>
         <div id="ordersList" class="profile-list"><div class="profile-empty">Заказов пока нет.</div></div>

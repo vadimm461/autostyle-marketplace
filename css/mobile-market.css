@@ -50,3 +50,15 @@
 .m-products,.m-carousel,.m-cat-grid,.m-promo-row{will-change:contents}
 .m-loader{transition:opacity .16s ease}.m-loader.removing{opacity:0}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Auth upgrade: social services, SMS and verified email */
+.m-auth-services{display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0}
+.m-auth-service{height:48px;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(255,255,255,.08);color:#fff;font-weight:800;font-size:15px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.m-auth-service:active{transform:scale(.98)}
+.m-auth-box{margin-top:14px;padding:14px;border:1px solid rgba(255,255,255,.12);border-radius:20px;background:rgba(255,255,255,.06)}
+.m-auth-box h2{margin:0 0 10px;font-size:18px}
+.m-profile-tabs{overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.m-profile-tabs::-webkit-scrollbar{display:none}
+.m-profile-tabs a{white-space:nowrap}
+#mRecaptcha{min-height:1px}
+@media (min-width:420px){.m-auth-services{grid-template-columns:repeat(3,1fr)}}

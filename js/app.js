@@ -2,6 +2,7 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { loginEmail, registerEmail, signInService, sendSmsCode, confirmSmsCode, ensureUserProfile } from './auth-core.js';
 import { getCollectionCached, getProducts } from './data-cache.js';
 
 const $ = s => document.querySelector(s);
@@ -364,11 +365,14 @@ function renderAccountPanel(user){
 }
 
 function authModal(){
-  const modal=$('#authModal'); if(!modal)return; $('#openAuth')&&($('#openAuth').onclick=()=>modal.classList.add('open')); $('#closeAuth')&&($('#closeAuth').onclick=()=>modal.classList.remove('open'));
+  const modal=$('#authModal'); if(!modal)return; const msg=()=>$('#authFullMsg'); const say=t=>{const m=msg(); if(m)m.textContent=t||''}; $('#openAuth')&&($('#openAuth').onclick=()=>modal.classList.add('open')); $('#closeAuth')&&($('#closeAuth').onclick=()=>modal.classList.remove('open'));
   $$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $('#loginForm').style.display=t.dataset.tab==='login'?'block':'none'; $('#registerForm').style.display=t.dataset.tab==='register'?'block':'none';});
-  $('#loginForm')&&($('#loginForm').onsubmit=async e=>{e.preventDefault(); await signInWithEmailAndPassword(auth,$('#loginEmail').value.trim(),$('#loginPass').value); modal.classList.remove('open');});
-  $('#registerForm')&&($('#registerForm').onsubmit=async e=>{e.preventDefault(); const res=await createUserWithEmailAndPassword(auth,$('#regEmail').value.trim(),$('#regPass').value); await setDoc(doc(db,COLLECTIONS.users,res.user.uid),{name:$('#regName').value.trim(),email:$('#regEmail').value.trim(),role:'user',createdAt:new Date().toISOString()}); await sendEmailVerification(res.user); alert('Аккаунт создан. Проверьте письмо на почте.'); modal.classList.remove('open');});
-  onAuthStateChanged(auth,u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
+  $('#loginForm')&&($('#loginForm').onsubmit=async e=>{e.preventDefault(); try{say('Входим...'); await loginEmail($('#loginEmail').value.trim(),$('#loginPass').value); modal.classList.remove('open'); location.reload();}catch(err){say('Ошибка входа: '+(err.message||err));}});
+  $('#registerForm')&&($('#registerForm').onsubmit=async e=>{e.preventDefault(); try{say('Создаём аккаунт...'); await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),$('#regPass').value); say('Аккаунт создан. Проверьте письмо подтверждения на почте.');}catch(err){say('Ошибка регистрации: '+(err.message||err));}});
+  $$('[data-auth-service]').forEach(b=>b.onclick=async()=>{try{say('Открываем сервис входа...'); await signInService(b.dataset.authService); modal.classList.remove('open'); location.reload();}catch(err){say('Ошибка сервиса: '+(err.message||err));}});
+  $('#sendSmsCode')&&($('#sendSmsCode').onclick=async()=>{try{say('Отправляем SMS...'); await sendSmsCode($('#phoneLogin').value.trim()); say('Код отправлен. Введите его ниже.');}catch(err){say('Ошибка SMS: '+(err.message||err));}});
+  $('#confirmSmsCode')&&($('#confirmSmsCode').onclick=async()=>{try{say('Проверяем код...'); await confirmSmsCode($('#smsCode').value.trim()); modal.classList.remove('open'); location.reload();}catch(err){say('Ошибка подтверждения: '+(err.message||err));}});
+  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u);authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
   if (accBtn && accDrop && !accDrop.dataset.closeReady) {
     accDrop.dataset.closeReady = '1';

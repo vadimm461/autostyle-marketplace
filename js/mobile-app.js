@@ -1,5 +1,5 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, linkWithPopup, RecaptchaVerifier, signInWithPhoneNumber, linkWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 
@@ -353,25 +353,116 @@ async function activateDiscountCard(u, currentData){
 }
 function renderInfoShell(active='more'){ setupShell(active); clearLoader(); }
 
+
+
+function authProvider(name){
+  if(name === 'google') return new GoogleAuthProvider();
+  if(name === 'facebook') return new FacebookAuthProvider();
+  if(name === 'apple') return new OAuthProvider('apple.com');
+  return new GoogleAuthProvider();
+}
+function providerTitle(id){
+  return ({'password':'Email/пароль','phone':'Телефон / SMS','google.com':'Google','facebook.com':'Facebook','apple.com':'Apple'})[id] || id;
+}
+function userProviders(u){ return (u?.providerData || []).map(x => x.providerId).filter(Boolean); }
+async function saveAuthProfile(u, extra={}){
+  if(!u) return;
+  const current = await getUserDoc(u.uid);
+  await setDoc(current.ref, {
+    uid:u.uid,
+    name: extra.name || current.data.name || u.displayName || '',
+    email: extra.email || current.data.email || u.email || '',
+    phone: extra.phone || current.data.phone || u.phoneNumber || '',
+    photoURL: extra.photoURL || current.data.photoURL || u.photoURL || '',
+    providers:userProviders(u),
+    emailVerified:Boolean(u.emailVerified),
+    phoneVerified:Boolean(u.phoneNumber),
+    lastLoginAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
+    createdAt:current.data.createdAt || new Date().toISOString(),
+    role:current.data.role || 'user'
+  }, { merge:true });
+}
+async function socialAuth(name, link=false){
+  const provider = authProvider(name);
+  if(link && auth.currentUser){
+    await linkWithPopup(auth.currentUser, provider);
+    await auth.currentUser.reload();
+    await saveAuthProfile(auth.currentUser);
+    alert('Сервис привязан к профилю.');
+  } else {
+    const res = await signInWithPopup(auth, provider);
+    await saveAuthProfile(res.user);
+    location.reload();
+  }
+}
+function ensureRecaptcha(containerId='mRecaptcha'){
+  let el = document.getElementById(containerId);
+  if(!el){ el = document.createElement('div'); el.id = containerId; document.body.appendChild(el); }
+  if(!window.mRecaptchaVerifier) window.mRecaptchaVerifier = new RecaptchaVerifier(auth, containerId, { size:'invisible' });
+  return window.mRecaptchaVerifier;
+}
+async function startPhoneAuth(phone, link=false){
+  const verifier = ensureRecaptcha();
+  if(link && auth.currentUser){
+    window.mPhoneConfirmation = await linkWithPhoneNumber(auth.currentUser, phone, verifier);
+  } else {
+    window.mPhoneConfirmation = await signInWithPhoneNumber(auth, phone, verifier);
+  }
+  alert('SMS-код отправлен.');
+}
+async function confirmPhoneAuth(code){
+  if(!window.mPhoneConfirmation) throw new Error('Сначала отправьте SMS-код.');
+  const res = await window.mPhoneConfirmation.confirm(code);
+  await saveAuthProfile(auth.currentUser || res.user);
+  alert('Телефон подтверждён.');
+  location.reload();
+}
+async function registerByEmail(){
+  const name = $('#pRegName')?.value.trim() || '';
+  const email = $('#pRegEmail')?.value.trim() || '';
+  const pass = $('#pRegPass')?.value || '';
+  const res = await createUserWithEmailAndPassword(auth, email, pass);
+  await updateProfile(res.user, { displayName:name });
+  await sendEmailVerification(res.user);
+  await saveAuthProfile(res.user, { name, email });
+  alert('Аккаунт создан. Письмо подтверждения отправлено на почту.');
+  location.reload();
+}
+
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
 async function renderProfile(){
   setupShell('profile');
   onAuthStateChanged(auth, async u=>{
     userNow=u; const box=$('#mProfileBox');
     if(!u){
-      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите, чтобы управлять аккаунтом, заказами, избранным и скидочной картой.</p><input id="pEmail" class="m-input" placeholder="Email" style="margin-top:12px"><input id="pPass" class="m-input" type="password" placeholder="Пароль" style="margin-top:10px"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button><a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
-      $('#pLogin').onclick=async()=>signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value);
+      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите, зарегистрируйтесь по SMS или через сервисы. После входа можно привязать Google/Facebook/Apple и телефон к существующему профилю.</p>
+      <div class="m-auth-services"><button class="m-auth-service" data-social="google">G Google</button><button class="m-auth-service" data-social="facebook">f Facebook</button><button class="m-auth-service" data-social="apple"> Apple</button></div>
+      <div class="m-auth-box"><h2>Email</h2><input id="pEmail" class="m-input" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
+      <div class="m-auth-box"><h2>Регистрация</h2><input id="pRegName" class="m-input" placeholder="Имя"><input id="pRegEmail" class="m-input" type="email" placeholder="Email"><input id="pRegPass" class="m-input" type="password" placeholder="Пароль от 6 символов"><button id="pRegister" class="m-primary" style="width:100%;margin-top:10px">Создать и подтвердить почту</button></div>
+      <div class="m-auth-box"><h2>Вход по SMS</h2><input id="pPhoneLogin" class="m-input" placeholder="Телефон: +373..."><button id="pSendSms" class="m-btn" style="width:100%;margin-top:10px">Получить SMS-код</button><input id="pSmsCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить SMS</button><div id="mRecaptcha"></div></div>
+      <a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
+      $('#pLogin').onclick=async()=>{ try{ const res=await signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); await saveAuthProfile(res.user); location.reload(); }catch(e){ alert('Ошибка входа: '+(e.message||e)); } };
+      $('#pRegister').onclick=async()=>{ try{ await registerByEmail(); }catch(e){ alert('Ошибка регистрации: '+(e.message||e)); } };
+      $$('[data-social]').forEach(b=>b.onclick=async()=>{ try{ await socialAuth(b.dataset.social); }catch(e){ alert('Не удалось войти через сервис: '+(e.message||e)); } });
+      $('#pSendSms').onclick=async()=>{ try{ await startPhoneAuth($('#pPhoneLogin').value.trim()); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
+      $('#pConfirmSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pSmsCode').value.trim()); }catch(e){ alert('Ошибка SMS-подтверждения: '+(e.message||e)); } };
       clearLoader(); return;
     }
     const current=await getUserDoc(u.uid); const d=current.data || {};
     box.innerHTML=`<div class="m-row"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div><h1 style="margin:0">${d.name||u.displayName||'Профиль'}</h1><div class="m-group">${d.email||u.email||''}</div></div></div>
-    <div class="m-profile-tabs"><a href="#account">Данные</a><a href="#discount-card">Карта</a><a href="mobile-favorites.html">Избранное</a><a href="mobile-cart.html">Корзина</a></div>
-    <section id="account" class="m-profile-pane"><h2>Данные аккаунта</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
+    <div class="m-profile-tabs"><a href="#account">Данные</a><a href="#security">Вход</a><a href="#discount-card">Карта</a><a href="mobile-favorites.html">Избранное</a><a href="mobile-cart.html">Корзина</a></div>
+    <section id="account" class="m-profile-pane"><h2>Данные аккаунта</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||u.phoneNumber||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
+    <section id="security" class="m-profile-pane"><h2>Привязка входа</h2><p class="m-group">Подключено: ${userProviders(u).map(providerTitle).join(', ') || 'не определено'} · Почта ${u.emailVerified?'подтверждена':'не подтверждена'} · Телефон ${u.phoneNumber?'подтверждён':'не привязан'}</p><div class="m-auth-services"><button class="m-auth-service" data-link-social="google">G Google</button><button class="m-auth-service" data-link-social="facebook">f Facebook</button><button class="m-auth-service" data-link-social="apple"> Apple</button></div><button id="resendEmailVerify" class="m-btn" style="width:100%;margin-top:10px">Отправить подтверждение почты</button><div class="m-auth-box"><input id="pLinkPhone" class="m-input" value="${u.phoneNumber||d.phone||''}" placeholder="Телефон: +373..."><button id="pLinkSms" class="m-btn" style="width:100%;margin-top:10px">Отправить SMS для привязки</button><input id="pLinkCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmLinkSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить и привязать</button><div id="mRecaptcha"></div></div></section>
     <section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section>
     <section class="m-profile-pane"><h2>Все разделы</h2><div class="m-link-grid"><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-contacts.html">Контакты</a><a href="mobile-about.html">Про нас</a></div><button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:14px">Выйти</button></section>`;
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
     $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()) await updatePassword(u,$('#pPassEdit').value.trim()); await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
     $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
+    $$('[data-link-social]').forEach(b=>b.onclick=async()=>{ try{ await socialAuth(b.dataset.linkSocial, true); }catch(e){ alert('Не удалось привязать сервис: '+(e.message||e)); } });
+    $('#resendEmailVerify').onclick=async()=>{ try{ await sendEmailVerification(u); alert('Письмо подтверждения отправлено.'); }catch(e){ alert('Не удалось отправить письмо: '+(e.message||e)); } };
+    $('#pLinkSms').onclick=async()=>{ try{ await startPhoneAuth($('#pLinkPhone').value.trim(), true); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
+    $('#pConfirmLinkSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pLinkCode').value.trim()); }catch(e){ alert('Ошибка подтверждения телефона: '+(e.message||e)); } };
     $('#pLogout').onclick=async()=>{localStorage.removeItem('cart');localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
     clearLoader();
   });

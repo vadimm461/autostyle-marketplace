@@ -1,65 +1,24 @@
-import { auth, db, COLLECTIONS } from './firebase.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-const authBtn = document.getElementById('authBtn');
-const modal = document.getElementById('authModal');
-const closeAuth = document.getElementById('closeAuth');
-const loginTab = document.getElementById('loginTab');
-const registerTab = document.getElementById('registerTab');
-const loginForm = document.getElementById('loginForm');
-const registerForm = document.getElementById('registerForm');
-const msg = document.getElementById('authMsg');
-const userChip = document.getElementById('userChip');
-const setMsg = t => { if(msg) msg.textContent = t; };
-
-function openAuth(){ modal?.classList.add('show'); setMsg(''); }
-function close(){ modal?.classList.remove('show'); }
-function mode(m){
-  loginForm?.classList.toggle('hide', m!=='login'); registerForm?.classList.toggle('hide', m!=='register');
-  loginTab?.classList.toggle('active', m==='login'); registerTab?.classList.toggle('active', m==='register'); setMsg('');
+import { auth } from './firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { loginEmail, registerEmail, signInService, sendSmsCode, confirmSmsCode, ensureUserProfile } from './auth-core.js';
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function showModal(){ $('#authModal')?.classList.add('open'); $('#authModal')?.classList.add('show'); }
+function hideModal(){ $('#authModal')?.classList.remove('open'); $('#authModal')?.classList.remove('show'); }
+function say(t){ const m=$('#authMsg')||$('#authFullMsg'); if(m)m.textContent=t||''; }
+function enhance(){
+ const modal=$('#authModal'); if(!modal) return;
+ if(!modal.querySelector('[data-auth-service]')){
+   const box=document.createElement('div'); box.className='auth-upgrade'; box.innerHTML=`<div class="auth-services"><button class="auth-service" type="button" data-auth-service="google">G Google</button><button class="auth-service" type="button" data-auth-service="facebook">f Facebook</button><button class="auth-service" type="button" data-auth-service="apple"> Apple</button></div><div class="auth-divider">или</div><div class="auth-sms"><b>Вход / регистрация по SMS</b><div class="auth-sms-row"><input id="phoneLogin" placeholder="Телефон: +373..."><button class="secondary" type="button" id="sendSmsCode">Получить код</button></div><div class="auth-sms-row" style="margin-top:8px"><input id="smsCode" placeholder="Код из SMS"><button class="primary" type="button" id="confirmSmsCode">Подтвердить</button></div><div id="recaptcha-container"></div></div><p id="authFullMsg" class="auth-msg"></p>`;
+   const h=modal.querySelector('h2'); h?.insertAdjacentElement('afterend', box);
+ }
 }
-authBtn?.addEventListener('click', async()=>{ if(auth.currentUser){ clearCartAndFavorites(); await signOut(auth); location.reload(); } else openAuth(); });
-closeAuth?.addEventListener('click', close); modal?.addEventListener('click',e=>{ if(e.target===modal) close(); });
-loginTab?.addEventListener('click',()=>mode('login')); registerTab?.addEventListener('click',()=>mode('register'));
-
-registerForm?.addEventListener('submit', async e=>{
-  e.preventDefault();
-  const name = document.getElementById('regName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  try{
-    setMsg('Создаём аккаунт...');
-    const res = await createUserWithEmailAndPassword(auth,email,password);
-    await setDoc(doc(db, COLLECTIONS.users || 'autostyle_users', res.user.uid),{name,email,role:'user',createdAt:new Date().toISOString()});
-    await sendEmailVerification(res.user);
-    await signOut(auth);
-    setMsg('Мы отправили письмо подтверждения. Проверьте почту и папку Спам, потом войдите.');
-    mode('login');
-  }catch(err){
-    if(err.code==='auth/email-already-in-use') setMsg('Этот email уже зарегистрирован. Войдите в аккаунт.');
-    else setMsg('Ошибка: '+err.message);
-  }
-});
-loginForm?.addEventListener('submit', async e=>{
-  e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  try{
-    setMsg('Входим...');
-    const res = await signInWithEmailAndPassword(auth,email,password);
-    await res.user.reload();
-    if(!res.user.emailVerified){ await signOut(auth); setMsg('Сначала подтвердите email. Проверьте почту и папку Спам.'); return; }
-    close(); location.reload();
-  }catch(err){ setMsg('Ошибка входа: '+err.message); }
-});
-
-onAuthStateChanged(auth, async user=>{
-  if(!authBtn) return;
-  if(user){
-    let label = user.email;
-    try{ const s = await getDoc(doc(db, COLLECTIONS.users || 'autostyle_users', user.uid)); if(s.exists() && s.data().name) label = s.data().name; }catch(e){}
-    if(userChip) userChip.textContent = label;
-    authBtn.textContent = 'Выйти';
-  }else{ if(userChip) userChip.textContent=''; authBtn.textContent='Войти'; }
-});
+enhance();
+$('#authOpen')?.addEventListener('click',showModal); $('#authBtn')?.addEventListener('click',showModal); $('#openLoginPage')?.addEventListener('click',showModal); $('#closeAuth')?.addEventListener('click',hideModal); $$('[data-close="authModal"]').forEach(b=>b.addEventListener('click',hideModal));
+$$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active'); const login=$('#loginForm')||$('#modalLogin'), reg=$('#registerForm')||$('#modalRegister'); if(login)login.style.display=t.dataset.tab?.includes('login')||t.dataset.tab==='login'?'block':'none'; if(reg)reg.style.display=t.dataset.tab?.includes('register')||t.dataset.tab==='register'?'block':'none';});
+const loginForm=$('#loginForm')||$('#modalLogin'); const regForm=$('#registerForm')||$('#modalRegister');
+loginForm&&(loginForm.onsubmit=async e=>{e.preventDefault();try{say('Входим...');await loginEmail(($('#loginEmail')||{}).value.trim(),($('#loginPass')||$('#loginPassword')).value);hideModal();location.href='profile.html'}catch(err){say('Ошибка входа: '+(err.message||err))}});
+regForm&&(regForm.onsubmit=async e=>{e.preventDefault();try{say('Создаём аккаунт...');await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),($('#regPass')||$('#regPassword')).value);say('Аккаунт создан. Проверьте письмо подтверждения на почте.')}catch(err){say('Ошибка регистрации: '+(err.message||err))}});
+$$('[data-auth-service]').forEach(b=>b.onclick=async()=>{try{say('Открываем сервис входа...');await signInService(b.dataset.authService);hideModal();location.href='profile.html'}catch(err){say('Ошибка сервиса: '+(err.message||err))}});
+$('#sendSmsCode')&&($('#sendSmsCode').onclick=async()=>{try{say('Отправляем SMS...');await sendSmsCode($('#phoneLogin').value.trim());say('Код отправлен. Введите его ниже.')}catch(err){say('Ошибка SMS: '+(err.message||err))}});
+$('#confirmSmsCode')&&($('#confirmSmsCode').onclick=async()=>{try{say('Проверяем код...');await confirmSmsCode($('#smsCode').value.trim());hideModal();location.href='profile.html'}catch(err){say('Ошибка подтверждения: '+(err.message||err))}});
+onAuthStateChanged(auth,async u=>{ if(u){await ensureUserProfile(u); const t=$('#authText'); if(t)t.textContent='Профиль'; const ue=$('#userEmail'); if(ue)ue.textContent=u.email||u.phoneNumber||u.displayName||'Пользователь';} });
