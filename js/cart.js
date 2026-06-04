@@ -151,19 +151,37 @@ function renderInstallments(total) {
     inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
     return;
   }
-  inst.innerHTML = calcInstallment(total).map(({bank, className, logo, rates}, idx) => `
-    <label class="installment-bank ${className} ${idx === 0 ? 'selected' : ''}">
-      <input type="radio" name="installmentBank" ${idx === 0 ? 'checked' : ''}>
-      <span class="bank-head"><img src="${logo}" alt="${bank}"><b>${bank}</b></span>
-      <span class="bank-months">
-        ${Object.entries(rates).map(([months, k]) => `
-          <span><em>${months} мес.</em><strong>${money(Math.ceil(total * k / Number(months)))}/мес.</strong></span>`).join('')}
-      </span>
-    </label>`).join('') + '<button class="installment-calc-btn" type="button">Рассчитать рассрочку</button>';
+
+  const banks = calcInstallment(total);
+  inst.innerHTML = banks.map(({bank, className, logo, rates}, idx) => {
+    const monthsHtml = Object.entries(rates).map(([months, k]) => {
+      const payment = Math.ceil(total * k / Number(months));
+      return `<span><em>${months} мес.</em><strong>${money(payment)}/мес.</strong></span>`;
+    }).join('');
+
+    return `
+      <button class="installment-bank ${className} ${idx === 0 ? 'selected' : ''}" type="button" data-bank-index="${idx}" aria-expanded="${idx === 0 ? 'true' : 'false'}">
+        <span class="bank-head">
+          <img src="${logo}" alt="${bank}">
+          <b>${bank}</b>
+          <i>${idx === 0 ? 'Выбрано' : 'Выбрать'}</i>
+        </span>
+        <span class="bank-months">${monthsHtml}</span>
+      </button>`;
+  }).join('') + '<button class="installment-calc-btn" type="button">Рассчитать рассрочку</button>';
+
   inst.querySelectorAll('.installment-bank').forEach(card => {
     card.addEventListener('click', () => {
-      inst.querySelectorAll('.installment-bank').forEach(x => x.classList.remove('selected'));
+      inst.querySelectorAll('.installment-bank').forEach(x => {
+        x.classList.remove('selected');
+        x.setAttribute('aria-expanded', 'false');
+        const label = x.querySelector('.bank-head i');
+        if (label) label.textContent = 'Выбрать';
+      });
       card.classList.add('selected');
+      card.setAttribute('aria-expanded', 'true');
+      const label = card.querySelector('.bank-head i');
+      if (label) label.textContent = 'Выбрано';
     });
   });
 }

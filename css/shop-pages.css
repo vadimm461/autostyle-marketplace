@@ -1117,3 +1117,175 @@
   .cart-bottom-actions{grid-template-columns:1fr;}
   .bank-months strong{font-size:11px;}
 }
+
+/* ===== Cart installment accordion final fix ===== */
+.cart-row{
+  grid-template-columns:92px minmax(0,1fr) 178px auto !important;
+}
+.cart-row-controls{
+  gap:12px !important;
+}
+.cart-qty{
+  display:grid !important;
+  grid-template-columns:34px 38px 34px !important;
+  width:106px !important;
+  min-width:106px !important;
+  height:38px !important;
+  padding:0 !important;
+  gap:0 !important;
+  border-radius:13px !important;
+  overflow:hidden !important;
+  background:#fff !important;
+}
+.cart-qty button{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:34px !important;
+  min-width:34px !important;
+  height:38px !important;
+  min-height:38px !important;
+  padding:0 !important;
+  border:0 !important;
+  background:#fff !important;
+  color:#111722 !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  font-family:Arial, sans-serif !important;
+}
+.cart-qty .minus::before{content:'−';font-size:19px;font-weight:950;line-height:1;}
+.cart-qty .plus::before{content:'+' !important;font-size:19px !important;font-weight:950 !important;line-height:1 !important;display:block !important;color:inherit !important;}
+.cart-qty button:hover{background:#effaf0 !important;color:#18c313 !important;}
+.cart-qty span{
+  min-width:38px !important;
+  width:38px !important;
+  height:38px !important;
+  font-size:14px !important;
+}
+.cart-line-price{
+  min-width:70px !important;
+  font-size:16px !important;
+  text-align:left !important;
+}
+.installment-box{
+  margin-top:20px !important;
+  padding:14px !important;
+  border:1px solid #beeec0 !important;
+  border-radius:20px !important;
+  background:linear-gradient(180deg,#fbfffb,#f4fff4) !important;
+  overflow:visible !important;
+}
+.installment-box summary{
+  min-height:44px !important;
+  padding:0 0 10px !important;
+  font-size:17px !important;
+  line-height:1.15 !important;
+}
+#installmentResults,
+.installment-results{
+  padding:0 !important;
+  display:grid !important;
+  gap:10px !important;
+}
+.installment-bank{
+  display:block !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  position:relative !important;
+  padding:12px !important;
+  border:1px solid #dfe5ee !important;
+  border-radius:16px !important;
+  background:#fff !important;
+  text-align:left !important;
+  cursor:pointer !important;
+}
+.installment-bank input{display:none !important;}
+.bank-head{
+  display:grid !important;
+  grid-template-columns:24px minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:8px !important;
+  padding-right:0 !important;
+  font-size:12px !important;
+  line-height:1.1 !important;
+  text-transform:uppercase !important;
+  white-space:normal !important;
+  overflow:visible !important;
+}
+.bank-head img{
+  width:24px !important;
+  height:24px !important;
+  object-fit:contain !important;
+  border-radius:7px !important;
+  background:#fff !important;
+}
+.bank-head b{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.bank-head i{
+  justify-self:end !important;
+  padding:5px 8px !important;
+  border-radius:999px !important;
+  background:#f3f6fa !important;
+  color:#667085 !important;
+  font-style:normal !important;
+  font-size:10px !important;
+  font-weight:950 !important;
+  line-height:1 !important;
+}
+.installment-bank.selected .bank-head i{background:rgba(52,226,31,.16) !important;color:#16830b !important;}
+.installment-bank.agro .bank-head{color:#2184ff !important;}
+.installment-bank.exim .bank-head{color:#f4b000 !important;}
+.installment-bank.sber .bank-head{color:#16b957 !important;}
+.installment-bank.agro.selected{border-color:#2184ff !important;box-shadow:0 10px 26px rgba(33,132,255,.12) !important;}
+.installment-bank.exim.selected{border-color:#f4b000 !important;box-shadow:0 10px 26px rgba(244,176,0,.13) !important;}
+.installment-bank.sber.selected{border-color:#16b957 !important;box-shadow:0 10px 26px rgba(22,185,87,.12) !important;}
+.bank-months{
+  display:none !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+  margin-top:12px !important;
+}
+.installment-bank.selected .bank-months{display:grid !important;}
+.bank-months span{
+  min-width:0 !important;
+  display:grid !important;
+  gap:3px !important;
+  padding:8px !important;
+  border-radius:12px !important;
+  background:#f8fafc !important;
+  border:1px solid #edf0f3 !important;
+}
+.bank-months em{
+  color:#7a8597 !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  line-height:1.05 !important;
+  white-space:nowrap !important;
+}
+.bank-months strong{
+  color:#111722 !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+  line-height:1.15 !important;
+  white-space:nowrap !important;
+}
+.installment-calc-btn{
+  width:100% !important;
+  min-height:50px !important;
+  margin-top:2px !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:#25e11b !important;
+  color:#050814 !important;
+  font-size:15px !important;
+  font-weight:950 !important;
+  box-shadow:0 14px 30px rgba(37,225,27,.20) !important;
+}
+@media(max-width:900px){
+  .cart-row{grid-template-columns:78px 1fr !important;}
+  .cart-row-controls{grid-column:1/-1 !important;justify-content:space-between !important;}
+}
