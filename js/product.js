@@ -167,9 +167,9 @@ async function loadProduct(){
         </div>
       </div>
       <div class="product-info-panel product-card-clean product-info-clean">
-        <div class="breadcrumbs product-breadcrumbs"><a href="index.html">Главная</a> / <a href="catalog.html">Каталог</a> / <span>${group(p)}</span></div>
-        <h1>${name}</h1>
-        <div class="product-meta-row"><span class="product-category-pill">${group(p)}</span>${d ? `<span class="product-discount-pill">Скидка ${d}%</span>` : ''}</div>
+        <div class="breadcrumbs product-breadcrumbs"><a href="index.html">Главная</a> / <a href="catalog.html">Каталог</a> / <a class="cat-link" href="catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></div>
+        <h1>${escapeHtml(name)}</h1>
+        <div class="product-meta-row"><span class="product-category-pill"><a href="catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></span>${d ? `<span class="product-discount-pill">Скидка ${d}%</span>` : ''}</div>
         <div class="buy-card product-buy-card">
           <div class="product-price-box">
             <div class="price-row-card product-price-row">
@@ -184,16 +184,28 @@ async function loadProduct(){
             <button id="favProduct" class="quick-btn product-fav-btn ${favActive ? 'active' : ''}" type="button">${favActive ? '♥ В избранном' : '♡ В избранное'}</button>
           </div>
         </div>
-        <section class="product-block"><h2>Описание</h2><p>${p.description || 'Описание товара пока не добавлено.'}</p></section>
+        <section class="product-block description-collapsed" id="productDescriptionBlock">
+          <div class="product-block-head"><h2>Описание</h2><button class="product-desc-toggle" id="toggleProductDescription" type="button">Показать</button></div>
+          <p>${escapeHtml(p.description || 'Описание товара пока не добавлено.')}</p>
+        </section>
         <section class="product-block"><h2>Характеристики</h2>
           <div class="spec"><span>Название</span><b>${name}</b></div>
-          <div class="spec"><span>Группа</span><b>${group(p)}</b></div>
+          <div class="spec"><span>Группа</span><b><a href="catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></b></div>
           <div class="spec"><span>Остаток</span><b>${s}</b></div>
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
           ${d ? `<div class="spec"><span>Скидка</span><b>${d}%</b></div>` : ''}
         </section>
       </div>
       <div id="relatedProducts" class="product-related-wrap"></div>`;
+    const descBlock = document.getElementById('productDescriptionBlock');
+    const descToggle = document.getElementById('toggleProductDescription');
+    if (descBlock && descToggle) {
+      descToggle.onclick = () => {
+        const open = descBlock.classList.toggle('description-open');
+        descBlock.classList.toggle('description-collapsed', !open);
+        descToggle.textContent = open ? 'Скрыть' : 'Показать';
+      };
+    }
     $('#addToCart') && ($('#addToCart').onclick = () => {
       if (s <= 0) return;
       cart.push(p.id); saveCart();
