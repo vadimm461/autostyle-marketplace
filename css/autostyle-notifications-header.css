@@ -1,24 +1,23 @@
-
 /* AutoStyle header-only icons, slogan and notifications */
 .as-logo-slogan-wrap{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  justify-content:center;
-  gap:3px;
-  line-height:1;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  gap:2px !important;
+  line-height:1 !important;
 }
 
 .as-header-slogan{
-  color:#fff;
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.06em;
-  opacity:.86;
-  text-transform:lowercase;
-  margin-left:52px;
-  white-space:nowrap;
-  pointer-events:none;
+  color:#fff !important;
+  font-size:9px !important;
+  font-weight:800 !important;
+  letter-spacing:.03em !important;
+  opacity:.9 !important;
+  text-transform:lowercase !important;
+  white-space:nowrap !important;
+  margin-left:54px !important;
+  margin-top:-2px !important;
 }
 
 .as-nav-icon-btn{
@@ -26,58 +25,52 @@
   display:inline-flex !important;
   align-items:center !important;
   justify-content:center !important;
-  gap:8px !important;
-  min-height:46px;
+  gap:7px !important;
+  min-height:46px !important;
 }
 
 .as-nav-icon{
-  font-size:16px;
-  line-height:1;
-  display:inline-flex;
-  align-items:center;
+  font-size:16px !important;
+  line-height:1 !important;
 }
 
 .as-nav-count{
-  position:absolute;
-  top:-9px;
-  right:10px;
-  min-width:22px;
-  height:22px;
-  padding:0 6px;
-  border-radius:999px;
-  background:#26e11b;
-  color:#061006;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:900;
-  border:2px solid #11151b;
-  box-shadow:0 8px 18px rgba(38,225,27,.25);
-  z-index:5;
+  position:absolute !important;
+  top:-9px !important;
+  right:10px !important;
+  min-width:21px !important;
+  height:21px !important;
+  padding:0 6px !important;
+  border-radius:999px !important;
+  background:#26e11b !important;
+  color:#061006 !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  border:2px solid #11151b !important;
+  box-shadow:0 8px 18px rgba(38,225,27,.25) !important;
 }
 
 .as-nav-count:empty,
 .as-nav-count[data-count="0"]{
-  display:none;
-}
-
-.as-header-notify-btn{
-  text-decoration:none;
+  display:none !important;
 }
 
 .as-header-notify-dropdown{
   position:fixed;
   top:76px;
-  right:170px;
-  width:min(380px, calc(100vw - 24px));
+  right:92px;
+  width:min(380px, calc(100vw - 28px));
+  max-height:430px;
+  overflow:auto;
   background:#fff;
-  color:#10151f;
   border:1px solid #e5eaf3;
-  border-radius:20px;
+  border-radius:22px;
   box-shadow:0 24px 70px rgba(15,23,42,.22);
-  z-index:9999;
   padding:16px;
+  z-index:9999;
   display:none;
 }
 
@@ -86,43 +79,44 @@
 }
 
 .as-header-notify-title{
-  font-size:18px;
+  font-size:20px;
   font-weight:900;
-  margin-bottom:12px;
+  color:#0f172a;
+  margin:0 0 12px;
 }
 
-.as-header-notify-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  max-height:340px;
-  overflow:auto;
-}
-
-.as-header-notify-item{
-  background:#f8fafc;
+.as-notification-item{
   border:1px solid #e8edf5;
-  border-radius:14px;
-  padding:12px;
+  background:#f8fafc;
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:10px;
 }
 
-.as-header-notify-item strong{
-  display:block;
-  font-size:14px;
+.as-notification-title{
+  font-weight:900;
+  color:#10151f;
   margin-bottom:5px;
 }
 
-.as-header-notify-item span{
+.as-notification-text{
   color:#64748b;
-  font-size:13px;
-  line-height:1.35;
+  line-height:1.4;
+  font-size:14px;
 }
 
-.as-header-notify-empty{
-  color:#64748b;
+.as-notification-date{
+  margin-top:7px;
+  color:#94a3b8;
+  font-size:12px;
+  font-weight:700;
+}
+
+.as-empty-notifications{
+  padding:16px;
+  border-radius:16px;
   background:#f8fafc;
-  border-radius:14px;
-  padding:14px;
+  color:#64748b;
   font-weight:700;
 }
 
@@ -193,27 +187,31 @@
   color:#64748b;
 }
 
-/* remove old profile notification panel if it was injected by old version */
+/* remove previous profile notification additions */
 #asNotificationsPanel,
 .as-notifications-panel,
-.as-profile-notifications-link{
+.as-profile-notifications-link,
+[data-as-profile-notifications-link]{
   display:none !important;
 }
 
+/* prevent icons/counters in footer/cards */
+footer .as-nav-icon,
 footer .as-nav-count,
+.product-card .as-nav-icon,
 .product-card .as-nav-count,
-.product-item .as-nav-count,
-[class*="product-card"] .as-nav-count{
+.product-item .as-nav-icon,
+.product-item .as-nav-count{
   display:none !important;
 }
 
-@media(max-width:900px){
+@media(max-width:720px){
   .as-header-slogan{
-    font-size:8px;
-    margin-left:42px;
+    font-size:8px !important;
+    margin-left:42px !important;
   }
   .as-header-notify-dropdown{
-    right:12px;
     top:70px;
+    right:12px;
   }
 }
