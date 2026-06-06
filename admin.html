@@ -41,25 +41,6 @@
 
     <h1>Панель управления</h1>
     <p class="muted">Полное управление контентом сайта AutoStyle.</p>
-<div class="admin-stats">
-  <div class="admin-stat">
-    <div class="admin-stat-label">Пользователи</div>
-    <div class="admin-stat-value" id="usersCount">0</div>
-  </div>
-  <div class="admin-stat">
-    <div class="admin-stat-label">Товары</div>
-    <div class="admin-stat-value" id="productsCount">0</div>
-  </div>
-  <div class="admin-stat">
-    <div class="admin-stat-label">Заказы</div>
-    <div class="admin-stat-value" id="ordersCount">0</div>
-  </div>
-  <div class="admin-stat">
-    <div class="admin-stat-label">Категории</div>
-    <div class="admin-stat-value" id="categoriesCount">0</div>
-  </div>
-</div>
-
 <div class="admin-dashboard-grid">
   <a href="#products" class="admin-home-card">
     <div>
@@ -148,10 +129,7 @@
       <p>Открыть витрину AutoStyle.</p>
     </div>
   </a>
-</div>
-
-
-    <section id="dashboard" class="admin-section active">
+</div><section id="dashboard" class="admin-section active">
       <div class="admin-grid">
         <div class="admin-card"><h2>Товары</h2><p class="muted">Добавление, редактирование, цены, фото и категории.</p></div>
         <div class="admin-card"><h2>Категории</h2><p class="muted">Основные группы, подгруппы и порядок вывода.</p></div>
@@ -449,5 +427,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script type="module" src="js/admin-guard.js"></script>
+    <script src="js/admin-dashboard-home.js"></script>
 </body>
 </html>
