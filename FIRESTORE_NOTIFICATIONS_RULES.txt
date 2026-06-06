@@ -1,0 +1,9 @@
+
+Добавь в Firestore Rules:
+
+match /autostyle_notifications/{notificationId} {
+  allow read: if true;
+  allow create, update, delete: if isAdmin();
+}
+
+Если хочешь, чтобы уведомления создавались только из админки, isAdmin() должен проверять role == "admin" в autostyle_users.
