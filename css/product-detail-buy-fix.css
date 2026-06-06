@@ -1,0 +1,118 @@
+/* Product detail buy block hard fix: price, installment, stock and buttons must never overlap */
+.product-page .product-info-clean{
+  overflow: visible !important;
+}
+.product-page .product-buy-card,
+.product-info-panel .product-buy-card,
+.buy-card.product-buy-card{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 14px !important;
+  padding: 22px !important;
+  overflow: visible !important;
+  min-height: auto !important;
+}
+.product-page .product-price-box{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+.product-page .product-price-row,
+.product-buy-card .product-price-row,
+.product-page .price-row-card.product-price-row{
+  display: flex !important;
+  align-items: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 8px 14px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+.product-page .product-price-big{
+  display: inline-flex !important;
+  align-items: baseline !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: 100% !important;
+  font-size: clamp(34px, 3.2vw, 48px) !important;
+  line-height: .95 !important;
+  letter-spacing: -1.5px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+.product-page .product-old-price{
+  flex: 0 0 auto !important;
+  align-self: flex-end !important;
+  margin-bottom: 4px !important;
+  white-space: nowrap !important;
+}
+.product-page .product-installment-inline{
+  order: 3 !important;
+  flex: 1 0 100% !important;
+  grid-column: auto !important;
+  width: auto !important;
+  max-width: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 2px 0 0 !important;
+  padding: 7px 11px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+.product-page .product-stock-ok,
+.product-page .product-stock-zero{
+  position: static !important;
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  clear: both !important;
+}
+.product-page .product-buy-card .product-actions{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-top: 4px !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+.product-page .product-buy-card .product-actions button,
+.product-page .product-buy-card .product-action-btn,
+.product-page .product-buy-card .product-fav-btn{
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  padding: 0 14px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  position: static !important;
+  transform: none !important;
+}
+@media (max-width: 1120px){
+  .product-page .product-layout{grid-template-columns: minmax(0,1fr) 460px !important;}
+  .product-page .product-buy-card .product-actions{grid-template-columns:1fr !important;}
+}
+@media (max-width: 980px){
+  .product-page .product-layout{grid-template-columns:1fr !important;}
+  .product-page .product-buy-card .product-actions{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+}
+@media (max-width: 560px){
+  .product-page .product-buy-card{padding:16px !important;border-radius:20px !important;}
+  .product-page .product-buy-card .product-actions{grid-template-columns:1fr !important;}
+  .product-page .product-price-big{font-size:36px !important;}
+}
