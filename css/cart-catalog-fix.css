@@ -1,0 +1,15 @@
+
+.cart-page a[href*="catalog"],
+.cart-page .catalog-btn,
+.cart-page .cart-catalog-btn,
+.empty-cart a[href*="catalog"],
+a[href="catalog.html"].cart-catalog-btn{
+  width:auto !important;
+  min-width:130px !important;
+  max-width:190px !important;
+  padding:12px 18px !important;
+  height:auto !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
