@@ -1,0 +1,361 @@
+
+/* ===== AutoStyle FINAL unified header ===== */
+.as-final-header{
+  position:sticky;
+  top:0;
+  z-index:99999;
+  width:100%;
+  height:74px;
+  background:#11151b;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 22px;
+  box-sizing:border-box;
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
+}
+
+.as-final-header-inner{
+  width:100%;
+  max-width:1180px;
+  height:74px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:0 auto;
+}
+
+.as-final-logo{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  width:210px;
+  min-width:210px;
+  text-decoration:none;
+  line-height:1;
+}
+
+.as-final-logo-row{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+
+.as-final-logo-badge{
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  background:#26e11b;
+  color:#071007;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:21px;
+  font-weight:950;
+}
+
+.as-final-logo-text{
+  color:#fff;
+  font-size:23px;
+  font-weight:950;
+  letter-spacing:.01em;
+  white-space:nowrap;
+}
+
+.as-final-logo-text span{
+  color:#26e11b;
+}
+
+.as-final-slogan{
+  color:#fff;
+  font-size:9px;
+  font-weight:850;
+  opacity:.9;
+  margin-left:48px;
+  margin-top:-3px;
+  white-space:nowrap;
+}
+
+.as-final-catalog{
+  height:46px;
+  min-width:118px;
+  border:0;
+  border-radius:16px;
+  background:#26e11b;
+  color:#061006;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-decoration:none;
+  font-weight:950;
+  padding:0 18px;
+  box-sizing:border-box;
+}
+
+.as-final-search{
+  flex:1 1 auto;
+  min-width:360px;
+  max-width:560px;
+  height:46px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.as-final-search input{
+  flex:1 1 auto;
+  min-width:0;
+  height:46px;
+  border:0;
+  border-radius:16px;
+  background:#fff;
+  padding:0 18px;
+  font-size:15px;
+  font-weight:650;
+  outline:none;
+  box-sizing:border-box;
+}
+
+.as-final-search button{
+  width:150px;
+  min-width:150px;
+  height:46px;
+  border:0;
+  border-radius:16px;
+  background:#26e11b;
+  color:#061006;
+  font-weight:950;
+  cursor:pointer;
+  box-sizing:border-box;
+}
+
+.as-final-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-left:auto;
+  flex:0 0 auto;
+}
+
+.as-final-btn{
+  position:relative;
+  height:46px;
+  min-width:46px;
+  padding:0 16px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.08);
+  background:#1c222d;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-decoration:none;
+  font-weight:950;
+  white-space:nowrap;
+  cursor:pointer;
+  box-sizing:border-box;
+}
+
+.as-final-badge{
+  position:absolute;
+  top:-9px;
+  right:8px;
+  min-width:21px;
+  height:21px;
+  border-radius:999px;
+  padding:0 6px;
+  background:#26e11b;
+  color:#061006;
+  border:2px solid #11151b;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:950;
+  box-shadow:0 8px 18px rgba(38,225,27,.28);
+}
+
+.as-final-badge[data-count]:not([data-count="0"]){
+  display:flex;
+}
+
+.as-final-dropdown{
+  position:fixed;
+  top:82px;
+  right:88px;
+  z-index:100000;
+  display:none;
+  width:min(390px, calc(100vw - 24px));
+  max-height:460px;
+  overflow:auto;
+  background:#fff;
+  color:#0f172a;
+  border:1px solid #e5eaf3;
+  border-radius:22px;
+  box-shadow:0 24px 70px rgba(15,23,42,.24);
+  padding:14px;
+  box-sizing:border-box;
+}
+
+.as-final-dropdown.is-open{
+  display:block;
+}
+
+.as-final-account-dropdown{
+  width:280px;
+  right:390px;
+}
+
+.as-final-dropdown-title{
+  font-size:20px;
+  font-weight:950;
+  margin:4px 6px 12px;
+}
+
+.as-final-menu-link{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:13px 14px;
+  border-radius:14px;
+  color:#0f172a;
+  text-decoration:none;
+  font-weight:850;
+  background:#f8fafc;
+  margin-bottom:8px;
+}
+
+.as-final-menu-link:hover{
+  background:#eaffea;
+}
+
+.as-final-notification{
+  border:1px solid #e8edf5;
+  background:#f8fafc;
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:10px;
+  cursor:pointer;
+}
+
+.as-final-notification:hover{
+  background:#eaffea;
+  border-color:#c8f7c4;
+}
+
+.as-final-notification-title{
+  font-weight:950;
+  margin-bottom:5px;
+}
+
+.as-final-notification-text{
+  color:#64748b;
+  line-height:1.4;
+  font-size:14px;
+}
+
+.as-final-notification-date{
+  margin-top:7px;
+  color:#94a3b8;
+  font-size:12px;
+  font-weight:800;
+}
+
+.as-final-back{
+  border:0;
+  background:#26e11b;
+  color:#061006;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:950;
+  cursor:pointer;
+  margin-bottom:12px;
+}
+
+/* Hide every old header instead of trying to patch duplicates */
+body.as-final-header-ready > header:not(.as-final-header),
+body.as-final-header-ready > .header:not(.as-final-header),
+body.as-final-header-ready > .site-header:not(.as-final-header),
+body.as-final-header-ready > .top-header:not(.as-final-header),
+body.as-final-header-ready > .navbar:not(.as-final-header),
+body.as-final-header-ready > .main-header:not(.as-final-header){
+  display:none !important;
+}
+
+/* remove old injected junk everywhere */
+.as-nav-icon,
+.as-nav-count,
+.as-header-notify-dropdown:not(.as-final-dropdown),
+.as-account-dropdown:not(.as-final-dropdown),
+#asHeaderNotifyDropdown:not(.as-final-dropdown),
+#asAccountDropdown:not(.as-final-dropdown){
+  display:none !important;
+}
+
+@media(max-width:1180px){
+  .as-final-header-inner{
+    max-width:100%;
+    gap:8px;
+  }
+  .as-final-logo{
+    width:190px;
+    min-width:190px;
+  }
+  .as-final-btn{
+    padding:0 12px;
+    font-size:13px;
+  }
+  .as-final-search{
+    min-width:280px;
+  }
+  .as-final-search button{
+    width:132px;
+    min-width:132px;
+  }
+}
+
+@media(max-width:900px){
+  .as-final-header{
+    height:auto;
+    min-height:74px;
+    padding:8px 12px;
+  }
+  .as-final-header-inner{
+    height:auto;
+    min-height:0;
+    flex-wrap:wrap;
+  }
+  .as-final-logo{
+    width:160px;
+    min-width:160px;
+  }
+  .as-final-logo-text{
+    font-size:18px;
+  }
+  .as-final-logo-badge{
+    width:34px;
+    height:34px;
+    font-size:18px;
+  }
+  .as-final-slogan{
+    font-size:8px;
+    margin-left:42px;
+  }
+  .as-final-search{
+    order:50;
+    flex-basis:100%;
+    max-width:none;
+    min-width:0;
+  }
+  .as-final-actions{
+    margin-left:0;
+  }
+  .as-final-dropdown,
+  .as-final-account-dropdown{
+    right:12px;
+    top:82px;
+  }
+}
+
