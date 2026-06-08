@@ -558,3 +558,151 @@
   #relatedProducts .related-nav,
   .product-page #relatedProducts .related-nav { display: none !important; }
 }
+
+/* === FIX: Favorites cards must have the same desktop size as main-page cards === */
+@media (min-width: 921px) {
+  #favoritesGrid.catalog-grid,
+  .favorites-page #favoritesGrid.catalog-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 18px !important;
+    grid-auto-rows: 340px !important;
+  }
+
+  #favoritesGrid .catalog-card.favorite-card,
+  .favorites-page #favoritesGrid .catalog-card.favorite-card,
+  #favoritesGrid .catalog-card {
+    width: 205px !important;
+    min-width: 205px !important;
+    max-width: 205px !important;
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  #favoritesGrid .catalog-card-link,
+  .favorites-page #favoritesGrid .catalog-card-link {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+
+  #favoritesGrid .catalog-card-photo,
+  .favorites-page #favoritesGrid .catalog-card-photo {
+    width: 100% !important;
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
+    flex: 0 0 126px !important;
+    aspect-ratio: auto !important;
+    margin: 0 0 10px !important;
+    border-radius: 10px !important;
+    background: #f4f6f8 !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+  }
+
+  #favoritesGrid .catalog-card-photo img,
+  .favorites-page #favoritesGrid .catalog-card-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    padding: 8px !important;
+  }
+
+  #favoritesGrid .catalog-card-body,
+  .favorites-page #favoritesGrid .catalog-card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 0 2px !important;
+  }
+
+  #favoritesGrid .catalog-card h3,
+  .favorites-page #favoritesGrid .catalog-card h3 {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    height: 36px !important;
+    margin: 0 0 6px !important;
+    font-size: 14px !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+  }
+
+  #favoritesGrid .catalog-card-category,
+  .favorites-page #favoritesGrid .catalog-card-category {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 17px !important;
+    max-height: 17px !important;
+    height: 17px !important;
+    margin: 0 0 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  #favoritesGrid .catalog-card-price-area,
+  .favorites-page #favoritesGrid .catalog-card-price-area {
+    margin-top: auto !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    gap: 4px !important;
+    justify-content: flex-end !important;
+  }
+
+  #favoritesGrid .catalog-card-price,
+  .favorites-page #favoritesGrid .catalog-card-price {
+    font-size: 23px !important;
+    line-height: 1 !important;
+    font-weight: 1000 !important;
+  }
+
+  #favoritesGrid .catalog-installment-badge,
+  #favoritesGrid .catalog-card-stock,
+  .favorites-page #favoritesGrid .catalog-installment-badge,
+  .favorites-page #favoritesGrid .catalog-card-stock {
+    display: none !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #favoritesGrid .catalog-cart-btn,
+  .favorites-page #favoritesGrid .catalog-cart-btn {
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin-top: 10px !important;
+    border-radius: 13px !important;
+    flex: 0 0 42px !important;
+  }
+}
+
+@media (max-width: 920px) {
+  #favoritesGrid.catalog-grid,
+  .favorites-page #favoritesGrid.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
