@@ -1,0 +1,9 @@
+(function(){
+  function ready(fn){document.readyState==='loading'?document.addEventListener('DOMContentLoaded',fn):fn();}
+  function normalizeCart(){document.querySelectorAll('a[href="cart.html"]').forEach(function(a){var b=a.querySelector('#cartCount, b, em'); if(!b)return; var n=(b.textContent||'0').trim()||'0'; b.textContent=n; if(!/Корзина/i.test(a.childNodes[0]?.textContent||a.textContent)){return;} var textNodes=[...a.childNodes].filter(x=>x.nodeType===3); if(textNodes[0]) textNodes[0].textContent='Корзина ';});}
+  function forceDropdownPosition(){var dd=document.getElementById('notificationsDropdown');var btn=document.getElementById('notificationsBtn');if(!dd||!btn)return;var r=btn.getBoundingClientRect();dd.style.position='fixed';dd.style.top=(r.bottom+12)+'px';dd.style.right=Math.max(12,window.innerWidth-r.right-170)+'px';dd.style.left='auto';}
+  function patchNotifications(){var btn=document.getElementById('notificationsBtn');if(!btn)return;btn.addEventListener('click',function(){setTimeout(function(){var dd=document.getElementById('notificationsDropdown');if(!dd)return;forceDropdownPosition(); dd.classList.add('as-modern-notify'); var link=[...dd.querySelectorAll('a')].find(a=>/Открыть|Все уведомления/i.test(a.textContent)); if(link) link.innerHTML='<b>Все уведомления</b> ›';},30);},true);}
+  function patchAccount(){document.querySelectorAll('.topbar a.icon-btn,.topbar button.icon-btn').forEach(function(el){if(!/аккаунт/i.test(el.textContent||'')||el.closest('.as-account-wrap')||el.id==='notificationsBtn')return; if(el.tagName==='A'){var b=document.createElement('button');b.type='button';b.className=el.className;b.id=el.id||'openAuth';b.textContent='Аккаунт';el.replaceWith(b);}});}
+  function run(){normalizeCart();patchAccount();patchNotifications();setTimeout(normalizeCart,700);}
+  ready(run);window.addEventListener('resize',forceDropdownPosition);
+})();
