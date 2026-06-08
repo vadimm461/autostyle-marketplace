@@ -23,3 +23,14 @@
 .card-spacer{
   display:none !important;
 }
+
+/* Two-line product title clamp */
+.product-title{
+display:-webkit-box !important;
+-webkit-line-clamp:2 !important;
+-webkit-box-orient:vertical !important;
+overflow:hidden !important;
+line-height:1.35 !important;
+min-height:2.7em !important;
+max-height:2.7em !important;
+}
