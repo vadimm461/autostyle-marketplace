@@ -251,7 +251,7 @@ function renderPage(){
       <div class="as-notify-detail-date">${esc(fmt(n.createdAt || n.createdAtLocal))}</div>
       <div class="as-notify-detail-body">${n.html || `<p>${esc(notificationText(n))}</p>`}</div>
       ${n.link ? `<p><a class="primary as-notify-link" href="${esc(n.link)}">Перейти</a></p>` : ''}`;
-    root.querySelector('.as-notify-back').addEventListener('click', showList);
+    root.querySelector('.as-notify-back')?.setAttribute('data-notify-back', '1');
   }
 
   if (openNotificationId) showDetail(openNotificationId);
@@ -266,10 +266,55 @@ function applyState(next){
   renderPage();
 }
 
+
+function bindAccountButton(user){
+  const openAuth = document.querySelector('#openAuth');
+  const accountDrop = document.querySelector('#accountDrop');
+  const accountBtn = document.querySelector('#accountBtn');
+  if (user) {
+    if (openAuth) {
+      openAuth.textContent = 'Аккаунт';
+      openAuth.onclick = (e) => {
+        e.preventDefault();
+        location.href = 'profile.html';
+      };
+    }
+    if (accountDrop) accountDrop.style.display = 'none';
+    if (accountBtn) accountBtn.onclick = (e) => { e.preventDefault(); location.href = 'profile.html'; };
+  } else if (openAuth) {
+    openAuth.textContent = 'Аккаунт';
+    openAuth.onclick = (e) => {
+      e.preventDefault();
+      const modal = document.querySelector('#authModal');
+      if (modal) modal.classList.add('open');
+      else location.href = 'login.html';
+    };
+  }
+}
+
+function bindNotificationPageBack(){
+  if (document.body.dataset.notifyBackBound === '1') return;
+  document.body.dataset.notifyBackBound = '1';
+  document.addEventListener('click', e => {
+    const back = e.target.closest('.as-notify-back, [data-notify-back]');
+    if (!back) return;
+    e.preventDefault();
+    openNotificationId = '';
+    pageMode = 'list';
+    localStorage.removeItem('autostyle_selected_notification');
+    if (location.pathname.endsWith('notifications.html')) {
+      history.pushState({}, '', 'notifications.html');
+    }
+    renderPage();
+  }, true);
+}
+
 function start(user){
   currentUser = user || null;
   initNotificationCatalogMenu();
   bindHeader();
+  bindAccountButton(currentUser);
+  bindNotificationPageBack();
   if (unsubscribe) unsubscribe();
   unsubscribe = watchNotifications(currentUser, applyState);
 }
