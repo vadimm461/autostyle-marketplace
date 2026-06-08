@@ -1,27 +1,18 @@
-
-import { db, COLLECTIONS } from './firebase.js';
+import { db } from './firebase.js';
 import {
-  collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp
+  collection, getDocs, query, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-const COLLECTION = COLLECTIONS.notifications || 'autostyle_notifications';
+import {
+  NOTIFICATIONS_COLLECTION,
+  createNotification,
+  stripHtml,
+  esc,
+  fmt,
+  notificationText
+} from './notify-service.js';
 
 const $ = s => document.querySelector(s);
 
-function stripHtml(html){
-  const div = document.createElement('div');
-  div.innerHTML = html || '';
-  return div.textContent || div.innerText || '';
-}
-function esc(v){
-  return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
-}
-function fmt(v){
-  try{
-    const d = v?.toDate ? v.toDate() : new Date(v || Date.now());
-    return d.toLocaleString('ru-RU');
-  }catch(e){ return ''; }
-}
 function editorCommand(cmd, value = null){
   const body = $('#adminNotifyBody');
   body?.focus();
@@ -37,13 +28,13 @@ async function renderHistory(){
   if (!box) return;
   box.innerHTML = '<div class="muted">Загружаем историю...</div>';
   try{
-    const snap = await getDocs(query(collection(db, COLLECTION), orderBy('createdAt','desc'), limit(30)));
+    const snap = await getDocs(query(collection(db, NOTIFICATIONS_COLLECTION), orderBy('createdAt','desc'), limit(40)));
     const items = snap.docs.map(d => ({ id:d.id, ...d.data() }));
     box.innerHTML = items.length ? items.map(n => `
       <article class="admin-notify-history-item">
         <b>${esc(n.title || 'Уведомление')}</b>
-        <div>${esc(n.text || stripHtml(n.html) || '')}</div>
-        <small>${esc(fmt(n.createdAt))} · ${esc(n.audience || 'all')}</small>
+        <div>${esc(notificationText(n))}</div>
+        <small>${esc(fmt(n.createdAt || n.createdAtLocal))} · ${esc(n.audience || 'all')}${n.userEmail ? ` · ${esc(n.userEmail)}` : ''}</small>
       </article>
     `).join('') : '<div class="muted">История уведомлений пустая.</div>';
   }catch(e){
@@ -62,20 +53,7 @@ async function sendNotification(){
   }
   status.textContent = 'Отправляем...';
   try{
-    const payload = {
-      title,
-      html,
-      text,
-      audience: 'all',
-      createdAt: serverTimestamp(),
-      createdAtLocal: new Date().toISOString()
-    };
-    await addDoc(collection(db, COLLECTION), payload);
-    try {
-      const local = JSON.parse(localStorage.getItem('autostyle_notifications_cache') || '[]');
-      local.unshift({ ...payload, createdAt: new Date().toISOString() });
-      localStorage.setItem('autostyle_notifications_cache', JSON.stringify(local.slice(0,80)));
-    } catch(e) {}
+    await createNotification({ title, html, text, audience: 'all', type: 'admin_broadcast' });
     $('#adminNotifyTitle').value = '';
     body.innerHTML = '';
     status.textContent = 'Уведомление отправлено всем пользователям.';

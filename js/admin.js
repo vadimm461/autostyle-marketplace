@@ -1,5 +1,6 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
 import { bumpCacheVersion, clearDataCache } from './data-cache.js';
+import { createOrderStatusNotification } from './notify-service.js';
 
 import {
   onAuthStateChanged,
@@ -454,11 +455,18 @@ async function renderOrdersAdmin() {
     list.querySelectorAll('[data-order-status]').forEach(select => {
       select.onchange = async () => {
         const id = select.dataset.orderStatus;
+        const order = orders.find(o => o.id === id);
+        const statusTitle = ORDER_STATUS[select.value] || select.value;
         await updateDoc(doc(db, COLLECTIONS.orders || 'autostyle_orders', id), {
           status: select.value,
-          statusTitle: ORDER_STATUS[select.value] || select.value,
+          statusTitle,
           updatedAt: new Date().toISOString()
         });
+        try {
+          await createOrderStatusNotification({ ...order, id }, statusTitle, select.value);
+        } catch (notifyErr) {
+          console.warn('Не удалось создать уведомление о статусе заказа', notifyErr);
+        }
         renderOrdersAdmin();
       };
     });

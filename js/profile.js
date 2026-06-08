@@ -12,6 +12,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orde
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
 import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile } from './auth-core.js';
+import { createPasswordChangedNotification } from './notify-service.js';
 
 const $ = s => document.querySelector(s);
 
@@ -125,6 +126,7 @@ async function changePassword(user){
   const cred = EmailAuthProvider.credential(user.email, oldPass);
   await reauthenticateWithCredential(user, cred);
   await updatePassword(user, newPass);
+  try { await createPasswordChangedNotification(user); } catch(e) { console.warn('Не удалось создать уведомление о смене пароля', e); }
   $('#passwordForm').reset();
   message(msg, 'Пароль обновлён.', true);
 }

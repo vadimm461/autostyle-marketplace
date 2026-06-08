@@ -37,5 +37,7 @@ export const COLLECTIONS = {
   homeBlocks: 'autostyle_home_blocks',
   promoCards: 'autostyle_promo_cards',
   orders: 'autostyle_orders',
-  discountCards: 'autostyle_discount_cards'
+  discountCards: 'autostyle_discount_cards',
+  notifications: 'autostyle_notifications',
+  notificationReads: 'autostyle_notification_reads'
 };
