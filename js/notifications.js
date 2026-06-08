@@ -1,5 +1,6 @@
-import { auth } from './firebase.js';
+import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
   watchNotifications,
   markNotificationRead,
@@ -17,6 +18,92 @@ let state = { list: [], readIds: new Set(), unread: 0 };
 let unsubscribe = null;
 let pageMode = 'list';
 let openNotificationId = new URLSearchParams(location.search).get('id') || localStorage.getItem('autostyle_selected_notification') || '';
+
+
+async function loadCollectionSafe(name){
+  try{
+    const snap = await getDocs(collection(db, name));
+    return snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  }catch(e){
+    console.warn('catalog menu load error', name, e);
+    return [];
+  }
+}
+function initNotificationCatalogMenu(){
+  const menu = document.querySelector('.catalog-menu');
+  const btn = document.querySelector('.catalog-btn');
+  if (!menu || !btn || menu.dataset.notifyCatalogReady === '1') return;
+  menu.dataset.notifyCatalogReady = '1';
+  btn.addEventListener('click', async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    menu.classList.toggle('open');
+    if (menu.classList.contains('open')) await renderNotificationCatalogMenu();
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.catalog-menu')) menu.classList.remove('open');
+  });
+}
+function catName(c){ return c?.title || c?.name || 'Без названия'; }
+function catId(c){ return String(c?.id || c?.externalId || catName(c)).trim(); }
+function parentKey(c){ return String(c?.parentId || c?.parent || c?.parentExternalId || '').trim(); }
+function normCatText(text){ return String(text || '').trim().toLocaleLowerCase('ru-RU').replace(/ё/g, 'е').replace(/[\s_-]+/g, ' '); }
+function isBlockedCatalogName(text){ const n = normCatText(text); return n === 'тмц' || n === 'я мусорка' || n === 'ямусорка' || n.includes('мусорка'); }
+function isServiceGroup(c){ return /^\s*\d+[.)-]?\s*/.test(catName(c)); }
+function sortCats(a,b){ return Number(a.order ?? 999) - Number(b.order ?? 999) || catName(a).localeCompare(catName(b), 'ru'); }
+function parentAllLabel(parent){
+  const raw = catName(parent).trim();
+  const lower = raw.toLocaleLowerCase('ru-RU');
+  const map = { 'инструмент':'инструменты', 'аккумулятор':'аккумуляторы', 'ароматизатор':'ароматизаторы', 'лампочка':'лампочки', 'колпак':'колпаки', 'коврик':'коврики', 'фильтр':'фильтры' };
+  return 'Все ' + (map[lower] || lower);
+}
+function shortChildName(child, parent){
+  let childName = catName(child).trim();
+  const parentName = catName(parent).trim();
+  const re = new RegExp('^' + parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+', 'i');
+  childName = childName.replace(re, '').trim();
+  return childName || catName(child);
+}
+async function renderNotificationCatalogMenu(){
+  const pb = $('#catalogParents'), cb = $('#catalogChildren'), tb = $('#megaTitle');
+  if (!pb || !cb || !tb) return;
+  if (pb.dataset.loaded === '1') return;
+  pb.innerHTML = '<p class="muted">Загружаем категории...</p>';
+  let cats = await loadCollectionSafe(COLLECTIONS.categories || 'autostyle_categories');
+  cats = cats.filter(c => catName(c).trim() && !isBlockedCatalogName(catName(c))).sort(sortCats);
+  const byId = new Map();
+  cats.forEach(c => [catId(c), String(c.externalId || '').trim()].filter(Boolean).forEach(id => byId.set(id, c)));
+  const parentOf = c => byId.get(parentKey(c));
+  const showInTopCatalog = c => c.showInTopCatalog !== false && c.hideFromTopCatalog !== true && !isBlockedCatalogName(catName(c)) && !isServiceGroup(c);
+  const childrenOf = parent => {
+    const ids = [catId(parent), String(parent.externalId || '').trim()].filter(Boolean);
+    return cats.filter(c => ids.includes(parentKey(c)) && showInTopCatalog(c)).sort(sortCats);
+  };
+  let parents = cats.filter(c => {
+    if (!showInTopCatalog(c)) return false;
+    const p = parentOf(c);
+    if (!p) return !parentKey(c) || childrenOf(c).length > 0;
+    if (isServiceGroup(p)) return true;
+    return childrenOf(c).length > 0;
+  });
+  const seen = new Set();
+  parents = parents.filter(c => { const key = catId(c) || catName(c).toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; }).sort(sortCats);
+  function render(parent){
+    const list = childrenOf(parent);
+    tb.textContent = catName(parent);
+    const allItem = `<a href="catalog.html?category=${encodeURIComponent(catName(parent))}" class="mega-child mega-child-all"><div><b>${parentAllLabel(parent)}</b><small>Основная категория и все подкатегории</small></div></a>`;
+    cb.innerHTML = allItem + list.map(ch => `<a href="catalog.html?category=${encodeURIComponent(catName(ch))}" class="mega-child"><div><b>${shortChildName(ch,parent)}</b><small>${catName(ch)}</small></div></a>`).join('');
+  }
+  pb.dataset.loaded = '1';
+  pb.innerHTML = parents.length ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" type="button">${catName(p)}</button>`).join('') : '<p class="muted">Категорий пока нет</p>';
+  if (parents[0]) render(parents[0]);
+  $$('.mega-parent').forEach(btn => btn.onmouseenter = btn.onclick = () => {
+    $$('.mega-parent').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = parents.find(x => catId(x) === btn.dataset.parent);
+    if (p) render(p);
+  });
+}
 
 function isRead(id){ return state.readIds.has(id); }
 function unreadList(){ return state.list.filter(n => !isRead(n.id)); }
@@ -171,6 +258,7 @@ function applyState(next){
 
 function start(user){
   currentUser = user || null;
+  initNotificationCatalogMenu();
   bindHeader();
   if (unsubscribe) unsubscribe();
   unsubscribe = watchNotifications(currentUser, applyState);

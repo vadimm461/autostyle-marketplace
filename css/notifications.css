@@ -227,3 +227,100 @@
   .as-notify-page-head{align-items:flex-start;flex-direction:column;}
   .as-notify-page-head h1{font-size:32px;}
 }
+
+/* Full notification editor in admin */
+.admin-editor-toolbar-main select{
+  min-width:150px;
+  width:auto;
+  max-width:220px;
+}
+.admin-color-tool{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#11151b;
+  color:#fff;
+  border-radius:12px;
+  padding:8px 10px;
+  font-weight:900;
+  cursor:pointer;
+}
+.admin-color-tool input{
+  width:32px!important;
+  height:28px;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  cursor:pointer;
+}
+.admin-notify-upload-row{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  background:#f8fafc;
+  border:1px solid #e8edf5;
+  border-radius:16px;
+  padding:12px;
+}
+.admin-notify-upload-row input{
+  flex:1;
+  min-width:240px;
+}
+.admin-notify-upload-row button,
+.admin-emoji-panel button{
+  border:0;
+  border-radius:12px;
+  background:#11151b;
+  color:#fff;
+  padding:10px 13px;
+  font-weight:900;
+  cursor:pointer;
+}
+.admin-notify-upload-row button:hover,
+.admin-emoji-panel button:hover{background:#27e11b;color:#061006;}
+.admin-emoji-panel{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  max-height:116px;
+  overflow:auto;
+  background:#f8fafc;
+  border:1px solid #e8edf5;
+  border-radius:16px;
+  padding:10px;
+}
+.admin-emoji-panel button{
+  min-width:40px;
+  padding:8px 9px;
+  font-size:20px;
+}
+.admin-notify-body:empty:before{
+  content:attr(data-placeholder);
+  color:#94a3b8;
+  font-weight:800;
+}
+.admin-notify-body img,
+.as-notify-detail-body img,
+.admin-notify-history-item img{
+  max-width:100%;
+  height:auto;
+  border-radius:14px;
+}
+.admin-notify-html-box textarea{
+  width:100%;
+  min-height:220px;
+  border:1px solid #dbe3ef;
+  border-radius:16px;
+  padding:14px;
+  font:14px/1.5 Consolas, Monaco, monospace;
+  background:#0f172a;
+  color:#e5e7eb;
+  box-sizing:border-box;
+}
+.as-notify-detail-body a,
+.admin-notify-history-item a{
+  color:#16a30f;
+  font-weight:900;
+  text-decoration:underline;
+}
