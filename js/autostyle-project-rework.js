@@ -1,6 +1,39 @@
 (function(){
   'use strict';
 
+
+  function navIconHtml(kind, countId){
+    var data = {
+      account:['👤','Аккаунт'],
+      notify:['🔔','Уведомления'],
+      fav:['♡','Избранное'],
+      cart:['🛒','Корзина']
+    }[kind] || ['•',''];
+    var badge = '';
+    if(kind === 'notify') badge = '<b id="notificationCount" class="as-notify-count as-head-badge" data-count="0"></b>';
+    if(kind === 'cart') badge = '<b id="cartCount" class="as-head-badge">0</b>';
+    return '<span class="as-head-icon" aria-hidden="true">'+data[0]+'</span><span class="as-head-label">'+data[1]+'</span>'+badge;
+  }
+  function applyHeaderIconButton(el, kind){
+    if(!el) return;
+    el.classList.add('as-head-icon-btn');
+    if(el.tagName === 'BUTTON' && !el.type) el.type = 'button';
+    var keepCart = el.querySelector('#cartCount');
+    var keepNotify = el.querySelector('#notificationCount,.as-notify-count');
+    el.innerHTML = navIconHtml(kind);
+    if(kind === 'cart' && keepCart){ var b=el.querySelector('#cartCount'); if(b) b.textContent = keepCart.textContent || '0'; }
+    if(kind === 'notify' && keepNotify){ var n=el.querySelector('#notificationCount'); if(n){ n.textContent = keepNotify.textContent || ''; n.dataset.count = keepNotify.dataset.count || n.dataset.count || '0'; } }
+  }
+  function normalizeHeaderIcons(){
+    document.querySelectorAll('.topbar a.icon-btn,.topbar button.icon-btn').forEach(function(el){
+      var text = (el.textContent || '').trim();
+      if(el.id === 'notificationsBtn' || /уведом/i.test(text)) applyHeaderIconButton(el,'notify');
+      else if(/избран/i.test(text) || el.getAttribute('href') === 'favorites.html') applyHeaderIconButton(el,'fav');
+      else if(/корзин/i.test(text) || el.getAttribute('href') === 'cart.html') applyHeaderIconButton(el,'cart');
+      else if(/аккаунт/i.test(text) || el.id === 'openAuth' || el.id === 'asAccountButton' || el.id === 'accountBtn') applyHeaderIconButton(el,'account');
+    });
+  }
+
   function ready(fn){
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
     else fn();
@@ -61,7 +94,7 @@
     btn.type = 'button';
     btn.className = (el.className || 'icon-btn').replace(/\bactive\b/g,'').trim() || 'icon-btn';
     btn.id = el.id || 'asAccountButton';
-    btn.textContent = 'Аккаунт';
+    btn.innerHTML = navIconHtml('account'); btn.classList.add('as-head-icon-btn');
     var popup = document.createElement('div');
     popup.className = 'as-account-popup';
     popup.innerHTML = accountPopupHtml();
@@ -84,7 +117,7 @@
         btn.type = 'button';
         btn.id = 'asAccountButton';
         btn.className = openAuth.className || 'icon-btn';
-        btn.textContent = 'Аккаунт';
+        btn.innerHTML = navIconHtml('account'); btn.classList.add('as-head-icon-btn');
         var popup = document.createElement('div');
         popup.className = 'as-account-popup';
         var oldDrop = accountDrop.querySelector('.drop');
@@ -163,10 +196,11 @@
 
   ready(function(){
     normalizeCatalogButtons();
+    normalizeHeaderIcons();
     normalizeAccountButtons();
     ensureNotificationHandler();
-    setTimeout(function(){ normalizeAccountButtons(); ensureNotificationHandler(); }, 400);
-    setTimeout(function(){ normalizeAccountButtons(); ensureNotificationHandler(); }, 1500);
+    setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 400);
+    setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 1500);
     bindGlobalClose();
   });
 })();

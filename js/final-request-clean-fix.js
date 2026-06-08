@@ -119,6 +119,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
+    if(window.normalizeHeaderIcons) window.normalizeHeaderIcons();
     enhanceAccountPopup();
     fixCatalogPricePosition();
     improveNotificationPosition();
