@@ -154,6 +154,21 @@ function bindNotificationOpen(root){
   });
 }
 
+
+function positionNotificationDropdown(dd){
+  if (!dd) return;
+  const header = document.querySelector('.topbar');
+  const account = document.querySelector('.topbar .as-account-wrap, .topbar #accountDrop, .topbar #openAuth');
+  const top = header ? header.getBoundingClientRect().bottom + 10 : 74;
+  dd.style.position = 'fixed';
+  dd.style.top = Math.max(68, top) + 'px';
+  if (account) {
+    const r = account.getBoundingClientRect();
+    dd.style.right = Math.max(12, window.innerWidth - r.right) + 'px';
+    dd.style.left = 'auto';
+  }
+}
+
 function renderDropdown(){
   const dd = ensureDropdown();
   const list = state.list.slice(0, 8);
@@ -173,14 +188,22 @@ function renderDropdown(){
   return dd;
 }
 
+window.autostyleNotifications = {
+  renderDropdown,
+  positionNotificationDropdown,
+  updateCount
+};
+
 function bindHeader(){
   const btn = $('#notificationsBtn');
   if (!btn || btn.dataset.bound === '1') return;
   btn.dataset.bound = '1';
+  btn.dataset.reworkNotifyReady = '1';
   btn.addEventListener('click', e => {
     e.preventDefault();
     e.stopPropagation();
     const dd = renderDropdown();
+    positionNotificationDropdown(dd);
     dd.classList.toggle('open');
   });
   document.addEventListener('click', e => {
@@ -252,7 +275,7 @@ function renderPage(){
 function applyState(next){
   state = next;
   updateCount();
-  if ($('#notificationsDropdown')?.classList.contains('open')) renderDropdown();
+  if ($('#notificationsDropdown')?.classList.contains('open')) { const dd = renderDropdown(); positionNotificationDropdown(dd); }
   renderPage();
 }
 
