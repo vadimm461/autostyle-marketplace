@@ -1,0 +1,29 @@
+
+/* AutoStyle final logo replacement */
+.logo.as-logo-link{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  min-width:auto!important;
+  width:auto!important;
+  height:auto!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  text-decoration:none!important;
+  flex:0 0 auto!important;
+}
+.logo.as-logo-link .as-logo-img{
+  display:block!important;
+  width:56px!important;
+  height:56px!important;
+  object-fit:contain!important;
+  border-radius:15px!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.20)!important;
+}
+.admin-side .logo.as-logo-link .as-logo-img,
+.admin-layout .logo.as-logo-link .as-logo-img{width:64px!important;height:64px!important;border-radius:18px!important;}
+.logo.as-logo-link .logo-mark{display:none!important;}
+@media(max-width:760px){.logo.as-logo-link .as-logo-img{width:48px!important;height:48px!important;border-radius:14px!important;}}
