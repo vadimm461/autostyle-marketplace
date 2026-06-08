@@ -16,6 +16,17 @@ function initials(name, email){
 function ensureAccountDrop(){
   let openBtn = $('#openAuth');
   let wrap = $('#accountDrop');
+  if (!openBtn && !wrap) {
+    const profileLink = $('.topbar a.icon-btn[href="profile.html"], .topbar a.icon-btn[href*="profile.html"]');
+    if (profileLink) {
+      openBtn = document.createElement('button');
+      openBtn.id = 'openAuth';
+      openBtn.className = profileLink.className || 'icon-btn';
+      openBtn.type = 'button';
+      openBtn.textContent = profileLink.textContent.trim() || 'Аккаунт';
+      profileLink.replaceWith(openBtn);
+    }
+  }
   if (!openBtn && !wrap) return null;
   if (!wrap && openBtn) {
     wrap = document.createElement('div');
