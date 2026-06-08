@@ -106,9 +106,15 @@ header.topbar .mega-catalog{
   box-shadow:0 30px 80px rgba(0,0,0,.22)!important;
   z-index:3000!important;
 }
+header.topbar .catalog-menu:not(.open) .catalog-popup{display:none!important;}
 header.topbar .catalog-menu.open .catalog-popup,
-header.topbar .catalog-menu:hover .catalog-popup,
 header.topbar .catalog-popup.open{display:grid!important;}
+
+/* Каталог открывается только по клику. Hover полностью отключён, чтобы не было двух меню. */
+header.topbar .catalog-menu:not(.open):hover .catalog-popup,
+header.topbar .catalog-menu:not(.open):hover .mega-catalog{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}
+header.topbar .catalog-menu.open .catalog-popup,
+header.topbar .catalog-menu.open .mega-catalog{opacity:1!important;visibility:visible!important;pointer-events:auto!important;}
 header.topbar .mega-left{border-right:1px solid #edf1f6!important;padding-right:16px!important;}
 header.topbar .mega-left h3,
 header.topbar .mega-right h3{margin:0 0 12px!important;font-size:18px!important;color:#111827!important;}
