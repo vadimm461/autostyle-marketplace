@@ -1,206 +1,220 @@
-/* ==========================================================
-   AutoStyle product cards — Ozon/WB-like unified layout
-   Loaded last on all pages. Applies to home, catalog,
-   related products, favorites and product widgets.
-   ========================================================== */
+/* ЕДИНЫЙ ВИД КАРТОЧЕК ТОВАРА
+   Взято за основу оформление из страницы "Избранное".
+   Этот файл подключен последним почти на всех страницах, поэтому он перебивает старые разные стили. */
 
-:root{
-  --as-card-h: 378px;
-  --as-card-img-h: 196px;
-  --as-card-radius: 18px;
-  --as-card-gap: 8px;
-}
-
+/* сетки на главной, в каталоге, избранном, похожих товарах */
 .products,
-.products-grid,
-.carousel-products,
 .catalog-grid,
-#productsGrid,
-#newProductsGrid,
-#recentlyViewedGrid,
-#bestsellersGrid,
 #catalogGrid,
 #favoritesGrid,
-#relatedProducts,
-.related-products{
+.product-related-wrap,
+.related-products,
+.carousel-products {
   align-items: stretch !important;
 }
 
-/* One visual standard for product cards everywhere */
+.products,
+.carousel-products {
+  gap: 18px !important;
+}
+
+#catalogGrid,
+#favoritesGrid,
+.catalog-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 22px !important;
+}
+
+.product-related-wrap {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 22px !important;
+}
+
+.carousel-products .product-card,
+.products .product-card {
+  flex: 0 0 calc((100% - 72px) / 5) !important;
+  min-width: 205px !important;
+}
+
+/* сама карточка — как в избранном */
 .product-card,
 .catalog-card,
-.home-product-card,
 .favorite-card,
-.related-card{
+.related-card,
+.home-product-card,
+[class$="-card"].product-card {
   position: relative !important;
-  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  padding: 12px !important;
   display: flex !important;
   flex-direction: column !important;
-  width: 100% !important;
-  height: var(--as-card-h) !important;
-  min-height: var(--as-card-h) !important;
-  max-height: var(--as-card-h) !important;
-  padding: 12px !important;
-  overflow: hidden !important;
   background: #fff !important;
   border: 1px solid #e8edf3 !important;
-  border-radius: var(--as-card-radius) !important;
-  box-shadow: 0 8px 24px rgba(15,23,42,.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
+  overflow: hidden !important;
   color: #111827 !important;
+  transform: none !important;
 }
 
 .product-card:hover,
 .catalog-card:hover,
-.home-product-card:hover,
 .favorite-card:hover,
-.related-card:hover{
-  transform: translateY(-2px) !important;
-  box-shadow: 0 14px 32px rgba(15,23,42,.12) !important;
-  border-color: #dfe6ee !important;
+.related-card:hover,
+.home-product-card:hover {
+  transform: none !important;
+  border-color: #e8edf3 !important;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .10) !important;
 }
 
 .product-card::before,
 .catalog-card::before,
-.home-product-card::before,
-.favorite-card::before,
-.related-card::before{display:none !important;}
+.home-product-card::before { display: none !important; }
 
+/* ссылка внутри карточки */
 .product-card-link,
 .catalog-card-link,
-.home-product-link{
+.home-product-link,
+.product-link,
+.catalog-link,
+.home-link {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  overflow: hidden !important;
   color: inherit !important;
   text-decoration: none !important;
+  overflow: hidden !important;
 }
 
-/* Bigger photo block: full product visible, no cropping */
+.catalog-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+/* фото — не режется, всегда целиком */
 .product-img,
 .catalog-card-photo,
-.home-product-photo,
-.product-card-img,
+.product-photo,
 .home-product-img,
+.home-photo,
+.related-img,
+.product-card-img,
 .product-card .image,
-.home-product-card .image,
-.related-img{
+.home-product-card .image {
   width: 100% !important;
-  height: var(--as-card-img-h) !important;
-  min-height: var(--as-card-img-h) !important;
-  max-height: var(--as-card-img-h) !important;
-  flex: 0 0 var(--as-card-img-h) !important;
-  margin: 0 0 10px !important;
+  height: 126px !important;
+  min-height: 126px !important;
+  max-height: 126px !important;
+  flex: 0 0 126px !important;
+  margin: 0 0 12px !important;
   padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #f4f6f8 !important;
+  border-radius: 10px !important;
   overflow: hidden !important;
-  background: #f6f7f9 !important;
-  border-radius: 14px !important;
 }
 
 .product-img img,
 .catalog-card-photo img,
-.home-product-photo img,
-.product-card-img img,
+.product-photo img,
 .home-product-img img,
+.home-photo img,
+.related-img img,
+.product-card-img img,
 .product-card .image img,
-.home-product-card .image img,
-.related-img img{
+.home-product-card .image img {
   display: block !important;
   width: 100% !important;
   height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  padding: 10px !important;
+  padding: 8px !important;
   object-fit: contain !important;
-  object-position: center !important;
   transform: none !important;
+  background: transparent !important;
 }
 
 .product-card:hover .product-img img,
-.catalog-card:hover .catalog-card-photo img,
-.home-product-card:hover .home-product-photo img,
-.related-card:hover .related-img img{transform:none !important;}
+.catalog-card:hover .catalog-card-photo img { transform: none !important; }
 
-/* Titles: exactly two lines, all cards equal */
+/* название — максимум 2 строки, одинаковая высота */
 .product-title,
 .catalog-card h3,
 .catalog-card-title,
 .product-card-title,
 .home-product-title,
-.home-product-card h3,
 .product-card h3,
-.related-card h3{
+.product-link h3,
+.catalog-link h3,
+.home-link h3 {
   display: -webkit-box !important;
   -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 2 !important;
-  height: 42px !important;
-  min-height: 42px !important;
-  max-height: 42px !important;
-  margin: 0 0 5px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  margin: 0 0 7px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: normal !important;
-  color: #111827 !important;
-  font-size: 16px !important;
-  line-height: 21px !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
   font-weight: 900 !important;
-  letter-spacing: -.15px !important;
+  color: #111827 !important;
 }
 
-/* Category: one compact line. Empty categories do not reserve a big gap. */
+/* группа/категория — одна строка */
 .product-group,
-.product-category,
+.product-cat,
 .catalog-card-category,
-.home-product-cat,
 .home-product-category,
-.muted.product-group{
+.home-cat,
+.catalog-cat,
+.muted.product-group {
   display: block !important;
   height: 18px !important;
   min-height: 18px !important;
   max-height: 18px !important;
-  margin: 0 0 8px !important;
+  margin: 0 0 10px !important;
   overflow: hidden !important;
   white-space: nowrap !important;
   text-overflow: ellipsis !important;
   color: #667085 !important;
   font-size: 13px !important;
   line-height: 18px !important;
-  font-weight: 700 !important;
+  font-weight: 500 !important;
 }
-.product-group:empty,
-.product-category:empty,
-.catalog-card-category:empty,
-.home-product-cat:empty,
-.home-product-category:empty{visibility:hidden !important;}
 
-.product-spacer,
-.card-spacer,
-.product-meta-spacer{display:none !important; height:0 !important; min-height:0 !important; margin:0 !important; padding:0 !important;}
-
-/* Bottom area is fixed, so price and cart buttons align on every page */
+/* низ карточки прижат вниз — цена и кнопка на одном уровне */
 .product-card-price-area,
 .catalog-card-price-area,
-.home-product-price-area{
+.home-product-price-area,
+.price-area {
   margin-top: auto !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-end !important;
-  min-height: 54px !important;
-  height: 54px !important;
-  gap: 2px !important;
-  overflow: hidden !important;
+  min-height: 34px !important;
+  height: auto !important;
+  gap: 0 !important;
 }
 
 .price-row-card,
 .price-row,
-.catalog-card-price-row{
-  height: 27px !important;
-  min-height: 27px !important;
-  max-height: 27px !important;
+.catalog-card-price-row,
+.home-price-row {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
   margin: 0 !important;
   display: flex !important;
   align-items: baseline !important;
@@ -211,171 +225,178 @@
 .price,
 .price-current,
 .catalog-card-price,
-.home-product-price{
-  font-size: 23px !important;
-  line-height: 27px !important;
-  font-weight: 1000 !important;
+.home-product-price,
+.home-price,
+.catalog-price {
+  font-size: 24px !important;
+  line-height: 28px !important;
+  font-weight: 950 !important;
   color: #05070d !important;
-  white-space: nowrap !important;
-}
-.old-price,
-.price-old{
-  font-size: 13px !important;
-  line-height: 18px !important;
-  color: #98a2b3 !important;
-  text-decoration: line-through !important;
-  font-weight: 900 !important;
-  white-space: nowrap !important;
 }
 
-.product-badges,
-.catalog-card-stock,
-.stock-zero{
-  height: 20px !important;
-  min-height: 20px !important;
-  max-height: 20px !important;
-  overflow: hidden !important;
+.old-price,
+.price-old {
+  font-size: 14px !important;
+  line-height: 18px !important;
+  color: #9aa3af !important;
+  text-decoration: line-through !important;
 }
+
+/* служебные строки не должны раздувать карточку */
+.product-badges,
 .installment-badge,
-.catalog-installment-badge{
-  display: block !important;
-  width: 100% !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  max-height: 20px !important;
+.catalog-installment-badge,
+.catalog-card-stock,
+.stock-zero,
+.stock,
+.product-meta-spacer,
+.card-spacer,
+.product-spacer {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-  background: transparent !important;
-  border: 0 !important;
-  color: #08a313 !important;
-  font-size: 12px !important;
-  line-height: 20px !important;
-  font-weight: 900 !important;
-}
-.catalog-card-stock,
-.stock-zero{
-  font-size: 12px !important;
-  line-height: 20px !important;
-  color: #667085 !important;
-  font-weight: 800 !important;
 }
 
+/* кнопка */
 .product-card .cart,
+.product-card .cart-btn,
 .product-card button.cart,
 .catalog-cart-btn,
-.home-product-card .cart,
 .home-product-card button,
+.home-product-card .cart,
+.home-product-card .cart-btn,
 .related-cart,
-.product-card [data-cart],
-.catalog-card [data-cart],
-.home-product-card [data-cart]{
-  flex: 0 0 42px !important;
+.cart-button {
   width: 100% !important;
-  height: 42px !important;
-  min-height: 42px !important;
-  max-height: 42px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
   margin: 10px 0 0 !important;
   padding: 0 12px !important;
   border: 0 !important;
-  border-radius: 12px !important;
-  background: #050914 !important;
+  border-radius: 10px !important;
+  background: #05070d !important;
   color: #fff !important;
   font-size: 14px !important;
-  line-height: 42px !important;
-  font-weight: 1000 !important;
+  line-height: 38px !important;
+  font-weight: 900 !important;
   text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: none !important;
   cursor: pointer !important;
 }
 
-.fav-btn{
+.product-card .cart:disabled,
+.catalog-cart-btn:disabled,
+.related-cart:disabled { opacity: .55 !important; cursor: not-allowed !important; }
+
+/* сердечко как в избранном */
+.fav-btn,
+.related-fav {
   position: absolute !important;
-  top: 14px !important;
-  right: 14px !important;
-  z-index: 5 !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 3 !important;
   width: 34px !important;
   height: 34px !important;
   min-width: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
   border-radius: 50% !important;
-  background: rgba(255,255,255,.94) !important;
-  border: 1px solid #e8edf3 !important;
-  color: #23c61b !important;
-  box-shadow: 0 6px 16px rgba(15,23,42,.12) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 19px !important;
+  background: #fff !important;
+  color: #16bf0a !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .12) !important;
+  font-size: 18px !important;
   line-height: 1 !important;
 }
-.discount-badge{
+
+.fav-btn.active,
+.related-fav.active { background: #eaffea !important; color: #16bf0a !important; }
+
+.discount-badge {
   position: absolute !important;
-  top: 14px !important;
-  left: 14px !important;
-  z-index: 6 !important;
-  border-radius: 999px !important;
-  padding: 5px 9px !important;
-  background: #ff3448 !important;
-  color: #fff !important;
-  font-size: 12px !important;
-  line-height: 16px !important;
-  font-weight: 1000 !important;
+  top: 18px !important;
+  left: 18px !important;
+  z-index: 3 !important;
 }
 
-/* Catalog cards have the same proportions */
-.catalog-card-body{display:flex !important; flex-direction:column !important; min-height:0 !important; flex:1 1 auto !important; overflow:hidden !important;}
-
-/* Horizontal carousels keep exactly 5 cards on desktop */
-.carousel-products{gap:18px !important; align-items:stretch !important;}
-.carousel-products .product-card,
-.carousel-products .catalog-card,
-.carousel-products .home-product-card,
-.carousel-products .related-card{
-  flex: 0 0 calc((100% - 72px) / 5) !important;
-  min-width: 218px !important;
-  scroll-snap-align: start !important;
-}
-
-/* Cart page: show item photos fully and keep rows neat */
-.cart-row{
-  align-items: center !important;
-  border-radius: 22px !important;
+/* корзина: рекомендованные/быстрые товары тоже в такой же карточке */
+.quick-product-card,
+.cart-product-card {
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  border: 1px solid #e8edf3 !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
   overflow: hidden !important;
 }
-.cart-product-open,
-.cart-row img,
-.cart-product-open img{
-  object-fit: contain !important;
-}
-.cart-product-open{
-  background: #f6f7f9 !important;
-  border-radius: 16px !important;
+
+.quick-product-img,
+.cart-product-img {
+  height: 126px !important;
+  min-height: 126px !important;
+  max-height: 126px !important;
+  background: #f4f6f8 !important;
+  border-radius: 10px !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
 }
 
-@media (max-width: 1250px){
-  :root{--as-card-h: 360px; --as-card-img-h: 178px;}
+.quick-product-img img,
+.cart-product-img img { width: 100% !important; height: 100% !important; object-fit: contain !important; padding: 8px !important; }
+
+/* адаптив */
+@media (max-width: 1180px) {
+  #catalogGrid, #favoritesGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 54px) / 4) !important; }
+}
+
+@media (max-width: 920px) {
+  #catalogGrid, #favoritesGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; }
+  .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 18px) / 2) !important; min-width: 190px !important; }
+}
+
+@media (max-width: 560px) {
+  .product-card,
+  .catalog-card,
+  .favorite-card,
+  .related-card,
+  .home-product-card,
+  .quick-product-card,
+  .cart-product-card {
+    height: 318px !important;
+    min-height: 318px !important;
+    max-height: 318px !important;
+    padding: 10px !important;
+    border-radius: 13px !important;
+  }
+  .product-img,
+  .catalog-card-photo,
+  .product-photo,
+  .home-product-img,
+  .home-photo,
+  .related-img,
+  .product-card-img,
+  .quick-product-img,
+  .cart-product-img {
+    height: 116px !important;
+    min-height: 116px !important;
+    max-height: 116px !important;
+    flex-basis: 116px !important;
+  }
   .product-title,
   .catalog-card h3,
-  .home-product-title,
-  .product-card h3{font-size:15px !important; line-height:20px !important; height:40px !important; min-height:40px !important; max-height:40px !important;}
-}
-@media (max-width: 980px){
-  :root{--as-card-h: 342px; --as-card-img-h: 164px;}
-  .products,.carousel-products,#catalogGrid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-  .carousel-products .product-card,
-  .carousel-products .catalog-card,
-  .carousel-products .home-product-card,
-  .carousel-products .related-card{flex-basis:calc((100% - 18px) / 2) !important; min-width:210px !important;}
-}
-@media (max-width: 560px){
-  :root{--as-card-h: 330px; --as-card-img-h: 154px;}
-  .product-card,.catalog-card,.home-product-card,.favorite-card,.related-card{padding:10px !important; border-radius:16px !important;}
-  .product-title,.catalog-card h3,.home-product-title,.product-card h3{font-size:14px !important; line-height:19px !important; height:38px !important; min-height:38px !important; max-height:38px !important;}
-  .price,.price-current,.catalog-card-price,.home-product-price{font-size:20px !important;}
-  .product-card .cart,.catalog-cart-btn,.related-cart,.product-card [data-cart],.catalog-card [data-cart]{height:39px !important; min-height:39px !important; max-height:39px !important; line-height:39px !important;}
+  .product-card h3 { font-size: 14px !important; line-height: 18px !important; height: 36px !important; min-height: 36px !important; max-height: 36px !important; }
+  .price, .price-current, .catalog-card-price, .home-product-price { font-size: 21px !important; line-height: 26px !important; }
+  .product-card .cart, .catalog-cart-btn, .related-cart { height: 36px !important; min-height: 36px !important; max-height: 36px !important; line-height: 36px !important; }
 }
