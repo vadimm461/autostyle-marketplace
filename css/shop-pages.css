@@ -1506,3 +1506,98 @@
   .profile-order-item{grid-template-columns:48px 1fr;}
   .profile-order-item strong{grid-column:2;}
 }
+
+/* ===== Quick product preview description fix ===== */
+.quick-modal{
+  align-items:center !important;
+  justify-content:center !important;
+  padding:18px !important;
+}
+.quick-modal-card{
+  width:min(920px, calc(100vw - 36px)) !important;
+  max-height:calc(100vh - 36px) !important;
+  overflow:hidden !important;
+  padding:24px !important;
+  border-radius:28px !important;
+}
+.quick-product{
+  display:grid !important;
+  grid-template-columns:minmax(240px, 340px) minmax(0, 1fr) !important;
+  gap:26px !important;
+  align-items:stretch !important;
+  max-height:calc(100vh - 84px) !important;
+  min-height:0 !important;
+}
+.quick-product-img{
+  height:auto !important;
+  min-height:360px !important;
+  max-height:calc(100vh - 120px) !important;
+  align-self:stretch !important;
+}
+.quick-product-img img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  padding:16px !important;
+}
+.quick-product-info{
+  min-width:0 !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+.quick-product-info h2{
+  font-size:26px !important;
+  line-height:1.15 !important;
+  margin:0 44px 10px 0 !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+}
+.quick-tags,
+.quick-price-line{
+  flex:0 0 auto !important;
+}
+.quick-desc{
+  flex:1 1 auto !important;
+  min-height:120px !important;
+  max-height:260px !important;
+  overflow:auto !important;
+  margin:0 !important;
+  padding:16px 12px 16px 0 !important;
+  border-top:1px solid #eef1f5 !important;
+  border-bottom:1px solid #eef1f5 !important;
+  color:#333b49 !important;
+  font-size:15px !important;
+  line-height:1.45 !important;
+  overflow-wrap:anywhere !important;
+  white-space:normal !important;
+}
+.quick-desc b{
+  display:block !important;
+  margin-bottom:8px !important;
+  color:#101828 !important;
+  font-size:16px !important;
+}
+.quick-actions{
+  flex:0 0 auto !important;
+  margin-top:16px !important;
+}
+@media(max-width:760px){
+  .quick-modal-card{
+    overflow:auto !important;
+  }
+  .quick-product{
+    grid-template-columns:1fr !important;
+    max-height:none !important;
+  }
+  .quick-product-img{
+    min-height:240px !important;
+    height:260px !important;
+  }
+  .quick-desc{
+    max-height:220px !important;
+  }
+}
