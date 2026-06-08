@@ -51,3 +51,102 @@
 .as-final-logo-row,.as-final-logo-badge,.as-final-logo-text,.as-final-slogan{display:none!important;}
 @media(max-width:1100px){.logo.as-logo-link,.as-final-logo{width:190px!important;min-width:190px!important;height:50px!important;}.m-logo{width:178px!important;height:44px!important;}}
 @media(max-width:760px){.logo.as-logo-link,.as-final-logo{width:158px!important;min-width:158px!important;height:42px!important;}.m-logo{width:150px!important;height:40px!important;}}
+
+/* ===== Fix product cards empty gap on home/catalog =====
+   Removes the forced reserved space between category and price.
+   Cards now grow only by real content instead of fixed blind-friendly blocks. */
+.products,
+.catalog-grid,
+#productsGrid,
+#newProductsGrid,
+#bestsellersGrid,
+#recentlyViewedGrid,
+#favoritesGrid,
+.profile-favorites-grid{
+  align-items:start!important;
+  grid-auto-rows:auto!important;
+}
+
+.product-card,
+.catalog-card,
+.home-product-card,
+.favorite-card,
+.products > article,
+.catalog-grid > article{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  align-self:start!important;
+}
+
+.product-card-link,
+.catalog-card-link,
+.home-product-link{
+  flex:0 0 auto!important;
+  height:auto!important;
+}
+
+.product-title,
+.catalog-card h3,
+.catalog-card-title,
+.home-product-title,
+.catalog-card-body h3{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin-bottom:6px!important;
+}
+
+.product-group,
+.catalog-card-category,
+.home-product-category,
+.home-product-cat,
+.product-cat,
+.catalog-cat{
+  height:auto!important;
+  min-height:0!important;
+  max-height:32px!important;
+  margin:0 0 10px!important;
+}
+
+.product-card-price-area,
+.catalog-card-price-area,
+.home-product-price-area{
+  margin-top:0!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  justify-content:flex-start!important;
+  gap:4px!important;
+}
+
+.price-row-card,
+.product-card-price-area .price-row,
+.catalog-card-price-area .price-row,
+.price-wrap,
+.product-price-wrap,
+.home-price-wrap{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+
+.product-badges,
+.installment-badge,
+.catalog-installment-badge,
+.catalog-card-stock{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+
+.installment-badge:empty,
+.catalog-installment-badge:empty,
+.product-badges:empty,
+.product-badges:has(.installment-badge:empty){
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+}
