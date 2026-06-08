@@ -81,7 +81,19 @@ service cloud.firestore {
 
     /* Уведомления */
     match /autostyle_notifications/{notificationId} {
-      allow read: if isSignedIn();
+      // Общие уведомления из админки видны всем, даже если пользователь ещё не вошёл.
+      // Персональные уведомления видны только владельцу или админу.
+      allow read: if resource.data.audience == "all"
+        || isAdmin()
+        || (
+          isSignedIn()
+          && (
+            resource.data.userId == request.auth.uid
+            || resource.data.uid == request.auth.uid
+            || resource.data.userEmail == request.auth.token.email
+          )
+        );
+
       allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }

@@ -114,8 +114,10 @@ export function watchNotifications(user, callback){
   };
 
   try{
+    // Без orderBy: так не нужен составной индекс Firestore для audience + createdAt.
+    // Сортировка выполняется на клиенте в normalizeList().
     unsubs.push(onSnapshot(
-      query(collection(db, NOTIFICATIONS_COLLECTION), where('audience','==','all'), orderBy('createdAt','desc'), limit(80)),
+      query(collection(db, NOTIFICATIONS_COLLECTION), where('audience','==','all'), limit(80)),
       applySnapshot,
       err => console.warn('global notifications snapshot error', err)
     ));
@@ -123,8 +125,10 @@ export function watchNotifications(user, callback){
 
   if (user?.uid) {
     try{
+      // Без orderBy: так не нужен составной индекс Firestore для userId + createdAt.
+      // Сортировка выполняется на клиенте в normalizeList().
       unsubs.push(onSnapshot(
-        query(collection(db, NOTIFICATIONS_COLLECTION), where('userId','==', user.uid), orderBy('createdAt','desc'), limit(80)),
+        query(collection(db, NOTIFICATIONS_COLLECTION), where('userId','==', user.uid), limit(80)),
         applySnapshot,
         err => console.warn('user notifications snapshot error', err)
       ));
