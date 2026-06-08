@@ -1,0 +1,15 @@
+
+/* Mega menu */
+.mega-catalog{width:900px!important;background:#08111b!important;border-radius:18px!important;padding:18px!important;box-shadow:0 20px 60px rgba(0,0,0,.35)!important}
+.catalog-popup{top:58px!important}
+.mega-left{width:220px!important}
+.mega-parent-list>*{border-radius:10px!important;padding:12px!important}
+.topbar.dark-topbar{box-shadow:0 8px 25px rgba(36,224,24,.15)!important}
+/* Large cards like mockup */
+.products{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:18px!important}
+.product-card,.card,.product{
+min-height:360px!important;border-radius:18px!important;padding:14px!important;
+box-shadow:0 8px 25px rgba(0,0,0,.08)!important;background:#fff!important}
+.product-card img,.product img{height:180px!important;object-fit:contain!important}
+.product-card .buy-btn,.product-card button{border-radius:12px!important}
+.section-block{border-radius:24px!important}
