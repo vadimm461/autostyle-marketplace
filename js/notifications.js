@@ -133,8 +133,16 @@ document.addEventListener('click', () => setTimeout(updateHeaderCounters, 50));
 /* ================= CATALOG MENU ================= */
 
 function ensureCatalogMarkup(){
-  let btn = document.querySelector('header .catalog-btn');
+  const header = document.querySelector('header.topbar');
+  let btn = header?.querySelector('.catalog-btn');
   if (!btn) return null;
+
+  // Оставляем только один каталог: старые выпадающие окна и дубли удаляем,
+  // чтобы не было двух меню: одно по hover, второе по click.
+  header.querySelectorAll('.catalog-popup, .mega-catalog').forEach(el => el.remove());
+  header.querySelectorAll('.catalog-menu').forEach((el, index) => {
+    if (index > 0) el.remove();
+  });
 
   let menu = btn.closest('.catalog-menu');
   if (!menu) {
@@ -153,13 +161,14 @@ function ensureCatalogMarkup(){
     btn = newBtn;
   }
 
-  if (!menu.querySelector('.catalog-popup')) {
-    menu.insertAdjacentHTML('beforeend', `
-      <div class="catalog-popup mega-catalog">
-        <div class="mega-left"><h3>Каталог товаров</h3><div id="catalogParents" class="mega-parent-list"></div></div>
-        <div class="mega-right"><h3 id="megaTitle">Выберите категорию</h3><div id="catalogChildren" class="mega-child-grid"></div></div>
-      </div>`);
-  }
+  btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-haspopup', 'true');
+
+  menu.insertAdjacentHTML('beforeend', `
+    <div class="catalog-popup mega-catalog" aria-hidden="true">
+      <div class="mega-left"><h3>Каталог товаров</h3><div id="catalogParents" class="mega-parent-list"></div></div>
+      <div class="mega-right"><h3 id="megaTitle">Выберите категорию</h3><div id="catalogChildren" class="mega-child-grid"></div></div>
+    </div>`);
 
   return menu;
 }
@@ -281,20 +290,25 @@ function initCatalogMenu(){
   const open = async () => {
     menu.classList.add('open');
     popup?.classList.add('open');
+    btn?.setAttribute('aria-expanded', 'true');
+    popup?.setAttribute('aria-hidden', 'false');
     if (!menu.dataset.asCatalogLoaded) {
       menu.dataset.asCatalogLoaded = '1';
       await renderCatalogMenu();
     }
   };
-  const close = () => { menu.classList.remove('open'); popup?.classList.remove('open'); };
+  const close = () => {
+    menu.classList.remove('open');
+    popup?.classList.remove('open');
+    btn?.setAttribute('aria-expanded', 'false');
+    popup?.setAttribute('aria-hidden', 'true');
+  };
 
   btn?.addEventListener('click', async e => {
     e.preventDefault();
     e.stopPropagation();
     if (menu.classList.contains('open')) close(); else await open();
   });
-  btn?.addEventListener('mouseenter', open);
-  popup?.addEventListener('mouseenter', open);
   document.addEventListener('click', e => {
     if (!e.target.closest('.catalog-menu')) close();
   });
