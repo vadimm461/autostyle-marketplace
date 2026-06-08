@@ -1,0 +1,16 @@
+/* Unified account dropdown: one real menu, same on every desktop page */
+#accountDrop.dropdown{position:relative;display:none;z-index:1001;}
+#accountDrop > #accountBtn{display:inline-flex;align-items:center;justify-content:center;}
+#accountDrop .drop{display:none;position:absolute;right:0;top:calc(100% + 10px);min-width:290px;z-index:10050;background:#fff;border:1px solid #e6ebf2;border-radius:20px;box-shadow:0 24px 60px rgba(9,13,20,.22);padding:14px;color:#111827;}
+#accountDrop.open .drop{display:block!important;}
+#accountDrop .account-user{display:flex;align-items:center;gap:12px;padding:10px;text-decoration:none;color:#111827;border-radius:16px;}
+#accountDrop .account-user:hover{background:#f4f7fb;}
+#accountDrop .account-avatar{width:52px;height:52px;border-radius:14px;overflow:hidden;background:#eef3f8;display:grid;place-items:center;font-weight:950;color:#121821;flex:0 0 52px;}
+#accountDrop .account-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+#accountDrop .account-name{display:block;font-size:17px;line-height:1.15;}
+#accountDrop .account-email{display:block;color:#667085;font-size:13px;font-weight:800;margin-top:4px;word-break:break-word;}
+#accountDrop .account-status{display:inline-flex;margin:8px 10px 12px;padding:7px 12px;border-radius:999px;background:#eafbec;color:#0b7d18;font-weight:900;font-size:13px;}
+#accountDrop .account-menu{display:grid;gap:6px;}
+#accountDrop .account-menu a,#accountDrop .account-menu button{display:flex;align-items:center;width:100%;min-height:44px;border:0;border-radius:14px;background:transparent;color:#111827;text-decoration:none;font:900 16px/1 Inter,Arial,sans-serif;padding:0 12px;cursor:pointer;text-align:left;}
+#accountDrop .account-menu a:hover,#accountDrop .account-menu button:hover{background:#f3f5f8;}
+#accountDrop .account-logout{margin-top:4px;}

@@ -125,16 +125,6 @@ function ensureDropdown(){
     dd.className = 'as-notify-dropdown';
     document.body.appendChild(dd);
   }
-  const btn = $('#notificationsBtn');
-  if (btn) {
-    const r = btn.getBoundingClientRect();
-    const width = Math.min(420, window.innerWidth - 24);
-    const left = Math.max(12, Math.min(r.right - width, window.innerWidth - width - 12));
-    dd.style.width = width + 'px';
-    dd.style.left = left + 'px';
-    dd.style.right = 'auto';
-    dd.style.top = Math.min(r.bottom + 10, window.innerHeight - 80) + 'px';
-  }
   return dd;
 }
 
@@ -251,7 +241,7 @@ function renderPage(){
       <div class="as-notify-detail-date">${esc(fmt(n.createdAt || n.createdAtLocal))}</div>
       <div class="as-notify-detail-body">${n.html || `<p>${esc(notificationText(n))}</p>`}</div>
       ${n.link ? `<p><a class="primary as-notify-link" href="${esc(n.link)}">Перейти</a></p>` : ''}`;
-    root.querySelector('.as-notify-back')?.setAttribute('data-notify-back', '1');
+    root.querySelector('.as-notify-back').addEventListener('click', showList);
   }
 
   if (openNotificationId) showDetail(openNotificationId);
@@ -266,155 +256,10 @@ function applyState(next){
   renderPage();
 }
 
-
-function findAccountTrigger(){
-  return document.querySelector('#accountBtn') ||
-    document.querySelector('#openAuth') ||
-    [...document.querySelectorAll('header .icon-btn, header a, header button')]
-      .find(el => (el.textContent || '').trim().toLocaleLowerCase('ru-RU').includes('аккаунт')) || null;
-}
-
-function ensureAccountDropdown(){
-  let accountDrop = document.querySelector('#accountDrop');
-  let accountBtn = document.querySelector('#accountBtn');
-  let openAuth = document.querySelector('#openAuth');
-
-  if (accountDrop && accountBtn) {
-    accountDrop.classList.add('dropdown', 'account-dropdown');
-    accountBtn.setAttribute('type', 'button');
-    accountBtn.setAttribute('aria-haspopup', 'true');
-    if (!accountBtn.hasAttribute('aria-expanded')) accountBtn.setAttribute('aria-expanded', 'false');
-    let drop = accountDrop.querySelector('.drop');
-    if (!drop) {
-      drop = document.createElement('div');
-      drop.className = 'drop account-panel';
-      accountDrop.appendChild(drop);
-    }
-    drop.classList.add('account-panel');
-    return { accountDrop, accountBtn, openAuth, drop };
-  }
-
-  const trigger = findAccountTrigger();
-  if (!trigger) return { accountDrop:null, accountBtn:null, openAuth:null, drop:null };
-
-  const btn = document.createElement('button');
-  btn.id = 'accountBtn';
-  btn.className = trigger.className || 'icon-btn';
-  if (!btn.classList.contains('icon-btn')) btn.classList.add('icon-btn');
-  btn.type = 'button';
-  btn.setAttribute('aria-haspopup', 'true');
-  btn.setAttribute('aria-expanded', 'false');
-  btn.textContent = 'Аккаунт';
-
-  accountDrop = document.createElement('div');
-  accountDrop.id = 'accountDrop';
-  accountDrop.className = 'dropdown account-dropdown';
-  const drop = document.createElement('div');
-  drop.className = 'drop account-panel';
-  accountDrop.appendChild(btn);
-  accountDrop.appendChild(drop);
-
-  if (trigger.id === 'openAuth') openAuth = trigger;
-  trigger.replaceWith(accountDrop);
-  accountBtn = btn;
-  return { accountDrop, accountBtn, openAuth, drop };
-}
-
-function bindAccountButton(user){
-  const modal = document.querySelector('#authModal');
-  const { accountDrop, accountBtn, drop } = ensureAccountDropdown();
-
-  if (!accountDrop || !accountBtn) return;
-
-  accountDrop.style.display = 'inline-block';
-
-  if (drop) {
-    if (user) {
-      const email = user.email || user.phoneNumber || 'Ваш аккаунт';
-      drop.innerHTML = `
-        <b id="userEmail">${esc(email)}</b>
-        <p class="muted">Вы авторизованы</p>
-        <a href="profile.html">Редактировать профиль</a>
-        <a href="profile.html#discount-card">Скидочная карта</a>
-        <a href="profile.html#orders">Мои заказы</a>
-        <a href="profile.html#security">Вход и привязки</a>
-        <a href="favorites.html">Избранное</a>
-        <a href="cart.html">Корзина</a>
-        <hr>
-        <button id="logout" class="icon-btn" type="button">Выйти</button>`;
-    } else {
-      drop.innerHTML = `
-        <b>Аккаунт</b>
-        <p class="muted">Войдите или создайте аккаунт</p>
-        <a href="login.html">Войти</a>
-        <a href="register.html">Регистрация</a>`;
-    }
-  }
-
-  if (accountBtn.dataset.notifyAccountBound !== '1') {
-    accountBtn.dataset.notifyAccountBound = '1';
-    accountBtn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!user && modal) {
-        modal.classList.add('open');
-        return;
-      }
-      const willOpen = !accountDrop.classList.contains('open');
-      document.querySelectorAll('.dropdown.open, .account-dropdown.open, .catalog-menu.open').forEach(el => {
-        if (el !== accountDrop) el.classList.remove('open');
-      });
-      document.querySelector('#notificationsDropdown')?.classList.remove('open');
-      accountDrop.classList.toggle('open', willOpen);
-      accountBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-    });
-    accountDrop.addEventListener('click', e => e.stopPropagation());
-    document.addEventListener('click', () => {
-      accountDrop.classList.remove('open');
-      accountBtn.setAttribute('aria-expanded', 'false');
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') {
-        accountDrop.classList.remove('open');
-        accountBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-  }
-
-  const logoutBtn = accountDrop.querySelector('#logout');
-  if (logoutBtn && user) {
-    logoutBtn.onclick = async (e) => {
-      e.preventDefault();
-      const mod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-      await mod.signOut(auth);
-      location.reload();
-    };
-  }
-}
-
-function bindNotificationPageBack(){
-  if (document.body.dataset.notifyBackBound === '1') return;
-  document.body.dataset.notifyBackBound = '1';
-  document.addEventListener('click', e => {
-    const back = e.target.closest('.as-notify-back, [data-notify-back]');
-    if (!back) return;
-    e.preventDefault();
-    openNotificationId = '';
-    pageMode = 'list';
-    localStorage.removeItem('autostyle_selected_notification');
-    if (location.pathname.endsWith('notifications.html')) {
-      history.pushState({}, '', 'notifications.html');
-    }
-    renderPage();
-  }, true);
-}
-
 function start(user){
   currentUser = user || null;
   initNotificationCatalogMenu();
   bindHeader();
-  bindAccountButton(currentUser);
-  bindNotificationPageBack();
   if (unsubscribe) unsubscribe();
   unsubscribe = watchNotifications(currentUser, applyState);
 }
