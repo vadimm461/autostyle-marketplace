@@ -282,3 +282,6 @@ header button,
   }
 }
 
+
+/* Final brand override */
+.as-logo-slogan-wrap{display:contents!important}.as-header-slogan{display:none!important}

@@ -215,3 +215,6 @@ footer .as-nav-count,
     right:12px;
   }
 }
+
+/* Final brand override */
+.as-logo-slogan-wrap{display:contents!important}.as-header-slogan{display:none!important}
