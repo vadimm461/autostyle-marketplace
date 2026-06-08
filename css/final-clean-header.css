@@ -359,3 +359,6 @@ body.as-final-header-ready > .main-header:not(.as-final-header){
   }
 }
 
+
+/* Image logo override */
+.as-final-logo-img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:left center!important}.as-final-logo-row,.as-final-logo-badge,.as-final-logo-text,.as-final-slogan{display:none!important}
