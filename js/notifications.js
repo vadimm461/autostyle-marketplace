@@ -271,24 +271,49 @@ function bindAccountButton(user){
   const openAuth = document.querySelector('#openAuth');
   const accountDrop = document.querySelector('#accountDrop');
   const accountBtn = document.querySelector('#accountBtn');
+  const userEmail = document.querySelector('#userEmail');
+
+  function closeAccountOnOutsideClick(e){
+    if (!accountDrop) return;
+    if (e.target.closest('#accountDrop')) return;
+    accountDrop.classList.remove('open');
+  }
+
   if (user) {
+    if (openAuth) openAuth.style.display = 'none';
+    if (accountDrop) {
+      accountDrop.style.display = 'block';
+      accountDrop.classList.remove('open');
+    }
+    if (userEmail) userEmail.textContent = user.email || user.phoneNumber || 'Ваш аккаунт';
+    if (accountBtn && accountDrop && accountBtn.dataset.notifyAccountBound !== '1') {
+      accountBtn.dataset.notifyAccountBound = '1';
+      accountBtn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        accountDrop.classList.toggle('open');
+      });
+      accountDrop.addEventListener('click', e => e.stopPropagation());
+      document.addEventListener('click', closeAccountOnOutsideClick);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') accountDrop.classList.remove('open');
+      });
+    }
+  } else {
+    if (accountDrop) {
+      accountDrop.style.display = 'none';
+      accountDrop.classList.remove('open');
+    }
     if (openAuth) {
+      openAuth.style.display = 'inline-block';
       openAuth.textContent = 'Аккаунт';
       openAuth.onclick = (e) => {
         e.preventDefault();
-        location.href = 'profile.html';
+        const modal = document.querySelector('#authModal');
+        if (modal) modal.classList.add('open');
+        else location.href = 'login.html';
       };
     }
-    if (accountDrop) accountDrop.style.display = 'none';
-    if (accountBtn) accountBtn.onclick = (e) => { e.preventDefault(); location.href = 'profile.html'; };
-  } else if (openAuth) {
-    openAuth.textContent = 'Аккаунт';
-    openAuth.onclick = (e) => {
-      e.preventDefault();
-      const modal = document.querySelector('#authModal');
-      if (modal) modal.classList.add('open');
-      else location.href = 'login.html';
-    };
   }
 }
 
