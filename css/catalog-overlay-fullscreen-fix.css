@@ -1,0 +1,11 @@
+
+html.catalog-open,body.catalog-open{overflow:hidden!important;}
+.page-dim,.catalog-overlay{
+position:fixed!important;
+top:0!important;left:0!important;right:0!important;bottom:0!important;
+width:100vw!important;height:100vh!important;
+z-index:9998!important;
+}
+.catalog-menu,.catalog-dropdown,.catalog-modal{
+z-index:9999!important;
+}
