@@ -1,4 +1,5 @@
-/* AutoStyle: официальный графический логотип в HTML, без текстовой сборки через CSS */
+/* AutoStyle: официальный графический логотип в HTML, без текстовой сборки через CSS.
+   HiDPI srcset подключен в разметке: браузер берет 2x/3x/4x файл, чтобы логотип не мылся и не пикселился. */
 .logo.as-logo-link{
   display:inline-flex!important;
   align-items:center!important;
@@ -23,6 +24,8 @@
   max-width:100%!important;
   object-fit:contain!important;
   object-position:left center!important;
+  image-rendering:auto!important;
+  -ms-interpolation-mode:bicubic;
   padding:0!important;
   margin:0!important;
   background:transparent!important;
@@ -38,10 +41,10 @@
   background:transparent!important;border:0!important;text-decoration:none!important;overflow:visible!important;
   font-size:0!important;line-height:0!important;
 }
-.m-logo-img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:left center!important;}
+.m-logo-img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:left center!important;image-rendering:auto!important;-ms-interpolation-mode:bicubic;}
 .m-logo-mark,.m-logo > span{display:none!important;}
 .as-final-logo{width:clamp(210px,22vw,330px)!important;min-width:clamp(210px,22vw,330px)!important;height:76px!important;display:inline-flex!important;align-items:center!important;background:transparent!important;border:0!important;text-decoration:none!important;}
-.as-final-logo-img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:left center!important;}
+.as-final-logo-img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:left center!important;image-rendering:auto!important;-ms-interpolation-mode:bicubic;}
 .as-final-logo-row,.as-final-logo-badge,.as-final-logo-text,.as-final-slogan{display:none!important;}
 @media(max-width:1100px){.logo.as-logo-link,.as-final-logo{width:220px!important;min-width:220px!important;height:64px!important;}.m-logo{width:190px!important;height:48px!important;}}
 @media(max-width:760px){.logo.as-logo-link,.as-final-logo{width:178px!important;min-width:178px!important;height:52px!important;}.m-logo{width:160px!important;height:44px!important;}}
