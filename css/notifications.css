@@ -11,3 +11,64 @@
 .as-notify-page{max-width:980px;margin:32px auto;padding:0 18px}.as-notify-page-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.as-notify-section{margin-top:24px}.as-notify-section h2{font-size:20px}.as-notify-list{display:grid;gap:12px}.as-notify-full-card{background:#fff;border:1px solid #e3e9f2;border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(15,23,42,.06);cursor:pointer}.as-notify-full-card:hover{border-color:#22e21a}.as-notify-full-card.is-unread{background:#f7fff6}.as-notify-full-card h3{margin:0 0 8px}.as-notify-full-card p{margin:0;color:#475569}.as-notify-detail-title{margin:18px 0 4px}.as-notify-detail-body{margin-top:18px;background:#fff;border:1px solid #e3e9f2;border-radius:18px;padding:22px;line-height:1.55;overflow:hidden}.as-notify-detail-body img{max-width:100%;height:auto;border-radius:14px}.as-notify-link{display:inline-block;text-decoration:none}
 .admin-notify-editor{display:grid;gap:12px;max-width:100%}.admin-editor-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:10px;border:1px solid #dbe3ee;border-radius:14px;background:#f8fafc}.admin-editor-toolbar button,.admin-editor-toolbar select,.admin-notify-upload-row button,.admin-notify-send{min-height:34px;border:1px solid #cfd8e5;border-radius:10px;background:#fff;color:#0f172a;padding:6px 10px;font-weight:700;cursor:pointer}.admin-editor-toolbar button:hover,.admin-notify-upload-row button:hover{border-color:#22e21a;background:#f0fff0}.admin-editor-toolbar select{padding-right:22px}.admin-color-tool{display:inline-flex;align-items:center;gap:5px;height:34px;border:1px solid #cfd8e5;border-radius:10px;background:#fff;padding:0 8px;font-weight:900}.admin-color-tool input{width:34px;height:24px;border:0;background:transparent;padding:0}.admin-notify-upload-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.admin-emoji-panel{display:flex;flex-wrap:wrap;gap:5px;max-height:86px;overflow:auto;padding:8px;border:1px solid #e5eaf1;border-radius:14px;background:#fff}.admin-emoji-panel button{border:1px solid #e5eaf1;background:#fff;border-radius:8px;width:31px;height:31px;cursor:pointer}.admin-notify-body{min-height:180px;border:1px solid #dbe3ee;border-radius:16px;background:#fff;padding:14px;line-height:1.5;outline:none;overflow:auto}.admin-notify-body:empty:before{content:attr(data-placeholder);color:#94a3b8}.admin-notify-body:focus{border-color:#22e21a;box-shadow:0 0 0 4px rgba(34,226,26,.13)}.admin-notify-body img{max-width:100%;height:auto}.admin-notify-html-box textarea{width:100%;min-height:170px;font-family:Consolas,monospace;border:1px solid #dbe3ee;border-radius:14px;padding:12px}.admin-notify-send{justify-self:start;background:#22e21a;border-color:#22e21a;color:#07110a;padding:10px 16px}.admin-notify-status{min-height:20px;font-weight:800;color:#0f5132}.admin-notify-history{display:grid;gap:10px;margin-top:10px}.admin-notify-history-item{background:#fff;border:1px solid #e3e9f2;border-radius:14px;padding:14px;overflow:hidden}.admin-notify-history-item img{max-width:100%;height:auto}.admin-notify-history-item small{display:block;color:#64748b;margin-top:8px}.upload-error{color:#b91c1c;background:#fff1f2;border:1px solid #fecdd3;border-radius:12px;padding:12px}
 @media(max-width:700px){.as-notify-dropdown{top:66px;right:10px;left:10px;width:auto}.admin-editor-toolbar{gap:5px}.admin-editor-toolbar button,.admin-editor-toolbar select{font-size:12px;padding:5px 7px}.admin-notify-send{width:100%}}
+
+/* Fix: account menu on notifications page must be a dropdown, not a link */
+.topbar .account-dropdown{position:relative;display:inline-block!important;z-index:1005}
+.topbar .account-dropdown .drop{display:none;position:absolute;right:0;top:calc(100% + 10px);min-width:240px;background:#fff;border:1px solid var(--line,#e8ebef);border-radius:18px;box-shadow:0 18px 50px rgba(16,18,23,.14);padding:12px;z-index:3000;color:#101217}
+.topbar .account-dropdown.open .drop{display:block!important}
+.topbar .account-dropdown .drop a,.topbar .account-dropdown .drop button{display:block;width:100%;text-align:left;margin:4px 0;padding:10px 12px;border-radius:12px;color:#101217;background:transparent;border:0;font-weight:800;cursor:pointer}
+.topbar .account-dropdown .drop a:hover,.topbar .account-dropdown .drop button:hover{background:#f4f6f8}
+
+/* Global account dropdown fix: works on every desktop page header */
+.topbar #accountDrop,
+.topbar .account-dropdown{
+  position:relative!important;
+  display:inline-block;
+}
+.topbar #accountDrop > .drop,
+.topbar .account-dropdown > .drop,
+.topbar #accountDrop .account-panel,
+.topbar .account-dropdown .account-panel{
+  display:none!important;
+  position:absolute!important;
+  right:0!important;
+  top:calc(100% + 10px)!important;
+  width:280px!important;
+  min-width:260px!important;
+  background:#fff!important;
+  color:#101217!important;
+  border:1px solid var(--line,#e8ebef)!important;
+  border-radius:18px!important;
+  box-shadow:0 18px 50px rgba(16,18,23,.18)!important;
+  padding:12px!important;
+  z-index:99999!important;
+}
+.topbar #accountDrop.open > .drop,
+.topbar .account-dropdown.open > .drop,
+.topbar #accountDrop.open .account-panel,
+.topbar .account-dropdown.open .account-panel{
+  display:block!important;
+}
+.topbar #accountDrop .drop a,
+.topbar #accountDrop .drop button,
+.topbar .account-dropdown .drop a,
+.topbar .account-dropdown .drop button{
+  display:block!important;
+  width:100%!important;
+  text-align:left!important;
+  margin:4px 0!important;
+  padding:10px 12px!important;
+  border-radius:12px!important;
+  color:#101217!important;
+  background:transparent!important;
+  border:0!important;
+  font-weight:800!important;
+  cursor:pointer!important;
+  text-decoration:none!important;
+}
+.topbar #accountDrop .drop a:hover,
+.topbar #accountDrop .drop button:hover,
+.topbar .account-dropdown .drop a:hover,
+.topbar .account-dropdown .drop button:hover{
+  background:#f4f6f8!important;
+}

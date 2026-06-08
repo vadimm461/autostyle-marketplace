@@ -267,53 +267,128 @@ function applyState(next){
 }
 
 
-function bindAccountButton(user){
-  const openAuth = document.querySelector('#openAuth');
-  const accountDrop = document.querySelector('#accountDrop');
-  const accountBtn = document.querySelector('#accountBtn');
-  const userEmail = document.querySelector('#userEmail');
+function findAccountTrigger(){
+  return document.querySelector('#accountBtn') ||
+    document.querySelector('#openAuth') ||
+    [...document.querySelectorAll('header .icon-btn, header a, header button')]
+      .find(el => (el.textContent || '').trim().toLocaleLowerCase('ru-RU').includes('аккаунт')) || null;
+}
 
-  function closeAccountOnOutsideClick(e){
-    if (!accountDrop) return;
-    if (e.target.closest('#accountDrop')) return;
-    accountDrop.classList.remove('open');
+function ensureAccountDropdown(){
+  let accountDrop = document.querySelector('#accountDrop');
+  let accountBtn = document.querySelector('#accountBtn');
+  let openAuth = document.querySelector('#openAuth');
+
+  if (accountDrop && accountBtn) {
+    accountDrop.classList.add('dropdown', 'account-dropdown');
+    accountBtn.setAttribute('type', 'button');
+    accountBtn.setAttribute('aria-haspopup', 'true');
+    if (!accountBtn.hasAttribute('aria-expanded')) accountBtn.setAttribute('aria-expanded', 'false');
+    let drop = accountDrop.querySelector('.drop');
+    if (!drop) {
+      drop = document.createElement('div');
+      drop.className = 'drop account-panel';
+      accountDrop.appendChild(drop);
+    }
+    drop.classList.add('account-panel');
+    return { accountDrop, accountBtn, openAuth, drop };
   }
 
-  if (user) {
-    if (openAuth) openAuth.style.display = 'none';
-    if (accountDrop) {
-      accountDrop.style.display = 'block';
-      accountDrop.classList.remove('open');
+  const trigger = findAccountTrigger();
+  if (!trigger) return { accountDrop:null, accountBtn:null, openAuth:null, drop:null };
+
+  const btn = document.createElement('button');
+  btn.id = 'accountBtn';
+  btn.className = trigger.className || 'icon-btn';
+  if (!btn.classList.contains('icon-btn')) btn.classList.add('icon-btn');
+  btn.type = 'button';
+  btn.setAttribute('aria-haspopup', 'true');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.textContent = 'Аккаунт';
+
+  accountDrop = document.createElement('div');
+  accountDrop.id = 'accountDrop';
+  accountDrop.className = 'dropdown account-dropdown';
+  const drop = document.createElement('div');
+  drop.className = 'drop account-panel';
+  accountDrop.appendChild(btn);
+  accountDrop.appendChild(drop);
+
+  if (trigger.id === 'openAuth') openAuth = trigger;
+  trigger.replaceWith(accountDrop);
+  accountBtn = btn;
+  return { accountDrop, accountBtn, openAuth, drop };
+}
+
+function bindAccountButton(user){
+  const modal = document.querySelector('#authModal');
+  const { accountDrop, accountBtn, drop } = ensureAccountDropdown();
+
+  if (!accountDrop || !accountBtn) return;
+
+  accountDrop.style.display = 'inline-block';
+
+  if (drop) {
+    if (user) {
+      const email = user.email || user.phoneNumber || 'Ваш аккаунт';
+      drop.innerHTML = `
+        <b id="userEmail">${esc(email)}</b>
+        <p class="muted">Вы авторизованы</p>
+        <a href="profile.html">Редактировать профиль</a>
+        <a href="profile.html#discount-card">Скидочная карта</a>
+        <a href="profile.html#orders">Мои заказы</a>
+        <a href="profile.html#security">Вход и привязки</a>
+        <a href="favorites.html">Избранное</a>
+        <a href="cart.html">Корзина</a>
+        <hr>
+        <button id="logout" class="icon-btn" type="button">Выйти</button>`;
+    } else {
+      drop.innerHTML = `
+        <b>Аккаунт</b>
+        <p class="muted">Войдите или создайте аккаунт</p>
+        <a href="login.html">Войти</a>
+        <a href="register.html">Регистрация</a>`;
     }
-    if (userEmail) userEmail.textContent = user.email || user.phoneNumber || 'Ваш аккаунт';
-    if (accountBtn && accountDrop && accountBtn.dataset.notifyAccountBound !== '1') {
-      accountBtn.dataset.notifyAccountBound = '1';
-      accountBtn.addEventListener('click', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        accountDrop.classList.toggle('open');
+  }
+
+  if (accountBtn.dataset.notifyAccountBound !== '1') {
+    accountBtn.dataset.notifyAccountBound = '1';
+    accountBtn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!user && modal) {
+        modal.classList.add('open');
+        return;
+      }
+      const willOpen = !accountDrop.classList.contains('open');
+      document.querySelectorAll('.dropdown.open, .account-dropdown.open, .catalog-menu.open').forEach(el => {
+        if (el !== accountDrop) el.classList.remove('open');
       });
-      accountDrop.addEventListener('click', e => e.stopPropagation());
-      document.addEventListener('click', closeAccountOnOutsideClick);
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') accountDrop.classList.remove('open');
-      });
-    }
-  } else {
-    if (accountDrop) {
-      accountDrop.style.display = 'none';
+      document.querySelector('#notificationsDropdown')?.classList.remove('open');
+      accountDrop.classList.toggle('open', willOpen);
+      accountBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    accountDrop.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => {
       accountDrop.classList.remove('open');
-    }
-    if (openAuth) {
-      openAuth.style.display = 'inline-block';
-      openAuth.textContent = 'Аккаунт';
-      openAuth.onclick = (e) => {
-        e.preventDefault();
-        const modal = document.querySelector('#authModal');
-        if (modal) modal.classList.add('open');
-        else location.href = 'login.html';
-      };
-    }
+      accountBtn.setAttribute('aria-expanded', 'false');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        accountDrop.classList.remove('open');
+        accountBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  const logoutBtn = accountDrop.querySelector('#logout');
+  if (logoutBtn && user) {
+    logoutBtn.onclick = async (e) => {
+      e.preventDefault();
+      const mod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+      await mod.signOut(auth);
+      location.reload();
+    };
   }
 }
 
