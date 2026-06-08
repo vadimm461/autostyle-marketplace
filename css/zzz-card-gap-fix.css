@@ -839,3 +839,73 @@
     flex: 0 0 42px !important;
   }
 }
+
+/* ===== FIX 2026-06-08: catalog overlay must stay BEHIND catalog window ===== */
+.catalog-overlay,
+.page-dim {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 8000 !important;
+  background: rgba(0, 0, 0, .46) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.catalog-overlay.active,
+.page-dim.active,
+body.catalog-open .catalog-overlay,
+body.catalog-open .page-dim {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.catalog-popup,
+.catalog-popup.mega-catalog,
+.mega-catalog,
+.catalog-dropdown {
+  position: fixed !important;
+  top: 92px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483000 !important;
+  background: #fff !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.catalog-popup.active,
+.catalog-popup.mega-catalog.active,
+.mega-catalog.active,
+.catalog-dropdown.active {
+  display: grid !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+.catalog-popup.active *,
+.catalog-popup.mega-catalog.active *,
+.mega-catalog.active *,
+.catalog-dropdown.active * {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+}
+
+.topbar,
+header.topbar {
+  z-index: 9000 !important;
+}
