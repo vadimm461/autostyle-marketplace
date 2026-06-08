@@ -1,0 +1,25 @@
+
+/* Fix homepage card gap while preserving aligned prices/buttons */
+.product-group,
+.catalog-card-category,
+.home-product-category{
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  margin:0 0 4px !important;
+}
+
+.product-card-price-area,
+.catalog-card-price-area,
+.home-product-price-area{
+  margin-top:auto !important;
+}
+
+/* remove empty placeholder blocks often injected under category */
+.product-group:empty,
+.catalog-card-category:empty,
+.home-product-category:empty,
+.product-meta-spacer,
+.card-spacer{
+  display:none !important;
+}
