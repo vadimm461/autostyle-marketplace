@@ -125,6 +125,16 @@ function ensureDropdown(){
     dd.className = 'as-notify-dropdown';
     document.body.appendChild(dd);
   }
+  const btn = $('#notificationsBtn');
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    const width = Math.min(420, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(r.right - width, window.innerWidth - width - 12));
+    dd.style.width = width + 'px';
+    dd.style.left = left + 'px';
+    dd.style.right = 'auto';
+    dd.style.top = Math.min(r.bottom + 10, window.innerHeight - 80) + 'px';
+  }
   return dd;
 }
 
