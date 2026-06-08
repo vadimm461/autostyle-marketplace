@@ -59,7 +59,7 @@
     header.innerHTML = `
       <div class="as-final-header-inner">
         <a class="as-final-logo" href="index.html" aria-label="AutoStyle">
-          <img class="as-final-logo-img" src="assets/autostyle-logo-full.png" alt="AutoStyle">
+          <img class="as-final-logo-img" src="assets/autostyle-logo-header-clean@3x.png" srcset="assets/autostyle-logo-header-clean.png 1x, assets/autostyle-logo-header-clean@2x.png 2x, assets/autostyle-logo-header-clean@3x.png 3x" width="720" height="158" alt="AutoStyle">
         </a>
 
         <a class="as-final-catalog" href="catalog.html">☰ Каталог</a>
