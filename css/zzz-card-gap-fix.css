@@ -400,3 +400,148 @@
   .price, .price-current, .catalog-card-price, .home-product-price { font-size: 21px !important; line-height: 26px !important; }
   .product-card .cart, .catalog-cart-btn, .related-cart { height: 36px !important; min-height: 36px !important; max-height: 36px !important; line-height: 36px !important; }
 }
+
+/* FIX: product.html — блок "Похожие товары" не должен становиться сеткой из 4 колонок.
+   Раньше #relatedProducts имел класс product-related-wrap, и общее правило делало сам контейнер grid,
+   из-за чего вся секция с похожими товарами сжималась в одну карточку. */
+#relatedProducts.product-related-wrap,
+.product-page #relatedProducts.product-related-wrap {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+}
+
+#relatedProducts .related-section,
+.product-page #relatedProducts .related-section {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 24px 0 0 !important;
+  padding: 24px !important;
+  border-radius: 30px !important;
+  background: #fff !important;
+  overflow: visible !important;
+}
+
+#relatedProducts .related-head,
+.product-page #relatedProducts .related-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin: 0 0 18px !important;
+}
+
+#relatedProducts .related-carousel-wrap,
+.product-page #relatedProducts .related-carousel-wrap {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+#relatedProducts .related-carousel,
+.product-page #relatedProducts .related-carousel {
+  display: flex !important;
+  grid-template-columns: none !important;
+  gap: 22px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x mandatory !important;
+  scroll-behavior: smooth !important;
+  padding: 2px 4px 14px !important;
+  scrollbar-width: none !important;
+  align-items: stretch !important;
+}
+
+#relatedProducts .related-carousel::-webkit-scrollbar,
+.product-page #relatedProducts .related-carousel::-webkit-scrollbar { display: none !important; }
+
+/* В product.html карточки похожих товаров теперь такие же, как в избранном */
+#relatedProducts .related-card.product-card,
+.product-page #relatedProducts .related-card.product-card {
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  scroll-snap-align: start !important;
+}
+
+#relatedProducts .related-card .product-card-link,
+.product-page #relatedProducts .related-card .product-card-link {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+#relatedProducts .related-card .product-img,
+#relatedProducts .related-card .related-img,
+.product-page #relatedProducts .related-card .product-img,
+.product-page #relatedProducts .related-card .related-img {
+  height: 126px !important;
+  min-height: 126px !important;
+  max-height: 126px !important;
+  flex: 0 0 126px !important;
+  background: #f4f6f8 !important;
+  border-radius: 10px !important;
+}
+
+#relatedProducts .related-card .product-img img,
+#relatedProducts .related-card .related-img img,
+.product-page #relatedProducts .related-card .product-img img,
+.product-page #relatedProducts .related-card .related-img img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  padding: 8px !important;
+}
+
+#relatedProducts .related-nav,
+.product-page #relatedProducts .related-nav {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 20 !important;
+}
+
+#relatedProducts .related-prev,
+.product-page #relatedProducts .related-prev { left: -22px !important; }
+#relatedProducts .related-next,
+.product-page #relatedProducts .related-next { right: -22px !important; }
+
+@media (max-width: 920px) {
+  #relatedProducts .related-card.product-card,
+  .product-page #relatedProducts .related-card.product-card {
+    flex-basis: 240px !important;
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  #relatedProducts .related-section,
+  .product-page #relatedProducts .related-section { padding: 16px !important; border-radius: 22px !important; }
+  #relatedProducts .related-card.product-card,
+  .product-page #relatedProducts .related-card.product-card {
+    flex-basis: 82vw !important;
+    width: 82vw !important;
+    min-width: 82vw !important;
+    max-width: 82vw !important;
+    height: 318px !important;
+    min-height: 318px !important;
+    max-height: 318px !important;
+  }
+  #relatedProducts .related-nav,
+  .product-page #relatedProducts .related-nav { display: none !important; }
+}
