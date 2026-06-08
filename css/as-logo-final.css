@@ -27,3 +27,12 @@
 .admin-layout .logo.as-logo-link .as-logo-img{width:64px!important;height:64px!important;border-radius:18px!important;}
 .logo.as-logo-link .logo-mark{display:none!important;}
 @media(max-width:760px){.logo.as-logo-link .as-logo-img{width:48px!important;height:48px!important;border-radius:14px!important;}}
+
+.as-logo-link{display:flex!important;align-items:center;gap:16px;text-decoration:none}
+.as-logo-img{background:transparent!important;box-shadow:none!important}
+.brand-text-wrap{display:flex;flex-direction:column}
+.brand-title{font-size:42px;font-weight:900;line-height:1}
+.brand-title .auto{color:#39e61c}
+.brand-title .style{color:#fff}
+.brand-tag{color:#fff;font-size:16px;font-weight:600;margin-top:4px}
+@media(max-width:768px){.brand-tag{display:none}.brand-title{font-size:28px}}
