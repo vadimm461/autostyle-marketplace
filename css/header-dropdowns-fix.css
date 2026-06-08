@@ -143,3 +143,29 @@ header form,
   }
 }
 
+
+
+/* 2026-06 fixes */
+.as-header-notify-dropdown{
+  right:20px !important;
+}
+.as-account-dropdown{
+  right:20px !important;
+}
+.as-header-notify-dropdown{
+  transform:translateX(-420px) !important; /* left of profile popup */
+}
+.catalog-btn{
+  min-width:auto !important;
+  width:auto !important;
+  padding:12px 18px !important;
+  white-space:nowrap !important;
+}
+.profile-page .catalog-btn,
+body:has(.profile-page) .catalog-btn,
+.page-simple .catalog-btn{
+  border-radius:16px !important;
+  background:#34e21f !important;
+  color:#111 !important;
+  font-weight:800 !important;
+}

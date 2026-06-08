@@ -154,8 +154,8 @@ async function renderHistory(){
       .slice(0, 40);
     box.innerHTML = items.length ? items.map(n => `
       <article class="admin-notify-history-item">
-        <b class="admin-notify-history-title">${esc(n.title || 'Уведомление')}</b>
-        <div class="admin-notify-history-body">${n.html || `<p>${esc(notificationText(n))}</p>`}</div>
+        <b>${esc(n.title || 'Уведомление')}</b>
+        <div>${n.html || esc(notificationText(n))}</div>
         <small>${esc(fmt(n.createdAt || n.createdAtLocal))} · ${esc(n.audience || 'all')}${n.userEmail ? ` · ${esc(n.userEmail)}` : ''}</small>
       </article>
     `).join('') : '<div class="muted">История уведомлений пустая.</div>';
