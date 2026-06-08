@@ -256,13 +256,127 @@ function applyState(next){
   renderPage();
 }
 
+function ensureUnifiedHeader(){
+  const header = document.querySelector('header.topbar, header');
+  if (!header) return;
+  const bar = header.querySelector('.bar') || header;
+  ensureUnifiedCatalog(bar);
+  normalizeHeaderActionButtons(bar);
+  updateCartBadgeCount();
+}
+
+function ensureUnifiedCatalog(bar){
+  let btn = bar.querySelector('.catalog-btn');
+  if (!btn) return;
+  let menu = btn.closest('.catalog-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.className = 'catalog-menu';
+    btn.parentNode.insertBefore(menu, btn);
+    menu.appendChild(btn);
+  }
+  btn.classList.add('as-catalog-unified');
+  btn.setAttribute('type', btn.tagName === 'BUTTON' ? 'button' : 'button');
+  btn.innerHTML = '<span class="as-catalog-icon">☰</span><span class="as-catalog-text">Каталог</span>';
+  if (!menu.querySelector('.catalog-popup')) {
+    const popup = document.createElement('div');
+    popup.className = 'catalog-popup mega-catalog';
+    popup.innerHTML = '<div class="mega-left"><h3>Каталог товаров</h3><div id="catalogParents" class="mega-parent-list"></div></div><div class="mega-right"><h3 id="megaTitle">Выберите категорию</h3><div id="catalogChildren" class="mega-child-grid"></div></div>';
+    menu.appendChild(popup);
+  }
+  initNotificationCatalogMenu();
+}
+
+function iconForAction(kind){
+  return kind === 'profile' ? '👤' : kind === 'notify' ? '🔔' : kind === 'fav' ? '♡' : '🛒';
+}
+function labelForAction(kind){
+  return kind === 'profile' ? 'Профиль' : kind === 'notify' ? 'Уведомления' : kind === 'fav' ? 'Избранное' : 'Корзина';
+}
+function detectActionKind(el){
+  const text = String(el.textContent || '').toLowerCase();
+  const href = String(el.getAttribute('href') || '').toLowerCase();
+  if (el.id === 'notificationsBtn' || text.includes('уведом')) return 'notify';
+  if (href.includes('favorites') || text.includes('избран')) return 'fav';
+  if (href.includes('cart') || text.includes('корзин')) return 'cart';
+  if (el.id === 'openAuth' || el.id === 'accountBtn' || href.includes('profile') || text.includes('аккаунт') || text.includes('профиль')) return 'profile';
+  return '';
+}
+function normalizeOneAction(el, kind){
+  if (!el || !kind) return;
+  el.classList.add('icon-btn', 'as-header-action', `as-header-${kind}`);
+  if (kind === 'notify') {
+    el.id = 'notificationsBtn';
+    el.setAttribute('type', 'button');
+  }
+  if (kind === 'fav' && el.tagName === 'BUTTON' && !el.dataset.asFavClickReady) {
+    el.dataset.asFavClickReady = '1';
+    el.addEventListener('click', e => { e.preventDefault(); location.href = 'favorites.html'; });
+  }
+  let badge = '';
+  if (kind === 'notify') badge = '<b id="notificationCount" class="as-notify-count as-action-badge" data-count="0"></b>';
+  if (kind === 'cart') {
+    const old = el.querySelector('#cartCount, .cartCount');
+    const value = old ? old.textContent.trim() : '0';
+    badge = `<b id="cartCount" class="as-cart-count as-action-badge">${value}</b>`;
+  }
+  el.innerHTML = `<span class="as-action-icon">${iconForAction(kind)}</span><span class="as-action-label">${labelForAction(kind)}</span>${badge}`;
+  const order = { profile: 1, notify: 2, fav: 3, cart: 4 }[kind] || 9;
+  el.style.order = String(order);
+}
+function normalizeHeaderActionButtons(bar){
+  let actions = bar.querySelector('.as-header-actions');
+  const candidates = Array.from(bar.querySelectorAll(':scope > a, :scope > button, :scope > div.dropdown > button, :scope > div.dropdown')).filter(el => {
+    if (el.classList?.contains('catalog-menu') || el.classList?.contains('search')) return false;
+    return detectActionKind(el) || el.id === 'accountDrop';
+  });
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.className = 'as-header-actions';
+    const first = candidates[0];
+    if (first) first.parentNode.insertBefore(actions, first);
+    else bar.appendChild(actions);
+  }
+  Array.from(bar.children).forEach(el => {
+    if (el === actions) return;
+    if (el.id === 'accountDrop' || detectActionKind(el)) actions.appendChild(el);
+  });
+  Array.from(actions.children).forEach(el => {
+    if (el.id === 'accountDrop') {
+      el.classList.add('as-header-account-wrap');
+      const btn = el.querySelector('#accountBtn');
+      if (btn) normalizeOneAction(btn, 'profile');
+      return;
+    }
+    const kind = detectActionKind(el);
+    if (kind) normalizeOneAction(el, kind);
+  });
+}
+function updateCartBadgeCount(){
+  const raw = localStorage.getItem('cart') || '[]';
+  let count = 0;
+  try {
+    const cart = JSON.parse(raw);
+    count = Array.isArray(cart) ? cart.reduce((s, item) => s + Number(item.qty || item.quantity || 1), 0) : Object.keys(cart || {}).length;
+  } catch(e) {}
+  $$('#cartCount').forEach(el => { el.textContent = count ? String(count) : '0'; el.dataset.count = String(count); });
+}
+
+window.addEventListener('storage', updateCartBadgeCount);
+window.addEventListener('autostyle-cart-updated', updateCartBadgeCount);
+setInterval(updateCartBadgeCount, 1200);
+
 function start(user){
   currentUser = user || null;
+  ensureUnifiedHeader();
   initNotificationCatalogMenu();
   bindHeader();
   if (unsubscribe) unsubscribe();
   unsubscribe = watchNotifications(currentUser, applyState);
 }
 
+document.addEventListener('DOMContentLoaded', ensureUnifiedHeader);
 onAuthStateChanged(auth, start);
 start(auth.currentUser);
+setTimeout(ensureUnifiedHeader, 300);
+setTimeout(ensureUnifiedHeader, 1000);
