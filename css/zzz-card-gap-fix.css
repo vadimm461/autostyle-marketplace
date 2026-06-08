@@ -19,11 +19,17 @@
 }
 
 #catalogGrid,
-#favoritesGrid,
 .catalog-grid {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 22px !important;
+}
+
+/* Избранное — размер карточек как на главной: 5 карточек в ряд */
+#favoritesGrid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 18px !important;
 }
 
 .product-related-wrap {
@@ -357,8 +363,14 @@
 
 /* адаптив */
 @media (max-width: 1180px) {
-  #catalogGrid, #favoritesGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  #catalogGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  #favoritesGrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 18px !important; }
   .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 54px) / 4) !important; }
+  #relatedProducts .related-card.product-card,
+  .product-page #relatedProducts .related-card.product-card {
+    flex-basis: calc((100% - 54px) / 4) !important;
+    width: calc((100% - 54px) / 4) !important;
+  }
 }
 
 @media (max-width: 920px) {
@@ -467,10 +479,11 @@
 /* В product.html карточки похожих товаров теперь такие же, как в избранном */
 #relatedProducts .related-card.product-card,
 .product-page #relatedProducts .related-card.product-card {
-  flex: 0 0 280px !important;
-  width: 280px !important;
-  min-width: 280px !important;
-  max-width: 280px !important;
+  /* Похожие товары — тот же размер, что карточки на главной: 5 карточек в ряд */
+  flex: 0 0 calc((100% - 72px) / 5) !important;
+  width: calc((100% - 72px) / 5) !important;
+  min-width: 205px !important;
+  max-width: none !important;
   height: 340px !important;
   min-height: 340px !important;
   max-height: 340px !important;
@@ -522,10 +535,10 @@
 @media (max-width: 920px) {
   #relatedProducts .related-card.product-card,
   .product-page #relatedProducts .related-card.product-card {
-    flex-basis: 240px !important;
-    width: 240px !important;
-    min-width: 240px !important;
-    max-width: 240px !important;
+    flex-basis: calc((100% - 18px) / 2) !important;
+    width: calc((100% - 18px) / 2) !important;
+    min-width: 190px !important;
+    max-width: none !important;
   }
 }
 
