@@ -28,8 +28,21 @@ async function renderHistory(){
   if (!box) return;
   box.innerHTML = '<div class="muted">Загружаем историю...</div>';
   try{
-    const snap = await getDocs(query(collection(db, NOTIFICATIONS_COLLECTION), orderBy('createdAt','desc'), limit(40)));
-    const items = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    let snap;
+    try {
+      snap = await getDocs(query(collection(db, NOTIFICATIONS_COLLECTION), orderBy('createdAt','desc'), limit(40)));
+    } catch (orderedErr) {
+      console.warn('notifications ordered query failed, fallback without orderBy', orderedErr);
+      snap = await getDocs(collection(db, NOTIFICATIONS_COLLECTION));
+    }
+    const items = snap.docs
+      .map(d => ({ id:d.id, ...d.data() }))
+      .sort((a,b) => {
+        const ad = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAtLocal || a.createdAt || 0);
+        const bd = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAtLocal || b.createdAt || 0);
+        return bd - ad;
+      })
+      .slice(0, 40);
     box.innerHTML = items.length ? items.map(n => `
       <article class="admin-notify-history-item">
         <b>${esc(n.title || 'Уведомление')}</b>
@@ -38,7 +51,7 @@ async function renderHistory(){
       </article>
     `).join('') : '<div class="muted">История уведомлений пустая.</div>';
   }catch(e){
-    box.innerHTML = `<div class="upload-error">Не удалось загрузить историю: ${esc(e.message)}</div>`;
+    box.innerHTML = `<div class="upload-error">Не удалось загрузить историю: ${esc(e.message || e)}<br><small>Проверь firestore.rules из файла firestore.rules в архиве.</small></div>`;
   }
 }
 async function sendNotification(){

@@ -13,86 +13,97 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin";
     }
 
-    /* ===== СТАРЫЙ САЙТ ===== */
-
-    match /site/{document=**} { allow read, write: if true; }
-    match /products/{document=**} { allow read, write: if true; }
-    match /salary/{document=**} { allow read, write: if true; }
-    match /users/{userId} { allow read, write: if isSignedIn(); }
-    match /categories/{document=**} { allow read, write: if true; }
-    match /banners/{document=**} { allow read, write: if true; }
-
-    /* ===== AUTOSTYLE ===== */
-
+    /* Товары и контент */
     match /autostyle_products/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
-
-    match /autostyle_users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow delete: if isAdmin();
-    }
-
     match /autostyle_settings/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_pages/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_media/{document=**} { allow read: if true; allow write: if isAdmin(); }
-
-    /* ===== БЛОКИ / БАННЕРЫ / ПРОМО ===== */
-
     match /autostyle_homeBlocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_home_blocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_homeSettings/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_home_settings/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_homeSections/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_home_sections/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_home_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_promoCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_home_blocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /promoCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /homeCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_home_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
+    /* Пользователи */
+    match /autostyle_users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+      );
+      allow delete: if isAdmin();
+    }
 
+    /* Заказы */
+    match /autostyle_orders/{orderId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    /* Скидочные карты */
+    match /autostyle_discount_cards/{cardId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /autostyle_discountCards/{cardId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    /* Уведомления */
     match /autostyle_notifications/{notificationId} {
-      allow read: if resource.data.audience == "all"
-        || (isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid || resource.data.userEmail == request.auth.token.email));
-      allow create: if isAdmin()
-        || (isSignedIn()
-          && request.resource.data.audience == "user"
-          && request.resource.data.userId == request.auth.uid
-          && request.resource.data.type in ["password_changed"]);
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
     match /autostyle_notification_reads/{userId} {
-      allow read, create, update: if isSignedIn() && request.auth.uid == userId;
+      allow read, create, update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
-    /* ===== ЗАКАЗЫ ===== */
+    /* Старые коллекции */
+    match /site/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /products/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /promoCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /homeCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
-    match /autostyle_orders/{orderId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid);
-      allow update, delete: if isAdmin();
+    match /users/{userId} {
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
     }
 
-    /* ===== СКИДОЧНЫЕ КАРТЫ ===== */
-
-    match /autostyle_discount_cards/{cardId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid || cardId == request.auth.uid);
-      allow update: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid || cardId == request.auth.uid);
-      allow delete: if isAdmin();
-    }
-
-    /* старая версия имени коллекции, чтобы не ломались уже созданные карты */
-    match /autostyle_discountCards/{cardId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid || cardId == request.auth.uid);
-      allow update: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid || cardId == request.auth.uid);
-      allow delete: if isAdmin();
-    }
+    match /salary/{document=**} { allow read, write: if isAdmin(); }
   }
 }
