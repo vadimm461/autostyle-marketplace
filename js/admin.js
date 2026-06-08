@@ -307,38 +307,15 @@ function uploadImageFromElements(input, folder, targetInput, statusBox) {
 
 /* MENU */
 
-function setAdminDashboardVisible(sectionId) {
-  const isDashboard = !sectionId || sectionId === 'dashboard' || sectionId === 'home' || sectionId === 'main';
-  document.querySelectorAll('.admin-dashboard-grid, .admin-home-section').forEach(el => {
-    el.classList.toggle('is-hidden', !isDashboard);
-    el.style.display = isDashboard ? '' : 'none';
-  });
-}
-
 function openSection(id) {
-  const aliases = {
-    homeBlocks: 'homeblocks',
-    homeblocks: 'homeblocks',
-    promoCards: 'promocards',
-    promocards: 'promocards',
-    discountCards: 'discountCards',
-    discountcards: 'discountCards'
-  };
-  const sectionId = aliases[id] || id || 'dashboard';
-
-  setAdminDashboardVisible(sectionId);
-
   $$('.admin-section').forEach(sec => sec.classList.remove('active'));
-  const target = document.getElementById(sectionId);
+  const target = document.getElementById(id);
   if (target) target.classList.add('active');
 
   $$('.admin-nav button').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.section === sectionId);
+    btn.classList.toggle('active', btn.dataset.section === id);
   });
 }
-
-
-window.openSection = openSection;
 
 $$('[data-section]').forEach(btn => {
   btn.addEventListener('click', e => {

@@ -1,49 +1,64 @@
 (function () {
   "use strict";
 
-  const aliases = {
-    home: "dashboard",
-    main: "dashboard",
-    homeBlocks: "homeblocks",
-    homeblocks: "homeblocks",
-    promoCards: "promocards",
-    promocards: "promocards",
-    discountCards: "discountCards",
-    discountcards: "discountCards"
-  };
+  const sectionIds = [
+    "products",
+    "categories",
+    "banners",
+    "homeBlocks",
+    "promoCards",
+    "orders",
+    "discountCards",
+    "media",
+    "pages",
+    "settings"
+  ];
 
   function normalizeHash(hash) {
-    const raw = String(hash || "").replace("#", "").trim();
-    return aliases[raw] || raw || "dashboard";
+    return String(hash || "").replace("#", "").trim();
   }
 
-  function dashboardEls() {
-    return document.querySelectorAll(".admin-dashboard-grid, .admin-home-section");
+  function findDashboard() {
+    return document.querySelector(".admin-dashboard-grid");
   }
 
-  function setDashboardVisible(sectionId) {
-    const show = !sectionId || sectionId === "dashboard" || sectionId === "home" || sectionId === "main";
-    dashboardEls().forEach(el => {
-      el.classList.toggle("is-hidden", !show);
-      el.style.display = show ? "" : "none";
-    });
+  function hideDashboard() {
+    const grid = findDashboard();
+    if (grid) grid.classList.add("is-hidden");
+    document.querySelectorAll(".admin-stats").forEach(el => el.style.display = "none");
+  }
+
+  function showDashboard() {
+    const grid = findDashboard();
+    if (grid) grid.classList.remove("is-hidden");
     document.querySelectorAll(".admin-stats").forEach(el => el.style.display = "none");
   }
 
   function activateSection(target) {
-    const sectionId = normalizeHash(target);
-    setDashboardVisible(sectionId);
+    const hash = normalizeHash(target);
 
-    if (typeof window.openSection === "function") {
-      window.openSection(sectionId);
+    if (!hash || hash === "home" || hash === "main") {
+      showDashboard();
       return;
     }
 
-    document.querySelectorAll(".admin-section").forEach(section => {
-      section.classList.toggle("active", section.id === sectionId);
-    });
-    document.querySelectorAll(".admin-nav button[data-section]").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.section === sectionId);
+    hideDashboard();
+
+    // Try existing admin navigation handlers first.
+    const leftLink =
+      document.querySelector(`.admin-sidebar a[href="#${hash}"], .sidebar a[href="#${hash}"], nav a[href="#${hash}"], a[href="#${hash}"]`);
+
+    if (leftLink && !leftLink.classList.contains("admin-home-card")) {
+      leftLink.click();
+      return;
+    }
+
+    // Fallback: show matching section if project uses sections.
+    document.querySelectorAll("[data-section], .admin-section, section[id]").forEach(section => {
+      const id = section.id || section.dataset.section;
+      if (!id) return;
+      section.style.display = id === hash ? "" : "none";
+      section.classList.toggle("active", id === hash);
     });
   }
 
@@ -54,20 +69,25 @@
       card.addEventListener("click", event => {
         const href = card.getAttribute("href") || "";
         if (!href.startsWith("#")) return;
+
         event.preventDefault();
-        const sectionId = normalizeHash(href);
-        history.pushState(null, "", "#" + sectionId);
-        activateSection(sectionId);
+        const hash = normalizeHash(href);
+        if (hash) {
+          history.pushState(null, "", "#" + hash);
+          activateSection(hash);
+        }
       });
     });
   }
 
-  function bindSidebarButtons() {
-    document.querySelectorAll(".admin-nav button[data-section]").forEach(btn => {
-      if (btn.dataset.dashboardBound === "1") return;
-      btn.dataset.dashboardBound = "1";
-      btn.addEventListener("click", () => {
-        setDashboardVisible(normalizeHash(btn.dataset.section));
+  function bindSidebar() {
+    document.querySelectorAll('.admin-sidebar a[href^="#"], .sidebar a[href^="#"], nav a[href^="#"]').forEach(link => {
+      if (link.dataset.dashboardBound === "1") return;
+      link.dataset.dashboardBound = "1";
+      link.addEventListener("click", () => {
+        const hash = normalizeHash(link.getAttribute("href"));
+        if (hash && hash !== "home" && hash !== "main") hideDashboard();
+        if (!hash || hash === "home" || hash === "main") showDashboard();
       }, true);
     });
   }
@@ -75,8 +95,11 @@
   function init() {
     document.querySelectorAll(".admin-stats").forEach(el => el.remove());
     bindHomeCards();
-    bindSidebarButtons();
-    activateSection(location.hash || "#dashboard");
+    bindSidebar();
+
+    const hash = normalizeHash(location.hash);
+    if (hash && hash !== "home" && hash !== "main") hideDashboard();
+    else showDashboard();
   }
 
   window.addEventListener("hashchange", () => activateSection(location.hash));
@@ -86,4 +109,10 @@
   } else {
     init();
   }
+
+  const observer = new MutationObserver(() => {
+    clearTimeout(window.__asAdminHomeTimer);
+    window.__asAdminHomeTimer = setTimeout(init, 120);
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
