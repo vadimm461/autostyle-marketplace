@@ -706,3 +706,136 @@
     gap: 14px !important;
   }
 }
+
+/* === FIX: Catalog cards only — same size as main page/favorites/related ===
+   Touches only catalog.html (#catalogGrid). Главная, избранное и похожие товары не меняются. */
+@media (min-width: 921px) {
+  .catalog-page #catalogGrid.catalog-grid,
+  .catalog-page #catalogGrid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 18px !important;
+    grid-auto-rows: 340px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card {
+    width: 205px !important;
+    min-width: 205px !important;
+    max-width: 205px !important;
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border-radius: 14px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-link {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-photo {
+    width: 100% !important;
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
+    flex: 0 0 126px !important;
+    aspect-ratio: auto !important;
+    margin: 0 0 10px !important;
+    border-radius: 10px !important;
+    background: #f4f6f8 !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    padding: 8px !important;
+    display: block !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 0 2px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card h3 {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    height: 36px !important;
+    margin: 0 0 6px !important;
+    font-size: 14px !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-category {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 17px !important;
+    max-height: 17px !important;
+    height: 17px !important;
+    margin: 0 0 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-price-area {
+    margin-top: auto !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-price {
+    font-size: 23px !important;
+    line-height: 1 !important;
+    font-weight: 1000 !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-installment-badge,
+  .catalog-page #catalogGrid .catalog-card-stock {
+    display: none !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-cart-btn {
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin-top: 10px !important;
+    border-radius: 13px !important;
+    flex: 0 0 42px !important;
+  }
+}
