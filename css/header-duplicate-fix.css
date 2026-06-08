@@ -52,11 +52,11 @@ header .container,
 
 .as-header-slogan{
   color:#fff !important;
-  font-size:9px !important;
+  font-size:12px !important;
   font-weight:800 !important;
   letter-spacing:.03em !important;
   opacity:.92 !important;
-  text-transform:lowercase !important;
+  text-transform:none !important;
   white-space:nowrap !important;
   margin-left:54px !important;
   margin-top:-7px !important;
