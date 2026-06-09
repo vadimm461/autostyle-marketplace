@@ -1,4 +1,83 @@
 // AutoStyle common mobile/search/cart/account
+
+function ensureProductImageFit(){
+  if (document.getElementById('as-product-image-fit-fix')) return;
+  const style = document.createElement('style');
+  style.id = 'as-product-image-fit-fix';
+  style.textContent = `
+    .product-photo,
+    .catalog-photo,
+    .home-photo,
+    .favorite-photo,
+    .cart-photo,
+    .recent-photo,
+    .similar-photo,
+    .product-card .product-photo,
+    .product-card [class$="-photo"]{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      overflow:hidden !important;
+      background:#fff !important;
+    }
+
+    .product-photo img,
+    .catalog-photo img,
+    .home-photo img,
+    .favorite-photo img,
+    .cart-photo img,
+    .recent-photo img,
+    .similar-photo img,
+    .product-card .product-photo img,
+    .product-card [class$="-photo"] img{
+      width:100% !important;
+      height:100% !important;
+      max-width:100% !important;
+      max-height:100% !important;
+      object-fit:contain !important;
+      object-position:center center !important;
+      display:block !important;
+    }
+
+    .product-main-image,
+    .product-image,
+    .product-gallery-main,
+    .product-photo-main,
+    .product-media,
+    .product-hero-image{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      overflow:hidden !important;
+      background:#fff !important;
+    }
+
+    .product-main-image img,
+    .product-image img,
+    .product-gallery-main img,
+    .product-photo-main img,
+    .product-media img,
+    .product-hero-image img,
+    .product-page img.product-img,
+    .product-page .product-img img,
+    .product-detail img,
+    .product-details img{
+      width:100% !important;
+      height:100% !important;
+      max-width:100% !important;
+      max-height:100% !important;
+      object-fit:contain !important;
+      object-position:center center !important;
+      display:block !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+ensureProductImageFit();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureProductImageFit);
+else ensureProductImageFit();
+
 export function fmtPrice(n){ return new Intl.NumberFormat('ru-RU').format(Number(n||0)) + ' ₽'; }
 export function productTitle(p){ return p.title || p.name || 'Товар'; }
 export function productImage(p){
