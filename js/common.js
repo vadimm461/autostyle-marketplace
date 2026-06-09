@@ -1,7 +1,20 @@
 // AutoStyle common mobile/search/cart/account
 export function fmtPrice(n){ return new Intl.NumberFormat('ru-RU').format(Number(n||0)) + ' ₽'; }
 export function productTitle(p){ return p.title || p.name || 'Товар'; }
-export function productImage(p){ return p.image || p.imageUrl || p.photo || ''; }
+export function productImage(p){
+  const first = (...values) => {
+    for (const value of values) {
+      if (typeof value === 'string' && value.trim()) return value.trim();
+      if (Array.isArray(value)) { const found = first(...value); if (found) return found; }
+      if (value && typeof value === 'object') {
+        const found = first(value.url, value.src, value.href, value.downloadURL, value.image, value.imageUrl, value.photo, value.photoUrl);
+        if (found) return found;
+      }
+    }
+    return '';
+  };
+  return first(p?.image, p?.imageUrl, p?.photo, p?.photoUrl, p?.img, p?.picture, p?.pictureUrl, p?.mainImage, p?.mainImageUrl, p?.thumbnail, p?.thumb, p?.images, p?.photos, p?.pictures, p?.gallery);
+}
 export function productStock(p){ return Number(p.stock ?? p.quantity ?? p.count ?? 0); }
 export function stockText(p){ const s=productStock(p); if(s>10)return 'В наличии больше 10'; if(s>0)return 'В наличии меньше 10'; return 'Нет в наличии'; }
 export function rawOldPrice(p){ return Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0); }

@@ -1,7 +1,8 @@
 import { db, COLLECTIONS } from './firebase.js';
 import { collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const CACHE_PREFIX = 'as_cache_v4:';
+// v5: принудительно сбрасывает старый localStorage-кэш товаров, где могли сохраниться карточки без фото.
+const CACHE_PREFIX = 'as_cache_v5:';
 const VERSION_KEY = CACHE_PREFIX + 'version';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
@@ -31,13 +32,41 @@ async function getRemoteVersion(){
   }
 }
 
+function firstString(...values){
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value)) {
+      const found = firstString(...value);
+      if (found) return found;
+    }
+    if (value && typeof value === 'object') {
+      const found = firstString(
+        value.url, value.src, value.href, value.downloadURL, value.image, value.imageUrl,
+        value.photo, value.photoUrl, value.path, value.fullPath
+      );
+      if (found) return found;
+    }
+  }
+  return '';
+}
+
+function resolveProductImage(row){
+  return firstString(
+    row?.image, row?.imageUrl, row?.photo, row?.photoUrl, row?.img, row?.picture, row?.pictureUrl,
+    row?.mainImage, row?.mainImageUrl, row?.thumbnail, row?.thumb, row?.url, row?.downloadURL,
+    row?.images, row?.photos, row?.pictures, row?.gallery, row?.files, row?.attachments
+  );
+}
+
 function normalizeProductRow(row){
   const price = Number(row?.price || 0);
   const old = Number(row?.oldPrice || row?.priceOld || row?.priceBefore || row?.compareAtPrice || 0);
+  const image = resolveProductImage(row);
+  const normalized = image ? { ...row, image, imageUrl: row?.imageUrl || image, photoUrl: row?.photoUrl || image } : { ...row };
   if (old && old <= price) {
-    return { ...row, oldPrice: 0, priceOld: 0, priceBefore: 0, compareAtPrice: 0 };
+    return { ...normalized, oldPrice: 0, priceOld: 0, priceBefore: 0, compareAtPrice: 0 };
   }
-  return row;
+  return normalized;
 }
 
 async function fetchCollection(name){
