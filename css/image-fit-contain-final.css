@@ -1,0 +1,48 @@
+/* AutoStyle: финальное исправление фото товаров — не обрезать товар в карточках */
+.product-img,
+.catalog-card-photo,
+.product-photo,
+.home-product-img,
+.home-photo,
+.related-img,
+.product-card-img,
+.cart-product-img,
+.quick-product-img,
+.main-photo,
+.product-main-photo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  background: #f4f6f8 !important;
+}
+
+.product-img img,
+.catalog-card-photo img,
+.product-photo img,
+.home-product-img img,
+.home-photo img,
+.related-img img,
+.product-card-img img,
+.cart-product-img img,
+.quick-product-img img,
+.main-photo img,
+.product-main-photo img {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: calc(100% - 16px) !important;
+  max-height: calc(100% - 16px) !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  transform: none !important;
+  padding: 0 !important;
+  margin: auto !important;
+}
+
+.product-card:hover .product-img img,
+.catalog-card:hover .catalog-card-photo img,
+.home-product-card:hover .home-product-img img,
+.related-card:hover .related-img img {
+  transform: none !important;
+}
