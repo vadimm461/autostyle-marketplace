@@ -1,0 +1,31 @@
+/* AutoStyle: каталог — показывать фото товара целиком, без обрезки крышки */
+html body .catalog-page #catalogGrid.catalog-grid .catalog-card .catalog-card-link .catalog-card-photo,
+html body .catalog-page #catalogGrid .catalog-card .catalog-card-photo,
+html body #catalogGrid.catalog-grid .catalog-card .catalog-card-photo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  background: #f4f6f8 !important;
+}
+
+html body .catalog-page #catalogGrid.catalog-grid .catalog-card .catalog-card-link .catalog-card-photo img,
+html body .catalog-page #catalogGrid .catalog-card .catalog-card-photo img,
+html body #catalogGrid.catalog-grid .catalog-card .catalog-card-photo img {
+  width: auto !important;
+  height: auto !important;
+  max-width: calc(100% - 18px) !important;
+  max-height: calc(100% - 18px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  padding: 0 !important;
+  margin: auto !important;
+  display: block !important;
+  transform: none !important;
+}
+
+html body .catalog-page #catalogGrid .catalog-card:hover .catalog-card-photo img {
+  transform: none !important;
+}
