@@ -1,0 +1,100 @@
+/* AutoStyle desktop catalog adaptive fix
+   Fixes category filter/sidebar on different desktop widths */
+
+/* Give catalog sidebar enough space on normal desktop screens */
+@media (min-width: 1181px){
+  .catalog-page{
+    grid-template-columns: clamp(340px, 25vw, 410px) minmax(0, 1fr) !important;
+    gap: 22px !important;
+    width: min(1560px, calc(100% - 40px)) !important;
+  }
+
+  .catalog-filters,
+  .filters.catalog-filters{
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .category-tree-filter{
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .cat-tree-grid{
+    grid-template-columns: minmax(142px, .95fr) minmax(160px, 1.05fr) !important;
+    min-width: 0 !important;
+  }
+
+  .cat-tree-title{
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .cat-tree-parent,
+  .cat-tree-child{
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 42px !important;
+    padding: 10px 12px !important;
+    font-size: clamp(12px, .82vw, 14px) !important;
+    line-height: 1.18 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    text-overflow: clip !important;
+  }
+
+  .cat-tree-parent.active,
+  .cat-tree-child.active{
+    border-radius: 13px !important;
+  }
+}
+
+/* Narrow notebooks: keep the filter usable instead of squeezing text */
+@media (min-width: 981px) and (max-width: 1180px){
+  .catalog-page{
+    grid-template-columns: 320px minmax(0, 1fr) !important;
+    gap: 18px !important;
+    width: min(100% - 28px, 1180px) !important;
+  }
+
+  .cat-tree-grid{
+    grid-template-columns: 1fr !important;
+  }
+
+  .cat-tree-col-parent{
+    border-right: 0 !important;
+    border-bottom: 1px solid #e8edf4 !important;
+  }
+
+  .cat-tree-parents{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    max-height: 260px !important;
+  }
+
+  .cat-tree-parent,
+  .cat-tree-child{
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.15 !important;
+    min-height: 40px !important;
+    text-overflow: clip !important;
+  }
+}
+
+/* Do not let the right catalog area push the page outside the screen */
+.catalog-content,
+.catalog-top,
+.catalog-grid{
+  min-width: 0 !important;
+}
+
+@media (max-width: 1500px) and (min-width: 1181px){
+  .catalog-grid{
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+  }
+}
