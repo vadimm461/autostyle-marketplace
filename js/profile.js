@@ -11,7 +11,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
-import { resendEmailVerification, userProviders, providerTitle, ensureUserProfile } from './auth-core.js';
+import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile } from './auth-core.js';
 import { createPasswordChangedNotification } from './notify-service.js';
 
 const $ = s => document.querySelector(s);
@@ -441,12 +441,13 @@ async function getDiscountCard(user) {
 function renderAuthSecurity(user){
   const box = $('#authSecurityBox'); if(!box || !user) return;
   const providers = userProviders(user);
+  const phoneText = user.phoneNumber || 'не привязан';
   box.innerHTML = `
     <div class="auth-link-card">
       <div class="auth-card-icon">🔐</div>
       <b>Способы входа</b>
       <div class="auth-provider-list" style="margin:12px 0">${providers.length ? providers.map(p=>`<span class="auth-provider-pill">${providerTitle(p)}</span>`).join('') : '<span class="auth-provider-pill">Email/пароль</span>'}</div>
-      <p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span></p>
+      <p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${phoneText}</span></p>
     </div>
     <div class="auth-link-card">
       <div class="auth-card-icon">✉️</div>
@@ -455,12 +456,17 @@ function renderAuthSecurity(user){
       <button id="resendProfileEmail" class="profile-save" type="button">Отправить письмо</button>
     </div>
     <div class="auth-link-card">
-      <div class="auth-card-icon">✅</div>
-      <b>Вход без телефона</b>
-      <p class="muted">Для входа используется только e-mail и пароль. Телефон можно оставить в данных профиля для заказов и скидочной карты.</p>
+      <div class="auth-card-icon">📱</div>
+      <b>Привязка телефона</b>
+      <p class="muted">Введите номер в формате +373... и подтвердите кодом из SMS.</p>
+      <div class="auth-sms-row"><input id="profileLinkPhone" value="${user.phoneNumber||''}" placeholder="+373..."><button id="profileSendSms" class="profile-save" type="button">Получить код</button></div>
+      <div class="auth-sms-row" style="margin-top:8px"><input id="profileSmsCode" placeholder="Код из SMS"><button id="profileConfirmSms" class="profile-save" type="button">Подтвердить</button></div>
+      <div id="profile-recaptcha"></div>
     </div>`;
   const msg = $('#profileAuthMsg'); const say=t=>message(msg,t,true); const fail=t=>message(msg,t,false);
   $('#resendProfileEmail')?.addEventListener('click', async()=>{try{await resendEmailVerification(); say('Письмо подтверждения отправлено.');}catch(e){fail('Ошибка: '+(e.message||e));}});
+  $('#profileSendSms')?.addEventListener('click', async()=>{try{say('Отправляем SMS...'); await sendLinkSmsCode($('#profileLinkPhone').value.trim(),'profile-recaptcha'); say('Код отправлен.');}catch(e){fail('Ошибка SMS: '+(e.message||e));}});
+  $('#profileConfirmSms')?.addEventListener('click', async()=>{try{await confirmLinkSmsCode($('#profileSmsCode').value.trim()); await auth.currentUser.reload(); renderAuthSecurity(auth.currentUser); say('Телефон привязан.');}catch(e){fail('Ошибка подтверждения: '+(e.message||e));}});
 }
 
 function setupSearch(){

@@ -35,7 +35,7 @@
     // Index/catalog old structure: visible #openAuth + hidden #accountDrop. Make it a nice dropdown instead of modal only when authorized menu exists.
     const openAuth = $('#openAuth');
     const oldDrop = $('#accountDrop');
-    if(false && openAuth && oldDrop && !oldDrop.dataset.finalAccount){
+    if(openAuth && oldDrop && !oldDrop.dataset.finalAccount){
       oldDrop.dataset.finalAccount='1';
       oldDrop.classList.add('as-account-wrap');
       oldDrop.style.display='block';
