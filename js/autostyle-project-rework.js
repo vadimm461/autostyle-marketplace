@@ -199,7 +199,7 @@
   }
 
   ready(function(){
-    normalizeCatalogButtons();
+    // Каталог не трогаем: оставляем кнопку как в исходной верстке.
     normalizeHeaderIcons();
     normalizeAccountButtons();
     ensureNotificationHandler();

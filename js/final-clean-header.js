@@ -70,10 +70,10 @@
         </form>
 
         <div class="as-final-actions">
-          <button class="as-final-btn" type="button" id="asFinalAccountBtn">👤 Аккаунт</button>
-          <a class="as-final-btn" href="favorites.html">♡ Избранное <span class="as-final-badge" id="asFinalFavBadge" data-count="0"></span></a>
-          <a class="as-final-btn" href="cart.html">🛒 Корзина <span class="as-final-badge" id="asFinalCartBadge" data-count="0"></span></a>
-          <button class="as-final-btn" type="button" id="asFinalNotifyBtn">🔔 Уведомления <span class="as-final-badge" id="asFinalNotifyBadge" data-count="0"></span></button>
+          <button class="as-final-btn" type="button" id="asFinalAccountBtn"><span class="as-head-icon" aria-hidden="true"><img src="assets/icons/user.svg" alt=""></span><span class="as-head-label">Аккаунт</span></button>
+          <a class="as-final-btn" href="favorites.html"><span class="as-head-icon" aria-hidden="true"><img src="assets/icons/heart.svg" alt=""></span><span class="as-head-label">Избранное</span> <span class="as-final-badge" id="asFinalFavBadge" data-count="0"></span></a>
+          <a class="as-final-btn" href="cart.html"><span class="as-head-icon" aria-hidden="true"><img src="assets/icons/cart.svg" alt=""></span><span class="as-head-label">Корзина</span> <span class="as-final-badge" id="asFinalCartBadge" data-count="0"></span></a>
+          <button class="as-final-btn" type="button" id="asFinalNotifyBtn"><span class="as-head-icon" aria-hidden="true"><img src="assets/icons/bell.svg" alt=""></span><span class="as-head-label">Уведомления</span> <span class="as-final-badge" id="asFinalNotifyBadge" data-count="0"></span></button>
         </div>
       </div>
     `;
@@ -100,7 +100,7 @@
         <a class="as-final-menu-link" href="profile.html#orders">📦 Мои заказы</a>
         <a class="as-final-menu-link" href="profile.html#security">🔐 Вход и привязки</a>
         <a class="as-final-menu-link" href="profile.html#settings">⚙️ Настройки аккаунта</a>
-        <a class="as-final-menu-link" href="favorites.html">♡ Избранное</a>
+        <a class="as-final-menu-link" href="favorites.html"><span class="as-head-icon" aria-hidden="true"><img src="assets/icons/heart.svg" alt=""></span><span class="as-head-label">Избранное</span></a>
       `;
       document.body.appendChild(account);
     }
