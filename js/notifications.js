@@ -105,6 +105,30 @@ async function renderNotificationCatalogMenu(){
   });
 }
 
+
+function setNotificationsVisible(visible){
+  $$('#notificationsBtn').forEach(btn => {
+    btn.style.display = visible ? '' : 'none';
+    btn.classList.toggle('as-hidden-guest', !visible);
+    btn.classList.toggle('as-notify-ready', visible);
+  });
+  if (!visible) {
+    const dd = $('#notificationsDropdown');
+    if (dd) dd.classList.remove('open');
+    state = { list: [], readIds: new Set(), unread: 0 };
+    updateCount();
+  }
+}
+function renderLoginRequired(){
+  const root = $('#notificationsPage');
+  if (!root) return;
+  root.innerHTML = `<div class="as-notify-empty" style="padding:28px;text-align:center">
+    <h1>Уведомления доступны после входа</h1>
+    <p class="muted">Войдите по почте, чтобы видеть уведомления и отмечать их прочитанными.</p>
+    <a class="primary" href="login.html" style="display:inline-flex;margin-top:14px;text-decoration:none">Войти</a>
+  </div>`;
+}
+
 function isRead(id){ return state.readIds.has(id); }
 function unreadList(){ return state.list.filter(n => !isRead(n.id)); }
 function readList(){ return state.list.filter(n => isRead(n.id)); }
@@ -283,7 +307,13 @@ function start(user){
   currentUser = user || null;
   initNotificationCatalogMenu();
   bindHeader();
-  if (unsubscribe) unsubscribe();
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  if (!currentUser) {
+    setNotificationsVisible(false);
+    renderLoginRequired();
+    return;
+  }
+  setNotificationsVisible(true);
   unsubscribe = watchNotifications(currentUser, applyState);
 }
 

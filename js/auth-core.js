@@ -8,8 +8,8 @@ import {
 import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const USERS = COLLECTIONS.users || 'autostyle_users';
-export const providerTitle = id => ({ password:'Email/пароль', 'password':'Email/пароль', phone:'SMS/телефон', 'phone':'SMS/телефон' }[id] || id);
-export function userProviders(user){ return (user?.providerData || []).map(p => p.providerId).filter(Boolean).filter(id => id === 'password' || id === 'phone'); }
+export const providerTitle = id => ({ password:'Email/пароль', 'password':'Email/пароль' }[id] || id);
+export function userProviders(user){ return (user?.providerData || []).map(p => p.providerId).filter(Boolean).filter(id => id === 'password'); }
 export async function ensureUserProfile(user, extra={}){
   if(!user) return;
   const ref = doc(db, USERS, user.uid);
@@ -36,10 +36,10 @@ export async function loginEmail(email, pass){
   await ensureUserProfile(res.user);
   return res.user;
 }
-export async function registerEmail(name, email, pass, phone=''){
+export async function registerEmail(name, email, pass){
   const res = await createUserWithEmailAndPassword(auth, email, pass);
   if(name) await updateProfile(res.user, { displayName:name });
-  await ensureUserProfile(res.user, { name, email, phone });
+  await ensureUserProfile(res.user, { name, email });
   await sendEmailVerification(res.user);
   return res.user;
 }
