@@ -1,0 +1,10 @@
+
+/* AutoStyle auth email-only fixes */
+.auth-choice-grid-two{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.auth-clean .auth-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.auth-clean .field-wide{grid-column:1/-1}
+#notificationsBtn.as-hidden-guest{display:none!important}
+@media(max-width:720px){.auth-choice-grid-two,.auth-clean .auth-form-grid{grid-template-columns:1fr!important}}
+
+#notificationsBtn{visibility:hidden}
+#notificationsBtn.as-notify-ready{visibility:visible}
