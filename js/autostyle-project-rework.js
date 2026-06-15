@@ -2,17 +2,21 @@
   'use strict';
 
 
+  function iconPath(name){
+    return 'assets/icons/' + name + '.svg';
+  }
+
   function navIconHtml(kind, countId){
     var data = {
-      account:['👤','Аккаунт'],
-      notify:['🔔','Уведомления'],
-      fav:['♡','Избранное'],
-      cart:['🛒','Корзина']
-    }[kind] || ['•',''];
+      account:['user','Аккаунт'],
+      notify:['bell','Уведомления'],
+      fav:['heart','Избранное'],
+      cart:['cart','Корзина']
+    }[kind] || ['grid',''];
     var badge = '';
     if(kind === 'notify') badge = '<b id="notificationCount" class="as-notify-count as-head-badge" data-count="0"></b>';
     if(kind === 'cart') badge = '<b id="cartCount" class="as-head-badge">0</b>';
-    return '<span class="as-head-icon" aria-hidden="true">'+data[0]+'</span><span class="as-head-label">'+data[1]+'</span>'+badge;
+    return '<span class="as-head-icon" aria-hidden="true"><img src="'+iconPath(data[0])+'" alt="" loading="eager"></span><span class="as-head-label">'+data[1]+'</span>'+badge;
   }
   function applyHeaderIconButton(el, kind){
     if(!el) return;
@@ -43,7 +47,7 @@
     document.querySelectorAll('.topbar .catalog-btn').forEach(function(btn){
       btn.classList.add('as-unified-catalog-btn');
       if(btn.tagName === 'BUTTON' && !btn.getAttribute('type')) btn.setAttribute('type','button');
-      btn.textContent = '☰ Каталог';
+      btn.innerHTML = '<img class="as-catalog-icon" src="assets/icons/menu.svg" alt="" aria-hidden="true"> <span>Каталог</span>';
     });
   }
 

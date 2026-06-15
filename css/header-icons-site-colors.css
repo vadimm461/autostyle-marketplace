@@ -142,3 +142,29 @@
   }
   .topbar .as-head-label{font-size:9.5px !important;}
 }
+
+/* SVG icon files inside header buttons */
+.topbar .as-head-icon img{
+  width:17px !important;
+  height:17px !important;
+  display:block !important;
+  object-fit:contain !important;
+  filter:brightness(0) saturate(100%) invert(77%) sepia(95%) saturate(1044%) hue-rotate(62deg) brightness(100%) contrast(93%) !important;
+}
+
+.topbar .as-head-icon-btn:hover .as-head-icon img,
+.topbar #accountDrop.open .as-head-icon img,
+.topbar .as-account-wrap.open .as-head-icon img{
+  filter:brightness(0) saturate(100%) invert(4%) sepia(11%) saturate(2135%) hue-rotate(81deg) brightness(99%) contrast(95%) !important;
+}
+
+.topbar .as-unified-catalog-btn .as-catalog-icon,
+.topbar .catalog-btn .as-catalog-icon{
+  width:18px !important;
+  height:18px !important;
+  display:inline-block !important;
+  object-fit:contain !important;
+  filter:brightness(0) saturate(100%) invert(4%) sepia(11%) saturate(2135%) hue-rotate(81deg) brightness(99%) contrast(95%) !important;
+  margin-right:4px !important;
+  flex:0 0 18px !important;
+}
