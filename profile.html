@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/modern-ready.css">
   <link rel="stylesheet" href="css/shop-pages.css">
   <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/profile-dashboard-final.css?v=20260616-1">
   <link rel="stylesheet" href="css/page-loader.css"><link rel="stylesheet" href="css/desktop-product-card-final.css">
 <script src="js/mobile-redirect.js"></script><link rel="stylesheet" href="css/auth-upgrade.css"><link rel="stylesheet" href="css/desktop-final-request-fixes.css?v=20260604-final2"><link rel="stylesheet" href="css/final-user-fixes-20260604.css?v=20260604-4"><link rel="stylesheet" href="css/final-card-height-fix.css?v=20260604-5"><link rel="stylesheet" href="css/final-ux-fix5.css?v=20260606">  <link rel="stylesheet" href="css/notifications.css">
 <link rel="stylesheet" href="css/autostyle-project-rework.css?v=20260608-rework2">
@@ -31,7 +32,7 @@
       <div class="as-account-popup">
         <b id="asAccountEmail">Аккаунт</b>
         <p class="muted">Меню профиля</p>
-        <a href="profile.html">Редактировать профиль</a>
+        <a href="profile.html#home">Личный кабинет</a>
         <a href="favorites.html">Избранное</a>
         <a href="cart.html">Корзина</a>
         <hr>
@@ -44,14 +45,6 @@
 </header>
 
 <main class="container profile-page">
-  <div class="profile-head">
-    <div>
-      <h1>Личный кабинет</h1>
-      <p class="muted">Добро пожаловать, <span id="profileWelcomeName">пользователь</span>. Выберите нужный раздел.</p>
-    </div>
-    <button id="profileLogout" class="profile-logout" type="button">Выйти</button>
-  </div>
-
   <section id="profileGuest" class="profile-card profile-guest" hidden>
     <h2>Войдите в аккаунт</h2>
     <p class="muted">Профиль доступен только авторизованным пользователям.</p>
@@ -66,18 +59,19 @@
         <p id="profileEmailTitle" class="muted"></p>
         <label class="avatar-upload">
           <input id="avatarInput" type="file" accept="image/*">
-          Добавить фото
+          <span class="profile-nav-ico">▣</span> Добавить фото
         </label>
+        <button id="profileLogout" class="profile-logout" type="button"><span class="profile-nav-ico">↪</span> Выйти</button>
         <div id="avatarMsg" class="profile-msg"></div>
       </div>
       <nav class="profile-tabs" aria-label="Разделы профиля">
-        <button class="active" data-profile-tab="home" type="button">Главная</button>
-        <button data-profile-tab="account" type="button">Профиль</button>
-        <button data-profile-tab="discount-card" type="button">Скидочная карта</button>
-        <button data-profile-tab="security" type="button">Вход и привязки</button>
-        <button data-profile-tab="orders" type="button">Мои заказы</button>
-        <button data-profile-tab="favorites" type="button">Избранное</button>
-        <button data-profile-tab="password" type="button">Изменить пароль</button>
+        <button class="active" data-profile-tab="home" type="button"><span class="profile-nav-ico">⌂</span> Главная</button>
+        <button data-profile-tab="account" type="button"><span class="profile-nav-ico">♙</span> Профиль</button>
+        <button data-profile-tab="discount-card" type="button"><span class="profile-nav-ico">%</span> Скидочная карта</button>
+        <button data-profile-tab="security" type="button"><span class="profile-nav-ico">⌁</span> Вход и привязки</button>
+        <button data-profile-tab="orders" type="button"><span class="profile-nav-ico">▤</span> Мои заказы</button>
+        <button data-profile-tab="favorites" type="button"><span class="profile-nav-ico">♡</span> Избранное</button>
+        <button data-profile-tab="password" type="button"><span class="profile-nav-ico">▣</span> Изменить пароль</button>
       </nav>
     </aside>
 
@@ -121,7 +115,7 @@
             <small>Личные данные и настройки аккаунта.</small>
             <em>Открыть</em>
           </button>
-          <button class="profile-home-card" type="button" data-profile-jump="discount-card">
+          <button class="profile-home-card profile-home-card-discount" type="button" data-profile-jump="discount-card">
             <span class="profile-home-icon"><img src="assets/icons/percent.svg" alt=""></span>
             <b>Скидочная карта</b>
             <small>Ваши скидки и специальные предложения.</small>

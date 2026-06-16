@@ -137,10 +137,10 @@ async function changePassword(user){
   message(msg, 'Пароль обновлён.', true);
 }
 function activateProfileTabFromHash(){
-  const hash = (location.hash || '').replace('#','');
-  const map = { home:'home', main:'home', profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', security:'security', login:'security', auth:'security', providers:'security', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
-  const target = map[hash];
-  if(target) document.querySelector(`[data-profile-tab="${target}"]`)?.click();
+  const hash = (location.hash || '').replace('#','').trim();
+  const map = { home:'home', main:'home', dashboard:'home', profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', security:'security', login:'security', auth:'security', providers:'security', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
+  const target = map[hash] || 'home';
+  document.querySelector(`[data-profile-tab="${target}"]`)?.click();
 }
 function activateProfileTab(tab) {
   const btn = document.querySelector(`[data-profile-tab="${tab}"]`);
@@ -519,12 +519,12 @@ function renderHeaderAccount(user){
   const photo = user.photoURL || '';
   const avatarHtml = photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : userInitials(name, email);
   popup.innerHTML = `
-    <a class="as-account-profile-head as-account-profile-link" href="profile.html#account">
+    <a class="as-account-profile-head as-account-profile-link" href="profile.html#home">
       <div class="as-account-avatar">${avatarHtml}</div>
       <div class="as-account-head-text"><div class="as-account-title">${name}</div><div class="as-account-subtitle">${email || 'Аккаунт'}</div></div>
     </a>
     <nav class="as-account-menu">
-      <a href="profile.html#account">${headerIcon('user')} Фото и профиль</a>
+      <a href="profile.html#account">${headerIcon('user')} Профиль</a>
       <a href="profile.html#discount-card">${headerIcon('card')} Скидочная карта</a>
       <a href="cart.html">${headerIcon('cart')} Корзина</a>
       <a href="favorites.html">${headerIcon('heart')} Избранное</a>
