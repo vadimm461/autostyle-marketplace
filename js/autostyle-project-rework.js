@@ -64,17 +64,35 @@
       '</div>';
   }
 
+  function escText(value){
+    return String(value == null ? '' : value)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#039;');
+  }
+
+  function accountInitials(name, email){
+    var base = String(name || email || 'AS').trim();
+    var parts = base.split(/\s+/).filter(Boolean);
+    var letters = parts.length > 1 ? (parts[0][0] + parts[1][0]) : base[0];
+    return (letters || 'AS').toUpperCase();
+  }
+
   function accountUserHtml(user){
-    var email = (user && (user.email || user.phoneNumber || user.displayName)) || 'Аккаунт';
-    var name = (user && (user.displayName || user.email || user.phoneNumber)) || 'Личный кабинет';
+    var emailRaw = (user && (user.email || user.phoneNumber)) || '';
+    var nameRaw = (user && (user.name || user.displayName)) || '';
+    var title = nameRaw || emailRaw || 'Аккаунт';
+    var subtitle = nameRaw && emailRaw ? emailRaw : '';
     var photo = user && user.photoURL;
-    var avatar = photo ? '<img src="'+photo+'" alt="">' : 'AS';
+    var avatar = photo ? '<img src="'+escText(photo)+'" alt="">' : escText(accountInitials(nameRaw, emailRaw));
     return ''+
       '<div class="as-account-profile-head">'+
         '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
         '<a class="as-account-head-text" href="profile.html#account">'+
-          '<div class="as-account-title">Личный кабинет</div>'+
-          '<div class="as-account-subtitle" id="asAccountEmail">'+email+'</div>'+
+          '<div class="as-account-title">'+escText(title)+'</div>'+
+          (subtitle ? '<div class="as-account-subtitle" id="asAccountEmail">'+escText(subtitle)+'</div>' : '')+
         '</a>'+
       '</div>'+
       '<nav class="as-account-menu">'+

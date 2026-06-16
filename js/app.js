@@ -1,7 +1,7 @@
 
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { loginEmail, registerEmail, sendSmsCode, confirmSmsCode, ensureUserProfile } from './auth-core.js';
 import { getCollectionCached, getProducts } from './data-cache.js';
 
@@ -377,7 +377,7 @@ function authModal(){
   
   $('#sendSmsCode')&&($('#sendSmsCode').onclick=async()=>{try{say('Отправляем SMS...'); await sendSmsCode($('#phoneLogin').value.trim()); say('Код отправлен. Введите его ниже.');}catch(err){say('Ошибка SMS: '+(err.message||err));}});
   $('#confirmSmsCode')&&($('#confirmSmsCode').onclick=async()=>{try{say('Проверяем код...'); await confirmSmsCode($('#smsCode').value.trim()); modal.classList.remove('open'); location.reload();}catch(err){say('Ошибка подтверждения: '+(err.message||err));}});
-  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u); window.AutoStyleAccountMenu?.renderUser(u, async()=>{clearCartAndFavorites();await signOut(auth);location.reload();}); authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{window.AutoStyleAccountMenu?.renderGuest(); clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
+  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u); const accountMenuUser = await getAccountMenuUser(u); window.AutoStyleAccountMenu?.renderUser(accountMenuUser || u, async()=>{clearCartAndFavorites();await signOut(auth);location.reload();}); authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{window.AutoStyleAccountMenu?.renderGuest(); clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
   if (accBtn && accDrop && !accDrop.dataset.closeReady) {
     accDrop.dataset.closeReady = '1';
