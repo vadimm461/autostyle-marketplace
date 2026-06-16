@@ -309,7 +309,6 @@ function renderInstallments(total) {
   if (!inst) return;
   if (!total) {
     inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
-    updatePaymentUI();
     return;
   }
 
@@ -364,7 +363,6 @@ function renderInstallments(total) {
     });
   });
 
-  updatePaymentUI();
 }
 
 function openQuickProduct(product) {
@@ -424,6 +422,13 @@ async function hasActiveDiscountCard(user) {
   return Boolean(card?.active);
 }
 
+
+function openLoginPopupSafe(message) {
+  if (typeof window.openLoginPopup === 'function') return window.openLoginPopup(message);
+  if (typeof window.AutoStyleOpenAuthModal === 'function') return window.AutoStyleOpenAuthModal(message);
+  alert(message || 'Войдите в аккаунт.');
+}
+
 async function applyDiscountCardFromCart() {
     if (getPaymentMethod() === 'installment') {
       alert('Скидочная карта не работает при оплате в рассрочку. Выберите наличные или карту, чтобы применить скидку.');
@@ -431,7 +436,7 @@ async function applyDiscountCardFromCart() {
     }
     const user = auth.currentUser;
     if (!user) {
-      openLoginPopup('Скидочная карта доступна после входа в аккаунт.');
+      openLoginPopupSafe('Скидочная карта доступна после входа в аккаунт.');
       return;
     }
     const card = await getActiveDiscountCard(user);
@@ -447,16 +452,16 @@ async function applyDiscountCardFromCart() {
     renderCartTotal(lastCartTotal);
 }
 if (discountCardBtn) {
-  discountCardBtn.onclick = applyDiscountCardFromCart;
   discountCardBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (discountCardBtn.disabled) return;
     applyDiscountCardFromCart();
   });
 }
 if (checkoutBtn) {
-  checkoutBtn.onclick = createOrderFromCart;
   checkoutBtn.addEventListener('click', (e) => {
     e.preventDefault();
+    if (checkoutBtn.disabled && !cartHasStockProblems(lastCartRows)) return;
     createOrderFromCart();
   });
 }
@@ -490,7 +495,7 @@ function getSelectedInstallment() {
 async function createOrderFromCart() {
   const user = auth.currentUser;
   if (!user) {
-    openLoginPopup('Оформить заказ можно только после входа в аккаунт.');
+    openLoginPopupSafe('Оформить заказ можно только после входа в аккаунт.');
     return;
   }
 

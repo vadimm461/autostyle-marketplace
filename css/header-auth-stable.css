@@ -1,13 +1,1 @@
-/* Stable desktop header/auth state. Prevents load stretching and duplicate account layers. */
-.topbar .bar{height:72px!important;min-height:72px!important;max-height:72px!important;display:flex!important;align-items:center!important;flex-wrap:nowrap!important;overflow:visible!important;}
-.logo.as-logo-link{height:52px!important;min-height:52px!important;max-height:52px!important;display:inline-flex!important;align-items:center!important;flex:0 0 236px!important;min-width:236px!important;overflow:hidden!important;}
-.logo.as-logo-link .as-logo-img,.topbar .as-logo-img{display:block!important;width:236px!important;max-width:236px!important;height:52px!important;max-height:52px!important;object-fit:contain!important;object-position:left center!important;}
-#accountDrop{flex:0 0 auto!important;position:relative!important;margin:0!important;padding:0!important;min-width:auto!important;}
-#accountDrop:not(.open) .drop{display:none!important;}
-#accountDrop.open .drop{display:block!important;}
-html[data-auth-state="guest"] #accountDrop, body.as-auth-guest #accountDrop{display:none!important;}
-html[data-auth-state="guest"] #notificationsBtn, body.as-auth-guest #notificationsBtn{display:none!important;}
-html[data-auth-state="user"] #openAuth, body.as-auth-user #openAuth{display:none!important;}
-html[data-auth-state="user"] #accountDrop{display:block!important;}
-#openAuth,#accountBtn,#notificationsBtn,.topbar a.icon-btn{height:46px!important;min-height:46px!important;max-height:46px!important;white-space:nowrap!important;}
-@media(max-width:980px){.topbar .bar{height:auto!important;max-height:none!important;flex-wrap:wrap!important}.logo.as-logo-link{flex:0 0 100%!important;max-width:100%!important}.logo.as-logo-link .as-logo-img,.topbar .as-logo-img{width:220px!important;max-width:220px!important}}
+/* AutoStyle: отключено. Стили перенесены в css/final-request-clean-fix.css */
