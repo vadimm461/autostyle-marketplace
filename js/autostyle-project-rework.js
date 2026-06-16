@@ -102,19 +102,26 @@
       '</div>';
   }
 
+  function escapeHtml(value){
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch] || ch;
+    });
+  }
+
   function accountUserHtml(user){
     var email = (user && (user.email || user.phoneNumber)) || '';
-    var name = (user && (user.displayName || '')).trim();
+    var name = (user && (user.displayName || user.name || user.fullName || '')).trim();
     if(!name && email) name = email.split('@')[0];
     if(!name) name = 'Пользователь';
-    var photo = user && user.photoURL;
-    var avatar = photo ? '<img src="'+photo+'" alt="">' : 'AS';
+    var photo = user && (user.photoURL || user.photo || user.avatar);
+    var initials = (name || email || 'AS').trim().slice(0,2).toUpperCase();
+    var avatar = photo ? '<img src="'+escapeHtml(photo)+'" alt="">' : escapeHtml(initials || 'AS');
     return ''+
       '<div class="as-account-profile-head">'+
         '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
-        '<a class="as-account-head-text" href="profile.html#account">'+
-          '<div class="as-account-title">'+name+'</div>'+
-          '<div class="as-account-subtitle" id="asAccountEmail">'+(email || 'Аккаунт')+'</div>'+
+        '<a class="as-account-head-text" href="profile.html#account" title="'+escapeHtml(email || name)+'">'+
+          '<div class="as-account-title">'+escapeHtml(name)+'</div>'+
+          '<div class="as-account-subtitle" id="asAccountEmail">'+escapeHtml(email || 'Аккаунт')+'</div>'+
         '</a>'+
       '</div>'+
       '<nav class="as-account-menu">'+

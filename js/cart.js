@@ -23,19 +23,47 @@ let discountCardApplied = false;
 let discountCardPercent = 0;
 let isCheckoutBusy = false;
 
+const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
+
+function parseJsonStorage(key) {
+  try {
+    const value = localStorage.getItem(key);
+    if (!value) return null;
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function readCart() {
-  try { return JSON.parse(localStorage.getItem('cart') || '[]'); }
-  catch { return []; }
+  for (const key of CART_STORAGE_KEYS) {
+    const rows = parseJsonStorage(key);
+    if (rows && rows.length) return rows;
+  }
+  return [];
+}
+
+function cartItemId(item) {
+  if (!item) return '';
+  if (typeof item !== 'object') return String(item);
+  return String(
+    item.id ?? item.productId ?? item.productID ?? item.product_id ??
+    item.uid ?? item.docId ?? item.documentId ?? item.sku ?? item.code ?? item.article ?? ''
+  );
 }
 
 function normalizeCart(raw) {
   const map = new Map();
   (Array.isArray(raw) ? raw : []).forEach(item => {
-    const id = typeof item === 'object' ? item.id : item;
+    const id = cartItemId(item);
     if (!id) return;
-    const qty = Math.max(1, Number(typeof item === 'object' ? item.qty : 1) || 1);
+    const qtyRaw = typeof item === 'object' ? (item.qty ?? item.quantity ?? item.count ?? 1) : 1;
+    const qty = Math.max(1, Number(qtyRaw) || 1);
     const key = String(id);
-    map.set(key, { id: key, qty: (map.get(key)?.qty || 0) + qty });
+    const prev = map.get(key);
+    const snapshot = typeof item === 'object' ? { ...item, id: key } : { id: key };
+    map.set(key, { ...snapshot, id: key, qty: (prev?.qty || 0) + qty });
   });
   return [...map.values()];
 }
@@ -82,7 +110,30 @@ function code(p) { return p.code || p.sku || p.article || p.id || ''; }
 
 async function getProductMap() {
   if (!productsCache) productsCache = await getProducts();
-  return new Map(productsCache.map(p => [String(p.id), p]));
+  const map = new Map();
+  (productsCache || []).forEach(p => {
+    const keys = [p.id, p.productId, p.uid, p.docId, p.sku, p.code, p.article, p.barcode].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+    keys.forEach(k => map.set(String(k), p));
+  });
+  return map;
+}
+
+function productFromCartItem(item, productMap) {
+  const product = productMap.get(String(item.id));
+  if (product) return product;
+  // fallback: если товар был добавлен старым кодом вместе с данными, не очищаем корзину и показываем его
+  return {
+    id: item.id,
+    title: item.title || item.name || item.productName || 'Товар',
+    name: item.name || item.title || item.productName || 'Товар',
+    group: item.group || item.category || item.categoryName || 'Без категории',
+    code: item.code || item.sku || item.article || item.id,
+    image: item.image || item.imageUrl || item.photo || item.photoUrl || item.img || '',
+    imageUrl: item.imageUrl || item.image || item.photoUrl || '',
+    price: Number(item.price || item.salePrice || item.cost || 0),
+    stock: item.stock ?? item.quantityAvailable ?? item.available ?? null,
+    description: item.description || ''
+  };
 }
 
 function calcInstallment(total) {
@@ -155,14 +206,13 @@ async function render() {
   save();
   if (!cartList) return;
 
-  const productMap = await getProductMap();
-  const rows = cart.map(item => ({ item, product: productMap.get(String(item.id)) })).filter(r => r.product);
-
-  // Если товар удалили из Firebase, убираем его из корзины, но не очищаем корзину из-за отсутствия авторизации.
-  if (rows.length !== cart.length) {
-    cart = rows.map(r => r.item);
-    save();
+  let productMap = new Map();
+  try {
+    productMap = await getProductMap();
+  } catch (err) {
+    console.warn('cart products load error', err);
   }
+  const rows = cart.map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
 
   if (!rows.length) {
     cartList.innerHTML = `
@@ -374,8 +424,7 @@ async function hasActiveDiscountCard(user) {
   return Boolean(card?.active);
 }
 
-if (discountCardBtn) {
-  discountCardBtn.onclick = async () => {
+async function applyDiscountCardFromCart() {
     if (getPaymentMethod() === 'installment') {
       alert('Скидочная карта не работает при оплате в рассрочку. Выберите наличные или карту, чтобы применить скидку.');
       return;
@@ -396,9 +445,22 @@ if (discountCardBtn) {
     discountCardBtn.classList.add('applied');
     discountCardBtn.innerHTML = '<img alt="" src="assets/icons/discount-card.svg">' + (discountCardPercent > 0 ? `Скидка ${discountCardPercent}% применена` : 'Скидочная карта применена');
     renderCartTotal(lastCartTotal);
-  };
 }
-checkoutBtn && (checkoutBtn.onclick = createOrderFromCart);
+if (discountCardBtn) {
+  discountCardBtn.onclick = applyDiscountCardFromCart;
+  discountCardBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    applyDiscountCardFromCart();
+  });
+}
+if (checkoutBtn) {
+  checkoutBtn.onclick = createOrderFromCart;
+  checkoutBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    createOrderFromCart();
+  });
+}
+
 
 async function getUserProfile(user) {
   if (!user) return null;
@@ -440,8 +502,9 @@ async function createOrderFromCart() {
   }
 
   try {
-    const productMap = await getProductMap();
-    const rows = normalizeCart(readCart()).map(item => ({ item, product: productMap.get(String(item.id)) })).filter(r => r.product);
+    let productMap = new Map();
+    try { productMap = await getProductMap(); } catch (err) { console.warn('checkout products load error', err); }
+    const rows = normalizeCart(readCart()).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
     if (!rows.length) {
       alert('Корзина пустая. Добавь товары перед оформлением заказа.');
       return;
@@ -545,18 +608,22 @@ function waitAccountMenu(cb, tries = 20) {
 
 // Важно: не очищаем корзину просто из-за гостевого режима. Очистка делается только при явном выходе из аккаунта в общем коде сайта.
 onAuthStateChanged(auth, user => {
-  waitAccountMenu(() => {
-    if (user) {
-      window.AutoStyleAccountMenu.renderUser(user, async () => {
-        localStorage.removeItem('cart');
-        localStorage.removeItem('favorites');
-        await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js').then(m => m.signOut(auth));
-        location.href = 'index.html';
-      });
-    } else {
-      window.AutoStyleAccountMenu.renderGuest();
-    }
-  });
+  // Меню аккаунта обновляется общим кодом сайта. Здесь не перерисовываем его сырым Firebase-user,
+  // чтобы не ломать фото/имя/email на странице корзины.
+  if (!window.__asAccountAuthBridgeReady) {
+    waitAccountMenu(() => {
+      if (user) {
+        window.AutoStyleAccountMenu.renderUser(user, async () => {
+          localStorage.removeItem('cart');
+          localStorage.removeItem('favorites');
+          await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js').then(m => m.signOut(auth));
+          location.href = 'index.html';
+        });
+      } else {
+        window.AutoStyleAccountMenu.renderGuest();
+      }
+    });
+  }
   cart = normalizeCart(readCart());
   render().finally(() => window.AutoStyleLoader?.hide?.());
 });
