@@ -114,11 +114,35 @@ async function assignSelected(){
   if (status) status.textContent = 'Пользователи добавлены в группу.';
   await refresh();
 }
+let adminUsersBound = false;
+let adminUsersLoaded = false;
+
 function bind(){
-  if (!$('#users')) return;
+  if (adminUsersBound || !$('#users')) return;
+  adminUsersBound = true;
   $('#adminCreateUserGroup')?.addEventListener('click', createGroup);
   $('#adminAssignUsersToGroup')?.addEventListener('click', assignSelected);
-  refresh().catch(e => { const st=$('#adminUsersStatus'); if(st) st.textContent='Ошибка: '+(e.message||e); });
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
-else bind();
+
+async function openUsersSection(force = false){
+  bind();
+  if (!$('#users')) return;
+  if (adminUsersLoaded && !force) return;
+  adminUsersLoaded = true;
+  await refresh().catch(e => {
+    adminUsersLoaded = false;
+    const st=$('#adminUsersStatus');
+    if(st) st.textContent='Ошибка: '+(e.message||e);
+  });
+}
+
+function init(){
+  bind();
+  window.addEventListener('autostyle:admin-section-open', e => {
+    if (e?.detail?.section === 'users') openUsersSection();
+  });
+  if (location.hash === '#users') openUsersSection();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();

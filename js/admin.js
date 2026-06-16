@@ -315,16 +315,48 @@ function setAdminDashboardVisible(sectionId) {
   });
 }
 
+const ADMIN_SECTION_ALIASES = {
+  homeBlocks: 'homeblocks',
+  homeblocks: 'homeblocks',
+  promoCards: 'promocards',
+  promocards: 'promocards',
+  discountCards: 'discountCards',
+  discountcards: 'discountCards'
+};
+
+const loadedAdminSections = new Set();
+let adminAuthReady = false;
+
+function normalizeAdminSectionId(id) {
+  return ADMIN_SECTION_ALIASES[id] || id || 'dashboard';
+}
+
+async function loadAdminSection(sectionId, force = false) {
+  if (!adminAuthReady) return;
+  const id = normalizeAdminSectionId(sectionId);
+  if (!force && loadedAdminSections.has(id)) return;
+
+  loadedAdminSections.add(id);
+
+  try {
+    if (id === 'products') await renderProducts();
+    else if (id === 'categories') await renderCats();
+    else if (id === 'banners') await renderBanners();
+    else if (id === 'orders') await renderOrdersAdmin();
+    else if (id === 'discountCards') await renderDiscountCardsAdmin();
+    else if (id === 'homeblocks') await renderHomeBlocksAdmin();
+    else if (id === 'promocards') await renderPromoCardsAdmin();
+    else if (id === 'notifications' || id === 'users') {
+      window.dispatchEvent(new CustomEvent('autostyle:admin-section-open', { detail: { section: id } }));
+    }
+  } catch (err) {
+    loadedAdminSections.delete(id);
+    console.error('Ошибка загрузки раздела админки:', id, err);
+  }
+}
+
 function openSection(id) {
-  const aliases = {
-    homeBlocks: 'homeblocks',
-    homeblocks: 'homeblocks',
-    promoCards: 'promocards',
-    promocards: 'promocards',
-    discountCards: 'discountCards',
-    discountcards: 'discountCards'
-  };
-  const sectionId = aliases[id] || id || 'dashboard';
+  const sectionId = normalizeAdminSectionId(id);
 
   setAdminDashboardVisible(sectionId);
 
@@ -335,6 +367,14 @@ function openSection(id) {
   $$('.admin-nav button').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.section === sectionId);
   });
+
+  if (sectionId && sectionId !== 'dashboard') {
+    history.replaceState(null, '', `#${sectionId}`);
+  } else {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+
+  loadAdminSection(sectionId);
 }
 
 
@@ -345,6 +385,20 @@ $$('[data-section]').forEach(btn => {
     e.preventDefault();
     openSection(btn.dataset.section);
   });
+});
+
+$$('a.admin-home-card[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    const id = link.getAttribute('href').slice(1);
+    if (!id) return;
+    e.preventDefault();
+    openSection(id);
+  });
+});
+
+window.addEventListener('hashchange', () => {
+  const id = location.hash.replace('#', '');
+  if (id) openSection(id);
 });
 
 if ($('#logout')) {
@@ -359,11 +413,9 @@ onAuthStateChanged(auth, user => {
     return;
   }
 
-  renderCats();
-  renderProducts();
-  renderBanners();
-  renderOrdersAdmin();
-  renderDiscountCardsAdmin();
+  adminAuthReady = true;
+  const startSection = normalizeAdminSectionId(location.hash.replace('#', '') || 'dashboard');
+  openSection(startSection);
 });
 
 
@@ -689,7 +741,7 @@ function buildCategoryOptions(cats) {
   // 2) Все группы/категории из самих товаров.
   // Отсюда берутся не только основные категории, но и подгруппы:
   // "Автохимия 3TON", "Автохимия ATAS", "Автохимия LAVR" и т.д.
-  (allProductsCache || []).forEach(product => {
+  (loadedAdminSections.has('products') ? (allProductsCache || []) : []).forEach(product => {
     [product.category, product.group, product.categoryName].forEach(rawTitle => {
       const title = normalizeCatTitle(rawTitle);
       if (!title || title === 'Без категории' || title === 'Без группы') return;
@@ -1168,11 +1220,6 @@ async function renderCats() {
 
   try {
     allCatsCache = sortByOrder(await getCollection(COLLECTIONS.categories));
-    try {
-      allProductsCache = await getCollection(COLLECTIONS.products);
-    } catch (e) {
-      allProductsCache = allProductsCache || [];
-    }
 
     const parents = allCatsCache.filter(c => !c.parentId);
 
@@ -1240,7 +1287,7 @@ function renderCategoryTree() {
   // В каталоге выпадающий список собирается не только из коллекции категорий,
   // но и из групп товаров. Поэтому здесь показываем такие же названия,
   // чтобы админка совпадала с сайтом.
-  (allProductsCache || []).forEach(product => {
+  (loadedAdminSections.has('products') ? (allProductsCache || []) : []).forEach(product => {
     [product.group, product.category, product.categoryName].forEach(raw => {
       const title = normalizeCatTitle(raw);
       if (!title || title === 'Без группы' || title === 'Без категории') return;
@@ -1328,7 +1375,7 @@ function renderCategoryTree() {
       await deleteDoc(doc(db, COLLECTIONS.categories, catId));
       await markSiteDataChanged();
       await renderCats();
-      await renderProducts();
+      if (loadedAdminSections.has('products')) await renderProducts();
     };
   });
 
@@ -1381,7 +1428,7 @@ if ($('#catForm')) {
       e.target.reset();
       await markSiteDataChanged();
       await renderCats();
-      await renderProducts();
+      if (loadedAdminSections.has('products')) await renderProducts();
       alert('Категория сохранена');
     } catch (err) {
       console.error(err);
@@ -1842,5 +1889,3 @@ if ($('#hbReset')) {
   };
 }
 
-renderHomeBlocksAdmin();
-renderPromoCardsAdmin();

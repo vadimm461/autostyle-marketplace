@@ -255,8 +255,12 @@ async function sendNotification(){
     status.textContent = 'Ошибка отправки: ' + e.message;
   }
 }
+let adminNotifyBound = false;
+let adminNotifyLoaded = false;
+
 function bind(){
-  if (!$('#notifications')) return;
+  if (adminNotifyBound || !$('#notifications')) return;
+  adminNotifyBound = true;
   renderFontOptions();
   renderEmojiPanel();
   const body = editor();
@@ -286,8 +290,24 @@ function bind(){
   $('#adminNotifyColor')?.addEventListener('input', e => applyColor(e.target.value));
   $('#adminNotifyBgColor')?.addEventListener('input', e => applyBg(e.target.value));
   $$('#adminNotifyEmojiPanel [data-admin-emoji]').forEach(btn => btn.addEventListener('click', () => insertEmoji(btn.dataset.adminEmoji)));
-  loadNotifyTargets();
-  renderHistory();
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
-else bind();
+
+async function openNotificationsSection(force = false){
+  bind();
+  if (!$('#notifications')) return;
+  if (adminNotifyLoaded && !force) return;
+  adminNotifyLoaded = true;
+  await loadNotifyTargets();
+  await renderHistory();
+}
+
+function init(){
+  bind();
+  window.addEventListener('autostyle:admin-section-open', e => {
+    if (e?.detail?.section === 'notifications') openNotificationsSection();
+  });
+  if (location.hash === '#notifications') openNotificationsSection();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
