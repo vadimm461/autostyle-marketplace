@@ -57,7 +57,7 @@ function renderDropdown(){
   const photo = profile.photoURL || profile.photo || profile.avatar || currentUser.photoURL || '';
   const avatar = photo ? `<img src="${esc(photo)}" alt="${esc(name)}" loading="lazy" decoding="async">` : esc(initials(name, email));
   dd.innerHTML = `
-    <a class="as-account-user" href="profile.html#account">
+    <a class="as-account-user" href="profile.html#home">
       <span class="as-account-avatar">${avatar}</span>
       <span class="as-account-info"><b>${esc(name)}</b><small>${esc(email)}</small></span>
     </a>

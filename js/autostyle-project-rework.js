@@ -118,14 +118,14 @@
     var avatar = photo ? '<img src="'+escapeHtml(photo)+'" alt="">' : escapeHtml(initials || 'AS');
     return ''+
       '<div class="as-account-profile-head">'+
-        '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
-        '<a class="as-account-head-text" href="profile.html#account" title="'+escapeHtml(email || name)+'">'+
+        '<a class="as-account-avatar" href="profile.html#home" aria-label="Фото и профиль">'+avatar+'</a>'+
+        '<a class="as-account-head-text" href="profile.html#home" title="'+escapeHtml(email || name)+'">'+
           '<div class="as-account-title">'+escapeHtml(name)+'</div>'+
           '<div class="as-account-subtitle" id="asAccountEmail">'+escapeHtml(email || 'Аккаунт')+'</div>'+
         '</a>'+
       '</div>'+
       '<nav class="as-account-menu">'+
-        '<a href="profile.html#account">'+accountIcon('user','Фото и профиль')+'</a>'+
+        '<a href="profile.html#home">'+accountIcon('user','Фото и профиль')+'</a>'+
         '<a href="profile.html#discount-card">'+accountIcon('card','Скидочная карта')+'</a>'+
         '<a href="cart.html">'+accountIcon('cart','Корзина')+'</a>'+
         '<a href="favorites.html">'+accountIcon('heart','Избранное')+'</a>'+

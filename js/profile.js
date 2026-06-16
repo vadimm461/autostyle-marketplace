@@ -524,7 +524,7 @@ function renderHeaderAccount(user){
       <div class="as-account-head-text"><div class="as-account-title">${name}</div><div class="as-account-subtitle">${email || 'Аккаунт'}</div></div>
     </a>
     <nav class="as-account-menu">
-      <a href="profile.html#account">${headerIcon('user')} Профиль</a>
+      <a href="profile.html#home">${headerIcon('user')} Фото и профиль</a>
       <a href="profile.html#discount-card">${headerIcon('card')} Скидочная карта</a>
       <a href="cart.html">${headerIcon('cart')} Корзина</a>
       <a href="favorites.html">${headerIcon('heart')} Избранное</a>

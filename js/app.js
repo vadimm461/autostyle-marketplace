@@ -375,7 +375,7 @@ function renderAccountPanel(user){
   drop.classList.add('account-panel');
   const avatarHtml = photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : accountInitials(name, email);
   drop.innerHTML = `
-    <a class="account-user account-user-link" href="profile.html#account" title="Открыть профиль">
+    <a class="account-user account-user-link" href="profile.html#home" title="Открыть профиль">
       <div class="account-avatar">${avatarHtml}</div>
       <div>
         <b class="account-name">${name}</b>
@@ -384,7 +384,7 @@ function renderAccountPanel(user){
     </a>
     <div class="account-status">● Вы авторизованы</div>
     <nav class="account-menu">
-      <a class="primary-account" href="profile.html#account">${icon('user')} Фото и профиль</a>
+      <a class="primary-account" href="profile.html#home">${icon('user')} Фото и профиль</a>
       <a href="profile.html#discount-card">${icon('card')} Скидочная карта</a>
       <a href="cart.html">${icon('cart')} Корзина</a>
       <a href="favorites.html">${icon('heart')} Избранное</a>
