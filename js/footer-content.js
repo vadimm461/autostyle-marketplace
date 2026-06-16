@@ -2,7 +2,7 @@ import { db, COLLECTIONS } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const DEFAULT = {
-  companyTitle: 'Компания',
+  companyTitle: 'AutoStyle',
   companyLinks: [
     { text: 'Контакты', url: 'contacts.html' },
     { text: 'Про нас', url: 'about.html' },
@@ -62,7 +62,7 @@ function applyFooter(f) {
       <div class="footer-group"><h3>${esc(f.companyTitle || 'Компания')}</h3>${links(f.companyLinks)}</div>
       <div class="footer-group"><h3>${esc(f.buyerTitle || 'Покупателям')}</h3>${links(f.buyerLinks)}</div>
       <div class="footer-group"><h3>${esc(f.infoTitle || 'Информация')}</h3>${links(f.infoLinks)}</div>
-    </div><div class="footer-copy"><span>© 2026 Все права защищены</span><span>Design by <a href="${esc(f.instagram || DEFAULT.instagram)}" target="_blank" rel="noopener">d.vadim.v</a></span></div>`;
+    </div><div class="footer-copy"><span>© 2026 Все права защищены</span><span>Dev by <a href="${esc(f.instagram || DEFAULT.instagram)}" target="_blank" rel="noopener">d.vadim.v</a></span></div>`;
   });
 }
 
