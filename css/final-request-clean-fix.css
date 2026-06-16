@@ -66,53 +66,29 @@
 @media(max-width:900px){.catalog-popup.mega-catalog,.mega-catalog{min-width:0!important;width:calc(100vw - 24px)!important;grid-template-columns:1fr!important}.mega-left{width:auto!important}.mega-child-grid{grid-template-columns:1fr!important}.as-notify-dropdown{right:12px!important;width:calc(100vw - 24px)!important}.catalog-top .catalog-top-price{width:100%!important}.catalog-top .catalog-top-price input{flex:1!important;width:auto!important}}
 
 
-/* Account menu root fix: active authorized profile button, clickable profile head, SVG files, stable logout hover */
-.topbar #accountDrop.is-authorized > .as-head-icon-btn,
-.topbar #accountDrop.is-authorized > #accountBtn,
-.topbar #openAuth.is-authorized,
-.topbar .as-account-wrap.is-authorized > .as-head-icon-btn{
-  border-color:rgba(39,226,26,.72)!important;
-  background:linear-gradient(180deg,rgba(39,226,26,.22),rgba(39,226,26,.08))!important;
+/* Account menu root fix: real SVG files, clickable profile head, active authorized account, readable logout hover */
+#accountBtn.is-authorized, #accountDrop.is-authorized > #accountBtn{
+  border-color:rgba(39,226,26,.65)!important;
+  box-shadow:0 0 0 1px rgba(39,226,26,.16), 0 10px 24px rgba(39,226,26,.12)!important;
 }
-.topbar #accountDrop.is-authorized > .as-head-icon-btn .as-head-icon,
-.topbar #accountDrop.is-authorized > #accountBtn .as-head-icon,
-.topbar #openAuth.is-authorized .as-head-icon{
-  background:#27e21a!important;
-}
-.topbar #accountDrop.is-authorized > .as-head-icon-btn .as-head-icon img,
-.topbar #accountDrop.is-authorized > #accountBtn .as-head-icon img,
-.topbar #openAuth.is-authorized .as-head-icon img{
-  filter:brightness(0) saturate(100%) invert(4%) sepia(11%) saturate(2135%) hue-rotate(81deg) brightness(99%) contrast(95%)!important;
-}
-.as-account-profile-link{
-  color:#111827!important;
+.account-panel .account-user, .as-account-profile-head{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
   text-decoration:none!important;
-  border-radius:16px!important;
-  transition:background .16s ease, transform .16s ease!important;
+  color:#111827!important;
+  cursor:pointer!important;
 }
-.as-account-profile-link:hover{
-  background:#f6fff4!important;
-  transform:translateY(-1px)!important;
+.account-panel .account-menu, .as-account-menu{display:grid!important;gap:8px!important}
+.account-panel .account-menu a, .as-account-menu a{
+  display:flex!important;align-items:center!important;gap:10px!important;
 }
-.as-account-menu a .as-menu-svg{
-  width:18px!important;
-  height:18px!important;
-  flex:0 0 18px!important;
-  display:block!important;
-  object-fit:contain!important;
+.account-panel .as-menu-svg, .as-account-menu .as-menu-svg{
+  width:19px!important;height:19px!important;min-width:19px!important;
+  display:block!important;object-fit:contain!important;filter:none!important;
 }
-.as-account-menu a:hover .as-menu-svg{
-  filter:brightness(0) saturate(100%) invert(45%) sepia(87%) saturate(1322%) hue-rotate(82deg) brightness(97%) contrast(94%)!important;
-}
-.as-account-popup button#logout,
-.as-account-popup button#asAccountLogout{
-  background:#111827!important;
-  color:#fff!important;
-  border:1px solid #111827!important;
-}
-.as-account-popup button#logout:hover,
-.as-account-popup button#asAccountLogout:hover{
+.account-panel .account-logout:hover, .as-account-popup button:hover, #logout:hover{
   background:#27e21a!important;
-  color:#06120a!important;
-  border-color:#27e21a!important;
+  color:#071009!important;
 }
+.account-panel .account-logout:hover *, .as-account-popup button:hover *, #logout:hover *{color:#071009!important}
