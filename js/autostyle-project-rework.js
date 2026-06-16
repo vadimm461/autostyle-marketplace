@@ -148,7 +148,7 @@
       var popup = wrap.querySelector('.as-account-popup');
       if(popup) popup.innerHTML = accountUserHtml(user || {});
       var btn = wrap.querySelector('.as-head-icon-btn');
-      if(btn) btn.classList.add('active');
+      if(btn) btn.classList.remove('active');
       wireAccountWrap(wrap);
       bindAccountPopupActions(wrap);
       var logout = wrap.querySelector('#asAccountLogout');
@@ -163,6 +163,59 @@
         };
       }
     });
+  }
+
+
+
+  function initAccountAuthBridge(){
+    if(window.__asAccountAuthBridgeReady) return;
+    window.__asAccountAuthBridgeReady = true;
+    Promise.all([
+      import('./firebase.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+    ]).then(async function(mods){
+      var firebase = mods[0];
+      var authMod = mods[1];
+      var fsMod = mods[2];
+      var auth = firebase.auth;
+      var db = firebase.db;
+      var COLLECTIONS = firebase.COLLECTIONS || {};
+      if(!auth || !authMod.onAuthStateChanged) return;
+
+      async function loadProfile(user){
+        if(!user || !db || !fsMod.getDoc || !fsMod.doc) return {};
+        try{
+          var snap = await fsMod.getDoc(fsMod.doc(db, COLLECTIONS.users || 'autostyle_users', user.uid));
+          return snap.exists() ? (snap.data() || {}) : {};
+        }catch(e){
+          console.warn('account profile load error', e);
+          return {};
+        }
+      }
+
+      async function logout(){
+        try{ localStorage.removeItem('cart'); }catch(_){}
+        try{ localStorage.removeItem('favorites'); }catch(_){}
+        try{ localStorage.removeItem('autostyle_user'); }catch(_){}
+        try{ await authMod.signOut(auth); }catch(e){ console.warn('logout error', e); }
+        location.href = 'index.html';
+      }
+
+      authMod.onAuthStateChanged(auth, async function(user){
+        if(user){
+          var profile = await loadProfile(user);
+          var merged = Object.assign({}, user, {
+            email: user.email || profile.email || '',
+            displayName: profile.name || profile.fullName || user.displayName || '',
+            photoURL: profile.photoURL || profile.photo || user.photoURL || ''
+          });
+          renderAccountUser(merged, logout);
+        } else {
+          renderAccountGuest();
+        }
+      });
+    }).catch(function(e){ console.warn('account auth bridge error', e); });
   }
 
   window.AutoStyleAccountMenu = { renderGuest: renderAccountGuest, renderUser: renderAccountUser };
@@ -310,7 +363,8 @@
     // Каталог не трогаем: оставляем кнопку как в исходной верстке.
     normalizeHeaderIcons();
     normalizeAccountButtons();
-    // Состояние аккаунта теперь централизованно обновляет js/autostyle-account-global.js.
+    initAccountAuthBridge();
+    // Состояние аккаунта обновляется здесь же, одной общей кнопкой для всех страниц.
     ensureNotificationHandler();
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 400);
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 1500);

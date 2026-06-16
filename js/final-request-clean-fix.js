@@ -82,21 +82,18 @@
   if (window.__asCustomAlertReady) return;
   window.__asCustomAlertReady = true;
 
-  const nativeAlert = window.alert ? window.alert.bind(window) : null;
-
   function closeAlert(backdrop) {
     if (!backdrop) return;
-    backdrop.remove();
+    const onKey = backdrop.__asOnKey;
+    if (onKey) document.removeEventListener('keydown', onKey);
+    backdrop.classList.remove('show');
+    setTimeout(() => backdrop.remove(), 120);
     const next = window.__asAlertQueue && window.__asAlertQueue.shift();
-    if (next) setTimeout(() => showAlert(next.message), 60);
+    if (next) setTimeout(() => showAlert(next.message), 150);
   }
 
   function showAlert(message) {
-    if (!document.body) {
-      if (nativeAlert) nativeAlert(message);
-      return;
-    }
-
+    if (!document.body) return setTimeout(() => showAlert(message), 50);
     if (document.querySelector('.as-alert-backdrop')) {
       window.__asAlertQueue = window.__asAlertQueue || [];
       window.__asAlertQueue.push({ message });
@@ -117,27 +114,23 @@
         </div>
       </div>
     `;
-
     backdrop.querySelector('.as-alert-message').textContent = String(message || '');
     document.body.appendChild(backdrop);
+    requestAnimationFrame(() => backdrop.classList.add('show'));
 
     const okBtn = backdrop.querySelector('.as-alert-ok');
-    okBtn.focus();
-    okBtn.addEventListener('click', () => closeAlert(backdrop));
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) closeAlert(backdrop);
-    });
-
-    const onKey = (e) => {
+    okBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); closeAlert(backdrop); });
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeAlert(backdrop); });
+    backdrop.__asOnKey = (e) => {
       if (e.key === 'Escape' || e.key === 'Enter') {
-        document.removeEventListener('keydown', onKey);
+        e.preventDefault();
         closeAlert(backdrop);
       }
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', backdrop.__asOnKey);
+    setTimeout(() => { try { okBtn.focus(); } catch(_){} }, 30);
   }
 
-  window.alert = function (message) {
-    showAlert(message);
-  };
+  window.alert = function (message) { showAlert(message); };
+  window.asAlert = showAlert;
 })();
