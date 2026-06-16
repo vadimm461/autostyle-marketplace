@@ -15,6 +15,8 @@ const PAGE_SIZE = 24;
 let cart = [];
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 const page = document.body.dataset.page;
+let mobileRefreshTimer = null;
+let mobileLastRefreshAt = 0;
 const waitAuthUser = () => new Promise(resolve => {
   if (auth.currentUser) return resolve(auth.currentUser);
   const off = onAuthStateChanged(auth, user => { off(); resolve(user || null); });
@@ -119,7 +121,35 @@ function setupMobileChrome(){
     const href = a.getAttribute('href') || '';
     if (/^(https?:\/\/)/i.test(href) && !href.includes(location.host)) a.setAttribute('target', '_blank');
   });
+  if (!window.__asMobileAutoRefreshBound) {
+    window.__asMobileAutoRefreshBound = true;
+    window.addEventListener('pageshow', () => refreshMobilePage('pageshow'));
+    window.addEventListener('focus', () => refreshMobilePage('focus'));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshMobilePage('visible'); });
+    window.addEventListener('autostyle-cart-updated', () => {
+      updateCounts();
+      if (page === 'cart') refreshMobilePage('cart-updated');
+    });
+  }
 }
+
+function refreshMobilePage(reason='manual'){
+  const now = Date.now();
+  if (now - mobileLastRefreshAt < 450) return;
+  mobileLastRefreshAt = now;
+  clearTimeout(mobileRefreshTimer);
+  mobileRefreshTimer = setTimeout(async()=>{
+    try{
+      if(page==='home') { await initData({force:true}); await renderHome(); }
+      if(page==='catalog') { await initData({force:true}); await renderCatalog(); }
+      if(page==='product') { await initData({force:true}); await renderProduct(); }
+      if(page==='cart') await renderCart();
+      if(page==='favorites') { await initData({force:true}); await renderFavorites(); }
+      if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
+    }catch(e){ console.warn('mobile refresh error', reason, e); }
+  }, 80);
+}
+
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 const title = p => p.title || p.name || 'Без названия';
 const img = p => p.image || p.imageUrl || p.photo || p.photoUrl || '';
@@ -174,6 +204,12 @@ function setupShell(active='home'){
     <a class="${active==='fav'?'active':''}" href="mobile-favorites.html">♡<span>Избранное <b id="mFavCount">0</b></span></a>
     <a class="${active==='cart'?'active':''}" href="mobile-cart.html">🛒<span>Корзина <b id="mCartCount">0</b></span></a>
     <a class="${active==='profile'?'active':''}" href="mobile-profile.html">👤<span>Профиль</span></a>`;
+  nav?.querySelectorAll('a.active').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      refreshMobilePage('active-nav');
+    });
+  });
   updateCounts();
 }
 function norm(s){return String(s||'').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[\s_-]+/g,' ')}
@@ -517,8 +553,9 @@ async function registerByEmail(){
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
 async function renderProfile(){
   setupShell('profile');
-  onAuthStateChanged(auth, async u=>{
-    userNow=u; const box=$('#mProfileBox');
+  const u = await waitAuthUser();
+  userNow=u; const box=$('#mProfileBox');
+  {
     if(!u){
       box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по почте, зарегистрируйтесь или используйте SMS. После входа можно подтвердить почту и привязать телефон.</p>
       <div class="m-auth-box"><h2>Email</h2><input id="pEmail" class="m-input" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
@@ -565,7 +602,7 @@ async function renderProfile(){
     if($('#mSendFeedback')) $('#mSendFeedback').onclick=async()=>{ try{ await sendMobileFeedback(u); }catch(e){ alert('Ошибка отправки: '+(e.message||e)); } };
     if($('#pLogout')) $('#pLogout').onclick=async()=>{localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
     clearLoader();
-  });
+  }
 }
 
 (async()=>{

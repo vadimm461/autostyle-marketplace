@@ -1,12 +1,15 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 
 const USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
 let currentUser = auth.currentUser || null;
 let currentCart = [];
 let readyPromise = null;
+let cartUnsubscribe = null;
+let cartReadyResolvedFor = '';
+let cartReadyResolve = null;
 
 function userRef(user = currentUser) {
   return user ? doc(db, USERS_COLLECTION, user.uid) : null;
@@ -50,6 +53,49 @@ function emitCartChanged() {
   window.dispatchEvent(new CustomEvent('autostyle-cart-updated', { detail: { cart: currentCart, count: cartQtyCount(currentCart) } }));
 }
 
+
+function setCartFromUserData(data = {}) {
+  currentCart = normalizeUserCart(data.cart || data.cartItems || []);
+  emitCartChanged();
+  return currentCart;
+}
+
+function stopCartListener() {
+  if (typeof cartUnsubscribe === 'function') {
+    try { cartUnsubscribe(); } catch(e) {}
+  }
+  cartUnsubscribe = null;
+}
+
+function startCartListener(user = currentUser) {
+  currentUser = user || auth.currentUser || null;
+  stopCartListener();
+  if (!currentUser) {
+    currentCart = [];
+    emitCartChanged();
+    if (cartReadyResolve) cartReadyResolve(currentCart);
+    return;
+  }
+  const uid = currentUser.uid;
+  cartReadyResolvedFor = '';
+  cartUnsubscribe = onSnapshot(userRef(currentUser), snap => {
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    setCartFromUserData(data);
+    if (cartReadyResolve && cartReadyResolvedFor !== uid) {
+      cartReadyResolvedFor = uid;
+      cartReadyResolve(currentCart);
+    }
+  }, err => {
+    console.warn('user cart realtime error', err);
+    loadUserCart(currentUser).finally(() => {
+      if (cartReadyResolve && cartReadyResolvedFor !== uid) {
+        cartReadyResolvedFor = uid;
+        cartReadyResolve(currentCart);
+      }
+    });
+  });
+}
+
 export async function loadUserCart(user = currentUser) {
   currentUser = user || auth.currentUser || null;
   if (!currentUser) {
@@ -59,9 +105,7 @@ export async function loadUserCart(user = currentUser) {
   }
   const snap = await getDoc(userRef(currentUser));
   const data = snap.exists() ? (snap.data() || {}) : {};
-  currentCart = normalizeUserCart(data.cart || data.cartItems || []);
-  emitCartChanged();
-  return currentCart;
+  return setCartFromUserData(data);
 }
 
 export async function saveUserCart(rows = currentCart, user = currentUser) {
@@ -123,18 +167,21 @@ export function getCurrentCartUser() {
 
 export function waitUserCartReady() {
   if (!readyPromise) readyPromise = new Promise(resolve => {
-    onAuthStateChanged(auth, async user => {
+    cartReadyResolve = resolve;
+    const first = auth.currentUser;
+    if (first) startCartListener(first);
+    onAuthStateChanged(auth, user => {
       currentUser = user || null;
-      try { await loadUserCart(currentUser); } catch (err) { console.warn('user cart load error', err); currentCart = []; emitCartChanged(); }
-      resolve(currentCart);
+      startCartListener(currentUser);
+      if (!currentUser) resolve(currentCart);
     });
   });
   return readyPromise;
 }
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, user => {
   currentUser = user || null;
-  try { await loadUserCart(currentUser); } catch (err) { console.warn('user cart refresh error', err); }
+  startCartListener(currentUser);
 });
 
 window.AutoStyleUserCart = {
@@ -146,5 +193,6 @@ window.AutoStyleUserCart = {
   setQty: setUserCartQty,
   get: getCurrentUserCart,
   ready: waitUserCartReady,
-  updateBadges: updateCartBadges
+  updateBadges: updateCartBadges,
+  startRealtime: startCartListener
 };
