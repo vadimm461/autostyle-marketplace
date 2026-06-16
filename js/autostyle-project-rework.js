@@ -103,15 +103,15 @@
   }
 
   function accountUserHtml(user){
-    var email = (user && (user.email || user.phoneNumber || user.displayName)) || 'Аккаунт';
-    var name = (user && (user.displayName || user.email || user.phoneNumber)) || 'Личный кабинет';
+    var email = (user && (user.email || user.phoneNumber)) || 'Аккаунт';
+    var name = (user && (user.displayName || user.email || user.phoneNumber)) || 'Пользователь';
     var photo = user && user.photoURL;
     var avatar = photo ? '<img src="'+photo+'" alt="">' : 'AS';
     return ''+
       '<div class="as-account-profile-head">'+
         '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
         '<a class="as-account-head-text" href="profile.html#account">'+
-          '<div class="as-account-title">Личный кабинет</div>'+
+          '<div class="as-account-title">'+name+'</div>'+
           '<div class="as-account-subtitle" id="asAccountEmail">'+email+'</div>'+
         '</a>'+
       '</div>'+
