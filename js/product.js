@@ -8,8 +8,8 @@ let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 
 function clearCartAndFavorites(){
-  localStorage.removeItem('cart');
-  localStorage.removeItem('favorites');
+  // Не чистим корзину и избранное при гостевом режиме/выходе — иначе корзина сразу становится пустой.
+  localStorage.removeItem('autostyle_user');
   window.dispatchEvent(new Event('autostyle-storage-cleared'));
 }
 
@@ -115,9 +115,12 @@ async function renderRelated(current){
   }catch(e){ box.innerHTML = ''; }
 }
 
+function cartQty(){ return (Array.isArray(cart)?cart:[]).reduce((s,i)=>s+(typeof i==='object'?Math.max(1,Number(i.qty??i.quantity??i.count??1)||1):1),0); }
 function saveCart(){
   localStorage.setItem('cart', JSON.stringify(cart));
-  $('#cartCount') && ($('#cartCount').textContent = cart.length);
+  const n = cartQty();
+  document.querySelectorAll('#cartCount,.cartCount').forEach(el => el.textContent = String(n));
+  window.dispatchEvent(new Event('autostyle-cart-updated'));
 }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function saveViewed(id){
@@ -225,8 +228,8 @@ async function loadProduct(){
 }
 setupSearch();
 onAuthStateChanged(auth, user => {
-  if (!user) { clearCartAndFavorites(); cart = []; favs = []; }
-  else { cart = JSON.parse(localStorage.getItem('cart') || '[]'); favs = JSON.parse(localStorage.getItem('favorites') || '[]'); }
+  cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  favs = JSON.parse(localStorage.getItem('favorites') || '[]');
   saveCart();
   loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });

@@ -72,11 +72,12 @@ function save() {
   cart = normalizeCart(cart);
   localStorage.setItem('cart', JSON.stringify(cart));
   updateCartCounter();
+  window.dispatchEvent(new Event('autostyle-cart-updated'));
 }
 
 function updateCartCounter() {
   const count = cart.reduce((s, i) => s + (Number(i.qty) || 1), 0);
-  document.querySelectorAll('#cartCount,.cartCount').forEach(el => el.textContent = String(count));
+  document.querySelectorAll('#cartCount,.cartCount').forEach(el => { el.textContent = String(count); el.dataset.count = String(count); });
 }
 
 function money(v) {
@@ -422,13 +423,6 @@ async function hasActiveDiscountCard(user) {
   return Boolean(card?.active);
 }
 
-
-function openLoginPopupSafe(message) {
-  if (typeof window.openLoginPopup === 'function') return window.openLoginPopup(message);
-  if (typeof window.AutoStyleOpenAuthModal === 'function') return window.AutoStyleOpenAuthModal(message);
-  alert(message || 'Войдите в аккаунт.');
-}
-
 async function applyDiscountCardFromCart() {
     if (getPaymentMethod() === 'installment') {
       alert('Скидочная карта не работает при оплате в рассрочку. Выберите наличные или карту, чтобы применить скидку.');
@@ -436,7 +430,7 @@ async function applyDiscountCardFromCart() {
     }
     const user = auth.currentUser;
     if (!user) {
-      openLoginPopupSafe('Скидочная карта доступна после входа в аккаунт.');
+      openLoginPopup('Скидочная карта доступна после входа в аккаунт.');
       return;
     }
     const card = await getActiveDiscountCard(user);
@@ -452,16 +446,16 @@ async function applyDiscountCardFromCart() {
     renderCartTotal(lastCartTotal);
 }
 if (discountCardBtn) {
+  discountCardBtn.onclick = applyDiscountCardFromCart;
   discountCardBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (discountCardBtn.disabled) return;
     applyDiscountCardFromCart();
   });
 }
 if (checkoutBtn) {
+  checkoutBtn.onclick = createOrderFromCart;
   checkoutBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (checkoutBtn.disabled && !cartHasStockProblems(lastCartRows)) return;
     createOrderFromCart();
   });
 }
@@ -495,7 +489,7 @@ function getSelectedInstallment() {
 async function createOrderFromCart() {
   const user = auth.currentUser;
   if (!user) {
-    openLoginPopupSafe('Оформить заказ можно только после входа в аккаунт.');
+    openLoginPopup('Оформить заказ можно только после входа в аккаунт.');
     return;
   }
 
@@ -619,8 +613,7 @@ onAuthStateChanged(auth, user => {
     waitAccountMenu(() => {
       if (user) {
         window.AutoStyleAccountMenu.renderUser(user, async () => {
-          localStorage.removeItem('cart');
-          localStorage.removeItem('favorites');
+          localStorage.removeItem('autostyle_user');
           await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js').then(m => m.signOut(auth));
           location.href = 'index.html';
         });

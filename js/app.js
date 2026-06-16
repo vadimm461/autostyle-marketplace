@@ -42,8 +42,8 @@ async function getAccountMenuUser(user){
 }
 
 function clearCartAndFavorites(){
-  localStorage.removeItem('cart');
-  localStorage.removeItem('favorites');
+  // Не чистим корзину и избранное при гостевом режиме/выходе — иначе корзина сразу становится пустой.
+  localStorage.removeItem('autostyle_user');
   window.dispatchEvent(new Event('autostyle-storage-cleared'));
 }
 
@@ -67,7 +67,8 @@ function discount(p){
 function productSection(p){ return String(p.homeSection || p.homeBlock || p.tag || '').toLowerCase(); }
 function normalizeKey(v){ return String(v || '').trim().toLowerCase(); }
 function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
-function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); $('#cartCount') && ($('#cartCount').textContent = cart.length); }
+function cartQty(){ return (Array.isArray(cart)?cart:[]).reduce((s,i)=>s+(typeof i==='object'?Math.max(1,Number(i.qty??i.quantity??i.count??1)||1):1),0); }
+function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); const n=cartQty(); document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(n)); window.dispatchEvent(new Event('autostyle-cart-updated')); }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 async function loadCollection(name){ return await getCollectionCached(name); }
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
@@ -398,7 +399,7 @@ function authModal(){
   
   $('#sendSmsCode')&&($('#sendSmsCode').onclick=async()=>{try{say('Отправляем SMS...'); await sendSmsCode($('#phoneLogin').value.trim()); say('Код отправлен. Введите его ниже.');}catch(err){say('Ошибка SMS: '+(err.message||err));}});
   $('#confirmSmsCode')&&($('#confirmSmsCode').onclick=async()=>{try{say('Проверяем код...'); await confirmSmsCode($('#smsCode').value.trim()); modal.classList.remove('open'); location.reload();}catch(err){say('Ошибка подтверждения: '+(err.message||err));}});
-  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u); const accountMenuUser = await getAccountMenuUser(u); window.AutoStyleAccountMenu?.renderUser(accountMenuUser || u, async()=>{clearCartAndFavorites();await signOut(auth);location.reload();}); authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{window.AutoStyleAccountMenu?.renderGuest(); clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
+  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u); const accountMenuUser = await getAccountMenuUser(u); window.AutoStyleAccountMenu?.renderUser(accountMenuUser || u, async()=>{clearCartAndFavorites();await signOut(auth);location.reload();}); authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{window.AutoStyleAccountMenu?.renderGuest(); cart=JSON.parse(localStorage.getItem('cart')||'[]'); favs=JSON.parse(localStorage.getItem('favorites')||'[]'); saveCart(); saveFav(); authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
   if (accBtn && accDrop && !accDrop.dataset.closeReady) {
     accDrop.dataset.closeReady = '1';
