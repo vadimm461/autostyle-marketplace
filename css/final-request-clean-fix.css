@@ -86,12 +86,8 @@
 .as-account-popup #asAccountLogout:focus-visible{outline:3px solid rgba(39,226,26,.35)!important;outline-offset:2px!important}
 .as-account-wrap:not(.open) .as-account-popup{display:none!important}
 .as-account-wrap.open .as-account-popup{display:block!important}
-.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{border-color:rgba(39,226,26,.55)!important;box-shadow:0 0 0 1px rgba(39,226,26,.18) inset!important}
 .as-account-avatar[href]{text-decoration:none!important}
 
-
-/* Auth visibility without Firebase blink: hidden by default, shown only after real auth */
-#notificationsBtn{display:none!important}
-body.as-authenticated #notificationsBtn{display:inline-flex!important}
-body:not(.as-authenticated) #notificationsDropdown{display:none!important}
-body:not(.as-authenticated) #notificationCount{display:none!important}
+/* Profile/account cleanup: account button same as other header buttons */
+.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{border-color:rgba(52,226,31,.22)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.16)!important;}
+.profile-eyebrow{display:none!important;}

@@ -51,22 +51,6 @@
     });
   }
 
-
-  function openAuthModal(){
-    document.querySelectorAll('.as-account-wrap.open').forEach(function(w){ w.classList.remove('open'); });
-    var modal = document.getElementById('authModal');
-    if(modal){
-      modal.classList.add('open','show');
-      var email = modal.querySelector('#loginEmail');
-      setTimeout(function(){ if(email) email.focus(); }, 80);
-      return;
-    }
-    var btn = document.getElementById('openAuth') || document.getElementById('authOpen') || document.getElementById('authBtn');
-    if(btn){ btn.click(); return; }
-    location.href = 'index.html#login';
-  }
-  window.AutoStyleOpenAuthModal = openAuthModal;
-
   function accountIcon(name, label){
     return '<img class="as-account-menu-icon" src="assets/icons/'+name+'.svg" alt="" aria-hidden="true"><span>'+label+'</span>';
   }
@@ -76,7 +60,7 @@
       '<div class="as-account-guest">'+
         '<div class="as-account-title">Аккаунт</div>'+
         '<div class="as-account-subtitle">Войдите, чтобы открыть профиль</div>'+
-        '<button class="as-account-login" type="button" data-auth-open="1">Войти</button>'+
+        '<a class="as-account-login" href="login.html">Войти</a>'+
       '</div>';
   }
 
@@ -123,7 +107,7 @@
       var popup = wrap.querySelector('.as-account-popup');
       if(popup) popup.innerHTML = accountUserHtml(user || {});
       var btn = wrap.querySelector('.as-head-icon-btn');
-      if(btn) btn.classList.add('active');
+      if(btn) btn.classList.remove('active');
       wireAccountWrap(wrap);
       var logout = wrap.querySelector('#asAccountLogout');
       if(logout){
@@ -157,7 +141,6 @@
       wrap.classList.toggle('open');
     }, true);
     popup.addEventListener('click', function(e){ e.stopPropagation(); });
-    popup.addEventListener('click', function(e){ var login=e.target.closest('[data-auth-open], .as-account-login'); if(login){ e.preventDefault(); e.stopPropagation(); openAuthModal(); } });
     var logout = popup.querySelector('#asAccountLogout');
     if(logout){
       logout.addEventListener('click', function(e){
@@ -268,15 +251,6 @@
   }
 
   function bindGlobalClose(){
-    if(!document.documentElement.dataset.noLoginReady){
-      document.documentElement.dataset.noLoginReady='1';
-      document.addEventListener('click', function(e){
-        var a=e.target.closest('a[href="login.html"], a[href$="/login.html"], [data-auth-open]');
-        if(!a) return;
-        e.preventDefault();
-        openAuthModal();
-      }, true);
-    }
     if(document.documentElement.dataset.asGlobalCloseReady === '1') return;
     document.documentElement.dataset.asGlobalCloseReady = '1';
     document.addEventListener('click', function(e){
@@ -296,6 +270,5 @@
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 400);
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 1500);
     bindGlobalClose();
-    if(location.hash === '#login' || location.hash === '#auth' || location.hash === '#register') setTimeout(openAuthModal, 120);
   });
 })();

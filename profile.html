@@ -46,9 +46,7 @@
 <main class="container profile-page">
   <div class="profile-head">
     <div>
-      <p class="profile-eyebrow">AUTO STYLE MARKET</p>
       <h1>Личный кабинет</h1>
-      <p class="muted">Профиль, фото, пароль, заказы и избранное.</p>
     </div>
     <button id="profileLogout" class="profile-logout" type="button">Выйти</button>
   </div>
@@ -56,7 +54,7 @@
   <section id="profileGuest" class="profile-card profile-guest" hidden>
     <h2>Войдите в аккаунт</h2>
     <p class="muted">Профиль доступен только авторизованным пользователям.</p>
-    <button class="profile-primary-link" type="button" data-auth-open="1" onclick="document.getElementById('authModal')?.classList.add('open','show')">Войти</button>
+    <a class="profile-primary-link" href="login.html">Войти</a>
   </section>
 
   <section id="profileApp" class="profile-layout" hidden>
@@ -85,7 +83,7 @@
     <div class="profile-content">
       <section class="profile-card profile-pane active" data-pane="account">
         <div class="profile-card-head">
-          <div><h2>Данные аккаунта</h2><p class="muted">Имя, телефон, адрес и email сохраняются в Firebase.</p></div>
+          <div><h2>Данные аккаунта</h2></div>
         </div>
         <form id="profileForm" class="profile-form">
           <label>Имя<input id="profileName" autocomplete="name" placeholder="Ваше имя"></label>
