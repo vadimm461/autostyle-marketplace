@@ -331,12 +331,40 @@ function normalizeAdminSectionId(id) {
   return ADMIN_SECTION_ALIASES[id] || id || 'dashboard';
 }
 
+function adminSectionTitle(id) {
+  const titles = {
+    products: 'Загружаем товары...',
+    categories: 'Загружаем категории...',
+    banners: 'Загружаем баннеры...',
+    orders: 'Загружаем заказы...',
+    discountCards: 'Загружаем скидочные карты...',
+    homeblocks: 'Загружаем блоки главной...',
+    promocards: 'Загружаем промо карточки...',
+    notifications: 'Загружаем уведомления...',
+    users: 'Загружаем пользователей...'
+  };
+  return titles[id] || 'Загрузка раздела...';
+}
+
+function setAdminLoading(active, title = 'Загрузка раздела...', text = 'Получаем данные из Firebase') {
+  const box = document.getElementById('adminGlobalLoader');
+  if (!box) return;
+  const titleEl = document.getElementById('adminGlobalLoaderTitle');
+  const textEl = document.getElementById('adminGlobalLoaderText');
+  if (titleEl) titleEl.textContent = title;
+  if (textEl) textEl.textContent = text;
+  box.classList.toggle('is-active', !!active);
+}
+
+
 async function loadAdminSection(sectionId, force = false) {
   if (!adminAuthReady) return;
   const id = normalizeAdminSectionId(sectionId);
   if (!force && loadedAdminSections.has(id)) return;
 
   loadedAdminSections.add(id);
+  const needsLoader = id && id !== 'dashboard';
+  if (needsLoader) setAdminLoading(true, adminSectionTitle(id));
 
   try {
     if (id === 'products') await renderProducts();
@@ -352,6 +380,8 @@ async function loadAdminSection(sectionId, force = false) {
   } catch (err) {
     loadedAdminSections.delete(id);
     console.error('Ошибка загрузки раздела админки:', id, err);
+  } finally {
+    if (needsLoader) setAdminLoading(false);
   }
 }
 

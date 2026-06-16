@@ -45,6 +45,13 @@
   </aside>
 
   <main class="admin-main">
+    <div id="adminGlobalLoader" class="admin-global-loader" aria-live="polite">
+      <div class="admin-global-loader-card">
+        <span class="admin-spinner"></span>
+        <b id="adminGlobalLoaderTitle">Загрузка раздела...</b>
+        <small id="adminGlobalLoaderText">Получаем данные из Firebase</small>
+      </div>
+    </div>
     <button id="logout" class="icon-btn" style="float:right">Выйти</button>
 
     <h1>Панель управления</h1>
@@ -528,18 +535,33 @@
           <button id="adminCreateUserGroup" class="primary" type="button">Создать группу</button>
         </div>
 
-        <div class="admin-users-actions">
-          <label class="field">Добавить выбранных пользователей в группу
+        <div class="admin-users-actions admin-users-actions-wide">
+          <label class="field">Группа для выбранных пользователей
             <select id="adminAssignGroup"></select>
           </label>
           <button id="adminAssignUsersToGroup" type="button">Добавить в группу</button>
+          <button id="adminMoveUsersToGroup" type="button">Переместить в группу</button>
           <span id="adminUsersStatus" class="muted"></span>
         </div>
 
         <h3>Группы</h3>
         <div id="adminUserGroupsList" class="admin-user-groups-list"></div>
 
-        <h3>Пользователи</h3>
+        <div class="admin-users-filter">
+          <label class="field">Фильтр по группе
+            <select id="adminUsersGroupFilter">
+              <option value="all">Все пользователи</option>
+              <option value="none">Без группы</option>
+            </select>
+          </label>
+          <label class="field">Поиск пользователя
+            <input id="adminUsersSearch" placeholder="Имя, email или телефон">
+          </label>
+          <button id="adminUsersSelectAll" type="button">Выбрать показанных</button>
+          <button id="adminUsersClearSelection" type="button">Снять выбор</button>
+        </div>
+
+        <h3>Пользователи <span id="adminUsersCount" class="admin-users-count"></span></h3>
         <div id="adminUsersList" class="admin-users-list"></div>
       </div>
     </section>
