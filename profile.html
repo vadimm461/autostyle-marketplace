@@ -46,9 +46,8 @@
 <main class="container profile-page">
   <div class="profile-head">
     <div>
-      <p class="profile-eyebrow">AUTO STYLE MARKET</p>
       <h1>Личный кабинет</h1>
-      <p class="muted">Профиль, фото, пароль, заказы и избранное.</p>
+      <p class="muted">Добро пожаловать, <span id="profileWelcomeName">пользователь</span>. Выберите нужный раздел.</p>
     </div>
     <button id="profileLogout" class="profile-logout" type="button">Выйти</button>
   </div>
@@ -73,7 +72,8 @@
         <div id="avatarMsg" class="profile-msg"></div>
       </div>
       <nav class="profile-tabs" aria-label="Разделы профиля">
-        <button class="active" data-profile-tab="account" type="button">Профиль</button>
+        <button class="active" data-profile-tab="home" type="button">Главная</button>
+        <button data-profile-tab="account" type="button">Профиль</button>
         <button data-profile-tab="discount-card" type="button">Скидочная карта</button>
         <button data-profile-tab="security" type="button">Вход и привязки</button>
         <button data-profile-tab="orders" type="button">Мои заказы</button>
@@ -83,7 +83,65 @@
     </aside>
 
     <div class="profile-content">
-      <section class="profile-card profile-pane active" data-pane="account">
+      <section class="profile-card profile-pane profile-home-pane active" data-pane="home">
+        <div class="profile-home-hero">
+          <div>
+            <h2>Добро пожаловать, <span id="profileDashboardName">пользователь</span>!</h2>
+            <p class="muted">Быстрый доступ к основным разделам личного кабинета AutoStyle.</p>
+          </div>
+        </div>
+
+        <div class="profile-home-grid">
+          <a class="profile-home-card" href="catalog.html">
+            <span class="profile-home-icon"><img src="assets/icons/package.svg" alt=""></span>
+            <b>Каталог товаров</b>
+            <small>Просматривайте автотовары и подбирайте детали.</small>
+            <em>Перейти в каталог</em>
+          </a>
+          <a class="profile-home-card" href="favorites.html">
+            <span class="profile-home-icon"><img src="assets/icons/heart.svg" alt=""></span>
+            <b>Избранное</b>
+            <small>Товары, которые вы сохранили.</small>
+            <em>Смотреть</em>
+          </a>
+          <a class="profile-home-card" href="cart.html">
+            <span class="profile-home-icon"><img src="assets/icons/cart.svg" alt=""></span>
+            <b>Корзина</b>
+            <small>Товары в вашей корзине.</small>
+            <em>Открыть</em>
+          </a>
+          <button class="profile-home-card" type="button" data-profile-jump="orders">
+            <span class="profile-home-icon"><img src="assets/icons/file.svg" alt=""></span>
+            <b>Мои заказы</b>
+            <small>История заказов и их статус.</small>
+            <em>Перейти</em>
+          </button>
+          <button class="profile-home-card" type="button" data-profile-jump="account">
+            <span class="profile-home-icon"><img src="assets/icons/user.svg" alt=""></span>
+            <b>Профиль</b>
+            <small>Личные данные и настройки аккаунта.</small>
+            <em>Открыть</em>
+          </button>
+          <button class="profile-home-card" type="button" data-profile-jump="discount-card">
+            <span class="profile-home-icon"><img src="assets/icons/percent.svg" alt=""></span>
+            <b>Скидочная карта</b>
+            <small>Ваши скидки и специальные предложения.</small>
+            <em>Открыть</em>
+          </button>
+        </div>
+
+        <div class="profile-benefits">
+          <h3>Ваши преимущества</h3>
+          <div class="profile-benefit-grid">
+            <div class="profile-benefit"><span><img src="assets/icons/percent.svg" alt=""></span><b>Скидочная карта</b><small>Персональные скидки и предложения</small></div>
+            <div class="profile-benefit"><span><img src="assets/icons/card.svg" alt=""></span><b>Удобная оплата</b><small>Разные способы оплаты заказа</small></div>
+            <div class="profile-benefit"><span><img src="assets/icons/shopping-bag.svg" alt=""></span><b>Быстрый заказ</b><small>Данные профиля подставляются автоматически</small></div>
+            <div class="profile-benefit"><span><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Статусы заказов и важные сообщения</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="account">
         <div class="profile-card-head">
           <div><h2>Данные аккаунта</h2><p class="muted">Личные данные аккаунта.</p></div>
         </div>

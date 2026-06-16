@@ -56,7 +56,10 @@ function fillProfile(user, data={}){
   const carInput = $('#profileCar');
   if (carInput) carInput.value = carValue || '';
   updateDiscountCardUI(user, data);
+  const shownName = name || 'пользователь';
   setText($('#profileNameTitle'), name || 'Пользователь');
+  setText($('#profileWelcomeName'), shownName);
+  setText($('#profileDashboardName'), shownName);
   setText($('#profileEmailTitle'), email);
   setText($('#discountCardEmail'), email);
   avatarHtml(photo, name, email);
@@ -92,7 +95,10 @@ async function saveProfile(user){
     createdAt: current.data.createdAt || new Date().toISOString(),
     role: current.data.role || 'user'
   }, { merge: true });
+  const shownName = name || 'пользователь';
   setText($('#profileNameTitle'), name || 'Пользователь');
+  setText($('#profileWelcomeName'), shownName);
+  setText($('#profileDashboardName'), shownName);
   setText($('#profileEmailTitle'), email);
   updateDiscountCardUI(user, { ...(current.data || {}), name, email, phone, city, address, car });
   message(msg, email !== user.email ? 'Профиль сохранён. На новый email отправлено письмо подтверждения.' : 'Профиль сохранён.', true);
@@ -132,7 +138,7 @@ async function changePassword(user){
 }
 function activateProfileTabFromHash(){
   const hash = (location.hash || '').replace('#','');
-  const map = { profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', security:'security', login:'security', auth:'security', providers:'security', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
+  const map = { home:'home', main:'home', profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', security:'security', login:'security', auth:'security', providers:'security', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
   const target = map[hash];
   if(target) document.querySelector(`[data-profile-tab="${target}"]`)?.click();
 }
