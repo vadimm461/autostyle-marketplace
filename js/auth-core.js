@@ -1,7 +1,7 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  sendEmailVerification, signOut,
+  sendEmailVerification, sendPasswordResetEmail, signOut,
   RecaptchaVerifier, signInWithPhoneNumber, linkWithPhoneNumber,
   updateProfile, unlink
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -31,6 +31,34 @@ export async function ensureUserProfile(user, extra={}){
   };
   await setDoc(ref, data, { merge:true });
 }
+
+export function getAuthErrorMessage(error, fallback='Ошибка авторизации'){
+  const code = String(error?.code || '').trim();
+  const raw = String(error?.message || error || '').toUpperCase();
+  if([
+    'auth/invalid-credential',
+    'auth/wrong-password',
+    'auth/user-not-found',
+    'auth/invalid-login-credentials',
+    'auth/invalid-email'
+  ].includes(code) || raw.includes('INVALID_LOGIN_CREDENTIALS') || raw.includes('INVALID_PASSWORD') || raw.includes('EMAIL_NOT_FOUND')){
+    return 'Неверный логин или пароль';
+  }
+  if(code === 'auth/too-many-requests') return 'Слишком много попыток входа. Попробуйте позже';
+  if(code === 'auth/network-request-failed') return 'Проверьте подключение к интернету';
+  if(code === 'auth/user-disabled') return 'Аккаунт заблокирован';
+  if(code === 'auth/email-already-in-use') return 'Такая почта уже зарегистрирована';
+  if(code === 'auth/weak-password') return 'Пароль должен быть не короче 6 символов';
+  if(code === 'auth/missing-email') return 'Введите почту';
+  return fallback;
+}
+export async function resetPassword(email){
+  const cleanEmail = String(email || '').trim();
+  if(!cleanEmail) throw new Error('Введите почту, чтобы восстановить пароль');
+  await sendPasswordResetEmail(auth, cleanEmail);
+  return true;
+}
+
 export async function loginEmail(email, pass){
   const res = await signInWithEmailAndPassword(auth, email, pass);
   await ensureUserProfile(res.user);
