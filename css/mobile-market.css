@@ -62,3 +62,6 @@
 .m-profile-tabs a{white-space:nowrap}
 #mRecaptcha{min-height:1px}
 @media (min-width:420px){.m-auth-services{grid-template-columns:repeat(3,1fr)}}
+
+/* loader disabled */
+.m-loader,#mLoader{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}
