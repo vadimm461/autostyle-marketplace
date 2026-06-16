@@ -198,3 +198,41 @@
 @keyframes asAlertIn {
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
+
+
+/* ===== Cart final restore: красивые кнопки и запрет скидки в рассрочку ===== */
+.cart-summary .primary#checkoutBtn{
+  min-height:54px!important;border:0!important;border-radius:18px!important;
+  background:linear-gradient(135deg,#24e11a,#12b80d)!important;color:#06120a!important;
+  font-weight:1000!important;box-shadow:0 16px 34px rgba(36,225,26,.28)!important;
+}
+.discount-card-btn{
+  min-height:52px!important;border:0!important;border-radius:18px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;
+  background:linear-gradient(135deg,#ff3b30,#ff6b35)!important;color:#fff!important;
+  font-weight:1000!important;box-shadow:0 16px 34px rgba(255,59,48,.28)!important;
+}
+.discount-card-btn img{width:18px!important;height:18px!important;filter:brightness(0) invert(1)!important;}
+.discount-card-btn.applied{background:linear-gradient(135deg,#24e11a,#12b80d)!important;color:#06120a!important;}
+.discount-card-btn.applied img{filter:none!important;}
+.discount-card-btn.disabled-by-installment,
+.discount-card-btn:disabled{
+  opacity:.72!important;cursor:not-allowed!important;filter:grayscale(.15)!important;
+  background:linear-gradient(135deg,#cbd5e1,#94a3b8)!important;color:#111827!important;box-shadow:none!important;
+}
+.discount-card-btn.disabled-by-installment img,
+.discount-card-btn:disabled img{filter:none!important;}
+.cart-bottom-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;margin-top:14px!important;}
+.continue-shopping-btn{
+  min-height:48px!important;border-radius:16px!important;border:1px solid #dbe3ee!important;
+  background:#fff!important;color:#111827!important;text-decoration:none!important;font-weight:1000!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
+  box-shadow:0 10px 24px rgba(15,23,42,.06)!important;
+}
+.continue-shopping-btn:hover{border-color:#24e11a!important;color:#0f8f08!important;transform:translateY(-1px)!important;}
+.continue-shopping-btn img{width:17px!important;height:17px!important;}
+.topbar .as-account-wrap > .as-head-icon-btn,
+.topbar .as-account-wrap > .as-head-icon-btn.active,
+.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{
+  box-shadow:none!important;outline:0!important;border-color:rgba(39,226,26,.22)!important;
+}

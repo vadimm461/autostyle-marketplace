@@ -97,6 +97,7 @@ function getPaymentMethod() {
 }
 
 function getDiscountedTotal(total) {
+  if (getPaymentMethod() === 'installment') return Math.round(Number(total || 0));
   const pct = discountCardApplied ? Math.max(0, Math.min(100, Number(discountCardPercent || 0))) : 0;
   return Math.max(0, Math.round(Number(total || 0) * (100 - pct) / 100));
 }
@@ -128,6 +129,22 @@ function updatePaymentUI() {
     installmentBox.hidden = method !== 'installment';
     if (method === 'installment') installmentBox.open = true;
   }
+
+  if (discountCardBtn) {
+    const isInstallment = method === 'installment';
+    discountCardBtn.disabled = isInstallment;
+    discountCardBtn.classList.toggle('disabled-by-installment', isInstallment);
+    if (isInstallment) {
+      discountCardApplied = false;
+      discountCardPercent = 0;
+      discountCardBtn.classList.remove('applied');
+      discountCardBtn.innerHTML = '<img alt="" src="assets/icons/discount-card.svg">Скидочная карта недоступна в рассрочку';
+    } else if (!discountCardApplied) {
+      discountCardBtn.innerHTML = '<img alt="" src="assets/icons/discount-card.svg">Применить скидочную карту';
+    }
+  }
+
+  renderCartTotal(lastCartTotal);
 }
 
 paymentInputs.forEach(input => input.addEventListener('change', updatePaymentUI));
@@ -359,6 +376,10 @@ async function hasActiveDiscountCard(user) {
 
 if (discountCardBtn) {
   discountCardBtn.onclick = async () => {
+    if (getPaymentMethod() === 'installment') {
+      alert('Скидочная карта не работает при оплате в рассрочку. Выберите наличные или карту, чтобы применить скидку.');
+      return;
+    }
     const user = auth.currentUser;
     if (!user) {
       alert('Скидочная карта доступна после входа в аккаунт.');
@@ -374,7 +395,7 @@ if (discountCardBtn) {
     discountCardApplied = true;
     discountCardPercent = Number(card.percent || 0);
     discountCardBtn.classList.add('applied');
-    discountCardBtn.textContent = discountCardPercent > 0 ? `Скидка ${discountCardPercent}% применена` : 'Скидочная карта применена';
+    discountCardBtn.innerHTML = '<img alt="" src="assets/icons/discount-card.svg">' + (discountCardPercent > 0 ? `Скидка ${discountCardPercent}% применена` : 'Скидочная карта применена');
     renderCartTotal(lastCartTotal);
   };
 }
@@ -459,6 +480,10 @@ async function createOrderFromCart() {
     const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
     const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
     const paymentMethod = getPaymentMethod();
+    if (paymentMethod === 'installment') {
+      discountCardApplied = false;
+      discountCardPercent = 0;
+    }
     const installment = paymentMethod === 'installment' ? getSelectedInstallment() : null;
     if (paymentMethod === 'installment' && !installment?.bank) {
       alert('Выберите банк для рассрочки.');
