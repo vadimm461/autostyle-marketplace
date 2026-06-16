@@ -20,6 +20,27 @@ const PROMO_CARDS_COLLECTIONS = [...new Set([
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 
+
+async function getAccountMenuUser(user){
+  if(!user) return null;
+  let profile = {};
+  try{
+    const usersCollection = COLLECTIONS.users || 'autostyle_users';
+    const snap = await getDoc(doc(db, usersCollection, user.uid));
+    if(snap.exists()) profile = snap.data() || {};
+  }catch(err){
+    console.warn('account menu profile load error', err);
+  }
+  return {
+    uid: user.uid,
+    email: profile.email || user.email || user.phoneNumber || '',
+    phoneNumber: profile.phone || user.phoneNumber || '',
+    displayName: profile.name || profile.displayName || user.displayName || '',
+    name: profile.name || profile.displayName || user.displayName || '',
+    photoURL: profile.photoURL || profile.photo || profile.avatar || user.photoURL || ''
+  };
+}
+
 function clearCartAndFavorites(){
   localStorage.removeItem('cart');
   localStorage.removeItem('favorites');
