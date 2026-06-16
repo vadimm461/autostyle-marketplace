@@ -15,6 +15,10 @@ const PAGE_SIZE = 24;
 let cart = [];
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 const page = document.body.dataset.page;
+const waitAuthUser = () => new Promise(resolve => {
+  if (auth.currentUser) return resolve(auth.currentUser);
+  const off = onAuthStateChanged(auth, user => { off(); resolve(user || null); });
+});
 
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
@@ -155,7 +159,12 @@ function bind(scope=document){
 }
 function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),150); }
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
+function normalizeMobileSearchButton(){
+  const btn = $('#mSearchBtn');
+  if (btn) { btn.textContent = 'Найти'; btn.setAttribute('aria-label','Найти'); }
+}
 function setupShell(active='home'){
+  normalizeMobileSearchButton();
   $('#mSearchBtn') && ($('#mSearchBtn').onclick=searchGo);
   $('#mSearch') && $('#mSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); searchGo(); }});
   const nav=$('.m-bottom-inner');
@@ -192,6 +201,27 @@ function childrenOfParent(parent){
 }
 function allLabel(parent){return 'Все '+catName(parent).toLocaleLowerCase('ru-RU')}
 function shortChild(child,parent){return catName(child).replace(new RegExp('^'+catName(parent).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s+','i'),'').trim()||catName(child)}
+
+function findCategoryByName(name){
+  const n = norm(name);
+  return categories.find(c => norm(catName(c)) === n) || null;
+}
+function findParentForCategory(category){
+  if(!category) return null;
+  const pKey = parentKey(category);
+  if(!pKey) return category;
+  return parentsList().find(p => [catId(p), String(p.externalId||'')].filter(Boolean).includes(pKey)) || category;
+}
+function categoryChipsForSelection(selected){
+  const pList = parentsList();
+  if(!selected) return { title:'Разделы', chips:pList.slice(0,18), parent:null };
+  const selectedCat = findCategoryByName(selected);
+  const parent = findParentForCategory(selectedCat) || pList.find(p => norm(catName(p)) === norm(selected)) || null;
+  if(!parent) return { title:'Разделы', chips:pList.slice(0,18), parent:null };
+  const kids = childrenOfParent(parent).filter(c => norm(catName(c)) !== norm(catName(parent)));
+  return { title:`Подразделы: ${catName(parent)}`, chips:kids.length ? kids : [parent], parent };
+}
+
 function productInCategory(p, selected){
   if(!selected) return true;
   const g=norm(group(p));
@@ -242,9 +272,14 @@ async function renderCatalog(){
   setupShell('catalog'); await initData();
   const params=new URLSearchParams(location.search), q=params.get('search')||'', selected=params.get('category')||'';
   const pList=parentsList();
-  $('#mCategory').innerHTML='<option value="">Все категории</option>'+pList.map(p=>`<option value="${catName(p)}" ${norm(selected)===norm(catName(p))?'selected':''}>${catName(p)}</option>`).join('');
+  const selectedCat = findCategoryByName(selected);
+  const selectedParent = findParentForCategory(selectedCat) || pList.find(p => norm(catName(p)) === norm(selected)) || null;
+  $('#mCategory').innerHTML='<option value="">Все категории</option>'+pList.map(p=>`<option value="${catName(p)}" ${(selectedParent && norm(catName(selectedParent))===norm(catName(p)))?'selected':''}>${catName(p)}</option>`).join('');
   $('#mCategory').onchange=e=>{location.href=e.target.value?`mobile-catalog.html?category=${encodeURIComponent(e.target.value)}`:'mobile-catalog.html'};
-  $('#mCatChips').innerHTML=pList.slice(0,18).map(p=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(p))}">${catName(p)}</a>`).join('');
+  const chipData = categoryChipsForSelection(selected);
+  const chipsTitle = document.querySelector('[data-m-catalog-chips-title]') || document.querySelector('.m-section-head h2');
+  if (chipsTitle) chipsTitle.textContent = chipData.title;
+  $('#mCatChips').innerHTML=(chipData.chips || []).map(c=>`<a class="m-cat ${norm(selected)===norm(catName(c))?'active':''}" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${selectedParent && catId(c)!==catId(selectedParent) ? shortChild(c, selectedParent) : catName(c)}</a>`).join('');
   $('#mFilterSearch').value=q;
   $('#mFilterSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); location.href=`mobile-catalog.html?search=${encodeURIComponent(e.target.value.trim())}`; }});
   let list=products.filter(p=>productInCategory(p,selected));
@@ -289,7 +324,7 @@ async function renderProduct(){
 }
 async function renderCart(){
   setupShell('cart'); await initData();
-  const user = auth.currentUser;
+  const user = await waitAuthUser();
   if(!user){
     $('#mCartList').innerHTML = `<div class="m-empty"><b>Войдите в аккаунт</b><br>Корзина сохраняется в профиле и доступна после входа.<br><br><a class="m-primary" href="mobile-profile.html">Войти</a></div>`;
     $('#mTotal').textContent = money(0); clearLoader(); return;
