@@ -4,12 +4,14 @@ import { createOrderStatusNotification } from './notify-service.js';
 
 import {
   onAuthStateChanged,
-  signOut
+  signOut,
+  signInWithEmailAndPassword
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   deleteDoc,
   doc,
@@ -326,6 +328,60 @@ const ADMIN_SECTION_ALIASES = {
 
 const loadedAdminSections = new Set();
 let adminAuthReady = false;
+let adminAuthChecked = false;
+const ADMIN_USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
+
+function setAdminLoginMessage(text = '') {
+  const box = document.getElementById('adminLoginError');
+  if (box) box.textContent = text;
+}
+
+function setAdminLocked(locked) {
+  document.body.classList.toggle('admin-locked', !!locked);
+}
+
+async function isCurrentUserAdmin(user) {
+  if (!user) return false;
+  const snap = await getDoc(doc(db, ADMIN_USERS_COLLECTION, user.uid));
+  return snap.exists() && snap.data().role === 'admin';
+}
+
+async function allowAdmin(user) {
+  const ok = await isCurrentUserAdmin(user);
+  if (!ok) {
+    adminAuthReady = false;
+    setAdminLocked(true);
+    setAdminLoginMessage('Этот аккаунт не является администратором. Войдите под отдельным админ-логином.');
+    try { await signOut(auth); } catch(e) {}
+    return false;
+  }
+
+  setAdminLocked(false);
+  setAdminLoginMessage('');
+  adminAuthReady = true;
+  adminAuthChecked = true;
+  const startSection = normalizeAdminSectionId(location.hash.replace('#', '') || 'dashboard');
+  openSection(startSection);
+  return true;
+}
+
+const adminLoginForm = document.getElementById('adminLoginForm');
+if (adminLoginForm) {
+  adminLoginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('adminLoginEmail')?.value.trim();
+    const pass = document.getElementById('adminLoginPassword')?.value || '';
+    try {
+      setAdminLoginMessage('Проверяем доступ...');
+      const res = await signInWithEmailAndPassword(auth, email, pass);
+      await allowAdmin(res.user);
+    } catch (err) {
+      console.error('admin login error', err);
+      setAdminLocked(true);
+      setAdminLoginMessage('Неверный логин/пароль или нет прав администратора.');
+    }
+  });
+}
 
 function normalizeAdminSectionId(id) {
   return ADMIN_SECTION_ALIASES[id] || id || 'dashboard';
@@ -433,19 +489,20 @@ window.addEventListener('hashchange', () => {
 
 if ($('#logout')) {
   $('#logout').onclick = () => {
-    signOut(auth).then(() => location.href = 'index.html');
+    signOut(auth).then(() => { setAdminLocked(true); location.href = 'admin.html'; });
   };
 }
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
+  setAdminLocked(true);
+
   if (!user) {
-    location.href = 'index.html';
+    adminAuthReady = false;
+    setAdminLoginMessage('');
     return;
   }
 
-  adminAuthReady = true;
-  const startSection = normalizeAdminSectionId(location.hash.replace('#', '') || 'dashboard');
-  openSection(startSection);
+  await allowAdmin(user);
 });
 
 
