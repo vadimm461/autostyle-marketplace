@@ -61,13 +61,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-
-    /* Предложения и жалобы */
-    match /autostyle_feedback/{feedbackId} {
-      allow create: if isSignedIn();
-      allow read, update, delete: if isAdmin();
-    }
-
     /* Заказы */
     match /autostyle_orders/{orderId} {
       allow create: if isProfileVerified();
@@ -139,6 +132,19 @@ service cloud.firestore {
     match /autostyle_notification_reads/{userId} {
       allow read, create, update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
+    }
+
+
+    /* Предложения и жалобы */
+    match /autostyle_feedback/{feedbackId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+        || resource.data.userEmail == request.auth.token.email
+      );
+      allow update, delete: if isAdmin();
     }
 
     /* Старые коллекции */
