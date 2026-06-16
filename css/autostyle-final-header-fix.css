@@ -1,1 +1,122 @@
-/* AutoStyle: отключено. Стили перенесены в css/final-request-clean-fix.css */
+/* FINAL HEADER FIX: one catalog button design everywhere + working dropdown positions */
+.topbar .bar{
+  align-items:center !important;
+}
+.topbar .catalog-btn,
+.topbar a.catalog-btn,
+.topbar button.catalog-btn,
+header .catalog-btn,
+header a.catalog-btn,
+header button.catalog-btn{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:132px !important;
+  max-width:132px !important;
+  height:46px !important;
+  min-height:46px !important;
+  padding:0 20px !important;
+  margin:0 !important;
+  border:1px solid rgba(33,229,29,.28) !important;
+  border-radius:18px !important;
+  background:linear-gradient(135deg,#21e51d,#63ff55) !important;
+  color:#041006 !important;
+  box-shadow:0 0 24px rgba(33,229,29,.22) !important;
+  font-size:15px !important;
+  line-height:46px !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  text-decoration:none !important;
+  cursor:pointer !important;
+  box-sizing:border-box !important;
+}
+.topbar .catalog-btn:hover{
+  transform:translateY(-1px) !important;
+  color:#041006 !important;
+}
+
+#asFixedAccountDropdown,
+#asFixedNotificationsDropdown{
+  position:fixed !important;
+  top:86px !important;
+  display:none !important;
+  background:#fff !important;
+  color:#0f172a !important;
+  border:1px solid #e5eaf3 !important;
+  border-radius:22px !important;
+  box-shadow:0 24px 70px rgba(15,23,42,.24) !important;
+  padding:14px !important;
+  z-index:2147483000 !important;
+  box-sizing:border-box !important;
+}
+#asFixedAccountDropdown.is-open,
+#asFixedNotificationsDropdown.is-open{
+  display:block !important;
+}
+#asFixedAccountDropdown{
+  right:24px !important;
+  width:292px !important;
+  max-width:calc(100vw - 24px) !important;
+}
+#asFixedNotificationsDropdown{
+  right:330px !important;
+  width:390px !important;
+  max-width:calc(100vw - 24px) !important;
+  max-height:calc(100vh - 110px) !important;
+  overflow:auto !important;
+}
+.as-fixed-drop-title{
+  margin:4px 6px 12px !important;
+  font-size:20px !important;
+  font-weight:900 !important;
+}
+.as-fixed-menu-link,
+.as-fixed-notify-item,
+.as-fixed-notify-all{
+  display:block !important;
+  width:100% !important;
+  text-align:left !important;
+  border:1px solid #eef2f7 !important;
+  background:#f8fafc !important;
+  color:#0f172a !important;
+  border-radius:14px !important;
+  padding:12px 14px !important;
+  margin:0 0 8px !important;
+  text-decoration:none !important;
+  font-weight:800 !important;
+  cursor:pointer !important;
+  box-sizing:border-box !important;
+}
+.as-fixed-menu-link:hover,
+.as-fixed-notify-item:hover,
+.as-fixed-notify-all:hover{
+  background:#eaffea !important;
+  border-color:#c8f7c4 !important;
+}
+.as-fixed-notify-title{font-weight:900 !important;margin-bottom:5px !important;}
+.as-fixed-notify-text{color:#475569 !important;font-size:14px !important;line-height:1.4 !important;}
+.as-fixed-notify-date{color:#64748b !important;font-size:12px !important;margin-top:7px !important;}
+.as-fixed-back{
+  border:0 !important;
+  background:#21e51d !important;
+  color:#061006 !important;
+  border-radius:12px !important;
+  padding:10px 14px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  margin-bottom:12px !important;
+}
+.as-fixed-detail-body{line-height:1.55 !important;color:#334155 !important;}
+
+@media(max-width:1000px){
+  #asFixedAccountDropdown,
+  #asFixedNotificationsDropdown{
+    left:12px !important;
+    right:12px !important;
+    width:auto !important;
+    max-width:none !important;
+    top:92px !important;
+  }
+}

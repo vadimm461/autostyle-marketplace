@@ -1,1 +1,14 @@
-/* AutoStyle: отключено. Стили перенесены в css/final-request-clean-fix.css */
+.topbar .bar{position:relative;}
+#accountBtn{cursor:pointer;}
+.as-account-dropdown{display:none;position:absolute;right:360px;top:calc(100% + 10px);width:320px;z-index:3000;background:#fff;color:#111827;border:1px solid #e6ebf2;border-radius:20px;box-shadow:0 24px 60px rgba(9,13,20,.25);padding:14px;}
+.as-account-dropdown.is-open{display:block;}
+.as-account-user{display:flex;align-items:center;gap:12px;padding:10px;border-radius:16px;text-decoration:none;color:#111827;}
+.as-account-user:hover,.as-account-menu a:hover,.as-account-menu button:hover{background:#f3f5f8;}
+.as-account-avatar{width:52px;height:52px;border-radius:14px;background:#eef3f8;display:grid;place-items:center;overflow:hidden;font-weight:950;flex:0 0 52px;}
+.as-account-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.as-account-info b{display:block;font-size:17px;line-height:1.1;}
+.as-account-info small{display:block;margin-top:4px;color:#667085;font-size:13px;font-weight:800;word-break:break-word;}
+.as-account-status{display:inline-flex;margin:8px 10px 12px;padding:7px 12px;border-radius:999px;background:#eafbec;color:#0b7d18;font-size:13px;font-weight:900;}
+.as-account-menu{display:grid;gap:6px;}
+.as-account-menu a,.as-account-menu button{display:flex;align-items:center;min-height:44px;width:100%;border:0;border-radius:14px;background:transparent;color:#111827;text-decoration:none;font:900 16px/1 Inter,Arial,sans-serif;padding:0 12px;cursor:pointer;text-align:left;}
+@media(max-width:900px){.as-account-dropdown{right:12px;left:12px;width:auto;}}
