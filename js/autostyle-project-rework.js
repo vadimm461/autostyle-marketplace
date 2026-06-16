@@ -2,27 +2,6 @@
   'use strict';
 
 
-
-  function safeParseArray(value){
-    try{ var parsed = JSON.parse(value || '[]'); return Array.isArray(parsed) ? parsed : []; }catch(_){ return []; }
-  }
-  function itemQty(item){
-    if(!item) return 0;
-    if(typeof item !== 'object') return 1;
-    var q = Number(item.qty != null ? item.qty : (item.quantity != null ? item.quantity : (item.count != null ? item.count : 1)));
-    return isFinite(q) && q > 0 ? q : 1;
-  }
-  function currentCartCount(){
-    var keys = ['cart','autostyle_cart','as_cart','cartItems'];
-    var best = [];
-    keys.forEach(function(key){ var rows = safeParseArray(localStorage.getItem(key)); if(rows.length > best.length) best = rows; });
-    return best.reduce(function(sum,item){ return sum + itemQty(item); }, 0);
-  }
-  function refreshCartBadges(){
-    var count = currentCartCount();
-    document.querySelectorAll('#cartCount,.cartCount').forEach(function(el){ el.textContent = String(count); el.dataset.count = String(count); });
-  }
-
   function iconPath(name){
     return 'assets/icons/' + name + '.svg';
   }
@@ -36,7 +15,7 @@
     }[kind] || ['grid',''];
     var badge = '';
     if(kind === 'notify') badge = '<b id="notificationCount" class="as-notify-count as-head-badge" data-count="0"></b>';
-    if(kind === 'cart') badge = '<b id="cartCount" class="as-head-badge">'+currentCartCount()+'</b>';
+    if(kind === 'cart') badge = '<b id="cartCount" class="as-head-badge">0</b>';
     return '<span class="as-head-icon" aria-hidden="true"><img src="'+iconPath(data[0])+'" alt="" loading="eager"></span><span class="as-head-label">'+data[1]+'</span>'+badge;
   }
   function applyHeaderIconButton(el, kind){
@@ -46,7 +25,7 @@
     var keepCart = el.querySelector('#cartCount');
     var keepNotify = el.querySelector('#notificationCount,.as-notify-count');
     el.innerHTML = navIconHtml(kind);
-    if(kind === 'cart'){ var b=el.querySelector('#cartCount'); if(b) b.textContent = keepCart ? (keepCart.textContent || String(currentCartCount())) : String(currentCartCount()); }
+    if(kind === 'cart' && keepCart){ var b=el.querySelector('#cartCount'); if(b) b.textContent = keepCart.textContent || '0'; }
     if(kind === 'notify' && keepNotify){ var n=el.querySelector('#notificationCount'); if(n){ n.textContent = keepNotify.textContent || ''; n.dataset.count = keepNotify.dataset.count || n.dataset.count || '0'; } }
   }
   function normalizeHeaderIcons(){
@@ -386,10 +365,6 @@
   }
 
   ready(function(){
-    refreshCartBadges();
-    window.addEventListener('storage', refreshCartBadges);
-    window.addEventListener('autostyle-cart-updated', refreshCartBadges);
-    window.AutoStyleUpdateCartCount = refreshCartBadges;
     // Каталог не трогаем: оставляем кнопку как в исходной верстке.
     normalizeHeaderIcons();
     normalizeAccountButtons();

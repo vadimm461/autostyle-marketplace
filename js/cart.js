@@ -72,12 +72,11 @@ function save() {
   cart = normalizeCart(cart);
   localStorage.setItem('cart', JSON.stringify(cart));
   updateCartCounter();
-  window.dispatchEvent(new Event('autostyle-cart-updated'));
 }
 
 function updateCartCounter() {
   const count = cart.reduce((s, i) => s + (Number(i.qty) || 1), 0);
-  document.querySelectorAll('#cartCount,.cartCount').forEach(el => { el.textContent = String(count); el.dataset.count = String(count); });
+  document.querySelectorAll('#cartCount,.cartCount').forEach(el => el.textContent = String(count));
 }
 
 function money(v) {
@@ -310,6 +309,7 @@ function renderInstallments(total) {
   if (!inst) return;
   if (!total) {
     inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
+    updatePaymentUI();
     return;
   }
 
@@ -364,6 +364,7 @@ function renderInstallments(total) {
     });
   });
 
+  updatePaymentUI();
 }
 
 function openQuickProduct(product) {
@@ -613,7 +614,8 @@ onAuthStateChanged(auth, user => {
     waitAccountMenu(() => {
       if (user) {
         window.AutoStyleAccountMenu.renderUser(user, async () => {
-          localStorage.removeItem('autostyle_user');
+          localStorage.removeItem('cart');
+          localStorage.removeItem('favorites');
           await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js').then(m => m.signOut(auth));
           location.href = 'index.html';
         });

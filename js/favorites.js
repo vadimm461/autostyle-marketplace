@@ -7,9 +7,10 @@ let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
 function clearCartAndFavorites(){
-  // Не чистим корзину и избранное при гостевом режиме/выходе — иначе корзина сразу становится пустой.
+  // Не очищаем корзину и избранное при обычной загрузке страницы или выходе.
+  // Иначе гость/разлогин получает пустую корзину сразу после открытия сайта.
   localStorage.removeItem('autostyle_user');
-  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+  window.dispatchEvent(new Event('autostyle-account-cleared'));
 }
 
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
@@ -21,8 +22,8 @@ const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.c
 const oldPrice = p => { const op = rawOldPrice(p), pr = Number(p.price || 0); return op > pr ? op : 0; };
 function discount(p){ const d=Number(p.discount||p.discountPercent||0); if(d>0)return d; const op=oldPrice(p), pr=Number(p.price||0); return op>pr&&pr>0?Math.round((op-pr)/op*100):0; }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
-function cartQty(){ return (Array.isArray(cart)?cart:[]).reduce((s,i)=>s+(typeof i==='object'?Math.max(1,Number(i.qty??i.quantity??i.count??1)||1):1),0); }
-function updateCart(){ localStorage.setItem('cart', JSON.stringify(cart)); const n=cartQty(); document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(n)); window.dispatchEvent(new Event('autostyle-cart-updated')); }
+function cartQtyCount(rows = cart){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
+function updateCart(){ localStorage.setItem('cart', JSON.stringify(cart)); document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(cartQtyCount())); window.dispatchEvent(new Event('autostyle-cart-updated')); }
 function setupSearch(){
   const input=$('#siteSearch'), btn=$('#siteSearchBtn');
   const go=()=>{const q=encodeURIComponent((input?.value||'').trim()); location.href=q?`catalog.html?search=${q}`:'catalog.html'};
@@ -58,6 +59,7 @@ async function loadFavorites(){
 }
 setupSearch();
 onAuthStateChanged(auth, user => {
+  if (!user) { clearCartAndFavorites(); }
   cart = JSON.parse(localStorage.getItem('cart') || '[]');
   favs = JSON.parse(localStorage.getItem('favorites') || '[]');
   updateCart();

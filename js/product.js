@@ -8,9 +8,10 @@ let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 
 function clearCartAndFavorites(){
-  // Не чистим корзину и избранное при гостевом режиме/выходе — иначе корзина сразу становится пустой.
+  // Не очищаем корзину и избранное при обычной загрузке страницы или выходе.
+  // Иначе гость/разлогин получает пустую корзину сразу после открытия сайта.
   localStorage.removeItem('autostyle_user');
-  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+  window.dispatchEvent(new Event('autostyle-account-cleared'));
 }
 
 
@@ -115,12 +116,9 @@ async function renderRelated(current){
   }catch(e){ box.innerHTML = ''; }
 }
 
-function cartQty(){ return (Array.isArray(cart)?cart:[]).reduce((s,i)=>s+(typeof i==='object'?Math.max(1,Number(i.qty??i.quantity??i.count??1)||1):1),0); }
 function saveCart(){
   localStorage.setItem('cart', JSON.stringify(cart));
-  const n = cartQty();
-  document.querySelectorAll('#cartCount,.cartCount').forEach(el => el.textContent = String(n));
-  window.dispatchEvent(new Event('autostyle-cart-updated'));
+  $('#cartCount') && ($('#cartCount').textContent = cart.length);
 }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function saveViewed(id){
@@ -228,6 +226,7 @@ async function loadProduct(){
 }
 setupSearch();
 onAuthStateChanged(auth, user => {
+  if (!user) { clearCartAndFavorites(); }
   cart = JSON.parse(localStorage.getItem('cart') || '[]');
   favs = JSON.parse(localStorage.getItem('favorites') || '[]');
   saveCart();

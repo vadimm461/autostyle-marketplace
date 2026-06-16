@@ -1,44 +1,33 @@
-function safeParseArray(value) {
-  try {
-    const parsed = JSON.parse(value || '[]');
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (_) {
-    return [];
-  }
-}
-
-function cartItemQty(item) {
-  if (!item) return 0;
-  if (typeof item === 'string' || typeof item === 'number') return 1;
-  const qty = Number(item.qty ?? item.quantity ?? item.count ?? 1);
-  return Number.isFinite(qty) && qty > 0 ? qty : 1;
-}
-
-function cartQty() {
+function readCartRows() {
   const keys = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
-  let best = [];
   for (const key of keys) {
-    const rows = safeParseArray(localStorage.getItem(key));
-    if (rows.length > best.length) best = rows;
+    try {
+      const rows = JSON.parse(localStorage.getItem(key) || '[]');
+      if (Array.isArray(rows) && rows.length) return rows;
+    } catch (_) {}
   }
-  return best.reduce((sum, item) => sum + cartItemQty(item), 0);
+  return [];
 }
 
-function updateCartCount() {
-  const count = cartQty();
-  document.querySelectorAll('#cartCount,.cartCount').forEach(el => {
-    el.textContent = String(count);
-    el.dataset.count = String(count);
-  });
+function cartCountValue(rows = readCartRows()) {
+  return rows.reduce((sum, item) => {
+    if (item && typeof item === 'object') return sum + Math.max(1, Number(item.qty ?? item.quantity ?? item.count ?? 1) || 1);
+    return sum + 1;
+  }, 0);
 }
 
-updateCartCount();
-window.addEventListener('storage', updateCartCount);
-window.addEventListener('autostyle-cart-updated', updateCartCount);
-window.AutoStyleUpdateCartCount = updateCartCount;
+function updateHeaderCartCount() {
+  const count = cartCountValue();
+  document.querySelectorAll('#cartCount,.cartCount').forEach(el => { el.textContent = String(count); });
+}
 
-const input = document.querySelector('#siteSearch, #topSearch, #homeSearch');
-const btn = document.querySelector('#siteSearchBtn, #topSearchBtn, #homeSearchBtn');
+updateHeaderCartCount();
+window.addEventListener('storage', updateHeaderCartCount);
+window.addEventListener('autostyle-cart-updated', updateHeaderCartCount);
+window.AutoStyleUpdateCartCount = updateHeaderCartCount;
+
+const input = document.querySelector('#siteSearch');
+const btn = document.querySelector('#siteSearchBtn');
 
 function goSearch() {
   const q = encodeURIComponent((input?.value || '').trim());

@@ -17,9 +17,9 @@ import { createPasswordChangedNotification } from './notify-service.js';
 const $ = s => document.querySelector(s);
 
 function clearCartAndFavorites(){
-  // Не чистим корзину и избранное при гостевом режиме/выходе — иначе корзина сразу становится пустой.
+  // Выход из аккаунта не должен стирать корзину и избранное в браузере.
   localStorage.removeItem('autostyle_user');
-  window.dispatchEvent(new Event('autostyle-storage-cleared'));
+  window.dispatchEvent(new Event('autostyle-account-cleared'));
 }
 
 const usersCollection = COLLECTIONS.users || 'autostyle_users';

@@ -103,7 +103,8 @@ export function priceHtml(p, cls=''){ const price=Number(p.price||0), old=oldPri
 export function cart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
 export function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartCount(); }
 export function addToCart(id){ const c=cart(); c.push(id); setCart(c); }
-export function updateCartCount(){ document.querySelectorAll('#cartCount,.cartCount').forEach(x=>x.textContent=cart().length); document.querySelector('#asCartBtn')?.lastChild && null; }
+export function cartQtyCount(rows = cart()){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
+export function updateCartCount(){ const count = cartQtyCount(); document.querySelectorAll('#cartCount,.cartCount').forEach(x=>x.textContent=String(count)); window.dispatchEvent(new Event('autostyle-cart-updated')); document.querySelector('#asCartBtn')?.lastChild && null; }
 
 export function initMobileUi(){
   updateCartCount();
@@ -113,7 +114,7 @@ export function initMobileUi(){
   if(!document.querySelector('.as-bottom-nav')){
     const nav=document.createElement('nav'); nav.className='as-bottom-nav';
     const p=location.pathname;
-    nav.innerHTML=`<a href="index.html" class="${p.includes('index')||p.endsWith('/')?'active':''}"><span>⌂</span>Главная</a><a href="catalog.html" class="${p.includes('catalog')?'active':''}"><span>▦</span>Каталог</a><button type="button" id="asProfileBtn"><span>●</span>Профиль</button><button type="button" id="asCartBtn"><span>🛒</span>Корзина <b class="cartCount">${cart().length}</b></button>`;
+    nav.innerHTML=`<a href="index.html" class="${p.includes('index')||p.endsWith('/')?'active':''}"><span>⌂</span>Главная</a><a href="catalog.html" class="${p.includes('catalog')?'active':''}"><span>▦</span>Каталог</a><button type="button" id="asProfileBtn"><span>●</span>Профиль</button><button type="button" id="asCartBtn"><span>🛒</span>Корзина <b class="cartCount">${cartQtyCount()}</b></button>`;
     document.body.appendChild(nav);
     nav.querySelector('#asProfileBtn').onclick=()=>document.querySelector('#accountBtn,#openAuth')?.click();
     nav.querySelector('#asCartBtn').onclick=()=>location.href='cart.html';
