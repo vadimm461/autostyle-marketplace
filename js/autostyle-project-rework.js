@@ -295,6 +295,27 @@
     }, true);
   }
 
+
+  function forceAccountButtonHandler(){
+    if(document.documentElement.dataset.asForceAccountHandler === '1') return;
+    document.documentElement.dataset.asForceAccountHandler = '1';
+    document.addEventListener('click', function(e){
+      var btn = e.target && e.target.closest ? e.target.closest('.as-account-wrap > #asAccountButton, .as-account-wrap > .as-head-icon-btn') : null;
+      if(!btn) return;
+      var wrap = btn.closest('.as-account-wrap');
+      var popup = wrap && wrap.querySelector('.as-account-popup');
+      if(!wrap || !popup) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+      closeNotifications();
+      document.querySelectorAll('.as-account-wrap.open').forEach(function(w){ if(w !== wrap) w.classList.remove('open'); });
+      wrap.classList.toggle('open');
+      wireAccountWrap(wrap);
+      bindAccountPopupActions(wrap);
+    }, true);
+  }
+
   function bindGlobalClose(){
     if(document.documentElement.dataset.asGlobalCloseReady === '1') return;
     document.documentElement.dataset.asGlobalCloseReady = '1';
@@ -315,5 +336,6 @@
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 400);
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 1500);
     bindGlobalClose();
+    forceAccountButtonHandler();
   });
 })();
