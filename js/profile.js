@@ -477,6 +477,7 @@ function setupSearch(){
 }
 
 
+function openProfileAuthModal(){ const m=document.getElementById('authModal'); if(m){m.classList.add('open','show'); return;} window.AutoStyleOpenAuthModal?.(); }
 function headerIcon(name){
   return `<img class="account-menu-icon" src="assets/icons/${name}.svg" alt="" loading="lazy" decoding="async">`;
 }
@@ -493,11 +494,12 @@ function renderHeaderAccount(user){
     wrap.dataset.accountRootReady = '1';
     btn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); wrap.classList.toggle('open'); });
     popup.addEventListener('click', e=>e.stopPropagation());
+    popup.addEventListener('click', e=>{ const b=e.target.closest('[data-auth-open], .account-login-only'); if(b){ e.preventDefault(); e.stopPropagation(); openProfileAuthModal(); } });
     document.addEventListener('click', ()=>wrap.classList.remove('open'));
   }
   if(!user){
     btn.classList.remove('active');
-    popup.innerHTML = `<a class="account-login-only" href="login.html">Войти</a>`;
+    popup.innerHTML = `<button class="account-login-only" type="button" data-auth-open="1">Войти</button>`;
     return;
   }
   btn.classList.add('active');

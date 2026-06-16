@@ -79,7 +79,7 @@ function openLogin(){
   closeDropdown();
   const modal = qs('#authModal');
   if (modal) modal.classList.add('open', 'show');
-  else location.href = 'login.html';
+  else window.AutoStyleOpenAuthModal?.();
 }
 function closeDropdown(){
   const dd = qs('#accountMenuDropdown');

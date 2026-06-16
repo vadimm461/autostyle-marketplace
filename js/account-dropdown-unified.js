@@ -134,7 +134,7 @@ function setLoggedOutHeader(){
   wrap.style.display = 'none';
   if (openBtn) {
     openBtn.style.display = 'inline-flex';
-    if (!$('#authModal')) openBtn.onclick = () => { location.href = 'login.html'; };
+    openBtn.onclick = (e) => { e.preventDefault(); window.AutoStyleOpenAuthModal?.(); };
   }
 }
 

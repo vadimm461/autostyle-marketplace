@@ -321,7 +321,7 @@ if (discountCardBtn) {
     const user = auth.currentUser;
     if (!user) {
       alert('Скидочная карта доступна после входа в аккаунт.');
-      location.href = 'login.html';
+      openSiteAuthModal();
       return;
     }
     const card = await getActiveDiscountCard(user);
@@ -368,7 +368,7 @@ async function createOrderFromCart() {
   const user = auth.currentUser;
   if (!user) {
     alert('Оформить заказ можно только после входа в аккаунт.');
-    location.href = 'login.html';
+    openSiteAuthModal();
     return;
   }
 
