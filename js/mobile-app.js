@@ -515,7 +515,7 @@ async function registerByEmail(){
 }
 
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
-async function renderProfile(){
+async function renderProfile(mode='menu'){
   setupShell('profile');
   onAuthStateChanged(auth, async u=>{
     userNow=u; const box=$('#mProfileBox');
@@ -536,22 +536,36 @@ async function renderProfile(){
     const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
     if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
     const myOrders = await loadMobileOrders(u).catch(()=>[]);
-    box.innerHTML=`<div class="m-row"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div><h1 style="margin:0">${d.name||u.displayName||'Профиль'}</h1><div class="m-group">${d.email||u.email||''}</div></div></div>
-    <div class="m-profile-tabs"><a href="#account">Данные</a><a href="#security">Вход</a><a href="#discount-card">Карта</a><a href="#orders">Заказы</a><a href="#feedback">Предложения и жалобы</a><a href="mobile-favorites.html">Избранное</a><a href="mobile-cart.html">Корзина</a></div>
-    <section id="account" class="m-profile-pane"><h2>Данные аккаунта</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||u.phoneNumber||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
+    const avatarHtml = `<div class="m-row"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div><h1 style="margin:0">${d.name||u.displayName||'Профиль'}</h1><div class="m-group">${d.email||u.email||''}</div></div></div>`;
+    const menuHtml = `${avatarHtml}
+    <div class="m-profile-menu">
+      <a class="m-profile-link" href="mobile-profile-data.html"><span>👤</span><b>Личные данные</b><em>Профиль, телефон, адрес, авто</em></a>
+      <a class="m-profile-link" href="mobile-discount-card.html"><span>💳</span><b>Скидочная карта</b><em>Штрихкод и статус карты</em></a>
+      <a class="m-profile-link" href="mobile-orders.html"><span>📦</span><b>Мои заказы</b><em>История и статусы заказов</em></a>
+      <a class="m-profile-link" href="mobile-favorites.html"><span>❤️</span><b>Избранное</b><em>Сохранённые товары</em></a>
+      <a class="m-profile-link" href="mobile-cart.html"><span>🛒</span><b>Корзина</b><em>Товары для оформления</em></a>
+      <a class="m-profile-link" href="mobile-notifications.html"><span>🔔</span><b>Уведомления</b><em>Сообщения от AutoStyle</em></a>
+      <a class="m-profile-link" href="mobile-feedback.html"><span>💬</span><b>Предложения и жалобы</b><em>Написать администрации</em></a>
+      <a class="m-profile-link" href="mobile-more.html"><span>⚙️</span><b>Настройки и ещё</b><em>О сайте, контакты, рассрочка</em></a>
+    </div>
+    <button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:14px">Выйти</button>`;
+    const accountHtml = `${avatarHtml}
+    <section id="account" class="m-profile-pane"><h2>Личные данные</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||u.phoneNumber||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
     <section id="security" class="m-profile-pane"><h2>Привязка входа</h2><p class="m-group">Подключено: ${userProviders(u).map(providerTitle).join(', ') || 'не определено'} · Почта ${u.emailVerified?'подтверждена':'не подтверждена'} · Телефон ${u.phoneNumber?'подтверждён':'не привязан'}</p><button id="resendEmailVerify" class="m-btn" style="width:100%;margin-top:10px">Отправить подтверждение почты</button><div class="m-auth-box"><input id="pLinkPhone" class="m-input" value="${u.phoneNumber||d.phone||''}" placeholder="Телефон: +373..."><button id="pLinkSms" class="m-btn" style="width:100%;margin-top:10px">Отправить SMS для привязки</button><input id="pLinkCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmLinkSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить и привязать</button><div id="mRecaptcha"></div></div></section>
-    <section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section>
-    <section id="orders" class="m-profile-pane"><h2>Мои заказы</h2><div class="m-orders-list">${renderOrdersList(myOrders)}</div></section>
-    <section id="feedback" class="m-profile-pane m-feedback-pane"><h2>Предложения и жалобы</h2><p class="m-group">Напишите администрации сайта. Можно прикрепить фото.</p><select id="mFeedbackType" class="m-input"><option value="proposal">Предложение</option><option value="complaint">Жалоба</option><option value="question">Вопрос</option></select><input id="mFeedbackSubject" class="m-input" placeholder="Тема обращения"><textarea id="mFeedbackText" class="m-input m-textarea" placeholder="Опишите обращение"></textarea><label class="m-file-input"><input id="mFeedbackPhoto" type="file" accept="image/*">📷 Прикрепить фото</label><button id="mSendFeedback" class="m-primary" style="width:100%;margin-top:10px">Отправить администрации</button></section>
-    <section class="m-profile-pane"><h2>Все разделы</h2><div class="m-link-grid"><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-contacts.html">Контакты</a><a href="mobile-about.html">Про нас</a><a href="mobile-more.html">Еще настройки</a></div><button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:14px">Выйти</button></section>`;
+    <a class="m-btn" style="width:100%;margin-top:14px" href="mobile-profile.html">Назад в профиль</a>`;
+    const cardHtml = `${avatarHtml}<section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section><a class="m-btn" style="width:100%;margin-top:14px" href="mobile-profile.html">Назад в профиль</a>`;
+    const ordersHtml = `${avatarHtml}<section id="orders" class="m-profile-pane"><h2>Мои заказы</h2><div class="m-orders-list">${renderOrdersList(myOrders)}</div></section><a class="m-btn" style="width:100%;margin-top:14px" href="mobile-profile.html">Назад в профиль</a>`;
+    const feedbackHtml = `${avatarHtml}<section id="feedback" class="m-profile-pane m-feedback-pane"><h2>Предложения и жалобы</h2><p class="m-group">Напишите администрации сайта. Можно прикрепить фото.</p><select id="mFeedbackType" class="m-input"><option value="proposal">Предложение</option><option value="complaint">Жалоба</option><option value="question">Вопрос</option></select><input id="mFeedbackSubject" class="m-input" placeholder="Тема обращения"><textarea id="mFeedbackText" class="m-input m-textarea" placeholder="Опишите обращение"></textarea><label class="m-file-input"><input id="mFeedbackPhoto" type="file" accept="image/*">📷 Прикрепить фото</label><button id="mSendFeedback" class="m-primary" style="width:100%;margin-top:10px">Отправить администрации</button></section><a class="m-btn" style="width:100%;margin-top:14px" href="mobile-profile.html">Назад в профиль</a>`;
+    const notificationsHtml = `${avatarHtml}<section class="m-profile-pane"><h2>Уведомления</h2><p class="m-group">Уведомления открываются кнопкой колокольчика в шапке/нижнем меню. Здесь оставлена отдельная страница, чтобы профиль не был длинным.</p><a class="m-btn" style="width:100%" href="mobile-profile.html">Назад в профиль</a></section>`;
+    box.innerHTML = mode==='account' ? accountHtml : mode==='card' ? cardHtml : mode==='orders' ? ordersHtml : mode==='feedback' ? feedbackHtml : mode==='notifications' ? notificationsHtml : menuHtml;
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
-    $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
+    if($('#saveProfile')) $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
     if($('#mGetDiscount')) $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
-    $('#resendEmailVerify').onclick=async()=>{ try{ await sendEmailVerification(u); alert('Письмо подтверждения отправлено.'); }catch(e){ alert('Не удалось отправить письмо: '+(e.message||e)); } };
-    $('#pLinkSms').onclick=async()=>{ try{ await startPhoneAuth($('#pLinkPhone').value.trim(), true); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
-    $('#pConfirmLinkSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pLinkCode').value.trim()); }catch(e){ alert('Ошибка подтверждения телефона: '+(e.message||e)); } };
+    if($('#resendEmailVerify')) $('#resendEmailVerify').onclick=async()=>{ try{ await sendEmailVerification(u); alert('Письмо подтверждения отправлено.'); }catch(e){ alert('Не удалось отправить письмо: '+(e.message||e)); } };
+    if($('#pLinkSms')) $('#pLinkSms').onclick=async()=>{ try{ await startPhoneAuth($('#pLinkPhone').value.trim(), true); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
+    if($('#pConfirmLinkSms')) $('#pConfirmLinkSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pLinkCode').value.trim()); }catch(e){ alert('Ошибка подтверждения телефона: '+(e.message||e)); } };
     if($('#mSendFeedback')) $('#mSendFeedback').onclick=async()=>{ try{ await sendMobileFeedback(u); }catch(e){ alert('Ошибка отправки: '+(e.message||e)); } };
-    $('#pLogout').onclick=async()=>{localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
+    if($('#pLogout')) $('#pLogout').onclick=async()=>{localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
     clearLoader();
   });
 }
@@ -564,7 +578,12 @@ async function renderProfile(){
     if(page==='product') await renderProduct();
     if(page==='cart') await renderCart();
     if(page==='favorites') await renderFavorites();
-    if(page==='profile') await renderProfile();
+    if(page==='profile') await renderProfile('menu');
+    if(page==='profile-account') await renderProfile('account');
+    if(page==='profile-card') await renderProfile('card');
+    if(page==='profile-orders') await renderProfile('orders');
+    if(page==='profile-feedback') await renderProfile('feedback');
+    if(page==='profile-notifications') await renderProfile('notifications');
     if(['about','contacts','installment','certificates','more'].includes(page)) renderInfoShell(page==='more'?'profile':'home');
   }catch(e){ console.error(e); clearLoader(); }
 })();
