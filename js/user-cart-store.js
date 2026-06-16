@@ -8,8 +8,7 @@ let currentUser = auth.currentUser || null;
 let currentCart = [];
 let readyPromise = null;
 let cartUnsubscribe = null;
-let cartReadyResolvedFor = '';
-let cartReadyResolve = null;
+let lastSnapshotAt = 0;
 
 function userRef(user = currentUser) {
   return user ? doc(db, USERS_COLLECTION, user.uid) : null;
@@ -54,45 +53,24 @@ function emitCartChanged() {
 }
 
 
-function setCartFromUserData(data = {}) {
-  currentCart = normalizeUserCart(data.cart || data.cartItems || []);
-  emitCartChanged();
-  return currentCart;
-}
-
-function stopCartListener() {
-  if (typeof cartUnsubscribe === 'function') {
-    try { cartUnsubscribe(); } catch(e) {}
+function bindUserCartSnapshot(user = currentUser) {
+  if (cartUnsubscribe) {
+    try { cartUnsubscribe(); } catch (e) {}
+    cartUnsubscribe = null;
   }
-  cartUnsubscribe = null;
-}
-
-function startCartListener(user = currentUser) {
   currentUser = user || auth.currentUser || null;
-  stopCartListener();
   if (!currentUser) {
     currentCart = [];
     emitCartChanged();
-    if (cartReadyResolve) cartReadyResolve(currentCart);
     return;
   }
-  const uid = currentUser.uid;
-  cartReadyResolvedFor = '';
   cartUnsubscribe = onSnapshot(userRef(currentUser), snap => {
     const data = snap.exists() ? (snap.data() || {}) : {};
-    setCartFromUserData(data);
-    if (cartReadyResolve && cartReadyResolvedFor !== uid) {
-      cartReadyResolvedFor = uid;
-      cartReadyResolve(currentCart);
-    }
+    currentCart = normalizeUserCart(data.cart || data.cartItems || []);
+    lastSnapshotAt = Date.now();
+    emitCartChanged();
   }, err => {
-    console.warn('user cart realtime error', err);
-    loadUserCart(currentUser).finally(() => {
-      if (cartReadyResolve && cartReadyResolvedFor !== uid) {
-        cartReadyResolvedFor = uid;
-        cartReadyResolve(currentCart);
-      }
-    });
+    console.warn('user cart snapshot error', err);
   });
 }
 
@@ -105,7 +83,9 @@ export async function loadUserCart(user = currentUser) {
   }
   const snap = await getDoc(userRef(currentUser));
   const data = snap.exists() ? (snap.data() || {}) : {};
-  return setCartFromUserData(data);
+  currentCart = normalizeUserCart(data.cart || data.cartItems || []);
+  emitCartChanged();
+  return currentCart;
 }
 
 export async function saveUserCart(rows = currentCart, user = currentUser) {
@@ -167,21 +147,19 @@ export function getCurrentCartUser() {
 
 export function waitUserCartReady() {
   if (!readyPromise) readyPromise = new Promise(resolve => {
-    cartReadyResolve = resolve;
-    const first = auth.currentUser;
-    if (first) startCartListener(first);
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       currentUser = user || null;
-      startCartListener(currentUser);
-      if (!currentUser) resolve(currentCart);
+      try { await loadUserCart(currentUser); } catch (err) { console.warn('user cart load error', err); currentCart = []; emitCartChanged(); }
+      resolve(currentCart);
     });
   });
   return readyPromise;
 }
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   currentUser = user || null;
-  startCartListener(currentUser);
+  bindUserCartSnapshot(currentUser);
+  try { await loadUserCart(currentUser); } catch (err) { console.warn('user cart refresh error', err); }
 });
 
 window.AutoStyleUserCart = {
@@ -194,5 +172,5 @@ window.AutoStyleUserCart = {
   get: getCurrentUserCart,
   ready: waitUserCartReady,
   updateBadges: updateCartBadges,
-  startRealtime: startCartListener
+  refresh: loadUserCart
 };

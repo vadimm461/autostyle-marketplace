@@ -256,3 +256,27 @@
   .m-profile-tile small{font-size:12px;margin-top:6px}
   .m-profile-pills{padding:0 16px 18px}
 }
+
+/* iPhone/Safari: убирает задержки/двойной тап на нижнем меню и кнопках */
+.m-bottom-nav a,
+.m-bottom-inner a,
+.m-profile-tile,
+.m-profile-pills a,
+.m-cart,
+.m-btn,
+.m-primary,
+.m-danger,
+.m-qty {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.m-profile-tile .m-tile-ico{
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+}
+.m-profile-tile .m-tile-ico img{
+  width: 24px !important;
+  height: 24px !important;
+}
