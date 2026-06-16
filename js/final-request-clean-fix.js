@@ -4,8 +4,18 @@
   function $$(s,r=document){return Array.from(r.querySelectorAll(s))}
 
   function enhanceAccountPopup(){
-    // Аккаунт обрабатывается только в js/autostyle-project-rework.js.
-    // Здесь ничего не вешаем, чтобы не было двойного клика и двух меню.
+    // Меню аккаунта теперь собирается в js/autostyle-project-rework.js и обновляется из Firebase-auth.
+    // Здесь оставляем только совместимость, без перерисовки и без наложения поверх старого HTML.
+    const btn = document.querySelector('#asAccountButton');
+    const wrap = btn?.closest('.as-account-wrap');
+    if(btn && wrap && wrap.dataset.finalClickReady !== '1'){
+      wrap.dataset.finalClickReady = '1';
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        wrap.classList.toggle('open');
+      });
+    }
   }
 
   function fixCatalogPricePosition(){
@@ -65,4 +75,69 @@
     improveNotificationPosition();
     enhanceAdminNotify();
   });
+})();
+
+/* ===== AutoStyle custom alert modal ===== */
+(function () {
+  if (window.__asCustomAlertReady) return;
+  window.__asCustomAlertReady = true;
+
+  const nativeAlert = window.alert ? window.alert.bind(window) : null;
+
+  function closeAlert(backdrop) {
+    if (!backdrop) return;
+    backdrop.remove();
+    const next = window.__asAlertQueue && window.__asAlertQueue.shift();
+    if (next) setTimeout(() => showAlert(next.message), 60);
+  }
+
+  function showAlert(message) {
+    if (!document.body) {
+      if (nativeAlert) nativeAlert(message);
+      return;
+    }
+
+    if (document.querySelector('.as-alert-backdrop')) {
+      window.__asAlertQueue = window.__asAlertQueue || [];
+      window.__asAlertQueue.push({ message });
+      return;
+    }
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'as-alert-backdrop';
+    backdrop.innerHTML = `
+      <div class="as-alert-card" role="dialog" aria-modal="true" aria-labelledby="asAlertTitle">
+        <div class="as-alert-head">
+          <div class="as-alert-icon">AS</div>
+          <h3 id="asAlertTitle" class="as-alert-title">AutoStyle</h3>
+        </div>
+        <p class="as-alert-message"></p>
+        <div class="as-alert-actions">
+          <button type="button" class="as-alert-ok">Окей</button>
+        </div>
+      </div>
+    `;
+
+    backdrop.querySelector('.as-alert-message').textContent = String(message || '');
+    document.body.appendChild(backdrop);
+
+    const okBtn = backdrop.querySelector('.as-alert-ok');
+    okBtn.focus();
+    okBtn.addEventListener('click', () => closeAlert(backdrop));
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeAlert(backdrop);
+    });
+
+    const onKey = (e) => {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        document.removeEventListener('keydown', onKey);
+        closeAlert(backdrop);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+  }
+
+  window.alert = function (message) {
+    showAlert(message);
+  };
 })();
