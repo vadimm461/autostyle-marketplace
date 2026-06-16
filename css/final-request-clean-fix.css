@@ -87,3 +87,33 @@
 
 @media(max-width:900px){.catalog-popup.mega-catalog,.mega-catalog{min-width:0!important;width:calc(100vw - 24px)!important;grid-template-columns:1fr!important}.mega-left{width:auto!important}.mega-child-grid{grid-template-columns:1fr!important}.as-notify-dropdown{right:12px!important;width:calc(100vw - 24px)!important}.catalog-top .catalog-top-price{width:100%!important}.catalog-top .catalog-top-price input{flex:1!important;width:auto!important}}
 
+
+
+/* Account popup root layout: name above email, no horizontal squeeze */
+.as-account-profile-head{
+  display:grid!important;
+  grid-template-columns:54px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.as-account-head-text{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  min-width:0!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+.as-account-title,.as-account-subtitle{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+}
+.as-account-title{font-size:16px!important;line-height:1.15!important;margin:0!important;}
+.as-account-subtitle{font-size:12px!important;line-height:1.2!important;margin:3px 0 0!important;color:#667085!important;}

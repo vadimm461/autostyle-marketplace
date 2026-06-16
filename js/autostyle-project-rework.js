@@ -103,8 +103,10 @@
   }
 
   function accountUserHtml(user){
-    var email = (user && (user.email || user.phoneNumber)) || 'Аккаунт';
-    var name = (user && (user.displayName || user.email || user.phoneNumber)) || 'Пользователь';
+    var email = (user && (user.email || user.phoneNumber)) || '';
+    var name = (user && (user.displayName || '')).trim();
+    if(!name && email) name = email.split('@')[0];
+    if(!name) name = 'Пользователь';
     var photo = user && user.photoURL;
     var avatar = photo ? '<img src="'+photo+'" alt="">' : 'AS';
     return ''+
@@ -112,7 +114,7 @@
         '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
         '<a class="as-account-head-text" href="profile.html#account">'+
           '<div class="as-account-title">'+name+'</div>'+
-          '<div class="as-account-subtitle" id="asAccountEmail">'+email+'</div>'+
+          '<div class="as-account-subtitle" id="asAccountEmail">'+(email || 'Аккаунт')+'</div>'+
         '</a>'+
       '</div>'+
       '<nav class="as-account-menu">'+

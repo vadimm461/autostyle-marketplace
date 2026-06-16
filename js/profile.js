@@ -503,14 +503,14 @@ function renderHeaderAccount(user){
     return;
   }
   btn.classList.add('active');
-  const name = user.displayName || user.email || 'Пользователь';
-  const email = user.email || 'Аккаунт';
+  const email = user.email || '';
+  const name = user.displayName || (email ? email.split('@')[0] : 'Пользователь');
   const photo = user.photoURL || '';
   const avatarHtml = photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : userInitials(name, email);
   popup.innerHTML = `
     <a class="as-account-profile-head as-account-profile-link" href="profile.html#account">
       <div class="as-account-avatar">${avatarHtml}</div>
-      <div class="as-account-head-text"><div class="as-account-title">${name}</div><div class="as-account-subtitle">${email}</div></div>
+      <div class="as-account-head-text"><div class="as-account-title">${name}</div><div class="as-account-subtitle">${email || 'Аккаунт'}</div></div>
     </a>
     <nav class="as-account-menu">
       <a href="profile.html#account">${headerIcon('user')} Фото и профиль</a>

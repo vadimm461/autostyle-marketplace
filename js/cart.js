@@ -321,7 +321,7 @@ if (discountCardBtn) {
     const user = auth.currentUser;
     if (!user) {
       alert('Скидочная карта доступна после входа в аккаунт.');
-      openSiteAuthModal();
+      location.href = 'login.html';
       return;
     }
     const card = await getActiveDiscountCard(user);
@@ -368,7 +368,7 @@ async function createOrderFromCart() {
   const user = auth.currentUser;
   if (!user) {
     alert('Оформить заказ можно только после входа в аккаунт.');
-    openSiteAuthModal();
+    location.href = 'login.html';
     return;
   }
 
@@ -462,8 +462,26 @@ async function createOrderFromCart() {
   }
 }
 
+function waitAccountMenu(cb, tries = 20) {
+  if (window.AutoStyleAccountMenu) return cb();
+  if (tries <= 0) return;
+  setTimeout(() => waitAccountMenu(cb, tries - 1), 100);
+}
+
 // Важно: не очищаем корзину просто из-за гостевого режима. Очистка делается только при явном выходе из аккаунта в общем коде сайта.
-onAuthStateChanged(auth, () => {
+onAuthStateChanged(auth, user => {
+  waitAccountMenu(() => {
+    if (user) {
+      window.AutoStyleAccountMenu.renderUser(user, async () => {
+        localStorage.removeItem('cart');
+        localStorage.removeItem('favorites');
+        await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js').then(m => m.signOut(auth));
+        location.href = 'index.html';
+      });
+    } else {
+      window.AutoStyleAccountMenu.renderGuest();
+    }
+  });
   cart = normalizeCart(readCart());
   render().finally(() => window.AutoStyleLoader?.hide?.());
 });
