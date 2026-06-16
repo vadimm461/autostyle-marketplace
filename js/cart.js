@@ -2,6 +2,7 @@ import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
+import { getUserCart, saveUserCart, normalizeCart as normalizeUserCart } from './user-cart.js';
 
 const cartList = document.querySelector('#cartList');
 const totalBox = document.querySelector('#cartTotal');
@@ -15,42 +16,16 @@ const quickProductContent = document.querySelector('#quickProductContent');
 const installmentBox = document.querySelector('#installmentBox') || document.querySelector('.installment-box');
 const paymentInputs = [...document.querySelectorAll('input[name="paymentMethod"]')];
 
-const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
-
 let productsCache = null;
-let cart = normalizeCart(readCart());
+let cart = [];
 let lastCartRows = [];
 let lastCartTotal = 0;
 let discountCardApplied = false;
 let discountCardPercent = 0;
 let isCheckoutBusy = false;
 
-function parseJsonStorage(key) {
-  try {
-    const value = localStorage.getItem(key);
-    if (!value) return null;
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function readCart() {
-  for (const key of CART_STORAGE_KEYS) {
-    const rows = parseJsonStorage(key);
-    if (rows && rows.length) return rows;
-  }
-  return [];
-}
-
-function cartItemId(item) {
-  if (!item) return '';
-  if (typeof item !== 'object') return String(item);
-  return String(
-    item.id ?? item.productId ?? item.productID ?? item.product_id ??
-    item.uid ?? item.docId ?? item.documentId ?? item.sku ?? item.code ?? item.article ?? ''
-  );
+async function readCart() {
+  return normalizeUserCart(await getUserCart());
 }
 
 function normalizeCart(raw) {
@@ -68,9 +43,8 @@ function normalizeCart(raw) {
   return [...map.values()];
 }
 
-function save() {
-  cart = normalizeCart(cart);
-  localStorage.setItem('cart', JSON.stringify(cart));
+async function save() {
+  cart = await saveUserCart(normalizeCart(cart));
   updateCartCounter();
 }
 
@@ -203,7 +177,7 @@ updatePaymentUI();
 
 
 async function render() {
-  save();
+  await save();
   if (!cartList) return;
 
   let productMap = new Map();
@@ -403,7 +377,7 @@ quickModal?.querySelector('.quick-modal-close')?.addEventListener('click', close
 quickModal?.querySelector('.quick-modal-backdrop')?.addEventListener('click', closeQuickProduct);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickProduct(); });
 
-clearBtn && (clearBtn.onclick = () => { cart = []; render().finally(() => window.AutoStyleLoader?.hide?.()); });
+clearBtn && (clearBtn.onclick = async () => { cart = []; await save(); render().finally(() => window.AutoStyleLoader?.hide?.()); });
 async function getActiveDiscountCard(user) {
   if (!user) return null;
   const profile = await getUserProfile(user);
@@ -504,7 +478,7 @@ async function createOrderFromCart() {
   try {
     let productMap = new Map();
     try { productMap = await getProductMap(); } catch (err) { console.warn('checkout products load error', err); }
-    const rows = normalizeCart(readCart()).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
+    const rows = normalizeCart(await readCart()).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
     if (!rows.length) {
       alert('Корзина пустая. Добавь товары перед оформлением заказа.');
       return;
@@ -585,7 +559,7 @@ async function createOrderFromCart() {
     });
 
     cart = [];
-    save();
+    await save();
     await render();
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
   } catch (err) {
@@ -607,17 +581,7 @@ function waitAccountMenu(cb, tries = 20) {
 }
 
 // Важно: не очищаем корзину просто из-за гостевого режима. Очистка делается только при явном выходе из аккаунта в общем коде сайта.
-let cartRenderedOnce = false;
-function renderCartPageNow() {
-  cart = normalizeCart(readCart());
-  cartRenderedOnce = true;
-  return render().finally(() => window.AutoStyleLoader?.hide?.());
-}
-
-// Сначала рисуем корзину сразу. Раньше страница ждала Firebase auth, а при ошибке/задержке cart.html оставался пустым.
-renderCartPageNow();
-
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   // Меню аккаунта обновляется общим кодом сайта. Здесь не перерисовываем его сырым Firebase-user,
   // чтобы не ломать фото/имя/email на странице корзины.
   if (!window.__asAccountAuthBridgeReady) {
@@ -634,5 +598,6 @@ onAuthStateChanged(auth, user => {
       }
     });
   }
-  renderCartPageNow();
+  cart = user ? normalizeCart(await readCart()) : [];
+  render().finally(() => window.AutoStyleLoader?.hide?.());
 });

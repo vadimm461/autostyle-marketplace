@@ -1,3 +1,4 @@
+import { getUserCart, saveUserCart, addToUserCart as addToUserCartRemote, cartQtyCount as userCartQtyCount } from './user-cart.js';
 // AutoStyle common mobile/search/cart/account
 
 function ensureProductImageFit(){
@@ -100,11 +101,11 @@ export function rawOldPrice(p){ return Number(p.oldPrice || p.priceOld || p.pric
 export function oldPrice(p){ const op=rawOldPrice(p), price=Number(p.price||0); return op>price?op:0; }
 export function discountPercent(p){ const m=Number(p.discountPercent || p.discount || p.discount_percent || p.salePercent || 0), rawOld=rawOldPrice(p), old=oldPrice(p), price=Number(p.price||0); if(m>0)return m; return old>price&&price>0?Math.round((old-price)/old*100):0; }
 export function priceHtml(p, cls=''){ const price=Number(p.price||0), old=oldPrice(p), d=discountPercent(p); return `<div class="${cls}price-wrap">${old>price&&old>0?`<span class="${cls}oldprice old-price">${fmtPrice(old)}</span>`:''}<span class="${cls}price price">${fmtPrice(price)}</span>${d>0?`<span class="${cls}discount discount-badge">-${d}%</span>`:''}</div>`; }
-export function cart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
-export function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartCount(); }
-export function addToCart(id){ const c=cart(); c.push(id); setCart(c); }
-export function cartQtyCount(rows = cart()){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
-export function updateCartCount(){ const count = cartQtyCount(); document.querySelectorAll('#cartCount,.cartCount').forEach(x=>x.textContent=String(count)); window.dispatchEvent(new Event('autostyle-cart-updated')); document.querySelector('#asCartBtn')?.lastChild && null; }
+export async function cart(){ return await getUserCart(); }
+export async function setCart(c){ await saveUserCart(c); updateCartCount(); }
+export async function addToCart(id){ await addToUserCartRemote(id); updateCartCount(); }
+export function cartQtyCount(rows = []){ return userCartQtyCount(rows); }
+export async function updateCartCount(){ const rows = await getUserCart(); const count = userCartQtyCount(rows); document.querySelectorAll('#cartCount,.cartCount').forEach(x=>x.textContent=String(count)); window.dispatchEvent(new Event('autostyle-cart-updated')); document.querySelector('#asCartBtn')?.lastChild && null; }
 
 export function initMobileUi(){
   updateCartCount();
@@ -114,7 +115,7 @@ export function initMobileUi(){
   if(!document.querySelector('.as-bottom-nav')){
     const nav=document.createElement('nav'); nav.className='as-bottom-nav';
     const p=location.pathname;
-    nav.innerHTML=`<a href="index.html" class="${p.includes('index')||p.endsWith('/')?'active':''}"><span>⌂</span>Главная</a><a href="catalog.html" class="${p.includes('catalog')?'active':''}"><span>▦</span>Каталог</a><button type="button" id="asProfileBtn"><span>●</span>Профиль</button><button type="button" id="asCartBtn"><span>🛒</span>Корзина <b class="cartCount">${cartQtyCount()}</b></button>`;
+    nav.innerHTML=`<a href="index.html" class="${p.includes('index')||p.endsWith('/')?'active':''}"><span>⌂</span>Главная</a><a href="catalog.html" class="${p.includes('catalog')?'active':''}"><span>▦</span>Каталог</a><button type="button" id="asProfileBtn"><span>●</span>Профиль</button><button type="button" id="asCartBtn"><span>🛒</span>Корзина <b class="cartCount">0</b></button>`;
     document.body.appendChild(nav);
     nav.querySelector('#asProfileBtn').onclick=()=>document.querySelector('#accountBtn,#openAuth')?.click();
     nav.querySelector('#asCartBtn').onclick=()=>location.href='cart.html';
@@ -138,7 +139,7 @@ export function productCard(p, type='catalog'){
 }
 
 export function bindCartButtons(){
-  document.querySelectorAll('[data-cart]').forEach(btn=>btn.onclick=e=>{e.preventDefault();e.stopPropagation();addToCart(btn.dataset.cart);btn.textContent='Добавлено';setTimeout(()=>btn.textContent='В корзину',800);});
+  document.querySelectorAll('[data-cart]').forEach(btn=>btn.onclick=e=>{e.preventDefault();e.stopPropagation();addToCart(btn.dataset.cart).then(()=>{btn.textContent='Добавлено';setTimeout(()=>btn.textContent='В корзину',800);});});
 }
 
 export function setupSearch(){

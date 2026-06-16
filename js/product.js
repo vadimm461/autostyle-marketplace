@@ -2,9 +2,10 @@ import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
+import { getUserCart, saveUserCart, addToUserCart, cartQtyCount } from './user-cart.js';
 
 const $ = s => document.querySelector(s);
-let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let cart = [];
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 
 function clearCartAndFavorites(){
@@ -61,11 +62,13 @@ function relatedCard(p){
 }
 function setupRelatedActions(){
   document.querySelectorAll('.related-cart').forEach(btn => {
-    btn.onclick = (e) => {
+    btn.onclick = async (e) => {
       const card = e.currentTarget.closest('.related-card');
       const id = card?.dataset.id;
       if (!id) return;
-      cart.push(id); saveCart();
+      const saved = await addToUserCart(id);
+      if (!saved) return;
+      cart = saved;
       e.currentTarget.textContent = '✓ Добавлено';
       setTimeout(() => e.currentTarget.textContent = 'В корзину', 1000);
     };
@@ -116,9 +119,9 @@ async function renderRelated(current){
   }catch(e){ box.innerHTML = ''; }
 }
 
-function saveCart(){
-  localStorage.setItem('cart', JSON.stringify(cart));
-  $('#cartCount') && ($('#cartCount').textContent = cart.length);
+async function saveCart(){
+  cart = await saveUserCart(cart);
+  document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(cartQtyCount(cart)));
 }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function saveViewed(id){
@@ -207,9 +210,11 @@ async function loadProduct(){
         descToggle.textContent = open ? 'Скрыть' : 'Показать';
       };
     }
-    $('#addToCart') && ($('#addToCart').onclick = () => {
+    $('#addToCart') && ($('#addToCart').onclick = async () => {
       if (s <= 0) return;
-      cart.push(p.id); saveCart();
+      const saved = await addToUserCart(p);
+      if (!saved) return;
+      cart = saved;
       $('#addToCart').textContent = '✓ Добавлено';
       setTimeout(() => $('#addToCart').textContent = 'В корзину', 1200);
     });
@@ -225,10 +230,9 @@ async function loadProduct(){
   }
 }
 setupSearch();
-onAuthStateChanged(auth, user => {
-  if (!user) { clearCartAndFavorites(); }
-  cart = JSON.parse(localStorage.getItem('cart') || '[]');
+onAuthStateChanged(auth, async user => {
+  if (!user) { clearCartAndFavorites(); cart = []; }
+  else { cart = await getUserCart(); }
   favs = JSON.parse(localStorage.getItem('favorites') || '[]');
-  saveCart();
   loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });
