@@ -310,7 +310,7 @@
     // Каталог не трогаем: оставляем кнопку как в исходной верстке.
     normalizeHeaderIcons();
     normalizeAccountButtons();
-    window.AutoStyleAccountMenu?.renderGuest();
+    // Состояние аккаунта теперь централизованно обновляет js/autostyle-account-global.js.
     ensureNotificationHandler();
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 400);
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 1500);
