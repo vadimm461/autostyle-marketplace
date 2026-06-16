@@ -15,6 +15,8 @@ const quickProductContent = document.querySelector('#quickProductContent');
 const installmentBox = document.querySelector('#installmentBox') || document.querySelector('.installment-box');
 const paymentInputs = [...document.querySelectorAll('input[name="paymentMethod"]')];
 
+const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
+
 let productsCache = null;
 let cart = normalizeCart(readCart());
 let lastCartRows = [];
@@ -22,8 +24,6 @@ let lastCartTotal = 0;
 let discountCardApplied = false;
 let discountCardPercent = 0;
 let isCheckoutBusy = false;
-
-const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
 
 function parseJsonStorage(key) {
   try {
@@ -607,6 +607,16 @@ function waitAccountMenu(cb, tries = 20) {
 }
 
 // Важно: не очищаем корзину просто из-за гостевого режима. Очистка делается только при явном выходе из аккаунта в общем коде сайта.
+let cartRenderedOnce = false;
+function renderCartPageNow() {
+  cart = normalizeCart(readCart());
+  cartRenderedOnce = true;
+  return render().finally(() => window.AutoStyleLoader?.hide?.());
+}
+
+// Сначала рисуем корзину сразу. Раньше страница ждала Firebase auth, а при ошибке/задержке cart.html оставался пустым.
+renderCartPageNow();
+
 onAuthStateChanged(auth, user => {
   // Меню аккаунта обновляется общим кодом сайта. Здесь не перерисовываем его сырым Firebase-user,
   // чтобы не ломать фото/имя/email на странице корзины.
@@ -624,6 +634,5 @@ onAuthStateChanged(auth, user => {
       }
     });
   }
-  cart = normalizeCart(readCart());
-  render().finally(() => window.AutoStyleLoader?.hide?.());
+  renderCartPageNow();
 });
