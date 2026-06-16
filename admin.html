@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="css/as-logo-final.css?v=20260608-brand-final"><link rel="stylesheet" href="css/zzz-card-gap-fix.css">
 <link rel="stylesheet" href="css/image-fit-contain-final.css?v=20260609-2">  <link rel="stylesheet" href="css/as-file-icons.css">
 <link rel="stylesheet" href="css/minimal-file-icons-fix.css">
+<link rel="stylesheet" href="css/admin-users.css">
 </head>
 <body><script src="js/page-loader.js"></script>
 
@@ -36,6 +37,7 @@
       <button data-section="discountCards">Скидочные карты</button>
       <button data-section="media">Медиа</button>
       <button data-section="notifications">Уведомления</button>
+      <button data-section="users">Пользователи</button>
       <button data-section="pages">Страницы</button>
       <button data-section="settings">Настройки</button>
       <a href="index.html" class="admin-link-btn">На сайт</a>
@@ -117,7 +119,15 @@
     <div>
       <div class="admin-home-card-icon">🔔</div>
       <h3>Уведомления</h3>
-      <p>Отправка уведомлений всем пользователям.</p>
+      <p>Отправка уведомлений всем, конкретному пользователю или группе.</p>
+    </div>
+  </a>
+
+  <a href="#users" class="admin-home-card">
+    <div>
+      <div class="admin-home-card-icon">👥</div>
+      <h3>Пользователи</h3>
+      <p>Группы пользователей и рассылка уведомлений.</p>
     </div>
   </a>
 
@@ -402,7 +412,23 @@
     <section id="notifications" class="admin-section">
       <div class="admin-card">
         <h2>Уведомления</h2>
-        <p class="muted">Отправка уведомлений всем пользователям. Уведомления появятся в верхней кнопке “Уведомления” и на странице уведомлений.</p>
+        <p class="muted">Отправка уведомлений всем пользователям, конкретному пользователю или выбранной группе. Гости уведомления не видят.</p>
+
+        <div class="admin-notify-targets">
+          <label class="field">Кому отправить
+            <select id="adminNotifyAudience">
+              <option value="all">Всем пользователям</option>
+              <option value="user">Конкретному пользователю</option>
+              <option value="group">Группе пользователей</option>
+            </select>
+          </label>
+          <label class="field" id="adminNotifyUserWrap" style="display:none">Пользователь
+            <select id="adminNotifyUser"></select>
+          </label>
+          <label class="field" id="adminNotifyGroupWrap" style="display:none">Группа
+            <select id="adminNotifyGroup"></select>
+          </label>
+        </div>
 
         <div class="admin-notify-editor">
           <label class="field">Заголовок уведомления
@@ -446,12 +472,40 @@
             <p class="muted">Изменения в HTML-коде сразу применяются к визуальному редактору.</p>
           </div>
 
-          <button id="adminNotifySend" class="admin-notify-send" type="button">Послать уведомление всем пользователям</button>
+          <button id="adminNotifySend" class="admin-notify-send" type="button">Послать уведомление</button>
           <div id="adminNotifyStatus" class="admin-notify-status"></div>
         </div>
 
         <h3>История уведомлений</h3>
         <div id="adminNotifyHistory" class="admin-notify-history"></div>
+      </div>
+    </section>
+
+    <section id="users" class="admin-section">
+      <div class="admin-card">
+        <h2>Пользователи</h2>
+        <p class="muted">Здесь можно создать группы пользователей и добавить в них нужных клиентов для рассылки уведомлений.</p>
+
+        <div class="admin-users-actions">
+          <label class="field">Название новой группы
+            <input id="adminUserGroupName" placeholder="Например: VIP, Оптовики, Постоянные">
+          </label>
+          <button id="adminCreateUserGroup" class="primary" type="button">Создать группу</button>
+        </div>
+
+        <div class="admin-users-actions">
+          <label class="field">Добавить выбранных пользователей в группу
+            <select id="adminAssignGroup"></select>
+          </label>
+          <button id="adminAssignUsersToGroup" type="button">Добавить в группу</button>
+          <span id="adminUsersStatus" class="muted"></span>
+        </div>
+
+        <h3>Группы</h3>
+        <div id="adminUserGroupsList" class="admin-user-groups-list"></div>
+
+        <h3>Пользователи</h3>
+        <div id="adminUsersList" class="admin-users-list"></div>
       </div>
     </section>
 
@@ -502,6 +556,7 @@
 <script type="module" src="js/admin-footer-editor.js"></script>
 <script src="js/admin-dashboard-home.js"></script>
 <script type="module" src="js/admin-notifications.js"></script>
+<script type="module" src="js/admin-users.js"></script>
 <script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 <script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
   <script src="js/as-file-icons.js"></script>

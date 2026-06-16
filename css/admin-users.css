@@ -1,0 +1,30 @@
+.admin-notify-targets,
+.admin-users-actions{
+  display:grid;
+  grid-template-columns: minmax(220px,1fr) minmax(220px,1fr) auto;
+  gap:12px;
+  align-items:end;
+  margin:14px 0 18px;
+}
+.admin-users-actions{grid-template-columns:minmax(260px,1fr) auto minmax(180px,1fr)}
+.admin-users-list,
+.admin-user-groups-list{display:grid;gap:10px;margin:12px 0 22px}
+.admin-user-row,
+.admin-user-group-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
+  border:1px solid rgba(15,23,42,.10);
+  border-radius:16px;
+  background:#fff;
+}
+.admin-user-row label{display:flex;align-items:center;gap:12px;cursor:pointer;flex:1}
+.admin-user-main b,
+.admin-user-group-row b{display:block;color:#111827}
+.admin-user-main small,
+.admin-user-group-row small{display:block;color:#6b7280;margin-top:2px}
+.admin-user-badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.admin-user-badge{font-size:12px;padding:5px 8px;border-radius:999px;background:#ecfdf5;color:#047857;border:1px solid #bbf7d0}
+@media(max-width:900px){.admin-notify-targets,.admin-users-actions{grid-template-columns:1fr}.admin-user-row,.admin-user-group-row{align-items:flex-start;flex-direction:column}.admin-user-badges{justify-content:flex-start}}

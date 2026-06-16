@@ -1,4 +1,4 @@
-import { db, storage } from './firebase.js';
+import { db, storage, COLLECTIONS } from './firebase.js';
 import {
   collection, getDocs, query, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -11,11 +11,15 @@ import {
   stripHtml,
   esc,
   fmt,
-  notificationText
+  notificationText,
+  USER_GROUPS_COLLECTION
 } from './notify-service.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+const USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
+let adminUsers = [];
+let adminGroups = [];
 
 const EMOJIS = '😀 😃 😄 😁 😆 😅 😂 🙂 😉 😊 😍 😘 😎 🤩 🥳 🤝 🙌 👏 👍 👎 ✅ ☑️ ✔️ ❌ ⚠️ 🔥 🎁 🎉 💚 💳 🛒 🚗 🛞 🔧 🧰 🧽 🧴 💡 🏁 ⭐ 💥 📢 📌 🕒 💰 🏷️ 🚚 📦'.split(' ');
 const FONTS = [
@@ -132,6 +136,70 @@ function renderFontOptions(){
   if (font) font.innerHTML = FONTS.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
   if (size) size.innerHTML = SIZES.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
 }
+
+function itemName(u){ return u.name || u.displayName || u.fullName || u.email || 'Пользователь'; }
+function itemEmail(u){ return u.email || u.userEmail || ''; }
+async function loadNotifyTargets(){
+  try{
+    const snap = await getDocs(collection(db, USERS_COLLECTION));
+    adminUsers = snap.docs.map(d => ({ id:d.id, uid:d.id, ...d.data() }));
+  }catch(e){
+    console.warn('notify users load error', e);
+    adminUsers = [];
+  }
+  try{
+    const snap = await getDocs(collection(db, USER_GROUPS_COLLECTION));
+    adminGroups = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  }catch(e){
+    console.warn('notify groups load error', e);
+    adminGroups = [];
+  }
+  renderNotifyTargetOptions();
+}
+function renderNotifyTargetOptions(){
+  const userSel = $('#adminNotifyUser');
+  const groupSel = $('#adminNotifyGroup');
+  if (userSel) {
+    userSel.innerHTML = adminUsers.length
+      ? adminUsers.map(u => `<option value="${esc(u.id)}" data-email="${esc(itemEmail(u))}">${esc(itemName(u))}${itemEmail(u) ? ' · ' + esc(itemEmail(u)) : ''}</option>`).join('')
+      : '<option value="">Пользователей нет</option>';
+  }
+  if (groupSel) {
+    groupSel.innerHTML = adminGroups.length
+      ? adminGroups.map(g => `<option value="${esc(g.id)}">${esc(g.name || g.id)}</option>`).join('')
+      : '<option value="">Групп нет</option>';
+  }
+  toggleNotifyTarget();
+}
+function toggleNotifyTarget(){
+  const audience = $('#adminNotifyAudience')?.value || 'all';
+  const userWrap = $('#adminNotifyUserWrap');
+  const groupWrap = $('#adminNotifyGroupWrap');
+  if (userWrap) userWrap.style.display = audience === 'user' ? '' : 'none';
+  if (groupWrap) groupWrap.style.display = audience === 'group' ? '' : 'none';
+}
+function selectedNotifyTarget(){
+  const audience = $('#adminNotifyAudience')?.value || 'all';
+  if (audience === 'user') {
+    const userId = $('#adminNotifyUser')?.value || '';
+    const user = adminUsers.find(u => u.id === userId);
+    if (!userId) throw new Error('Выбери пользователя.');
+    return { audience:'user', userId, userEmail:itemEmail(user || {}) };
+  }
+  if (audience === 'group') {
+    const groupId = $('#adminNotifyGroup')?.value || '';
+    const group = adminGroups.find(g => g.id === groupId);
+    if (!groupId) throw new Error('Выбери группу.');
+    return { audience:'group', groupId, groupName: group?.name || groupId };
+  }
+  return { audience:'all' };
+}
+function audienceLabel(n){
+  if ((n.audience || 'all') === 'user') return 'пользователь' + (n.userEmail ? ` · ${n.userEmail}` : '');
+  if (n.audience === 'group') return 'группа' + (n.groupName ? ` · ${n.groupName}` : (n.groupId ? ` · ${n.groupId}` : ''));
+  return 'всем пользователям';
+}
+
 async function renderHistory(){
   const box = $('#adminNotifyHistory');
   if (!box) return;
@@ -156,7 +224,7 @@ async function renderHistory(){
       <article class="admin-notify-history-item">
         <b>${esc(n.title || 'Уведомление')}</b>
         <div>${n.html || esc(notificationText(n))}</div>
-        <small>${esc(fmt(n.createdAt || n.createdAtLocal))} · ${esc(n.audience || 'all')}${n.userEmail ? ` · ${esc(n.userEmail)}` : ''}</small>
+        <small>${esc(fmt(n.createdAt || n.createdAtLocal))} · ${esc(audienceLabel(n))}</small>
       </article>
     `).join('') : '<div class="muted">История уведомлений пустая.</div>';
   }catch(e){
@@ -176,11 +244,12 @@ async function sendNotification(){
   }
   status.textContent = 'Отправляем...';
   try{
-    await createNotification({ title, html, text, audience: 'all', type: 'admin_broadcast' });
+    const target = selectedNotifyTarget();
+    await createNotification({ title, html, text, ...target, type: 'admin_broadcast' });
     $('#adminNotifyTitle').value = '';
     body.innerHTML = '';
     syncSource();
-    status.textContent = 'Уведомление отправлено всем пользователям.';
+    status.textContent = 'Уведомление отправлено.';
     renderHistory();
   }catch(e){
     status.textContent = 'Ошибка отправки: ' + e.message;
@@ -195,6 +264,7 @@ function bind(){
   body?.addEventListener('mouseup', saveSelection);
   body?.addEventListener('input', syncSource);
   source()?.addEventListener('input', syncEditor);
+  $('#adminNotifyAudience')?.addEventListener('change', toggleNotifyTarget);
   $('#adminNotifySend')?.addEventListener('click', sendNotification);
   $('#adminNotifyBold')?.addEventListener('click', () => command('bold'));
   $('#adminNotifyItalic')?.addEventListener('click', () => command('italic'));
@@ -216,6 +286,7 @@ function bind(){
   $('#adminNotifyColor')?.addEventListener('input', e => applyColor(e.target.value));
   $('#adminNotifyBgColor')?.addEventListener('input', e => applyBg(e.target.value));
   $$('#adminNotifyEmojiPanel [data-admin-emoji]').forEach(btn => btn.addEventListener('click', () => insertEmoji(btn.dataset.adminEmoji)));
+  loadNotifyTargets();
   renderHistory();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

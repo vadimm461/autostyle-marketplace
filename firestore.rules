@@ -79,16 +79,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    /* Группы пользователей */
+    match /autostyle_user_groups/{groupId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     /* Уведомления */
     match /autostyle_notifications/{notificationId} {
-      // Общие уведомления из админки видны всем, даже если пользователь ещё не вошёл.
-      // Персональные уведомления видны только владельцу или админу.
-      allow read: if resource.data.audience == "all"
-        || isAdmin()
+      // Гости уведомления не читают. Общие видны только после входа.
+      allow read: if isAdmin()
         || (
           isSignedIn()
           && (
-            resource.data.userId == request.auth.uid
+            resource.data.audience == "all"
+            || resource.data.audience == "group"
+            || resource.data.userId == request.auth.uid
             || resource.data.uid == request.auth.uid
             || resource.data.userEmail == request.auth.token.email
           )
