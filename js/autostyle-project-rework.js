@@ -51,29 +51,79 @@
     });
   }
 
-  function accountIcon(name){
-    return '<img class="as-account-link-icon" src="assets/icons/'+name+'.svg" alt="" aria-hidden="true">';
+  function accountIcon(name, label){
+    return '<img class="as-account-menu-icon" src="assets/icons/'+name+'.svg" alt="" aria-hidden="true"><span>'+label+'</span>';
   }
-  function accountPopupHtml(user){
-    if(!user){
-      return '<a class="as-account-login-only" href="login.html">'+accountIcon('user')+'<span>Войти</span></a>';
-    }
-    var name = (user.displayName || 'Личный кабинет').trim();
-    var email = (user.email || 'Аккаунт').trim();
-    var avatar = user.photoURL ? '<img src="'+user.photoURL+'" alt="">' : 'AS';
+
+  function accountGuestHtml(){
     return ''+
-      '<a class="as-account-profile-head as-account-profile-link" href="profile.html#account">'+
-        '<div class="as-account-avatar">'+avatar+'</div>'+
-        '<div><div class="as-account-title">'+(name === 'Личный кабинет' ? 'Личный кабинет' : name)+'</div><div class="as-account-subtitle">'+email+'</div></div>'+
-      '</a>'+
-      '<nav class="as-account-menu">'+
-        '<a href="profile.html#account">'+accountIcon('user')+'<span>Фото и профиль</span></a>'+
-        '<a href="profile.html#discount-card">'+accountIcon('card')+'<span>Скидочная карта</span></a>'+
-        '<a href="cart.html">'+accountIcon('cart')+'<span>Корзина</span></a>'+
-        '<a href="favorites.html">'+accountIcon('heart')+'<span>Избранное</span></a>'+
-        '<a href="profile.html#orders">'+accountIcon('package')+'<span>Заказы</span></a>'+
-      '</nav><hr><button type="button" id="asAccountLogout">Выйти</button>';
+      '<div class="as-account-guest">'+
+        '<div class="as-account-title">Аккаунт</div>'+
+        '<div class="as-account-subtitle">Войдите, чтобы открыть профиль</div>'+
+        '<a class="as-account-login" href="login.html">Войти</a>'+
+      '</div>';
   }
+
+  function accountUserHtml(user){
+    var email = (user && (user.email || user.phoneNumber || user.displayName)) || 'Аккаунт';
+    var name = (user && (user.displayName || user.email || user.phoneNumber)) || 'Личный кабинет';
+    var photo = user && user.photoURL;
+    var avatar = photo ? '<img src="'+photo+'" alt="">' : 'AS';
+    return ''+
+      '<div class="as-account-profile-head">'+
+        '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
+        '<a class="as-account-head-text" href="profile.html#account">'+
+          '<div class="as-account-title">Личный кабинет</div>'+
+          '<div class="as-account-subtitle" id="asAccountEmail">'+email+'</div>'+
+        '</a>'+
+      '</div>'+
+      '<nav class="as-account-menu">'+
+        '<a href="profile.html#account">'+accountIcon('user','Фото и профиль')+'</a>'+
+        '<a href="profile.html#discount-card">'+accountIcon('card','Скидочная карта')+'</a>'+
+        '<a href="cart.html">'+accountIcon('cart','Корзина')+'</a>'+
+        '<a href="favorites.html">'+accountIcon('heart','Избранное')+'</a>'+
+        '<a href="profile.html#orders">'+accountIcon('package','Заказы')+'</a>'+
+      '</nav>'+
+      '<hr>'+
+      '<button type="button" id="asAccountLogout">Выйти</button>';
+  }
+
+  function accountPopupHtml(){ return accountGuestHtml(); }
+
+  function renderAccountGuest(){
+    document.documentElement.classList.remove('as-authenticated');
+    document.querySelectorAll('.as-account-wrap').forEach(function(wrap){
+      var popup = wrap.querySelector('.as-account-popup');
+      if(popup) popup.innerHTML = accountGuestHtml();
+      var btn = wrap.querySelector('.as-head-icon-btn');
+      if(btn) btn.classList.remove('active');
+      wireAccountWrap(wrap);
+    });
+  }
+
+  function renderAccountUser(user, onLogout){
+    document.documentElement.classList.add('as-authenticated');
+    document.querySelectorAll('.as-account-wrap').forEach(function(wrap){
+      var popup = wrap.querySelector('.as-account-popup');
+      if(popup) popup.innerHTML = accountUserHtml(user || {});
+      var btn = wrap.querySelector('.as-head-icon-btn');
+      if(btn) btn.classList.add('active');
+      wireAccountWrap(wrap);
+      var logout = wrap.querySelector('#asAccountLogout');
+      if(logout){
+        logout.onclick = function(e){
+          e.preventDefault();
+          if(typeof onLogout === 'function') onLogout(e);
+          else {
+            var originalLogout = document.getElementById('logout') || document.querySelector('[data-logout]');
+            if(originalLogout && originalLogout !== logout) originalLogout.click();
+          }
+        };
+      }
+    });
+  }
+
+  window.AutoStyleAccountMenu = { renderGuest: renderAccountGuest, renderUser: renderAccountUser };
 
   function wireAccountWrap(wrap){
     if(!wrap || wrap.dataset.asAccountReady === '1') return;
@@ -138,7 +188,7 @@
         var popup = document.createElement('div');
         popup.className = 'as-account-popup';
         var oldDrop = accountDrop.querySelector('.drop');
-        popup.innerHTML = accountPopupHtml(null);
+        popup.innerHTML = accountPopupHtml();
         popup.querySelectorAll('#logout').forEach(function(x){ x.id = 'asAccountLogout'; });
         wrap.appendChild(btn);
         wrap.appendChild(popup);
@@ -215,6 +265,7 @@
     // Каталог не трогаем: оставляем кнопку как в исходной верстке.
     normalizeHeaderIcons();
     normalizeAccountButtons();
+    window.AutoStyleAccountMenu?.renderGuest();
     ensureNotificationHandler();
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 400);
     setTimeout(function(){ normalizeAccountButtons(); normalizeHeaderIcons(); ensureNotificationHandler(); }, 1500);

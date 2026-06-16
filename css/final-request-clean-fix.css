@@ -65,13 +65,26 @@
 
 @media(max-width:900px){.catalog-popup.mega-catalog,.mega-catalog{min-width:0!important;width:calc(100vw - 24px)!important;grid-template-columns:1fr!important}.mega-left{width:auto!important}.mega-child-grid{grid-template-columns:1fr!important}.as-notify-dropdown{right:12px!important;width:calc(100vw - 24px)!important}.catalog-top .catalog-top-price{width:100%!important}.catalog-top .catalog-top-price input{flex:1!important;width:auto!important}}
 
-/* Account dropdown real auth-state + SVG file icons */
-.as-account-popup .as-account-login-only{display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;min-height:48px!important;border-radius:14px!important;background:#27e21a!important;color:#06120a!important;font-weight:1000!important;text-decoration:none!important}
-.as-account-popup .as-account-login-only:hover{background:#18c910!important;color:#06120a!important}
-.as-account-link-icon{width:18px!important;height:18px!important;display:inline-block!important;object-fit:contain!important;flex:0 0 18px!important;filter:none!important}
-.as-account-profile-link{color:#111827!important;text-decoration:none!important;border-radius:16px!important}
-.as-account-profile-link:hover{background:#f6fff4!important}
-.as-account-menu a{display:flex!important;align-items:center!important;gap:10px!important}
-.as-account-menu a img.as-account-link-icon{width:18px!important;height:18px!important;opacity:1!important;visibility:visible!important}
-.as-account-popup button#asAccountLogout:hover{background:#0b1220!important;color:#fff!important;filter:brightness(.95)!important}
-.as-account-popup button#asAccountLogout:focus{color:#fff!important}
+/* account menu root rendering */
+.account-menu-icon{width:18px;height:18px;display:inline-block;object-fit:contain;flex:0 0 18px;vertical-align:middle;}
+.account-menu a,.as-account-menu a{gap:10px;}
+.as-account-profile-link{text-decoration:none;color:inherit;}
+.account-login-only{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:14px;background:#26e21a;color:#06120a!important;text-decoration:none;font-weight:1000;}
+.as-account-popup button:hover,.account-logout:hover{background:#26e21a!important;color:#06120a!important;}
+
+
+/* Root account-menu auth state + SVG icons */
+.as-account-head-text{display:block!important;text-decoration:none!important;color:inherit!important;min-width:0!important}
+.as-account-menu-icon{width:18px!important;height:18px!important;min-width:18px!important;display:block!important;object-fit:contain!important;filter:none!important}
+.as-account-menu a span{display:block!important;line-height:1.1!important}
+.as-account-guest{padding:8px!important;display:grid!important;gap:10px!important}
+.as-account-guest .as-account-title{font-size:18px!important;font-weight:1000!important;color:#111827!important}
+.as-account-guest .as-account-subtitle{font-size:13px!important;color:#667085!important;margin-bottom:4px!important}
+.as-account-login{display:flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;border-radius:14px!important;background:linear-gradient(135deg,#27e21a,#16b40d)!important;color:#06120a!important;text-decoration:none!important;font-weight:1000!important}
+.as-account-login:hover{background:linear-gradient(135deg,#32ff24,#19c60f)!important;color:#06120a!important}
+.as-account-popup #asAccountLogout:hover,.as-account-popup button#asAccountLogout:hover{background:#1f2937!important;color:#fff!important}
+.as-account-popup #asAccountLogout:focus-visible{outline:3px solid rgba(39,226,26,.35)!important;outline-offset:2px!important}
+.as-account-wrap:not(.open) .as-account-popup{display:none!important}
+.as-account-wrap.open .as-account-popup{display:block!important}
+.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{border-color:rgba(39,226,26,.55)!important;box-shadow:0 0 0 1px rgba(39,226,26,.18) inset!important}
+.as-account-avatar[href]{text-decoration:none!important}

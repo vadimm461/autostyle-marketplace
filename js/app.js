@@ -339,8 +339,11 @@ function accountInitials(name, email){
   const base = String(name || email || 'AS').trim();
   return (base.split(/\s+/).slice(0,2).map(x=>x[0]).join('') || 'AS').toUpperCase();
 }
+function icon(name){
+  return `<img class="account-menu-icon" src="assets/icons/${name}.svg" alt="" loading="lazy" decoding="async">`;
+}
 function renderAccountPanel(user){
-  const drop = document.querySelector('#accountDrop .drop, #accountDrop .as-account-popup');
+  const drop = document.querySelector('#accountDrop .drop');
   if(!drop || !user) return;
   const name = user.displayName || 'Профиль AutoStyle';
   const email = user.email || '';
@@ -357,11 +360,11 @@ function renderAccountPanel(user){
     </a>
     <div class="account-status">● Вы авторизованы</div>
     <nav class="account-menu">
-      <a href="profile.html#account"><img src="assets/icons/user.svg" alt=""> Фото и профиль</a>
-      <a href="profile.html#discount-card"><img src="assets/icons/card.svg" alt=""> Скидочная карта</a>
-      <a href="cart.html"><img src="assets/icons/cart.svg" alt=""> Корзина</a>
-      <a href="favorites.html"><img src="assets/icons/heart.svg" alt=""> Избранное</a>
-      <a href="profile.html#orders"><img src="assets/icons/package.svg" alt=""> Заказы</a>
+      <a class="primary-account" href="profile.html#account">${icon('user')} Фото и профиль</a>
+      <a href="profile.html#discount-card">${icon('card')} Скидочная карта</a>
+      <a href="cart.html">${icon('cart')} Корзина</a>
+      <a href="favorites.html">${icon('heart')} Избранное</a>
+      <a href="profile.html#orders">${icon('package')} Заказы</a>
       <button id="logout" class="account-logout" type="button">Выйти</button>
     </nav>`;
 }
@@ -374,7 +377,7 @@ function authModal(){
   
   $('#sendSmsCode')&&($('#sendSmsCode').onclick=async()=>{try{say('Отправляем SMS...'); await sendSmsCode($('#phoneLogin').value.trim()); say('Код отправлен. Введите его ниже.');}catch(err){say('Ошибка SMS: '+(err.message||err));}});
   $('#confirmSmsCode')&&($('#confirmSmsCode').onclick=async()=>{try{say('Проверяем код...'); await confirmSmsCode($('#smsCode').value.trim()); modal.classList.remove('open'); location.reload();}catch(err){say('Ошибка подтверждения: '+(err.message||err));}});
-  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u);authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
+  onAuthStateChanged(auth,async u=>{const authBtn=$('#openAuth'),dd=$('#accountDrop'); if(u){await ensureUserProfile(u); window.AutoStyleAccountMenu?.renderUser(u, async()=>{clearCartAndFavorites();await signOut(auth);location.reload();}); authBtn&&(authBtn.style.display='none'); if(dd){dd.style.display='block'; renderAccountPanel(u); $('#logout')&&($('#logout').onclick=async()=>{clearCartAndFavorites();await signOut(auth);location.reload();});}}else{window.AutoStyleAccountMenu?.renderGuest(); clearCartAndFavorites();cart=[];favs=[];saveCart();saveFav();authBtn&&(authBtn.style.display='inline-block'); dd&&(dd.style.display='none');}});
   const accBtn = $('#accountBtn'), accDrop = $('#accountDrop');
   if (accBtn && accDrop && !accDrop.dataset.closeReady) {
     accDrop.dataset.closeReady = '1';

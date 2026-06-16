@@ -476,22 +476,63 @@ function setupSearch(){
   input?.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); go(); } });
 }
 
+
+function headerIcon(name){
+  return `<img class="account-menu-icon" src="assets/icons/${name}.svg" alt="" loading="lazy" decoding="async">`;
+}
+function userInitials(name, email){
+  const base = String(name || email || 'AS').trim();
+  return (base.split(/\s+/).slice(0,2).map(x=>x[0]).join('') || 'AS').toUpperCase();
+}
+function renderHeaderAccount(user){
+  const wrap = document.querySelector('.as-account-wrap');
+  const popup = document.querySelector('.as-account-popup');
+  const btn = document.getElementById('asAccountButton');
+  if(!wrap || !popup || !btn) return;
+  if(!wrap.dataset.accountRootReady){
+    wrap.dataset.accountRootReady = '1';
+    btn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); wrap.classList.toggle('open'); });
+    popup.addEventListener('click', e=>e.stopPropagation());
+    document.addEventListener('click', ()=>wrap.classList.remove('open'));
+  }
+  if(!user){
+    btn.classList.remove('active');
+    popup.innerHTML = `<a class="account-login-only" href="login.html">Войти</a>`;
+    return;
+  }
+  btn.classList.add('active');
+  const name = user.displayName || 'Личный кабинет';
+  const email = user.email || 'Аккаунт';
+  const photo = user.photoURL || '';
+  const avatarHtml = photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : userInitials(name, email);
+  popup.innerHTML = `
+    <a class="as-account-profile-head as-account-profile-link" href="profile.html#account">
+      <div class="as-account-avatar">${avatarHtml}</div>
+      <div><div class="as-account-title">Личный кабинет</div><div class="as-account-subtitle">${email}</div></div>
+    </a>
+    <nav class="as-account-menu">
+      <a href="profile.html#account">${headerIcon('user')} Фото и профиль</a>
+      <a href="profile.html#discount-card">${headerIcon('card')} Скидочная карта</a>
+      <a href="cart.html">${headerIcon('cart')} Корзина</a>
+      <a href="favorites.html">${headerIcon('heart')} Избранное</a>
+      <a href="profile.html#orders">${headerIcon('package')} Заказы</a>
+    </nav>
+    <hr>
+    <button type="button" id="asAccountLogout">Выйти</button>`;
+  document.getElementById('asAccountLogout')?.addEventListener('click', async()=>{ clearCartAndFavorites(); await signOut(auth); location.href='index.html'; });
+}
+
 bindTabs();
 setupSearch();
 updateCartCount();
 
 onAuthStateChanged(auth, async user => {
   try{
-    if(!user){
-      const guest = $('#profileGuest'), app = $('#profileApp'), logout = $('#profileLogout');
-      if(guest){ guest.hidden = false; guest.style.display = ''; }
-      if(app){ app.hidden = true; app.style.display = 'none'; }
-      if(logout) logout.style.display='none';
-      window.AutoStyleLoader?.hide();
-      return;
-    }
-    if($('#profileGuest')){ $('#profileGuest').hidden = true; $('#profileGuest').style.display = 'none'; }
-    if($('#profileApp')){ $('#profileApp').hidden = false; $('#profileApp').style.display = ''; }
+    renderHeaderAccount(user);
+    if(!user){ window.AutoStyleAccountMenu?.renderGuest(); $('#profileGuest').hidden = false; $('#profileApp').hidden = true; $('#profileLogout').style.display='none'; window.AutoStyleLoader?.hide(); return; }
+    window.AutoStyleAccountMenu?.renderUser(user, async () => { clearCartAndFavorites(); await signOut(auth); location.href = 'index.html'; });
+    $('#profileGuest').hidden = true;
+    $('#profileApp').hidden = false;
     $('#profileLogout').style.display='inline-flex';
     $('#profileLogout').onclick = async () => { clearCartAndFavorites(); await signOut(auth); location.href = 'index.html'; };
     const current = await getUserDoc(user.uid);
