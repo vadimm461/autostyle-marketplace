@@ -137,14 +137,14 @@ async function addCart(id, btn){ const check = await getProfileVerification(auth
 function toggleFav(id, btn){ favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; save(); if(btn) btn.classList.toggle('active', favs.includes(id)); }
 function card(p){
   const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p));
-  return `<article class="m-card">
-    <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
+  return `<article class="m-card m-market-card">
+    <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button" aria-label="В избранное"><img src="assets/icons/heart.svg" alt=""></button>${d?`<span class="m-discount">-${d}%</span>`:''}
     <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
+    <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
+    ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
     <a class="m-card-title" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${t}</a>
     <div class="m-group">${g}</div>
-    ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
-    <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
-    <button class="m-cart" data-cart="${p.id}" type="button">В корзину</button>
+    <button class="m-cart" data-cart="${p.id}" type="button"><img src="assets/icons/cart.svg" alt=""> В корзину</button>
   </article>`;
 }
 function bind(scope=document){
@@ -156,13 +156,14 @@ function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = 
 function setupShell(active='home'){
   $('#mSearchBtn') && ($('#mSearchBtn').onclick=searchGo);
   $('#mSearch') && $('#mSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); searchGo(); }});
+  const icon = name => `<img src="assets/icons/${name}.svg" alt="" aria-hidden="true">`;
   const nav=$('.m-bottom-inner');
   if(nav) nav.innerHTML = `
-    <a class="${active==='home'?'active':''}" href="mobile.html">⌂<span>Главная</span></a>
-    <a class="${active==='catalog'?'active':''}" href="mobile-catalog.html">☰<span>Каталог</span></a>
-    <a class="${active==='fav'?'active':''}" href="mobile-favorites.html">♡<span>Избранное <b id="mFavCount">0</b></span></a>
-    <a class="${active==='cart'?'active':''}" href="mobile-cart.html">🛒<span>Корзина <b id="mCartCount">0</b></span></a>
-    <a class="${active==='profile'?'active':''}" href="mobile-profile.html">👤<span>Профиль</span></a>`;
+    <a class="${active==='home'?'active':''}" href="mobile.html">${icon('home')}<span>Главная</span></a>
+    <a class="${active==='catalog'?'active':''}" href="mobile-catalog.html">${icon('grid')}<span>Каталог</span></a>
+    <a class="${active==='fav'?'active':''}" href="mobile-favorites.html">${icon('heart')}<span>Избранное <b id="mFavCount">0</b></span></a>
+    <a class="${active==='cart'?'active':''}" href="mobile-cart.html">${icon('cart')}<span>Корзина <b id="mCartCount">0</b></span></a>
+    <a class="${active==='profile'?'active':''}" href="mobile-profile.html#home">${icon('user')}<span>Профиль</span></a>`;
   updateCounts();
 }
 function norm(s){return String(s||'').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[\s_-]+/g,' ')}
@@ -427,34 +428,65 @@ async function registerByEmail(){
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
 async function renderProfile(){
   setupShell('profile');
+  const goTab = name => {
+    const root = $('#mProfileBox');
+    if(!root) return;
+    const tab = (name || 'home').replace('#','') || 'home';
+    root.querySelectorAll('[data-m-pane]').forEach(p => p.classList.toggle('active', p.dataset.mPane === tab));
+    root.querySelectorAll('[data-m-jump]').forEach(a => a.classList.toggle('active', a.dataset.mJump === tab));
+    if (location.hash.replace('#','') !== tab) history.replaceState(null, '', `#${tab}`);
+  };
   onAuthStateChanged(auth, async u=>{
     userNow=u; const box=$('#mProfileBox');
     if(!u){
-      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по почте, зарегистрируйтесь или используйте SMS. После входа можно подтвердить почту и привязать телефон.</p>
-      <div class="m-auth-box"><h2>Email</h2><input id="pEmail" class="m-input" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
-      <div class="m-auth-box"><h2>Регистрация</h2><input id="pRegName" class="m-input" placeholder="Имя"><input id="pRegEmail" class="m-input" type="email" placeholder="Email"><input id="pRegPass" class="m-input" type="password" placeholder="Пароль от 6 символов"><button id="pRegister" class="m-primary" style="width:100%;margin-top:10px">Создать и подтвердить почту</button></div>
-      <div class="m-auth-box"><h2>Вход по SMS</h2><input id="pPhoneLogin" class="m-input" placeholder="Телефон: +373..."><button id="pSendSms" class="m-btn" style="width:100%;margin-top:10px">Получить SMS-код</button><input id="pSmsCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить SMS</button><div id="mRecaptcha"></div></div>
-      <a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
-      $('#pLogin').onclick=async()=>{ try{ const res=await signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); await saveAuthProfile(res.user); location.reload(); }catch(e){ alert('Ошибка входа: '+(e.message||e)); } };
+      box.innerHTML=`<div class="m-auth-hero"><span class="m-pill">AutoStyle</span><h1>Вход</h1><p>Войдите по почте или создайте аккаунт, чтобы пользоваться корзиной, заказами и скидочной картой.</p></div>
+      <div class="m-auth-box"><h2>Вход</h2><input id="pEmail" class="m-input" type="email" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><label class="m-check"><input id="pShowPass" type="checkbox"> Показать пароль</label><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button><button id="pForgot" class="m-link-btn" type="button">Забыли пароль?</button></div>
+      <div class="m-auth-box"><h2>Регистрация</h2><input id="pRegName" class="m-input" placeholder="Имя"><input id="pRegEmail" class="m-input" type="email" placeholder="Email"><input id="pRegPass" class="m-input" type="password" placeholder="Пароль от 6 символов"><button id="pRegister" class="m-primary" style="width:100%;margin-top:10px">Создать аккаунт</button></div>`;
+      $('#pShowPass').onchange=e=>$('#pPass').type=e.target.checked?'text':'password';
+      $('#pLogin').onclick=async()=>{ try{ const res=await signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); await saveAuthProfile(res.user); location.href='mobile-profile.html#home'; }catch(e){ alert('Неверный логин или пароль'); } };
+      $('#pForgot').onclick=()=>alert('Восстановление пароля доступно через страницу входа сайта.');
       $('#pRegister').onclick=async()=>{ try{ await registerByEmail(); }catch(e){ alert('Ошибка регистрации: '+(e.message||e)); } };
-      $('#pSendSms').onclick=async()=>{ try{ await startPhoneAuth($('#pPhoneLogin').value.trim()); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
-      $('#pConfirmSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pSmsCode').value.trim()); }catch(e){ alert('Ошибка SMS-подтверждения: '+(e.message||e)); } };
       clearLoader(); return;
     }
     const current=await getUserDoc(u.uid); const d=current.data || {};
-    box.innerHTML=`<div class="m-row"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div><h1 style="margin:0">${d.name||u.displayName||'Профиль'}</h1><div class="m-group">${d.email||u.email||''}</div></div></div>
-    <div class="m-profile-tabs"><a href="#account">Данные</a><a href="#security">Вход</a><a href="#discount-card">Карта</a><a href="mobile-favorites.html">Избранное</a><a href="mobile-cart.html">Корзина</a></div>
-    <section id="account" class="m-profile-pane"><h2>Данные аккаунта</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||u.phoneNumber||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
-    <section id="security" class="m-profile-pane"><h2>Привязка входа</h2><p class="m-group">Подключено: ${userProviders(u).map(providerTitle).join(', ') || 'не определено'} · Почта ${u.emailVerified?'подтверждена':'не подтверждена'} · Телефон ${u.phoneNumber?'подтверждён':'не привязан'}</p><button id="resendEmailVerify" class="m-btn" style="width:100%;margin-top:10px">Отправить подтверждение почты</button><div class="m-auth-box"><input id="pLinkPhone" class="m-input" value="${u.phoneNumber||d.phone||''}" placeholder="Телефон: +373..."><button id="pLinkSms" class="m-btn" style="width:100%;margin-top:10px">Отправить SMS для привязки</button><input id="pLinkCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmLinkSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить и привязать</button><div id="mRecaptcha"></div></div></section>
-    <section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section>
-    <section class="m-profile-pane"><h2>Все разделы</h2><div class="m-link-grid"><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-contacts.html">Контакты</a><a href="mobile-about.html">Про нас</a></div><button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:14px">Выйти</button></section>`;
+    const nm = escapeHtml(d.name||u.displayName||'Пользователь');
+    const mail = escapeHtml(d.email||u.email||'');
+    const photo = d.photoURL||u.photoURL;
+    const verified = await getProfileVerification(u).catch(()=>({verified:false}));
+    box.innerHTML=`<section class="m-prof-hero">
+      <button class="m-prof-user" type="button" data-m-jump="home">
+        <span class="m-avatar">${photo?`<img src="${photo}" alt="">`:initials({displayName:nm,email:mail})}</span>
+        <span><b>${nm}</b><small>${mail}</small></span>
+      </button>
+      <span class="m-verify ${verified.verified?'ok':'bad'}">${verified.verified?'Профиль подтверждён':'Нужно подтверждение'}</span>
+    </section>
+    <div class="m-profile-dashboard" data-m-pane="home">
+      <h2>Главная профиля</h2><p class="m-group">Все основные разделы в одном месте.</p>
+      <div class="m-dash-grid">
+        <button class="m-dash-card green" type="button" data-m-jump="account"><img src="assets/icons/user.svg" alt=""><b>Профиль</b><small>Данные и фото</small></button>
+        <button class="m-dash-card red" type="button" data-m-jump="discount-card"><img src="assets/icons/discount-card.svg" alt=""><b>Скидочная карта</b><small>Бонусы и скидки</small></button>
+        <button class="m-dash-card dark" type="button" data-m-jump="orders"><img src="assets/icons/file.svg" alt=""><b>Мои заказы</b><small>История покупок</small></button>
+        <a class="m-dash-card" href="mobile-favorites.html"><img src="assets/icons/heart.svg" alt=""><b>Избранное</b><small>Сохранённые товары</small></a>
+        <a class="m-dash-card" href="mobile-cart.html"><img src="assets/icons/cart.svg" alt=""><b>Корзина</b><small>Оформление заказа</small></a>
+        <button class="m-dash-card" type="button" data-m-jump="security"><img src="assets/icons/settings.svg" alt=""><b>Вход</b><small>Почта и телефон</small></button>
+      </div>
+      <div class="m-benefits-row"><span><img src="assets/icons/percent.svg" alt=""> Скидки</span><span><img src="assets/icons/bell.svg" alt=""> Уведомления</span><span><img src="assets/icons/shopping-bag.svg" alt=""> Быстрый заказ</span></div>
+    </div>
+    <section id="account" class="m-profile-pane" data-m-pane="account"><h2>Профиль</h2><input id="pName" class="m-input" value="${escapeHtml(d.name||u.displayName||'')}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${escapeHtml(d.email||u.email||'')}" placeholder="Email"><input id="pPhone" class="m-input" value="${escapeHtml(d.phone||u.phoneNumber||'')}" placeholder="Телефон"><input id="pCity" class="m-input" value="${escapeHtml(d.city||'')}" placeholder="Город"><input id="pAddress" class="m-input" value="${escapeHtml(d.address||'')}" placeholder="Адрес"><input id="pCar" class="m-input" value="${escapeHtml(d.car||d.carText||'')}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${escapeHtml(d.photoURL||u.photoURL||'')}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section>
+    <section id="security" class="m-profile-pane" data-m-pane="security"><h2>Вход и подтверждение</h2><p class="m-group">Почта ${u.emailVerified?'подтверждена':'не подтверждена'} · Телефон ${u.phoneNumber?'подтверждён':'не привязан'}</p><button id="resendEmailVerify" class="m-btn" style="width:100%;margin-top:10px">Отправить подтверждение почты</button><div class="m-auth-box"><input id="pLinkPhone" class="m-input" value="${escapeHtml(u.phoneNumber||d.phone||'')}" placeholder="Телефон: +373..."><button id="pLinkSms" class="m-btn" style="width:100%;margin-top:10px">Отправить SMS</button><input id="pLinkCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmLinkSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить</button><div id="mRecaptcha"></div></div></section>
+    <section id="discount-card" class="m-profile-pane" data-m-pane="discount-card">${renderDiscountCard(u,d)}</section>
+    <section id="orders" class="m-profile-pane" data-m-pane="orders"><h2>Мои заказы</h2><div class="m-empty">Заказы отобразятся после оформления.</div></section>
+    <section class="m-profile-pane" data-m-pane="more"><h2>Разделы сайта</h2><div class="m-link-grid"><a href="mobile-catalog.html">Каталог</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-contacts.html">Контакты</a></div><button id="pLogout" class="m-danger" style="width:100%;height:50px;margin-top:14px">Выйти</button></section>`;
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
-    $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
-    $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
+    $$('[data-m-jump]').forEach(el=>el.onclick=()=>goTab(el.dataset.mJump));
+    $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.href='mobile-profile.html#home'; location.reload(); };
+    const getBtn = $('#mGetDiscount'); if (getBtn) getBtn.onclick=async()=>activateDiscountCard(u,d);
     $('#resendEmailVerify').onclick=async()=>{ try{ await sendEmailVerification(u); alert('Письмо подтверждения отправлено.'); }catch(e){ alert('Не удалось отправить письмо: '+(e.message||e)); } };
     $('#pLinkSms').onclick=async()=>{ try{ await startPhoneAuth($('#pLinkPhone').value.trim(), true); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
     $('#pConfirmLinkSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pLinkCode').value.trim()); }catch(e){ alert('Ошибка подтверждения телефона: '+(e.message||e)); } };
     $('#pLogout').onclick=async()=>{localStorage.removeItem('cart');localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
+    goTab(location.hash.replace('#','') || 'home');
+    window.addEventListener('hashchange',()=>goTab(location.hash.replace('#','') || 'home'));
     clearLoader();
   });
 }
