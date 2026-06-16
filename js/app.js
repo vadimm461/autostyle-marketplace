@@ -4,7 +4,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { loginEmail, registerEmail, sendSmsCode, confirmSmsCode, ensureUserProfile } from './auth-core.js';
 import { getCollectionCached, getProducts } from './data-cache.js';
-import { getUserCart, saveUserCart, addToUserCart, cartQtyCount } from './user-cart.js';
+import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -69,7 +69,8 @@ function discount(p){
 function productSection(p){ return String(p.homeSection || p.homeBlock || p.tag || '').toLowerCase(); }
 function normalizeKey(v){ return String(v || '').trim().toLowerCase(); }
 function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
-async function saveCart(){ cart = await saveUserCart(cart); document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(cartQtyCount(cart))); window.dispatchEvent(new Event('autostyle-cart-updated')); }
+function cartQtyCount(rows = cart){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
+function saveCart(){ cart = getCurrentUserCart(); updateCartBadges(cart); }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 async function loadCollection(name){ return await getCollectionCached(name); }
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
@@ -206,7 +207,7 @@ function card(p){
   </article>`;
 }
 function bindProductButtons(scope=document){
-  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); const product = allProducts.find(p=>String(p.id)===String(b.dataset.cart)) || {id:b.dataset.cart}; const saved = await addToUserCart(product); if(saved){ cart=saved; b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); } });
+  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
   scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
 }
 function makeSection(block, products){
@@ -333,7 +334,6 @@ async function renderCatalogMenu(){
   });
 }
 async function renderHome(){
-  cart = await getUserCart();
   allProducts = await getProducts();
   const customBlocks = await safeLoadCollection(HOME_BLOCKS_COLLECTION);
   allBlocks = mergeBlocks(customBlocks);
@@ -348,7 +348,7 @@ async function renderHome(){
   if (sidePromo) sidePromo.innerHTML = renderImageSlides(promoCards, 'promo-image-slider', 'Загрузите промо в админке');
   renderPromoCards(promoCards);
   initImageBannerSliders(document);
-  renderSections(); await saveCart(); renderCatalogMenu();
+  await waitUserCartReady(); cart = getCurrentUserCart(); saveCart(); renderSections(); renderCatalogMenu();
 }
 function setupExpand(){
   document.addEventListener('click', e => {

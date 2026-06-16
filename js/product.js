@@ -2,7 +2,7 @@ import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
-import { getUserCart, saveUserCart, addToUserCart, cartQtyCount } from './user-cart.js';
+import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
 
 const $ = s => document.querySelector(s);
 let cart = [];
@@ -66,15 +66,13 @@ function setupRelatedActions(){
       const card = e.currentTarget.closest('.related-card');
       const id = card?.dataset.id;
       if (!id) return;
-      const saved = await addToUserCart(id);
-      if (!saved) return;
-      cart = saved;
+      await addUserCartItem(id); cart = getCurrentUserCart(); saveCart();
       e.currentTarget.textContent = '✓ Добавлено';
       setTimeout(() => e.currentTarget.textContent = 'В корзину', 1000);
     };
   });
   document.querySelectorAll('.related-fav').forEach(btn => {
-    btn.onclick = (e) => {
+    btn.onclick = async (e) => {
       e.preventDefault(); e.stopPropagation();
       const card = e.currentTarget.closest('.related-card');
       const id = card?.dataset.id;
@@ -119,9 +117,9 @@ async function renderRelated(current){
   }catch(e){ box.innerHTML = ''; }
 }
 
-async function saveCart(){
-  cart = await saveUserCart(cart);
-  document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(cartQtyCount(cart)));
+function saveCart(){
+  cart = getCurrentUserCart();
+  updateCartBadges(cart);
 }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function saveViewed(id){
@@ -212,9 +210,7 @@ async function loadProduct(){
     }
     $('#addToCart') && ($('#addToCart').onclick = async () => {
       if (s <= 0) return;
-      const saved = await addToUserCart(p);
-      if (!saved) return;
-      cart = saved;
+      try { await addUserCartItem(p.id); cart = getCurrentUserCart(); saveCart(); } catch(err) { alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); return; }
       $('#addToCart').textContent = '✓ Добавлено';
       setTimeout(() => $('#addToCart').textContent = 'В корзину', 1200);
     });
@@ -231,8 +227,10 @@ async function loadProduct(){
 }
 setupSearch();
 onAuthStateChanged(auth, async user => {
-  if (!user) { clearCartAndFavorites(); cart = []; }
-  else { cart = await getUserCart(); }
+  if (!user) { clearCartAndFavorites(); }
+  await waitUserCartReady();
+  cart = getCurrentUserCart();
   favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+  saveCart();
   loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });

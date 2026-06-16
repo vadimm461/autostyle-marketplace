@@ -1,7 +1,7 @@
 import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getProducts } from './data-cache.js';
-import { getUserCart, addToUserCart, cartQtyCount } from './user-cart.js';
+import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
 
 const $ = s => document.querySelector(s);
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -23,7 +23,8 @@ const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.c
 const oldPrice = p => { const op = rawOldPrice(p), pr = Number(p.price || 0); return op > pr ? op : 0; };
 function discount(p){ const d=Number(p.discount||p.discountPercent||0); if(d>0)return d; const op=oldPrice(p), pr=Number(p.price||0); return op>pr&&pr>0?Math.round((op-pr)/op*100):0; }
 function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
-function updateCart(){ document.querySelectorAll('#cartCount,.cartCount').forEach(el=>el.textContent=String(cartQtyCount(cart))); window.dispatchEvent(new Event('autostyle-cart-updated')); }
+function cartQtyCount(rows = cart){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
+function updateCart(){ cart = getCurrentUserCart(); updateCartBadges(cart); }
 function setupSearch(){
   const input=$('#siteSearch'), btn=$('#siteSearchBtn');
   const go=()=>{const q=encodeURIComponent((input?.value||'').trim()); location.href=q?`catalog.html?search=${q}`:'catalog.html'};
@@ -41,7 +42,7 @@ function card(p){
   </article>`;
 }
 function bind(){
-  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); const saved=await addToUserCart(b.dataset.cart); if(!saved)return; cart=saved; updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='В корзину',900);});
+  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.filter(x=>x!==id); saveFav(); loadFavorites();});
 }
 async function loadFavorites(){
@@ -59,8 +60,9 @@ async function loadFavorites(){
 }
 setupSearch();
 onAuthStateChanged(auth, async user => {
-  if (!user) { clearCartAndFavorites(); cart = []; }
-  else { cart = await getUserCart(); }
+  if (!user) { clearCartAndFavorites(); }
+  await waitUserCartReady();
+  cart = getCurrentUserCart();
   favs = JSON.parse(localStorage.getItem('favorites') || '[]');
   updateCart();
   loadFavorites().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
