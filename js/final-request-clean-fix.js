@@ -3,74 +3,93 @@
   function $(s,r=document){return r.querySelector(s)}
   function $$(s,r=document){return Array.from(r.querySelectorAll(s))}
 
+  function iconImg(name){ return '<img class="as-account-link-icon" src="assets/icons/'+name+'.svg" alt="" aria-hidden="true">'; }
+  function accountPopupHtml(user){
+    if(!user){
+      return '<a class="as-account-login-only" href="login.html">'+iconImg('user')+'<span>Войти</span></a>';
+    }
+    const name = (user.displayName || 'Личный кабинет').trim();
+    const email = (user.email || 'Аккаунт').trim();
+    const avatar = user.photoURL ? '<img src="'+user.photoURL+'" alt="">' : 'AS';
+    return `
+      <a class="as-account-profile-head as-account-profile-link" href="profile.html#account">
+        <div class="as-account-avatar" id="asAccountAvatar">${avatar}</div>
+        <div><div class="as-account-title">${name === 'Личный кабинет' ? 'Личный кабинет' : name}</div><div class="as-account-subtitle">${email}</div></div>
+      </a>
+      <nav class="as-account-menu">
+        <a href="profile.html#account">${iconImg('user')}<span>Фото и профиль</span></a>
+        <a href="profile.html#discount-card">${iconImg('card')}<span>Скидочная карта</span></a>
+        <a href="cart.html">${iconImg('cart')}<span>Корзина</span></a>
+        <a href="favorites.html">${iconImg('heart')}<span>Избранное</span></a>
+        <a href="profile.html#orders">${iconImg('package')}<span>Заказы</span></a>
+      </nav>
+      <hr>
+      <button type="button" id="asAccountLogout">Выйти</button>`;
+  }
+  function updateAccountPopupForAuth(user){
+    $$('.as-account-popup').forEach(popup=>{
+      popup.innerHTML = accountPopupHtml(user);
+      const logout = $('#asAccountLogout', popup);
+      if(logout){
+        logout.addEventListener('click', async (e)=>{
+          e.preventDefault();
+          try{
+            if(window.__asSignOut && window.__asAuth) await window.__asSignOut(window.__asAuth);
+            else document.getElementById('logout')?.click();
+          }catch(_){ document.getElementById('logout')?.click(); }
+          localStorage.removeItem('cart'); localStorage.removeItem('favorites');
+          location.href = 'index.html';
+        });
+      }
+      const login = $('.as-account-login-only', popup);
+      if(login){
+        login.addEventListener('click', (e)=>{
+          const modal = $('#authModal');
+          if(modal){ e.preventDefault(); modal.classList.add('open'); }
+        });
+      }
+    });
+  }
+  function watchRealAuth(){
+    if(window.__asAuthWatchReady) return;
+    window.__asAuthWatchReady = true;
+    import('./firebase.js').then(fb=>{
+      window.__asAuth = fb.auth;
+      return import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    }).then(mod=>{
+      window.__asSignOut = mod.signOut;
+      mod.onAuthStateChanged(window.__asAuth, user=> updateAccountPopupForAuth(user));
+    }).catch(()=> updateAccountPopupForAuth(null));
+  }
+
   function enhanceAccountPopup(){
-    // Normalize old account HTML into one rich dropdown. Keeps existing ids/buttons for old scripts.
     const wraps = $$('.as-account-wrap');
     wraps.forEach(wrap=>{
       const popup = $('.as-account-popup', wrap);
       const btn = $('#asAccountButton', wrap);
       if(!popup || popup.dataset.finalAccount==='1') return;
       popup.dataset.finalAccount='1';
-      const emailEl = $('#asAccountEmail', popup);
-      const email = (emailEl?.textContent || localStorage.getItem('autostyle_user_email') || 'Аккаунт').trim();
-      const logout = $('#asAccountLogout', popup);
-      popup.innerHTML = `
-        <div class="as-account-profile-head">
-          <div class="as-account-avatar" id="asAccountAvatar">AS</div>
-          <div><div class="as-account-title">Личный кабинет</div><div class="as-account-subtitle" id="asAccountEmail">${email}</div></div>
-        </div>
-        <nav class="as-account-menu">
-          <a href="profile.html#account">👤 Фото и профиль</a>
-          <a href="profile.html#discount-card">💳 Скидочная карта</a>
-          <a href="cart.html">🛒 Корзина</a>
-          <a href="favorites.html">♡ Избранное</a>
-          <a href="profile.html#orders">📦 Заказы</a>
-        </nav>
-        <hr>
-        <button type="button" id="asAccountLogout">Выйти</button>`;
-      $('#asAccountLogout', popup)?.addEventListener('click', ()=> logout?.click());
+      popup.innerHTML = accountPopupHtml(null);
       btn?.addEventListener('click', (e)=>{e.preventDefault();e.stopPropagation();wrap.classList.toggle('open')});
     });
 
-    // Index/catalog old structure: visible #openAuth + hidden #accountDrop. Make it a nice dropdown instead of modal only when authorized menu exists.
     const openAuth = $('#openAuth');
     const oldDrop = $('#accountDrop');
     if(openAuth && oldDrop && !oldDrop.dataset.finalAccount){
       oldDrop.dataset.finalAccount='1';
       oldDrop.classList.add('as-account-wrap');
+      oldDrop.style.display='block';
       const drop = $('.drop', oldDrop);
       if(drop){
-        const email = ($('#userEmail', drop)?.textContent || '').trim();
-        const logout = $('#logout', drop);
         drop.className='as-account-popup';
-        if(!email || email === 'Аккаунт'){
-          drop.innerHTML = `
-            <div class="as-account-profile-head">
-              <div class="as-account-avatar">AS</div>
-              <div><div class="as-account-title">Вход в аккаунт</div><div class="as-account-subtitle">Авторизуйтесь для профиля и заказов</div></div>
-            </div>
-            <a class="as-login-only-link" href="login.html">Войти</a>`;
-        }else{
-          drop.innerHTML = `
-            <div class="as-account-profile-head">
-              <div class="as-account-avatar">AS</div>
-              <div><div class="as-account-title">Личный кабинет</div><div class="as-account-subtitle" id="userEmail">${email}</div></div>
-            </div>
-            <nav class="as-account-menu">
-              <a href="profile.html#account"><img src="assets/icons/user.svg" alt=""> Фото и профиль</a>
-              <a href="profile.html#discount-card"><img src="assets/icons/card.svg" alt=""> Скидочная карта</a>
-              <a href="cart.html"><img src="assets/icons/cart.svg" alt=""> Корзина</a>
-              <a href="favorites.html"><img src="assets/icons/heart.svg" alt=""> Избранное</a>
-              <a href="profile.html#orders"><img src="assets/icons/package.svg" alt=""> Заказы</a>
-            </nav>
-            <hr><button type="button" id="logout">Выйти</button>`;
-          $('#logout', drop)?.addEventListener('click', ()=> logout?.click());
-        }
+        drop.innerHTML = accountPopupHtml(null);
       }
       oldDrop.querySelector('#accountBtn')?.remove();
       oldDrop.style.position='relative';
       openAuth.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); oldDrop.classList.toggle('open'); });
     }
+    updateAccountPopupForAuth(null);
+    watchRealAuth();
     document.addEventListener('click', e=>{
       if(!e.target.closest('.as-account-wrap') && !e.target.closest('#openAuth')) $$('.as-account-wrap').forEach(w=>w.classList.remove('open'));
     }, {capture:true});

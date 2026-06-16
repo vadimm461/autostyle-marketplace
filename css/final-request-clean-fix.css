@@ -65,6 +65,13 @@
 
 @media(max-width:900px){.catalog-popup.mega-catalog,.mega-catalog{min-width:0!important;width:calc(100vw - 24px)!important;grid-template-columns:1fr!important}.mega-left{width:auto!important}.mega-child-grid{grid-template-columns:1fr!important}.as-notify-dropdown{right:12px!important;width:calc(100vw - 24px)!important}.catalog-top .catalog-top-price{width:100%!important}.catalog-top .catalog-top-price input{flex:1!important;width:auto!important}}
 
-.as-account-menu a img{width:18px!important;height:18px!important;object-fit:contain!important;display:inline-block!important;filter:none!important;flex:0 0 18px!important}
-.as-login-only-link{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:46px!important;border-radius:14px!important;background:#27e21a!important;color:#06120a!important;text-decoration:none!important;font-weight:1000!important}
-.as-account-popup button:hover{background:#0b1220!important;color:#fff!important}
+/* Account dropdown real auth-state + SVG file icons */
+.as-account-popup .as-account-login-only{display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;min-height:48px!important;border-radius:14px!important;background:#27e21a!important;color:#06120a!important;font-weight:1000!important;text-decoration:none!important}
+.as-account-popup .as-account-login-only:hover{background:#18c910!important;color:#06120a!important}
+.as-account-link-icon{width:18px!important;height:18px!important;display:inline-block!important;object-fit:contain!important;flex:0 0 18px!important;filter:none!important}
+.as-account-profile-link{color:#111827!important;text-decoration:none!important;border-radius:16px!important}
+.as-account-profile-link:hover{background:#f6fff4!important}
+.as-account-menu a{display:flex!important;align-items:center!important;gap:10px!important}
+.as-account-menu a img.as-account-link-icon{width:18px!important;height:18px!important;opacity:1!important;visibility:visible!important}
+.as-account-popup button#asAccountLogout:hover{background:#0b1220!important;color:#fff!important;filter:brightness(.95)!important}
+.as-account-popup button#asAccountLogout:focus{color:#fff!important}

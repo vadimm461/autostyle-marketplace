@@ -51,15 +51,28 @@
     });
   }
 
-  function accountPopupHtml(){
+  function accountIcon(name){
+    return '<img class="as-account-link-icon" src="assets/icons/'+name+'.svg" alt="" aria-hidden="true">';
+  }
+  function accountPopupHtml(user){
+    if(!user){
+      return '<a class="as-account-login-only" href="login.html">'+accountIcon('user')+'<span>Войти</span></a>';
+    }
+    var name = (user.displayName || 'Личный кабинет').trim();
+    var email = (user.email || 'Аккаунт').trim();
+    var avatar = user.photoURL ? '<img src="'+user.photoURL+'" alt="">' : 'AS';
     return ''+
-      '<b id="asAccountEmail">Аккаунт</b>'+
-      '<p class="muted">Меню профиля</p>'+
-      '<a href="profile.html">Редактировать профиль</a>'+
-      '<a href="favorites.html">Избранное</a>'+
-      '<a href="cart.html">Корзина</a>'+
-      '<hr>'+
-      '<button type="button" id="asAccountLogout">Выйти</button>';
+      '<a class="as-account-profile-head as-account-profile-link" href="profile.html#account">'+
+        '<div class="as-account-avatar">'+avatar+'</div>'+
+        '<div><div class="as-account-title">'+(name === 'Личный кабинет' ? 'Личный кабинет' : name)+'</div><div class="as-account-subtitle">'+email+'</div></div>'+
+      '</a>'+
+      '<nav class="as-account-menu">'+
+        '<a href="profile.html#account">'+accountIcon('user')+'<span>Фото и профиль</span></a>'+
+        '<a href="profile.html#discount-card">'+accountIcon('card')+'<span>Скидочная карта</span></a>'+
+        '<a href="cart.html">'+accountIcon('cart')+'<span>Корзина</span></a>'+
+        '<a href="favorites.html">'+accountIcon('heart')+'<span>Избранное</span></a>'+
+        '<a href="profile.html#orders">'+accountIcon('package')+'<span>Заказы</span></a>'+
+      '</nav><hr><button type="button" id="asAccountLogout">Выйти</button>';
   }
 
   function wireAccountWrap(wrap){
@@ -125,7 +138,7 @@
         var popup = document.createElement('div');
         popup.className = 'as-account-popup';
         var oldDrop = accountDrop.querySelector('.drop');
-        popup.innerHTML = oldDrop ? oldDrop.innerHTML : accountPopupHtml();
+        popup.innerHTML = accountPopupHtml(null);
         popup.querySelectorAll('#logout').forEach(function(x){ x.id = 'asAccountLogout'; });
         wrap.appendChild(btn);
         wrap.appendChild(popup);
