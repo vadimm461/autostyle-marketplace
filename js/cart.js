@@ -58,7 +58,26 @@ function money(v) {
 function title(p) { return p.title || p.name || p.productName || 'Товар'; }
 function group(p) { return p.group || p.category || p.categoryName || 'Без категории'; }
 function image(p) { return p.image || p.imageUrl || p.photo || p.photoUrl || p.img || ''; }
-function stock(p) { return Number(p.stock ?? p.quantity ?? p.qty ?? p.balance ?? 0); }
+function getStockValue(p) {
+  const raw = p?.stock ?? p?.quantity ?? p?.qty ?? p?.balance ?? p?.availableQty ?? p?.available ?? null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+}
+function stock(p) {
+  const n = getStockValue(p);
+  return n === null ? null : n;
+}
+function isOverStock(item, product) {
+  const available = stock(product);
+  return available !== null && (Number(item.qty) || 1) > available;
+}
+function cartHasStockProblems(rows) {
+  return rows.some(({ item, product }) => {
+    const available = stock(product);
+    return available !== null && (available <= 0 || (Number(item.qty) || 1) > available);
+  });
+}
 function code(p) { return p.code || p.sku || p.article || p.id || ''; }
 
 async function getProductMap() {
@@ -148,25 +167,40 @@ async function render() {
   lastCartRows = rows;
   lastCartTotal = total;
 
+  const hasStockProblems = cartHasStockProblems(rows);
+  if (checkoutBtn) {
+    checkoutBtn.disabled = hasStockProblems;
+    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems);
+    checkoutBtn.title = hasStockProblems ? 'Исправьте количество товаров: оно превышает остаток на сайте.' : '';
+  }
+
   cartList.innerHTML = rows.map(({ item, product }, index) => {
     const qty = Number(item.qty) || 1;
     const productTitle = title(product);
+    const available = stock(product);
+    const limited = available !== null;
+    const overStock = limited && qty > available;
+    const outOfStock = limited && available <= 0;
+    const maxReached = limited && qty >= available;
     return `
-      <article class="cart-row" data-product-id="${product.id}">
+      <article class="cart-row ${overStock || outOfStock ? 'cart-stock-error' : ''}" data-product-id="${product.id}">
         <button class="cart-product-open" type="button" data-index="${index}" title="Быстрый просмотр">
           <div class="cart-img">${image(product) ? `<img loading="lazy" decoding="async" src="${image(product)}" alt="${productTitle}">` : '<span>Фото</span>'}</div>
         </button>
         <div class="cart-product-info">
           <button class="cart-title-btn" type="button" data-index="${index}">${productTitle}</button>
           <p class="cart-meta">${group(product)}${code(product) ? ` · код: ${code(product)}` : ''}</p>
+          <p class="cart-stock-line ${overStock || outOfStock ? 'bad' : ''}">${limited ? `В наличии: ${available}` : 'Остаток уточняется'}</p>
+          ${overStock ? `<p class="cart-stock-warning">Нельзя заказать ${qty}. На сайте доступно только ${available}.</p>` : ''}
+          ${outOfStock ? `<p class="cart-stock-warning">Товара сейчас нет в наличии.</p>` : ''}
           <strong class="cart-mobile-price">${money(Number(product.price || 0) * qty)}</strong>
-          <button class="quick-view-btn" type="button" data-index="${index}">👁 Быстрый просмотр</button>
+          <button class="quick-view-btn" type="button" data-index="${index}"><img alt="" src="assets/icons/search.svg"> Быстрый просмотр</button>
         </div>
         <div class="cart-row-controls">
           <div class="qty cart-qty" aria-label="Количество товара">
             <button class="minus" data-index="${index}" type="button">−</button>
             <span>${qty}</span>
-            <button class="plus" data-index="${index}" type="button">+</button>
+            <button class="plus" data-index="${index}" type="button" ${maxReached || outOfStock ? 'disabled' : ''}>+</button>
           </div>
           <strong class="cart-line-price">${money(Number(product.price || 0) * qty)}</strong>
         </div>
@@ -179,7 +213,14 @@ async function render() {
 
   document.querySelectorAll('.plus').forEach(btn => btn.onclick = () => {
     const i = Number(btn.dataset.index);
-    cart[i].qty = (Number(cart[i].qty) || 1) + 1;
+    const row = rows[i];
+    const available = row ? stock(row.product) : null;
+    const current = Number(cart[i].qty) || 1;
+    if (available !== null && current >= available) {
+      alert(`Больше добавить нельзя. В наличии только ${available}.`);
+      return;
+    }
+    cart[i].qty = current + 1;
     render();
   });
   document.querySelectorAll('.minus').forEach(btn => btn.onclick = () => {
@@ -271,7 +312,7 @@ function openQuickProduct(product) {
       <div class="quick-product-info">
         <button class="quick-modal-close-inline" type="button" aria-label="Закрыть">×</button>
         <h2>${productTitle}</h2>
-        <div class="quick-tags"><span>${group(product)}</span><span class="stock-pill">В наличии: ${stock(product) || '—'}</span></div>
+        <div class="quick-tags"><span>${group(product)}</span><span class="stock-pill">В наличии: ${stock(product) === null ? '—' : stock(product)}</span></div>
         <div class="quick-price-line"><b>${money(price)}</b>${hasDiscount ? `<span>${money(oldPrice)}</span>` : ''}</div>
         <p class="quick-desc"><b>Описание</b><br>${product.description || 'Описание товара пока не добавлено.'}</p>
         <div class="quick-actions">
@@ -384,6 +425,17 @@ async function createOrderFromCart() {
     const rows = normalizeCart(readCart()).map(item => ({ item, product: productMap.get(String(item.id)) })).filter(r => r.product);
     if (!rows.length) {
       alert('Корзина пустая. Добавь товары перед оформлением заказа.');
+      return;
+    }
+
+    const stockProblem = rows.find(({ item, product }) => {
+      const available = stock(product);
+      return available !== null && (available <= 0 || (Number(item.qty) || 1) > available);
+    });
+    if (stockProblem) {
+      const available = stock(stockProblem.product);
+      alert(`Нельзя оформить заказ: «${title(stockProblem.product)}». В корзине ${Number(stockProblem.item.qty) || 1}, а в наличии ${available}.`);
+      await render();
       return;
     }
 
