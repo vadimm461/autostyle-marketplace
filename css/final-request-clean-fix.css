@@ -163,3 +163,22 @@
 }
 .as-account-wrap:not(.open) .as-account-popup{display:none!important}
 .as-account-wrap.open .as-account-popup{display:block!important}
+
+
+/* Account button: no extra highlight, same visual weight as other header buttons */
+.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn,
+.topbar .as-account-wrap > .as-head-icon-btn.is-logged{
+  border-color:rgba(39,226,26,.28)!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+.topbar .as-account-wrap.open > .as-head-icon-btn,
+.topbar .as-account-wrap > .as-head-icon-btn:focus,
+.topbar .as-account-wrap > .as-head-icon-btn:focus-visible{
+  border-color:rgba(39,226,26,.28)!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+.topbar .as-account-wrap > .as-head-icon-btn.is-logged .as-head-label{
+  color:#fff!important;
+}
