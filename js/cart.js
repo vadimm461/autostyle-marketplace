@@ -2,7 +2,7 @@ import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
-import { getCurrentUserCart, saveUserCart, clearUserCart, waitUserCartReady, updateCartBadges, normalizeUserCart } from './user-cart-store.js';
+import { getCurrentUserCart, saveUserCart, clearUserCart, waitUserCartReady, updateCartBadges, normalizeUserCart, loadUserCart } from './user-cart-store.js';
 
 const cartList = document.querySelector('#cartList');
 const totalBox = document.querySelector('#cartTotal');
@@ -201,8 +201,9 @@ paymentInputs.forEach(input => input.addEventListener('change', updatePaymentUI)
 updatePaymentUI();
 
 
-async function render() {
-  await save();
+async function render({ persist = false } = {}) {
+  if (persist) await save();
+  else { cart = normalizeUserCart(cart); updateCartCounter(); }
   if (!cartList) return;
 
   let productMap = new Map();
@@ -287,12 +288,12 @@ async function render() {
       return;
     }
     cart[i].qty = current + 1;
-    await render();
+    await render({ persist: true });
   });
   document.querySelectorAll('.minus').forEach(btn => btn.onclick = async () => {
     const i = Number(btn.dataset.index);
     cart[i].qty = Math.max(1, (Number(cart[i].qty) || 1) - 1);
-    await render();
+    await render({ persist: true });
   });
   document.querySelectorAll('.cart-product-open,.cart-title-btn,.quick-view-btn').forEach(btn => {
     btn.onclick = () => openQuickProduct(rows[Number(btn.dataset.index)]?.product);
@@ -309,7 +310,6 @@ function renderInstallments(total) {
   if (!inst) return;
   if (!total) {
     inst.innerHTML = '<div class="installment-empty">Добавь товары, чтобы рассчитать платеж.</div>';
-    updatePaymentUI();
     return;
   }
 
@@ -403,7 +403,7 @@ quickModal?.querySelector('.quick-modal-close')?.addEventListener('click', close
 quickModal?.querySelector('.quick-modal-backdrop')?.addEventListener('click', closeQuickProduct);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuickProduct(); });
 
-clearBtn && (clearBtn.onclick = async () => { cart = []; await clearUserCart(); await render(); window.AutoStyleLoader?.hide?.(); });
+clearBtn && (clearBtn.onclick = async () => { cart = []; await clearUserCart(); await render({ persist: true }); window.AutoStyleLoader?.hide?.(); });
 async function getActiveDiscountCard(user) {
   if (!user) return null;
   const profile = await getUserProfile(user);
@@ -504,7 +504,9 @@ async function createOrderFromCart() {
   try {
     let productMap = new Map();
     try { productMap = await getProductMap(); } catch (err) { console.warn('checkout products load error', err); }
-    const rows = normalizeCart(readCart()).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
+    await loadUserCart(user);
+    cart = getCurrentUserCart();
+    const rows = normalizeUserCart(cart).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
     if (!rows.length) {
       alert('Корзина пустая. Добавь товары перед оформлением заказа.');
       return;
@@ -517,7 +519,7 @@ async function createOrderFromCart() {
     if (stockProblem) {
       const available = stock(stockProblem.product);
       alert(`Нельзя оформить заказ: «${title(stockProblem.product)}». В корзине ${Number(stockProblem.item.qty) || 1}, а в наличии ${available}.`);
-      await render();
+      await render({ persist: true });
       return;
     }
 
@@ -586,7 +588,7 @@ async function createOrderFromCart() {
 
     cart = [];
     await clearUserCart();
-    await render();
+    await render({ persist: true });
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
   } catch (err) {
     console.error('order create error', err);
@@ -625,6 +627,9 @@ onAuthStateChanged(auth, async user => {
     });
   }
   await waitUserCartReady();
+  if (user) {
+    try { await loadUserCart(user); } catch (err) { console.warn('user cart force load error', err); }
+  }
   cart = getCurrentUserCart();
   render().finally(() => window.AutoStyleLoader?.hide?.());
 });
