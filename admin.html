@@ -48,7 +48,7 @@
     <input id="adminLoginPassword" type="password" autocomplete="current-password" required>
     <button type="submit">Войти в админку</button>
     <div id="adminLoginError" class="admin-login-error"></div>
-    <div class="admin-login-note">Обычный аккаунт сайта сюда не подходит. Доступ будет только если в Firestore у пользователя стоит <b>role: admin</b>.</div>
+    <div class="admin-login-note">Обычный аккаунт сайта сюда не подходит. Войдите под администратором.</div>
   </form>
 </div>
 
@@ -79,7 +79,7 @@
       <div class="admin-global-loader-card">
         <span class="admin-spinner"></span>
         <b id="adminGlobalLoaderTitle">Загрузка раздела...</b>
-        <small id="adminGlobalLoaderText">Получаем данные из Firebase</small>
+        <small id="adminGlobalLoaderText">Загружаем данные</small>
       </div>
     </div>
     <button id="logout" class="icon-btn" style="float:right">Выйти</button>
@@ -148,7 +148,7 @@
     <div>
       <div class="admin-home-card-icon">📁</div>
       <h3>Медиа</h3>
-      <p>Загрузка изображений и файлов в Firebase Storage.</p>
+      <p>Загрузка изображений и файлов.</p>
     </div>
   </a>
 

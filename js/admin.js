@@ -402,7 +402,7 @@ function adminSectionTitle(id) {
   return titles[id] || 'Загрузка раздела...';
 }
 
-function setAdminLoading(active, title = 'Загрузка раздела...', text = 'Получаем данные из Firebase') {
+function setAdminLoading(active, title = 'Загрузка раздела...', text = 'Загружаем данные') {
   const box = document.getElementById('adminGlobalLoader');
   if (!box) return;
   const titleEl = document.getElementById('adminGlobalLoaderTitle');
