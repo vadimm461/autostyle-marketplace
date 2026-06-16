@@ -8,9 +8,16 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin";
+      return isSignedIn() && (
+        request.auth.token.email in [
+          "vadimm461@gmail.com",
+          "vadim462@gmail.com"
+        ]
+        || (
+          exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin"
+        )
+      );
     }
 
     /* Товары и контент */
