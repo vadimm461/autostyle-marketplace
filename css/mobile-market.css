@@ -80,10 +80,19 @@
 .m-cat-grid .m-cat.active{border-color:rgba(40,225,26,.75);background:#ecfbea;box-shadow:0 10px 28px rgba(40,225,26,.12)}
 @media(max-width:380px){.m-logo-img{max-width:185px!important}.m-search button,#mSearchBtn{min-width:96px!important}.m-cat-grid .m-cat{font-size:14px;padding:10px}}
 
-/* === Mobile profile split pages === */
-.m-profile-menu{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-.m-profile-link{display:grid;grid-template-columns:42px 1fr;grid-template-areas:'ico title' 'ico text';align-items:center;min-height:64px;padding:14px 16px;border-radius:18px;background:#fff;color:#111827;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.07);border:1px solid rgba(15,23,42,.06)}
-.m-profile-link span{grid-area:ico;font-size:24px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#f3f4f6}
-.m-profile-link b{grid-area:title;font-size:15px;line-height:1.2}
-.m-profile-link em{grid-area:text;font-style:normal;font-size:12px;color:#6b7280;margin-top:3px}
-.m-profile-pane{margin-top:16px}
+/* profile app-style menu 2026-06-16 */
+.m-profile-card{border-radius:30px;padding:22px;background:#fff;box-shadow:0 18px 45px rgba(15,23,42,.08)}
+.m-profile-head{display:grid;grid-template-columns:86px 1fr auto;gap:14px;align-items:center;margin-bottom:22px}
+.m-profile-head .m-avatar{width:86px;height:86px;border-radius:26px;background:#eef1f5;color:#101828}
+.m-profile-user h1{margin:0;font-size:36px;line-height:1;font-weight:950;color:#101828}
+.m-profile-user div{margin-top:6px;color:#667085;font-weight:850;font-size:15px}
+.m-profile-ok{justify-self:end;background:#dff8dc;color:#176b22;border-radius:999px;padding:10px 14px;font-size:13px;font-weight:950;white-space:nowrap}
+.m-profile-menu{display:grid;gap:14px;margin-top:8px}
+.m-profile-menu-item{width:100%;min-height:74px;border-radius:22px;background:#fff;border:1px solid rgba(229,231,235,.9);box-shadow:0 10px 28px rgba(15,23,42,.045);display:grid;grid-template-columns:50px 1fr 20px;gap:12px;align-items:center;padding:12px 16px;text-decoration:none;color:#101828;text-align:left;font:inherit}
+.m-menu-ico{width:44px;height:44px;border-radius:15px;background:#f2f4f7;display:grid;place-items:center;font-size:20px;color:#101828;overflow:hidden}
+.m-menu-ico img{width:20px;height:20px;display:block;object-fit:contain;filter:brightness(0) saturate(100%) invert(7%) sepia(13%) saturate(1837%) hue-rotate(187deg) brightness(92%) contrast(94%)}
+.m-profile-menu-item b{display:block;font-size:19px;line-height:1.1;font-weight:950;color:#101828}
+.m-profile-menu-item small{display:block;margin-top:5px;color:#667085;font-size:14px;font-weight:750;line-height:1.15}
+.m-profile-menu-item em{font-style:normal;font-size:30px;line-height:1;color:#111827;font-weight:300;justify-self:end}
+.m-profile-logout{cursor:pointer}
+@media(max-width:420px){.m-profile-card{padding:20px 18px}.m-profile-head{grid-template-columns:74px 1fr;gap:12px}.m-profile-head .m-avatar{width:74px;height:74px;border-radius:22px}.m-profile-user h1{font-size:30px}.m-profile-ok{grid-column:1/-1;justify-self:start;margin-top:2px}.m-profile-menu-item{min-height:68px;border-radius:20px;grid-template-columns:46px 1fr 18px;padding:11px 14px}.m-menu-ico{width:40px;height:40px;border-radius:14px}.m-menu-ico img{width:18px;height:18px}.m-profile-menu-item b{font-size:17px}.m-profile-menu-item small{font-size:13px}}
