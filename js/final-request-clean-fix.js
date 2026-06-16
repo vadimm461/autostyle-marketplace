@@ -4,18 +4,8 @@
   function $$(s,r=document){return Array.from(r.querySelectorAll(s))}
 
   function enhanceAccountPopup(){
-    // Меню аккаунта теперь собирается в js/autostyle-project-rework.js и обновляется из Firebase-auth.
-    // Здесь оставляем только совместимость, без перерисовки и без наложения поверх старого HTML.
-    const btn = document.querySelector('#asAccountButton');
-    const wrap = btn?.closest('.as-account-wrap');
-    if(btn && wrap && wrap.dataset.finalClickReady !== '1'){
-      wrap.dataset.finalClickReady = '1';
-      btn.addEventListener('click', (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        wrap.classList.toggle('open');
-      });
-    }
+    // Аккаунт обрабатывается только в js/autostyle-project-rework.js.
+    // Здесь ничего не вешаем, чтобы не было двойного клика и двух меню.
   }
 
   function fixCatalogPricePosition(){
