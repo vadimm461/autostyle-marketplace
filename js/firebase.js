@@ -39,5 +39,6 @@ export const COLLECTIONS = {
   orders: 'autostyle_orders',
   discountCards: 'autostyle_discount_cards',
   notifications: 'autostyle_notifications',
-  notificationReads: 'autostyle_notification_reads'
+  notificationReads: 'autostyle_notification_reads',
+  feedback: 'autostyle_feedback'
 };

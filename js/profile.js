@@ -8,7 +8,7 @@ import {
   reauthenticateWithCredential,
   verifyBeforeUpdateEmail
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, addDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
 import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile, getProfileVerification, profileVerificationMessage } from './auth-core.js';
@@ -138,7 +138,7 @@ async function changePassword(user){
 }
 function activateProfileTabFromHash(){
   const hash = (location.hash || '').replace('#','').trim();
-  const map = { home:'home', main:'home', dashboard:'home', profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', security:'security', login:'security', auth:'security', providers:'security', orders:'orders', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
+  const map = { home:'home', main:'home', dashboard:'home', profile:'account', photo:'account', avatar:'account', account:'account', edit:'account', password:'password', security:'security', login:'security', auth:'security', providers:'security', orders:'orders', feedback:'feedback', complaints:'feedback', suggestion:'feedback', suggestions:'feedback', favorites:'favorites', 'discount-card':'discount-card', discount:'discount-card', card:'discount-card' };
   const target = map[hash] || 'home';
   document.querySelector(`[data-profile-tab="${target}"]`)?.click();
 }
@@ -167,6 +167,47 @@ function bindTabs(){
     });
   });
 }
+
+async function submitFeedback(user){
+  const msg = $('#feedbackMsg');
+  const title = ($('#feedbackTitle')?.value || '').trim();
+  const type = ($('#feedbackType')?.value || 'suggestion').trim();
+  const text = ($('#feedbackMessage')?.value || '').trim();
+  const file = $('#feedbackPhoto')?.files?.[0] || null;
+  if(!title || !text){ message(msg, 'Заполните тему и сообщение.', false); return; }
+  if(file && !file.type.startsWith('image/')){ message(msg, 'Можно прикрепить только изображение.', false); return; }
+  message(msg, 'Отправляю письмо администрации...', true);
+  let photoUrl = '';
+  let photoPath = '';
+  if(file){
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    photoPath = `feedback/${user.uid}/${Date.now()}.${ext}`;
+    const fileRef = ref(storage, photoPath);
+    await uploadBytes(fileRef, file);
+    photoUrl = await getDownloadURL(fileRef);
+  }
+  const userDoc = await getUserDoc(user.uid);
+  const profile = userDoc.data || {};
+  await addDoc(collection(db, COLLECTIONS.feedback || 'autostyle_feedback'), {
+    userId: user.uid,
+    uid: user.uid,
+    userName: profile.name || user.displayName || '',
+    userEmail: profile.email || user.email || '',
+    userPhone: profile.phone || '',
+    title,
+    type,
+    message: text,
+    photoUrl,
+    photoPath,
+    status: 'new',
+    read: false,
+    createdAt: serverTimestamp(),
+    createdAtText: new Date().toLocaleString('ru-RU')
+  });
+  $('#feedbackForm')?.reset();
+  message(msg, 'Письмо отправлено администрации. Спасибо!', true);
+}
+
 async function renderFavorites(){
   const box = $('#profileFavorites');
   if(!box) return;
@@ -554,6 +595,7 @@ onAuthStateChanged(auth, async user => {
     $('#profileForm').onsubmit = async e => { e.preventDefault(); try{ await saveProfile(user); }catch(err){ message($('#profileMsg'), 'Ошибка: ' + (err.message || err), false); } };
     $('#avatarInput').onchange = async e => { try{ await uploadAvatar(user, e.target.files[0]); }catch(err){ message($('#avatarMsg'), 'Ошибка загрузки: ' + (err.message || err), false); } };
     $('#passwordForm').onsubmit = async e => { e.preventDefault(); try{ await changePassword(user); }catch(err){ message($('#passwordMsg'), 'Ошибка: ' + (err.message || err), false); } };
+    if ($('#feedbackForm')) $('#feedbackForm').onsubmit = async e => { e.preventDefault(); try{ await submitFeedback(user); }catch(err){ message($('#feedbackMsg'), 'Ошибка отправки: ' + (err.message || err), false); } };
     const getCardBtn = $('#getDiscountCardBtn');
     if (getCardBtn) getCardBtn.onclick = async () => { try { await getDiscountCard(user); } catch(err) { alert('Не удалось получить карту: ' + (err.message || err)); } };
     await renderFavorites();

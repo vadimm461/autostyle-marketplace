@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="css/image-fit-contain-final.css?v=20260609-2">  <link rel="stylesheet" href="css/as-file-icons.css">
 <link rel="stylesheet" href="css/minimal-file-icons-fix.css">
 <link rel="stylesheet" href="css/admin-users.css">
+<link rel="stylesheet" href="css/feedback-admin-user.css?v=20260616-1">
 </head>
 <body class="admin-locked"><script src="js/page-loader.js"></script>
 
@@ -63,7 +64,8 @@
       <button data-section="banners">Баннеры</button>
       <button data-section="homeblocks">Блоки главной</button>
       <button data-section="promocards">Промо карточки</button>
-      <button data-section="orders">Заказы</button>
+      <button data-section="orders" class="admin-nav-alert-btn" data-admin-badge="orders">Заказы <span class="admin-red-dot" data-admin-dot="orders" hidden></span></button>
+      <button data-section="feedback" class="admin-nav-alert-btn" data-admin-badge="feedback">Предложения и жалобы <span class="admin-red-dot" data-admin-dot="feedback" hidden></span></button>
       <button data-section="discountCards">Скидочные карты</button>
       <button data-section="media">Медиа</button>
       <button data-section="notifications">Уведомления</button>
@@ -128,11 +130,19 @@
     </div>
   </a>
 
-  <a href="#orders" class="admin-home-card">
+  <a href="#orders" class="admin-home-card" data-admin-home-badge="orders">
     <div>
       <div class="admin-home-card-icon">🛒</div>
-      <h3>Заказы</h3>
+      <h3>Заказы <span class="admin-card-alert" data-admin-card-dot="orders" hidden>новые</span></h3>
       <p>Просмотр и обработка заказов клиентов.</p>
+    </div>
+  </a>
+
+  <a href="#feedback" class="admin-home-card" data-admin-home-badge="feedback">
+    <div>
+      <div class="admin-home-card-icon">📨</div>
+      <h3>Предложения и жалобы <span class="admin-card-alert" data-admin-card-dot="feedback" hidden>новые</span></h3>
+      <p>Письма от пользователей сайта с возможностью приложить фото.</p>
     </div>
   </a>
 
@@ -400,6 +410,17 @@
       </div>
     </section>
 
+
+    <section id="feedback" class="admin-section">
+      <div class="admin-card admin-feedback-card">
+        <h2>Предложения и жалобы</h2>
+        <p class="muted">Письма пользователей сайта. Новые обращения подсвечивают кнопку раздела красным.</p>
+        <div class="admin-feedback-toolbar">
+          <button id="refreshFeedbackBtn" type="button" class="secondary">Обновить</button>
+        </div>
+        <div id="adminFeedbackList" class="list admin-feedback-list"><div class="orders-empty">Писем пока нет.</div></div>
+      </div>
+    </section>
 
     <section id="discountCards" class="admin-section">
       <div class="admin-card">

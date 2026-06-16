@@ -61,6 +61,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+
+    /* Предложения и жалобы */
+    match /autostyle_feedback/{feedbackId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if isAdmin();
+    }
+
     /* Заказы */
     match /autostyle_orders/{orderId} {
       allow create: if isProfileVerified();

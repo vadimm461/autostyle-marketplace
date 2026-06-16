@@ -18,6 +18,7 @@
 
 <link rel="stylesheet" href="css/as-logo-final.css?v=20260608-brand-final"><link rel="stylesheet" href="css/zzz-card-gap-fix.css">
 <link rel="stylesheet" href="css/image-fit-contain-final.css?v=20260609-2">  <link rel="stylesheet" href="css/as-file-icons.css">
+  <link rel="stylesheet" href="css/feedback-admin-user.css?v=20260616-1">
 
 </head>
 <body>
@@ -68,6 +69,7 @@
         <button class="active" data-profile-tab="home" type="button"><span class="profile-nav-ico"><img src="assets/icons/home.svg" alt=""></span> Главная</button>
         <button data-profile-tab="account" type="button"><span class="profile-nav-ico"><img src="assets/icons/user.svg" alt=""></span> Профиль</button>
         <button data-profile-tab="discount-card" type="button"><span class="profile-nav-ico"><img src="assets/icons/percent.svg" alt=""></span> Скидочная карта</button>
+        <button data-profile-tab="feedback" type="button"><span class="profile-nav-ico"><img src="assets/icons/bell.svg" alt=""></span> Предложения и жалобы</button>
         <button data-profile-tab="security" type="button"><span class="profile-nav-ico"><img src="assets/icons/settings.svg" alt=""></span> Вход и привязки</button>
         <button data-profile-tab="orders" type="button"><span class="profile-nav-ico"><img src="assets/icons/file.svg" alt=""></span> Мои заказы</button>
         <button data-profile-tab="favorites" type="button"><span class="profile-nav-ico"><img src="assets/icons/heart.svg" alt=""></span> Избранное</button>
@@ -120,6 +122,12 @@
             <b>Скидочная карта</b>
             <small>Ваши скидки и специальные предложения.</small>
             <em>Открыть</em>
+          </button>
+          <button class="profile-home-card profile-home-card-feedback" type="button" data-profile-jump="feedback">
+            <span class="profile-home-icon"><img src="assets/icons/bell.svg" alt=""></span>
+            <b>Предложения и жалобы</b>
+            <small>Напишите администрации сайта и прикрепите фото.</small>
+            <em>Написать</em>
           </button>
         </div>
 
@@ -187,6 +195,33 @@
         <div class="profile-card-head"><div><h2>Безопасность аккаунта</h2><p class="muted">Подтверждение почты и привязка телефона по SMS.</p></div></div>
         <div id="authSecurityBox" class="auth-security-grid"></div>
         <div id="profileAuthMsg" class="profile-msg profile-wide"></div>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="feedback">
+        <div class="profile-card-head">
+          <div><h2>Предложения и жалобы</h2><p class="muted">Современная форма письма администрации AutoStyle. Можно прикрепить фото проблемы или идеи.</p></div>
+        </div>
+        <form id="feedbackForm" class="profile-feedback-form">
+          <label>Тема обращения
+            <input id="feedbackTitle" placeholder="Например: проблема с заказом или предложение по сайту" required>
+          </label>
+          <label>Тип обращения
+            <select id="feedbackType">
+              <option value="suggestion">Предложение</option>
+              <option value="complaint">Жалоба</option>
+              <option value="question">Вопрос</option>
+            </select>
+          </label>
+          <label class="profile-feedback-wide">Сообщение
+            <textarea id="feedbackMessage" rows="6" placeholder="Опишите подробно, что нужно передать администрации" required></textarea>
+          </label>
+          <label class="profile-feedback-file profile-feedback-wide">
+            <input id="feedbackPhoto" type="file" accept="image/*">
+            <span><b>Прикрепить фото</b><small>JPG, PNG или WEBP. Необязательно.</small></span>
+          </label>
+          <button class="profile-save profile-feedback-submit" type="submit">Послать письмо администрации</button>
+          <div id="feedbackMsg" class="profile-msg profile-wide"></div>
+        </form>
       </section>
 
       <section class="profile-card profile-pane" data-pane="orders">

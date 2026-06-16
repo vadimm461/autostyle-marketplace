@@ -19,7 +19,8 @@ import {
   where,
   limit,
   orderBy,
-  deleteField
+  deleteField,
+  serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 import {
@@ -321,7 +322,10 @@ const ADMIN_SECTION_ALIASES = {
   promoCards: 'promocards',
   promocards: 'promocards',
   discountCards: 'discountCards',
-  discountcards: 'discountCards'
+  discountcards: 'discountCards',
+  feedback: 'feedback',
+  complaints: 'feedback',
+  suggestions: 'feedback'
 };
 
 const loadedAdminSections = new Set();
@@ -342,7 +346,8 @@ async function loadAdminSection(sectionId, force = false) {
     if (id === 'products') await renderProducts();
     else if (id === 'categories') await renderCats();
     else if (id === 'banners') await renderBanners();
-    else if (id === 'orders') await renderOrdersAdmin();
+    else if (id === 'orders') { await renderOrdersAdmin(); await updateAdminBadges(); }
+    else if (id === 'feedback') { await renderFeedbackAdmin(); await updateAdminBadges(); }
     else if (id === 'discountCards') await renderDiscountCardsAdmin();
     else if (id === 'homeblocks') await renderHomeBlocksAdmin();
     else if (id === 'promocards') await renderPromoCardsAdmin();
@@ -416,8 +421,110 @@ onAuthStateChanged(auth, user => {
   adminAuthReady = true;
   const startSection = normalizeAdminSectionId(location.hash.replace('#', '') || 'dashboard');
   openSection(startSection);
+  updateAdminBadges();
 });
 
+
+
+/* ADMIN BADGES + FEEDBACK */
+
+function setAdminBadge(name, count){
+  const active = Number(count || 0) > 0;
+  document.querySelectorAll(`[data-admin-dot="${name}"], [data-admin-card-dot="${name}"]`).forEach(el => {
+    el.hidden = !active;
+    if (active && el.dataset.adminCardDot) el.textContent = `новые: ${count}`;
+  });
+  document.querySelectorAll(`[data-admin-badge="${name}"], [data-admin-home-badge="${name}"]`).forEach(el => {
+    el.classList.toggle('admin-has-new', active);
+  });
+}
+
+async function updateAdminBadges(){
+  try{
+    const ordersCollection = COLLECTIONS.orders || 'autostyle_orders';
+    const ordersSnap = await getDocs(query(collection(db, ordersCollection), where('status','==','new'), limit(50)));
+    setAdminBadge('orders', ordersSnap.size);
+  }catch(e){ console.warn('Не удалось проверить новые заказы', e); }
+  try{
+    const feedbackCollection = COLLECTIONS.feedback || 'autostyle_feedback';
+    const feedbackSnap = await getDocs(query(collection(db, feedbackCollection), where('status','==','new'), limit(50)));
+    setAdminBadge('feedback', feedbackSnap.size);
+  }catch(e){ console.warn('Не удалось проверить новые письма', e); }
+}
+
+function feedbackTypeTitle(type){
+  return type === 'complaint' ? 'Жалоба' : type === 'question' ? 'Вопрос' : 'Предложение';
+}
+
+function feedbackStatusTitle(status){
+  return status === 'done' ? 'Закрыто' : status === 'processing' ? 'В работе' : 'Новое';
+}
+
+function renderFeedbackCard(item){
+  const created = item.createdAt?.toDate ? item.createdAt.toDate().toLocaleString('ru-RU') : (item.createdAtText || '');
+  const status = item.status || 'new';
+  return `<article class="admin-feedback-item ${status === 'new' ? 'is-new' : ''}" data-feedback-id="${item.id}">
+    <div class="admin-feedback-top">
+      <div>
+        <span class="admin-feedback-type">${feedbackTypeTitle(item.type)}</span>
+        <h3>${esc(item.title || 'Без темы')}</h3>
+        <p>${esc(created)}</p>
+      </div>
+      <strong>${feedbackStatusTitle(status)}</strong>
+    </div>
+    <div class="admin-feedback-user">
+      <b>${esc(item.userName || 'Пользователь')}</b>
+      <span>${esc(item.userEmail || '')}</span>
+      <span>${esc(item.userPhone || '')}</span>
+    </div>
+    <p class="admin-feedback-message">${esc(item.message || '')}</p>
+    ${item.photoUrl ? `<a class="admin-feedback-photo" href="${esc(item.photoUrl)}" target="_blank" rel="noopener"><img src="${esc(item.photoUrl)}" alt="Фото обращения"><span>Открыть фото</span></a>` : ''}
+    <div class="admin-feedback-actions">
+      <button type="button" data-feedback-status="processing">В работу</button>
+      <button type="button" data-feedback-status="done">Закрыть</button>
+      <button type="button" class="danger" data-feedback-delete="1">Удалить</button>
+    </div>
+  </article>`;
+}
+
+async function renderFeedbackAdmin(){
+  const list = document.getElementById('adminFeedbackList');
+  if(!list) return;
+  list.innerHTML = '<div class="orders-empty">Загружаю письма...</div>';
+  try{
+    const feedbackCollection = COLLECTIONS.feedback || 'autostyle_feedback';
+    let items = [];
+    try{
+      const snap = await getDocs(query(collection(db, feedbackCollection), orderBy('createdAt','desc')));
+      items = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    }catch(indexErr){
+      const snap = await getDocs(collection(db, feedbackCollection));
+      items = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      items.sort((a,b)=>String(b.createdAtText || '').localeCompare(String(a.createdAtText || '')));
+    }
+    if(!items.length){ list.innerHTML = '<div class="orders-empty">Писем пока нет.</div>'; return; }
+    list.innerHTML = items.map(renderFeedbackCard).join('');
+    list.querySelectorAll('[data-feedback-status]').forEach(btn => btn.addEventListener('click', async () => {
+      const id = btn.closest('[data-feedback-id]')?.dataset.feedbackId;
+      if(!id) return;
+      await updateDoc(doc(db, feedbackCollection, id), { status: btn.dataset.feedbackStatus, read: true, updatedAt: serverTimestamp() });
+      await renderFeedbackAdmin();
+      await updateAdminBadges();
+    }));
+    list.querySelectorAll('[data-feedback-delete]').forEach(btn => btn.addEventListener('click', async () => {
+      const id = btn.closest('[data-feedback-id]')?.dataset.feedbackId;
+      if(!id || !confirm('Удалить письмо?')) return;
+      await deleteDoc(doc(db, feedbackCollection, id));
+      await renderFeedbackAdmin();
+      await updateAdminBadges();
+    }));
+  }catch(err){
+    console.error('feedback render error', err);
+    list.innerHTML = `<div class="orders-empty">Не удалось загрузить письма: ${esc(err.message || err)}</div>`;
+  }
+}
+
+document.getElementById('refreshFeedbackBtn')?.addEventListener('click', async () => { await renderFeedbackAdmin(); await updateAdminBadges(); });
 
 /* ORDERS */
 
@@ -542,14 +649,16 @@ async function renderOrdersAdmin() {
         } catch (notifyErr) {
           console.warn('Не удалось создать уведомление о статусе заказа', notifyErr);
         }
-        renderOrdersAdmin();
+        await renderOrdersAdmin();
+        await updateAdminBadges();
       };
     });
     list.querySelectorAll('[data-order-delete]').forEach(btn => {
       btn.onclick = async () => {
         if (!confirm('Удалить заказ?')) return;
         await deleteDoc(doc(db, COLLECTIONS.orders || 'autostyle_orders', btn.dataset.orderDelete));
-        renderOrdersAdmin();
+        await renderOrdersAdmin();
+        await updateAdminBadges();
       };
     });
   } catch (err) {
