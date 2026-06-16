@@ -43,6 +43,44 @@
     else fn();
   }
 
+  function openAuthModal(){
+    var modal = document.getElementById('authModal');
+    if(!modal){
+      return false;
+    }
+    modal.classList.add('open');
+    modal.classList.add('show');
+    modal.removeAttribute('hidden');
+    modal.style.display = '';
+
+    var loginTab = modal.querySelector('[data-tab="login"], [data-auth-mode="login-email"]');
+    if(loginTab) loginTab.click();
+
+    var firstInput = modal.querySelector('#loginEmail, input[type="email"], input:not([type])');
+    if(firstInput){
+      setTimeout(function(){ try{ firstInput.focus(); }catch(_){} }, 60);
+    }
+    return true;
+  }
+
+  window.AutoStyleOpenAuthModal = openAuthModal;
+
+  function bindAccountPopupActions(wrap){
+    if(!wrap) return;
+    wrap.querySelectorAll('[data-open-auth], .as-account-login').forEach(function(loginBtn){
+      if(loginBtn.dataset.asLoginReady === '1') return;
+      loginBtn.dataset.asLoginReady = '1';
+      loginBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+        if(openAuthModal()){
+          wrap.classList.remove('open');
+        }
+      }, true);
+    });
+  }
+
   function normalizeCatalogButtons(){
     document.querySelectorAll('.topbar .catalog-btn').forEach(function(btn){
       btn.classList.add('as-unified-catalog-btn');
@@ -60,67 +98,21 @@
       '<div class="as-account-guest">'+
         '<div class="as-account-title">Аккаунт</div>'+
         '<div class="as-account-subtitle">Войдите, чтобы открыть профиль</div>'+
-        '<button class="as-account-login" type="button" data-open-auth="1">Войти</button>'+
+        '<button type="button" class="as-account-login" data-open-auth="1">Войти</button>'+
       '</div>';
   }
 
-  function escText(value){
-    return String(value == null ? '' : value)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#039;');
-  }
-
-
-
-  function setAccountButtonState(user){
-    document.querySelectorAll('.topbar .as-account-wrap > .as-head-icon-btn').forEach(function(btn){
-      var label = btn.querySelector('.as-head-label');
-      if(!label) return;
-      if(user){
-        var name = String((user.name || user.displayName || '')).trim();
-        var email = String((user.email || user.phoneNumber || '')).trim();
-        var first = name ? name.split(/\s+/)[0] : '';
-        label.textContent = first || 'Профиль';
-        btn.classList.add('is-logged');
-        btn.setAttribute('title', email ? (name ? name + ' — ' + email : email) : 'Вы авторизованы');
-        btn.setAttribute('aria-label', email ? 'Аккаунт: ' + (name || email) : 'Аккаунт: вы авторизованы');
-      }else{
-        label.textContent = 'Войти';
-        btn.classList.remove('is-logged');
-        btn.setAttribute('title','Войти в аккаунт');
-        btn.setAttribute('aria-label','Войти в аккаунт');
-      }
-    });
-  }
-
-  function openAuthModal(){
-    var modal = document.getElementById('authModal');
-    if(modal) modal.classList.add('open');
-  }
-
-  function accountInitials(name, email){
-    var base = String(name || email || 'AS').trim();
-    var parts = base.split(/\s+/).filter(Boolean);
-    var letters = parts.length > 1 ? (parts[0][0] + parts[1][0]) : base[0];
-    return (letters || 'AS').toUpperCase();
-  }
-
   function accountUserHtml(user){
-    var emailRaw = (user && (user.email || user.phoneNumber)) || '';
-    var nameRaw = (user && (user.name || user.displayName)) || '';
-    var title = nameRaw || emailRaw || 'Вы вошли';
-    var subtitle = emailRaw || 'Аккаунт активен';
+    var email = (user && (user.email || user.phoneNumber || user.displayName)) || 'Аккаунт';
+    var name = (user && (user.displayName || user.email || user.phoneNumber)) || 'Личный кабинет';
     var photo = user && user.photoURL;
-    var avatar = photo ? '<img src="'+escText(photo)+'" alt="">' : escText(accountInitials(nameRaw, emailRaw));
+    var avatar = photo ? '<img src="'+photo+'" alt="">' : 'AS';
     return ''+
       '<div class="as-account-profile-head">'+
         '<a class="as-account-avatar" href="profile.html#account" aria-label="Фото и профиль">'+avatar+'</a>'+
         '<a class="as-account-head-text" href="profile.html#account">'+
-          '<div class="as-account-title">'+escText(title)+'</div>'+
-          (subtitle ? '<div class="as-account-subtitle" id="asAccountEmail">'+escText(subtitle)+'</div>' : '')+
+          '<div class="as-account-title">Личный кабинет</div>'+
+          '<div class="as-account-subtitle" id="asAccountEmail">'+email+'</div>'+
         '</a>'+
       '</div>'+
       '<nav class="as-account-menu">'+
@@ -138,25 +130,25 @@
 
   function renderAccountGuest(){
     document.documentElement.classList.remove('as-authenticated');
-    setAccountButtonState(null);
     document.querySelectorAll('.as-account-wrap').forEach(function(wrap){
       var popup = wrap.querySelector('.as-account-popup');
       if(popup) popup.innerHTML = accountGuestHtml();
       var btn = wrap.querySelector('.as-head-icon-btn');
       if(btn) btn.classList.remove('active');
       wireAccountWrap(wrap);
+      bindAccountPopupActions(wrap);
     });
   }
 
   function renderAccountUser(user, onLogout){
     document.documentElement.classList.add('as-authenticated');
-    setAccountButtonState(user || {});
     document.querySelectorAll('.as-account-wrap').forEach(function(wrap){
       var popup = wrap.querySelector('.as-account-popup');
       if(popup) popup.innerHTML = accountUserHtml(user || {});
       var btn = wrap.querySelector('.as-head-icon-btn');
-      if(btn) btn.classList.remove('active');
+      if(btn) btn.classList.add('active');
       wireAccountWrap(wrap);
+      bindAccountPopupActions(wrap);
       var logout = wrap.querySelector('#asAccountLogout');
       if(logout){
         logout.onclick = function(e){
@@ -189,9 +181,7 @@
       wrap.classList.toggle('open');
     }, true);
     popup.addEventListener('click', function(e){ e.stopPropagation(); });
-    popup.querySelectorAll('[data-open-auth]').forEach(function(loginBtn){
-      loginBtn.onclick = function(e){ e.preventDefault(); wrap.classList.remove('open'); openAuthModal(); };
-    });
+    bindAccountPopupActions(wrap);
     var logout = popup.querySelector('#asAccountLogout');
     if(logout){
       logout.addEventListener('click', function(e){
@@ -220,6 +210,7 @@
     wrap.appendChild(popup);
     el.replaceWith(wrap);
     wireAccountWrap(wrap);
+    bindAccountPopupActions(wrap);
   }
 
   function normalizeAccountButtons(){
@@ -246,6 +237,7 @@
         openAuth.replaceWith(wrap);
         accountDrop.remove();
         wireAccountWrap(wrap);
+        bindAccountPopupActions(wrap);
         return;
       }
 

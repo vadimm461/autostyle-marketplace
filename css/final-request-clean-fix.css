@@ -86,99 +86,33 @@
 .as-account-popup #asAccountLogout:focus-visible{outline:3px solid rgba(39,226,26,.35)!important;outline-offset:2px!important}
 .as-account-wrap:not(.open) .as-account-popup{display:none!important}
 .as-account-wrap.open .as-account-popup{display:block!important}
-.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{border-color:rgba(39,226,26,.55)!important;box-shadow:0 0 0 1px rgba(39,226,26,.18) inset!important}
+.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{border-color:rgba(39,226,26,.22)!important;box-shadow:none!important}
 .as-account-avatar[href]{text-decoration:none!important}
 
 
-/* Account dropdown final status fix */
-.topbar .as-account-wrap > .as-head-icon-btn.is-logged{
-  border-color:rgba(39,226,26,.45)!important;
-  box-shadow:none!important;
-}
-.topbar .as-account-wrap > .as-head-icon-btn.is-logged .as-head-label{
-  color:#fff!important;
-}
-.as-account-popup{
-  width:270px!important;
-  min-width:270px!important;
-  max-width:270px!important;
-}
-.as-account-profile-head{
-  display:grid!important;
-  grid-template-columns:52px minmax(0,1fr)!important;
-  align-items:center!important;
-  gap:12px!important;
-  padding:10px!important;
-  background:#fff!important;
-  border-radius:18px!important;
-}
-.as-account-avatar{
-  width:52px!important;
-  height:52px!important;
-  min-width:52px!important;
-  border-radius:14px!important;
-  background:#f3f5f8!important;
-  color:#111827!important;
-  display:grid!important;
-  place-items:center!important;
-  overflow:hidden!important;
-  font-size:16px!important;
-  font-weight:900!important;
-  line-height:1!important;
-}
-.as-account-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
-.as-account-head-text{
-  min-width:0!important;
-  overflow:hidden!important;
-  display:block!important;
-  text-decoration:none!important;
-  color:#111827!important;
-}
-.as-account-title{
-  display:block!important;
-  max-width:100%!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  white-space:nowrap!important;
-  font-size:16px!important;
-  line-height:1.15!important;
-  font-weight:1000!important;
-}
-.as-account-subtitle{
-  display:block!important;
-  max-width:100%!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  white-space:nowrap!important;
-  margin-top:3px!important;
-  color:#667085!important;
-  font-size:12px!important;
-  line-height:1.2!important;
-  font-weight:800!important;
-}
+/* Root fix: account login popup button opens modal, no extra profile highlight */
 .as-account-login{
+  width:100%!important;
   border:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:44px!important;
+  border-radius:14px!important;
+  background:linear-gradient(135deg,#27e21a,#16b40d)!important;
+  color:#06120a!important;
+  text-decoration:none!important;
+  font-weight:1000!important;
   cursor:pointer!important;
-  font:1000 16px/1 Inter,Arial,sans-serif!important;
+  font-family:inherit!important;
 }
-.as-account-wrap:not(.open) .as-account-popup{display:none!important}
-.as-account-wrap.open .as-account-popup{display:block!important}
-
-
-/* Account button: no extra highlight, same visual weight as other header buttons */
-.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn,
-.topbar .as-account-wrap > .as-head-icon-btn.is-logged{
-  border-color:rgba(39,226,26,.28)!important;
+.as-account-login:hover{background:linear-gradient(135deg,#32ff24,#19c60f)!important;color:#06120a!important}
+.topbar .as-account-wrap > .as-head-icon-btn,
+.topbar .as-account-wrap > .as-head-icon-btn.active,
+.as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{
   box-shadow:none!important;
-  outline:none!important;
+  outline:0!important;
 }
-.topbar .as-account-wrap.open > .as-head-icon-btn,
-.topbar .as-account-wrap > .as-head-icon-btn:focus,
-.topbar .as-account-wrap > .as-head-icon-btn:focus-visible{
-  border-color:rgba(39,226,26,.28)!important;
-  box-shadow:none!important;
-  outline:none!important;
-}
-.topbar .as-account-wrap > .as-head-icon-btn.is-logged .as-head-label{
-  color:#fff!important;
+.topbar .as-account-wrap > .as-head-icon-btn:hover{
+  box-shadow:0 0 0 1px rgba(39,226,26,.18) inset!important;
 }
