@@ -43,23 +43,51 @@
     else fn();
   }
 
-  function openAuthModal(){
+  function ensureAuthCss(){
+    if(document.querySelector('link[href*="auth-upgrade.css"]')) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'css/auth-upgrade.css?v=global-auth-modal';
+    document.head.appendChild(link);
+  }
+
+  function ensureAuthModal(){
+    ensureAuthCss();
     var modal = document.getElementById('authModal');
     if(!modal){
-      return false;
+      modal = document.createElement('div');
+      modal.id = 'authModal';
+      modal.className = 'modal auth-modal';
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(modal);
     }
+    if(!window.__asAuthJsImportStarted){
+      window.__asAuthJsImportStarted = true;
+      import('./auth.js').catch(function(e){
+        window.__asAuthJsImportStarted = false;
+        console.warn('auth modal import error', e);
+      });
+    }
+    return modal;
+  }
+
+  function openAuthModal(){
+    var modal = ensureAuthModal();
     modal.classList.add('open');
     modal.classList.add('show');
     modal.removeAttribute('hidden');
     modal.style.display = '';
+    modal.setAttribute('aria-hidden', 'false');
 
-    var loginTab = modal.querySelector('[data-tab="login"], [data-auth-mode="login-email"]');
-    if(loginTab) loginTab.click();
+    setTimeout(function(){
+      var loginTab = modal.querySelector('[data-tab="login"], [data-auth-mode="login-email"]');
+      if(loginTab) loginTab.click();
 
-    var firstInput = modal.querySelector('#loginEmail, input[type="email"], input:not([type])');
-    if(firstInput){
-      setTimeout(function(){ try{ firstInput.focus(); }catch(_){} }, 60);
-    }
+      var firstInput = modal.querySelector('#loginEmail, input[type="email"], input:not([type])');
+      if(firstInput){
+        try{ firstInput.focus(); }catch(_){}
+      }
+    }, 120);
     return true;
   }
 
