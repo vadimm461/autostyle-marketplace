@@ -321,5 +321,7 @@ function start(user){
   unsubscribe = watchNotifications(currentUser, applyState);
 }
 
+// Ждём реальное состояние Firebase Auth.
+// Не вызываем start(auth.currentUser) вручную: на старте currentUser часто null,
+// из-за этого кнопка уведомлений на секунду скрывалась у авторизованного пользователя.
 onAuthStateChanged(auth, start);
-start(auth.currentUser);
