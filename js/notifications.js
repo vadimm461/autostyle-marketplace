@@ -12,13 +12,6 @@ import {
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-(function injectGuestNotifyStyle(){
-  if (document.getElementById('asGuestNotifyStyle')) return;
-  const style = document.createElement('style');
-  style.id = 'asGuestNotifyStyle';
-  style.textContent = 'body.as-guest-no-notify #notificationsBtn{display:none!important}';
-  document.head.appendChild(style);
-})();
 
 let currentUser = null;
 let state = { list: [], readIds: new Set(), unread: 0 };
@@ -286,42 +279,40 @@ function applyState(next){
   renderPage();
 }
 
-function setGuestNotificationsMode(){
-  document.body.classList.add('as-guest-no-notify');
-  currentUser = null;
+function renderGuestNotificationsPage(){
+  const root = $('#notificationsPage');
+  if (!root) return;
+  root.innerHTML = `
+    <div class="as-notify-page-head"><h1>Уведомления</h1></div>
+    <div class="as-notify-empty">Войдите в аккаунт, чтобы видеть свои уведомления.</div>`;
+}
+
+function closeGuestNotifications(){
+  const dd = $('#notificationsDropdown');
+  if (dd) dd.classList.remove('open');
   state = { list: [], readIds: new Set(), unread: 0 };
   updateCount();
-  const btn = $('#notificationsBtn');
-  if (btn) btn.style.display = 'none';
-  const dd = $('#notificationsDropdown');
-  if (dd) {
-    dd.classList.remove('open');
-    dd.innerHTML = '';
-  }
-  const root = $('#notificationsPage');
-  if (root) {
-    root.innerHTML = `
-      <div class="as-notify-page-head"><h1>Уведомления</h1></div>
-      <div class="as-notify-empty">Войдите в аккаунт, чтобы видеть свои уведомления.</div>`;
-  }
+  renderGuestNotificationsPage();
+}
+
+function setAuthVisualState(user){
+  document.body.classList.toggle('as-authenticated', !!user);
+  document.body.classList.add('as-auth-ready');
 }
 
 function start(user){
   currentUser = user || null;
   initNotificationCatalogMenu();
-  if (unsubscribe) unsubscribe();
-  if (!currentUser?.uid) {
-    setGuestNotificationsMode();
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  setAuthVisualState(currentUser);
+
+  if (!currentUser) {
+    closeGuestNotifications();
     return;
   }
-  document.body.classList.remove('as-guest-no-notify');
-  const btn = $('#notificationsBtn');
-  if (btn) btn.style.display = '';
+
   bindHeader();
   unsubscribe = watchNotifications(currentUser, applyState);
 }
 
-// Ждём реальное состояние Firebase Auth.
-// Не вызываем start(auth.currentUser) вручную: на старте currentUser часто null,
-// из-за этого кнопка уведомлений на секунду скрывалась у авторизованного пользователя.
 onAuthStateChanged(auth, start);

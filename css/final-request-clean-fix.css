@@ -88,3 +88,10 @@
 .as-account-wrap.open .as-account-popup{display:block!important}
 .as-authenticated .topbar .as-account-wrap > .as-head-icon-btn{border-color:rgba(39,226,26,.55)!important;box-shadow:0 0 0 1px rgba(39,226,26,.18) inset!important}
 .as-account-avatar[href]{text-decoration:none!important}
+
+
+/* Auth visibility without Firebase blink: hidden by default, shown only after real auth */
+#notificationsBtn{display:none!important}
+body.as-authenticated #notificationsBtn{display:inline-flex!important}
+body:not(.as-authenticated) #notificationsDropdown{display:none!important}
+body:not(.as-authenticated) #notificationCount{display:none!important}

@@ -60,4 +60,20 @@ function bindAuth(){
   $('#confirmSmsCode')?.addEventListener('click', async()=>{try{say('Проверяем код...');await confirmSmsCode($('#smsCode').value.trim());hideModal();location.href='profile.html'}catch(err){say('Ошибка подтверждения: '+(err.message||err),false)}});
 }
 bindAuth();
-onAuthStateChanged(auth,async u=>{ if(u){await ensureUserProfile(u); const t=$('#authText'); if(t)t.textContent='Профиль'; const ue=$('#userEmail'); if(ue)ue.textContent=u.email||u.phoneNumber||u.displayName||'Пользователь';} });
+onAuthStateChanged(auth, async u => {
+  document.body.classList.toggle('as-authenticated', !!u);
+  document.body.classList.add('as-auth-ready');
+
+  if (u) {
+    await ensureUserProfile(u);
+    const t = $('#authText');
+    if (t) t.textContent = 'Профиль';
+    const ue = $('#userEmail');
+    if (ue) ue.textContent = u.email || u.phoneNumber || u.displayName || 'Пользователь';
+  } else {
+    const t = $('#authText');
+    if (t) t.textContent = 'Войти';
+    const ue = $('#userEmail');
+    if (ue) ue.textContent = '';
+  }
+});
