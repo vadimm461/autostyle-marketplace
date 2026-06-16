@@ -1,5 +1,5 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
   watchNotifications,
@@ -18,6 +18,38 @@ let state = { list: [], readIds: new Set(), unread: 0 };
 let unsubscribe = null;
 let pageMode = 'list';
 let openNotificationId = new URLSearchParams(location.search).get('id') || localStorage.getItem('autostyle_selected_notification') || '';
+
+
+function clearAccountLocalState(){
+  try{
+    localStorage.removeItem('autostyle_cart');
+    localStorage.removeItem('autostyle_favorites');
+    localStorage.removeItem('autostyle_user');
+  }catch(_){ }
+}
+
+function renderHeaderAccount(user){
+  const render = () => {
+    const menu = window.AutoStyleAccountMenu;
+    if (!menu) return false;
+
+    if (user) {
+      menu.renderUser(user, async () => {
+        clearAccountLocalState();
+        await signOut(auth);
+        location.reload();
+      });
+    } else {
+      menu.renderGuest();
+    }
+    return true;
+  };
+
+  if (render()) return;
+  setTimeout(render, 100);
+  setTimeout(render, 350);
+  setTimeout(render, 800);
+}
 
 
 async function loadCollectionSafe(name){
@@ -279,40 +311,14 @@ function applyState(next){
   renderPage();
 }
 
-function renderGuestNotificationsPage(){
-  const root = $('#notificationsPage');
-  if (!root) return;
-  root.innerHTML = `
-    <div class="as-notify-page-head"><h1>Уведомления</h1></div>
-    <div class="as-notify-empty">Войдите в аккаунт, чтобы видеть свои уведомления.</div>`;
-}
-
-function closeGuestNotifications(){
-  const dd = $('#notificationsDropdown');
-  if (dd) dd.classList.remove('open');
-  state = { list: [], readIds: new Set(), unread: 0 };
-  updateCount();
-  renderGuestNotificationsPage();
-}
-
-function setAuthVisualState(user){
-  document.body.classList.toggle('as-authenticated', !!user);
-  document.body.classList.add('as-auth-ready');
-}
-
 function start(user){
   currentUser = user || null;
+  renderHeaderAccount(currentUser);
   initNotificationCatalogMenu();
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  setAuthVisualState(currentUser);
-
-  if (!currentUser) {
-    closeGuestNotifications();
-    return;
-  }
-
   bindHeader();
+  if (unsubscribe) unsubscribe();
   unsubscribe = watchNotifications(currentUser, applyState);
 }
 
 onAuthStateChanged(auth, start);
+start(auth.currentUser);
