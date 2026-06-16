@@ -15,16 +15,16 @@
       const email = (emailEl?.textContent || localStorage.getItem('autostyle_user_email') || 'Аккаунт').trim();
       const logout = $('#asAccountLogout', popup);
       popup.innerHTML = `
-        <a class="as-account-profile-head" href="profile.html#account">
+        <div class="as-account-profile-head">
           <div class="as-account-avatar" id="asAccountAvatar">AS</div>
           <div><div class="as-account-title">Личный кабинет</div><div class="as-account-subtitle" id="asAccountEmail">${email}</div></div>
-        </a>
+        </div>
         <nav class="as-account-menu">
-          <a href="profile.html#account"><img class="as-menu-svg" src="assets/icons/user.svg" alt="" loading="lazy" decoding="async"> Фото и профиль</a>
-          <a href="profile.html#discount-card"><img class="as-menu-svg" src="assets/icons/card.svg" alt="" loading="lazy" decoding="async"> Скидочная карта</a>
-          <a href="cart.html"><img class="as-menu-svg" src="assets/icons/cart.svg" alt="" loading="lazy" decoding="async"> Корзина</a>
-          <a href="favorites.html"><img class="as-menu-svg" src="assets/icons/heart.svg" alt="" loading="lazy" decoding="async"> Избранное</a>
-          <a href="profile.html#orders"><img class="as-menu-svg" src="assets/icons/package.svg" alt="" loading="lazy" decoding="async"> Заказы</a>
+          <a href="profile.html#account">👤 Фото и профиль</a>
+          <a href="profile.html#discount-card">💳 Скидочная карта</a>
+          <a href="cart.html">🛒 Корзина</a>
+          <a href="favorites.html">♡ Избранное</a>
+          <a href="profile.html#orders">📦 Заказы</a>
         </nav>
         <hr>
         <button type="button" id="asAccountLogout">Выйти</button>`;
@@ -38,26 +38,34 @@
     if(openAuth && oldDrop && !oldDrop.dataset.finalAccount){
       oldDrop.dataset.finalAccount='1';
       oldDrop.classList.add('as-account-wrap');
-      oldDrop.style.display='block';
       const drop = $('.drop', oldDrop);
       if(drop){
-        const email = ($('#userEmail', drop)?.textContent || 'Аккаунт').trim();
+        const email = ($('#userEmail', drop)?.textContent || '').trim();
         const logout = $('#logout', drop);
         drop.className='as-account-popup';
-        drop.innerHTML = `
-          <a class="as-account-profile-head" href="profile.html#account">
-            <div class="as-account-avatar">AS</div>
-            <div><div class="as-account-title">Личный кабинет</div><div class="as-account-subtitle" id="userEmail">${email}</div></div>
-          </a>
-          <nav class="as-account-menu">
-            <a href="profile.html#account"><img class="as-menu-svg" src="assets/icons/user.svg" alt="" loading="lazy" decoding="async"> Фото и профиль</a>
-            <a href="profile.html#discount-card"><img class="as-menu-svg" src="assets/icons/card.svg" alt="" loading="lazy" decoding="async"> Скидочная карта</a>
-            <a href="cart.html"><img class="as-menu-svg" src="assets/icons/cart.svg" alt="" loading="lazy" decoding="async"> Корзина</a>
-            <a href="favorites.html"><img class="as-menu-svg" src="assets/icons/heart.svg" alt="" loading="lazy" decoding="async"> Избранное</a>
-            <a href="profile.html#orders"><img class="as-menu-svg" src="assets/icons/package.svg" alt="" loading="lazy" decoding="async"> Заказы</a>
-          </nav>
-          <hr><button type="button" id="logout">Выйти</button>`;
-        $('#logout', drop)?.addEventListener('click', ()=> logout?.click());
+        if(!email || email === 'Аккаунт'){
+          drop.innerHTML = `
+            <div class="as-account-profile-head">
+              <div class="as-account-avatar">AS</div>
+              <div><div class="as-account-title">Вход в аккаунт</div><div class="as-account-subtitle">Авторизуйтесь для профиля и заказов</div></div>
+            </div>
+            <a class="as-login-only-link" href="login.html">Войти</a>`;
+        }else{
+          drop.innerHTML = `
+            <div class="as-account-profile-head">
+              <div class="as-account-avatar">AS</div>
+              <div><div class="as-account-title">Личный кабинет</div><div class="as-account-subtitle" id="userEmail">${email}</div></div>
+            </div>
+            <nav class="as-account-menu">
+              <a href="profile.html#account"><img src="assets/icons/user.svg" alt=""> Фото и профиль</a>
+              <a href="profile.html#discount-card"><img src="assets/icons/card.svg" alt=""> Скидочная карта</a>
+              <a href="cart.html"><img src="assets/icons/cart.svg" alt=""> Корзина</a>
+              <a href="favorites.html"><img src="assets/icons/heart.svg" alt=""> Избранное</a>
+              <a href="profile.html#orders"><img src="assets/icons/package.svg" alt=""> Заказы</a>
+            </nav>
+            <hr><button type="button" id="logout">Выйти</button>`;
+          $('#logout', drop)?.addEventListener('click', ()=> logout?.click());
+        }
       }
       oldDrop.querySelector('#accountBtn')?.remove();
       oldDrop.style.position='relative';

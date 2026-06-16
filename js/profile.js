@@ -482,9 +482,16 @@ updateCartCount();
 
 onAuthStateChanged(auth, async user => {
   try{
-    if(!user){ $('#profileGuest').hidden = false; $('#profileApp').hidden = true; $('#profileLogout').style.display='none'; window.AutoStyleLoader?.hide(); return; }
-    $('#profileGuest').hidden = true;
-    $('#profileApp').hidden = false;
+    if(!user){
+      const guest = $('#profileGuest'), app = $('#profileApp'), logout = $('#profileLogout');
+      if(guest){ guest.hidden = false; guest.style.display = ''; }
+      if(app){ app.hidden = true; app.style.display = 'none'; }
+      if(logout) logout.style.display='none';
+      window.AutoStyleLoader?.hide();
+      return;
+    }
+    if($('#profileGuest')){ $('#profileGuest').hidden = true; $('#profileGuest').style.display = 'none'; }
+    if($('#profileApp')){ $('#profileApp').hidden = false; $('#profileApp').style.display = ''; }
     $('#profileLogout').style.display='inline-flex';
     $('#profileLogout').onclick = async () => { clearCartAndFavorites(); await signOut(auth); location.href = 'index.html'; };
     const current = await getUserDoc(user.uid);

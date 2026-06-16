@@ -340,37 +340,32 @@ function accountInitials(name, email){
   return (base.split(/\s+/).slice(0,2).map(x=>x[0]).join('') || 'AS').toUpperCase();
 }
 function renderAccountPanel(user){
-  const drop = document.querySelector('#accountDrop .drop');
+  const drop = document.querySelector('#accountDrop .drop, #accountDrop .as-account-popup');
   if(!drop || !user) return;
   const name = user.displayName || 'Профиль AutoStyle';
   const email = user.email || '';
   const photo = user.photoURL || '';
-  const accountDrop = document.querySelector('#accountDrop');
-  const accountBtn = document.querySelector('#accountBtn');
-  accountDrop?.classList.add('is-authorized');
-  accountBtn?.classList.add('is-authorized');
-  accountBtn?.setAttribute('aria-label', 'Личный кабинет');
   drop.classList.add('account-panel');
   const avatarHtml = photo ? `<img loading="lazy" decoding="async" src="${photo}" alt="${name}">` : accountInitials(name, email);
   drop.innerHTML = `
-    <a class="account-user account-user-link" href="profile.html" title="Открыть личный кабинет">
+    <a class="account-user account-user-link" href="profile.html#account" title="Открыть профиль">
       <div class="account-avatar">${avatarHtml}</div>
       <div>
-        <b class="account-name">Личный кабинет</b>
-        <span class="account-email">${email || name}</span>
+        <b class="account-name">${name}</b>
+        <span class="account-email">${email}</span>
       </div>
     </a>
     <div class="account-status">● Вы авторизованы</div>
     <nav class="account-menu">
-      <a href="profile.html#account"><img class="as-menu-svg" src="assets/icons/user.svg" alt="" loading="lazy" decoding="async"> Фото и профиль</a>
-      <a href="profile.html#discount-card"><img class="as-menu-svg" src="assets/icons/card.svg" alt="" loading="lazy" decoding="async"> Скидочная карта</a>
-      <a href="cart.html"><img class="as-menu-svg" src="assets/icons/cart.svg" alt="" loading="lazy" decoding="async"> Корзина</a>
-      <a href="favorites.html"><img class="as-menu-svg" src="assets/icons/heart.svg" alt="" loading="lazy" decoding="async"> Избранное</a>
-      <a href="profile.html#orders"><img class="as-menu-svg" src="assets/icons/package.svg" alt="" loading="lazy" decoding="async"> Заказы</a>
+      <a href="profile.html#account"><img src="assets/icons/user.svg" alt=""> Фото и профиль</a>
+      <a href="profile.html#discount-card"><img src="assets/icons/card.svg" alt=""> Скидочная карта</a>
+      <a href="cart.html"><img src="assets/icons/cart.svg" alt=""> Корзина</a>
+      <a href="favorites.html"><img src="assets/icons/heart.svg" alt=""> Избранное</a>
+      <a href="profile.html#orders"><img src="assets/icons/package.svg" alt=""> Заказы</a>
       <button id="logout" class="account-logout" type="button">Выйти</button>
-    </nav>
-  `;
+    </nav>`;
 }
+
 function authModal(){
   const modal=$('#authModal'); if(!modal)return; const msg=()=>$('#authFullMsg'); const say=t=>{const m=msg(); if(m)m.textContent=t||''}; $('#openAuth')&&($('#openAuth').onclick=()=>modal.classList.add('open')); $('#closeAuth')&&($('#closeAuth').onclick=()=>modal.classList.remove('open'));
   $$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); $('#loginForm').style.display=t.dataset.tab==='login'?'block':'none'; $('#registerForm').style.display=t.dataset.tab==='register'?'block':'none';});

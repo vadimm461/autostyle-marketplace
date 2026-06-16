@@ -65,30 +65,6 @@
 
 @media(max-width:900px){.catalog-popup.mega-catalog,.mega-catalog{min-width:0!important;width:calc(100vw - 24px)!important;grid-template-columns:1fr!important}.mega-left{width:auto!important}.mega-child-grid{grid-template-columns:1fr!important}.as-notify-dropdown{right:12px!important;width:calc(100vw - 24px)!important}.catalog-top .catalog-top-price{width:100%!important}.catalog-top .catalog-top-price input{flex:1!important;width:auto!important}}
 
-
-/* Account menu root fix: real SVG files, clickable profile head, active authorized account, readable logout hover */
-#accountBtn.is-authorized, #accountDrop.is-authorized > #accountBtn{
-  border-color:rgba(39,226,26,.65)!important;
-  box-shadow:0 0 0 1px rgba(39,226,26,.16), 0 10px 24px rgba(39,226,26,.12)!important;
-}
-.account-panel .account-user, .as-account-profile-head{
-  display:flex!important;
-  align-items:center!important;
-  gap:12px!important;
-  text-decoration:none!important;
-  color:#111827!important;
-  cursor:pointer!important;
-}
-.account-panel .account-menu, .as-account-menu{display:grid!important;gap:8px!important}
-.account-panel .account-menu a, .as-account-menu a{
-  display:flex!important;align-items:center!important;gap:10px!important;
-}
-.account-panel .as-menu-svg, .as-account-menu .as-menu-svg{
-  width:19px!important;height:19px!important;min-width:19px!important;
-  display:block!important;object-fit:contain!important;filter:none!important;
-}
-.account-panel .account-logout:hover, .as-account-popup button:hover, #logout:hover{
-  background:#27e21a!important;
-  color:#071009!important;
-}
-.account-panel .account-logout:hover *, .as-account-popup button:hover *, #logout:hover *{color:#071009!important}
+.as-account-menu a img{width:18px!important;height:18px!important;object-fit:contain!important;display:inline-block!important;filter:none!important;flex:0 0 18px!important}
+.as-login-only-link{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:46px!important;border-radius:14px!important;background:#27e21a!important;color:#06120a!important;text-decoration:none!important;font-weight:1000!important}
+.as-account-popup button:hover{background:#0b1220!important;color:#fff!important}
