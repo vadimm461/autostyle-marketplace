@@ -11,7 +11,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
-import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile } from './auth-core.js';
+import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile, getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { createPasswordChangedNotification } from './notify-service.js';
 
 const $ = s => document.querySelector(s);
@@ -246,6 +246,11 @@ function orderPaymentTitle(order) {
 async function renderOrders(user){
   const box = $('#ordersList');
   if(!box) return;
+  const check = await getProfileVerification(user);
+  if (!check.verified) {
+    box.innerHTML = `<div class="profile-empty"><b>Заказы пока недоступны.</b><br>${profileVerificationMessage()}<br><br><a class="profile-save" href="profile.html#security">Подтвердить профиль</a></div>`;
+    return;
+  }
   box.innerHTML = '<div class="profile-empty">Загружаю заказы...</div>';
   try{
     const ordersCollection = COLLECTIONS.orders || 'autostyle_orders';
@@ -447,7 +452,7 @@ function renderAuthSecurity(user){
       <div class="auth-card-icon">🔐</div>
       <b>Способы входа</b>
       <div class="auth-provider-list" style="margin:12px 0">${providers.length ? providers.map(p=>`<span class="auth-provider-pill">${providerTitle(p)}</span>`).join('') : '<span class="auth-provider-pill">Email/пароль</span>'}</div>
-      <p class="muted">Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${phoneText}</span></p>
+      <p class="muted">Статус профиля: <span class="${(user.emailVerified || user.phoneNumber)?'auth-verified':'auth-not-verified'}">${(user.emailVerified || user.phoneNumber)?'подтверждён':'не подтверждён'}</span><br>Почта: <span class="${user.emailVerified?'auth-verified':'auth-not-verified'}">${user.emailVerified?'подтверждена':'не подтверждена'}</span><br>Телефон: <span class="${user.phoneNumber?'auth-verified':'auth-not-verified'}">${phoneText}</span></p>
     </div>
     <div class="auth-link-card">
       <div class="auth-card-icon">✉️</div>

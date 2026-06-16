@@ -1,6 +1,7 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 
 let authReady = false;
 let authUser = auth.currentUser || null;
@@ -76,6 +77,13 @@ export async function addToUserCart(product, qty = 1){
   if (!user) {
     if (typeof window.openLoginPopup === 'function') window.openLoginPopup('Войдите в аккаунт, чтобы добавить товар в корзину.');
     else alert('Войдите в аккаунт, чтобы добавить товар в корзину.');
+    return null;
+  }
+  const check = await getProfileVerification(user);
+  if (!check.verified) {
+    const message = profileVerificationMessage();
+    if (typeof window.openLoginPopup === 'function') window.openLoginPopup(message);
+    else alert(message);
     return null;
   }
   const id = typeof product === 'object'

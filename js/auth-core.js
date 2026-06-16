@@ -88,3 +88,38 @@ export async function confirmLinkSmsCode(code){
   return res.user;
 }
 export async function logoutAndClear(){ await signOut(auth); }
+
+export function isUserVerifiedByAnyMethod(user, profile={}){
+  if(!user) return false;
+  return Boolean(
+    user.emailVerified ||
+    user.phoneNumber ||
+    profile?.emailVerified === true ||
+    profile?.phoneVerified === true ||
+    profile?.verified === true ||
+    profile?.isVerified === true
+  );
+}
+
+export async function getProfileVerification(user=auth.currentUser){
+  if(!user) return { verified:false, profile:null, reason:'guest' };
+  try { await user.reload?.(); } catch(_) {}
+  const freshUser = auth.currentUser || user;
+  let profile = null;
+  try {
+    const snap = await getDoc(doc(db, USERS, freshUser.uid));
+    profile = snap.exists() ? (snap.data() || {}) : null;
+  } catch(e) {
+    console.warn('profile verification load error', e);
+  }
+  return {
+    verified: isUserVerifiedByAnyMethod(freshUser, profile),
+    profile,
+    user: freshUser,
+    reason: isUserVerifiedByAnyMethod(freshUser, profile) ? 'verified' : 'not-verified'
+  };
+}
+
+export function profileVerificationMessage(){
+  return 'Корзина и заказы доступны после подтверждения профиля. Подтвердите почту или привяжите телефон в личном кабинете.';
+}

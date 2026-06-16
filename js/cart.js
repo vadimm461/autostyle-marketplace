@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/f
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
 import { getCurrentUserCart, saveUserCart, clearUserCart, waitUserCartReady, updateCartBadges, normalizeUserCart, loadUserCart } from './user-cart-store.js';
+import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 
 const cartList = document.querySelector('#cartList');
 const totalBox = document.querySelector('#cartTotal');
@@ -25,6 +26,28 @@ let discountCardPercent = 0;
 let isCheckoutBusy = false;
 
 const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
+
+function renderVerificationLock() {
+  if (!cartList) return;
+  const text = profileVerificationMessage();
+  cartList.innerHTML = `
+    <div class="cart-empty-card">
+      <h2>Подтвердите профиль</h2>
+      <p>${text}</p>
+      <a href="profile.html#security">Подтвердить профиль</a>
+    </div>`;
+  if (totalBox) totalBox.textContent = '0 ₽';
+  if (countBox) countBox.textContent = '0';
+  if (checkoutBtn) {
+    checkoutBtn.disabled = true;
+    checkoutBtn.title = text;
+  }
+  if (discountCardBtn) {
+    discountCardBtn.disabled = true;
+    discountCardBtn.title = text;
+  }
+  renderInstallments(0);
+}
 
 function parseJsonStorage(key) {
   try {
@@ -492,6 +515,13 @@ async function createOrderFromCart() {
     return;
   }
 
+  const check = await getProfileVerification(user);
+  if (!check.verified) {
+    alert(profileVerificationMessage());
+    location.href = 'profile.html#security';
+    return;
+  }
+
   if (isCheckoutBusy) return;
   isCheckoutBusy = true;
   if (checkoutBtn) {
@@ -632,6 +662,13 @@ onAuthStateChanged(auth, async user => {
   }
 
   try {
+    const check = await getProfileVerification(user);
+    if (!check.verified) {
+      cart = [];
+      updateCartCounter();
+      renderVerificationLock();
+      return;
+    }
     await loadUserCart(user);
     cart = getCurrentUserCart();
     await render();

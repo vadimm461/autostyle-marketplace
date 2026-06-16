@@ -3,6 +3,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 import { createPasswordChangedNotification } from './notify-service.js';
+import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -132,7 +133,7 @@ const installment = p => price(p) >= 199 || p.installment === true || p.installm
 const monthPay = p => Math.ceil(price(p) / 12);
 function save(){ localStorage.setItem('cart', JSON.stringify(cart)); localStorage.setItem('favorites', JSON.stringify(favs)); updateCounts(); }
 function updateCounts(){ $$('#mCartCount').forEach(x=>x.textContent=cart.length); $$('#mFavCount').forEach(x=>x.textContent=favs.length); }
-function addCart(id, btn){ cart.push(id); save(); if(btn){ const t=btn.textContent; btn.textContent='✓ Добавлено'; setTimeout(()=>btn.textContent=t,900); } }
+async function addCart(id, btn){ const check = await getProfileVerification(auth.currentUser); if(!check.verified){ alert(profileVerificationMessage()); location.href='mobile-profile.html#security'; return; } cart.push(id); save(); if(btn){ const t=btn.textContent; btn.textContent='✓ Добавлено'; setTimeout(()=>btn.textContent=t,900); } }
 function toggleFav(id, btn){ favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; save(); if(btn) btn.classList.toggle('active', favs.includes(id)); }
 function card(p){
   const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p));
@@ -286,6 +287,13 @@ async function renderProduct(){
 }
 async function renderCart(){
   setupShell('cart'); await initData();
+  const check = await getProfileVerification(auth.currentUser);
+  if(!check.verified){
+    $('#mCartList').innerHTML = `<div class="m-empty"><b>Подтвердите профиль</b><br>${profileVerificationMessage()}<br><br><a class="m-primary" href="mobile-profile.html#security">Подтвердить профиль</a></div>`;
+    $('#mTotal').textContent = money(0);
+    clearLoader();
+    return;
+  }
   const byId=new Map(products.map(p=>[p.id,p])); const counts={}; cart.forEach(id=>counts[id]=(counts[id]||0)+1);
   const rows=Object.keys(counts).map(id=>byId.get(id)).filter(Boolean);
   const total=rows.reduce((s,p)=>s+price(p)*counts[p.id],0);

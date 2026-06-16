@@ -7,6 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+
+    function isProfileVerified() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true
+        || request.auth.token.phone_number is string
+        || (
+          exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+          && (
+            get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.emailVerified == true
+            || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.phoneVerified == true
+            || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.verified == true
+            || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.isVerified == true
+          )
+        )
+      );
+    }
+
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email in [
@@ -46,11 +63,12 @@ service cloud.firestore {
 
     /* Заказы */
     match /autostyle_orders/{orderId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && (
-        isAdmin()
-        || resource.data.userId == request.auth.uid
-        || resource.data.uid == request.auth.uid
+      allow create: if isProfileVerified();
+      allow read: if isAdmin() || (
+        isProfileVerified() && (
+          resource.data.userId == request.auth.uid
+          || resource.data.uid == request.auth.uid
+        )
       );
       allow update, delete: if isAdmin();
     }
