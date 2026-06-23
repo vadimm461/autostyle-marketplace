@@ -461,3 +461,58 @@
     width:100% !important;
   }
 }
+
+/* Clean crossed elements from desktop catalog: no overlay, only real layout cleanup. */
+@media (min-width: 981px){
+  /* Remove left panel title "Подгруппы" and search block from sidebar */
+  .filters.catalog-filters > h2,
+  aside.catalog-filters > h2,
+  .filters.catalog-filters .field:has(#search),
+  aside.catalog-filters .field:has(#search){
+    display:none !important;
+  }
+
+  /* Remove text title "Каталог" above parent categories, keep the "Все товары" button */
+  .category-tree-filter .cat-filter-head{
+    justify-content:flex-end !important;
+    padding:0 0 10px !important;
+    margin-bottom:10px !important;
+  }
+  .category-tree-filter .cat-filter-head b{
+    display:none !important;
+  }
+
+  /* Remove big product count text in the top panel */
+  #catalogCount{
+    display:none !important;
+  }
+
+  /* Fix duplicated "Сортировка Сортировка": hide native label text, keep one clean label */
+  .catalog-top .catalog-top-sort-field{
+    font-size:0 !important;
+  }
+  .catalog-top .catalog-top-sort-field::before{
+    content:'Сортировка' !important;
+    font-size:14px !important;
+    font-weight:950 !important;
+    color:#667085 !important;
+    white-space:nowrap !important;
+  }
+  .catalog-top .catalog-top-sort-field select{
+    font-size:14px !important;
+  }
+
+  /* Keep controls where they were: top panel near count area, not inside left menu */
+  .catalog-top{
+    align-items:flex-start !important;
+  }
+  .catalog-top-price,
+  .catalog-top #zeroNotice,
+  .catalog-top .catalog-top-sort-field{
+    order:1 !important;
+  }
+  .catalog-top .top-category-bar{
+    order:2 !important;
+    flex:1 1 100% !important;
+  }
+}
