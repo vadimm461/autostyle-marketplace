@@ -1,4 +1,4 @@
-/* AutoStyle draggable product sliders for all home product blocks */
+/* AutoStyle draggable product sliders for horizontal home/product carousels only */
 .as-draggable-slider {
   display: flex !important;
   flex-wrap: nowrap !important;
@@ -8,7 +8,6 @@
   overflow-y: hidden !important;
   scroll-behavior: smooth;
   cursor: grab;
-  user-select: none;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

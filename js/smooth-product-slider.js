@@ -5,11 +5,11 @@
   const CARD_SELECTOR = ".product-card, .product-item, .catalog-card, [class*='product-card']";
   const ACTION_SELECTOR = "button, input, select, textarea, label, .fav-btn, .cart, .cart-btn, .catalog-cart-btn, [data-cart], [data-fav]";
 
+  // ВАЖНО: этот файл должен работать только с горизонтальными блоками/каруселями.
+  // Обычные сетки каталога/избранного (#productsGrid, .products-grid) не трогаем,
+  // иначе ломаются клики по товару и кнопке «В корзину».
   const sliderSelectors = [
-    ".products",
-    ".products-grid",
     ".carousel-products",
-    ".product-slider-ready",
     ".products-carousel",
     ".product-carousel",
     ".home-products-row",
@@ -23,7 +23,6 @@
     "#newProductsGrid",
     "#recentlyViewedGrid",
     "#bestsellersGrid",
-    "#productsGrid",
     "#hotProducts",
     "#featuredProducts",
     "#bestProducts",
@@ -48,7 +47,6 @@
         overflow-y: hidden !important;
         scroll-behavior: smooth;
         cursor: grab;
-        user-select: none;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none !important;
         -ms-overflow-style: none !important;
@@ -94,7 +92,7 @@
 
   function hasProductCards(el) {
     if (!el || el.dataset.asDragSlider === "1") return false;
-    return cardsIn(el).length >= 2 || el.querySelectorAll(CARD_SELECTOR).length >= 2;
+    return cardsIn(el).length >= 2;
   }
 
   function getSlideAmount(slider) {
@@ -116,12 +114,15 @@
     let moved = false;
     let startX = 0;
     let startScrollLeft = 0;
+    let pointerId = null;
 
     slider.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
+      // Кнопки, избранное, поля — кликаются как обычно. С них перетаскивание не стартует.
       if (event.target.closest(ACTION_SELECTOR)) return;
       isDown = true;
       moved = false;
+      pointerId = event.pointerId;
       startX = event.clientX;
       startScrollLeft = slider.scrollLeft;
       slider.setPointerCapture?.(event.pointerId);
@@ -143,11 +144,11 @@
       if (!isDown) return;
       isDown = false;
       slider.classList.remove("is-dragging");
-      try { slider.releasePointerCapture?.(event.pointerId); } catch (_) {}
+      try { slider.releasePointerCapture?.(event.pointerId || pointerId); } catch (_) {}
       setTimeout(() => {
         moved = false;
         delete slider.dataset.asWasDragged;
-      }, 160);
+      }, 120);
     }
 
     slider.addEventListener("pointerup", endDrag);
@@ -155,7 +156,7 @@
     slider.addEventListener("pointerleave", endDrag);
 
     slider.addEventListener("click", (event) => {
-      if (moved) {
+      if (moved || slider.dataset.asWasDragged === "1") {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -174,6 +175,8 @@
       const isNext = arrow.classList.contains("next") || arrow.classList.contains("right") || arrow.classList.contains("carousel-arrow-right") || arrow.dataset.sliderArrow === "next" || text === "›" || text === "→";
       if (!isPrev && !isNext) return;
       arrow.classList.add("as-slider-arrow");
+      if (arrow.dataset.asArrowClickReady === "1") return;
+      arrow.dataset.asArrowClickReady = "1";
       arrow.addEventListener("click", (event) => {
         event.preventDefault();
         slider.scrollBy({ left: (isPrev ? -1 : 1) * getSlideAmount(slider) * 2, behavior: "smooth" });
@@ -191,15 +194,11 @@
       });
     });
 
-    document.querySelectorAll("section, .section, .home-section, .section-block, .products-section, .carousel-section, .home-block").forEach((section) => {
-      const directContainers = section.querySelectorAll(":scope > .products, :scope > .products-grid, :scope .products, :scope .products-grid, :scope .carousel-products");
-      directContainers.forEach((container) => { if (hasProductCards(container)) sliders.add(container); });
-
-      const cards = section.querySelectorAll(CARD_SELECTOR);
-      if (cards.length >= 3) {
-        const parent = cards[0].parentElement;
-        if (parent && Array.from(cards).every((card) => card.parentElement === parent)) sliders.add(parent);
-      }
+    // Только реальные карусели, не обычные сетки каталога.
+    document.querySelectorAll(".section-block, .product-section-carousel, .home-block, .carousel-section").forEach((section) => {
+      section.querySelectorAll(":scope .carousel-products, :scope .products-carousel, :scope .products-slider, :scope .products-row").forEach((container) => {
+        if (hasProductCards(container)) sliders.add(container);
+      });
     });
 
     sliders.forEach((slider) => {
@@ -207,7 +206,6 @@
       bindNearbyArrows(slider);
     });
   }
-
 
   function productLinkFromCard(card) {
     if (!card) return null;
