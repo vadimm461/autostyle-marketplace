@@ -334,72 +334,75 @@
 .continue-shopping-btn:hover{border-color:#24e11a!important;color:#0f8f08!important;transform:translateY(-1px)!important;}
 .continue-shopping-btn img{width:17px!important;height:17px!important;}
 
+/* Promo admin tabs */
+.promo-admin-tabs{display:flex;gap:10px;margin:16px 0 18px;flex-wrap:wrap;}
+.promo-admin-tab{border:1px solid #dfe7f2;background:#f3f7fd;color:#101828;border-radius:14px;padding:12px 16px;font-weight:900;cursor:pointer;}
+.promo-admin-tab.active{background:#25df12;border-color:#25df12;color:#061006;box-shadow:0 10px 24px rgba(37,223,18,.24);}
+.promo-admin-panel{border-top:1px solid #e5edf7;padding-top:14px;}
 
 /* Mini promo cards under hero banner */
 #banners.home-mini-promos{
   display:flex;
   gap:14px;
-  margin:18px auto 34px;
-  padding:4px 2px 8px;
+  margin:18px 0 28px;
   overflow-x:auto;
-  scrollbar-width:none;
-  -ms-overflow-style:none;
+  overflow-y:hidden;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+  padding:0 2px 4px;
 }
 #banners.home-mini-promos::-webkit-scrollbar{display:none;}
 .home-mini-promo-card{
-  flex:0 0 min(360px, 32vw);
-  min-width:260px;
-  height:92px;
-  border-radius:22px;
-  background:linear-gradient(135deg,#111820,#202a36);
-  color:#fff;
-  text-decoration:none;
+  position:relative;
+  flex:0 0 330px;
+  height:86px;
   display:flex;
   align-items:center;
   gap:14px;
-  padding:14px 16px;
-  box-shadow:0 18px 44px rgba(15,23,42,.14);
-  border:1px solid rgba(255,255,255,.08);
+  padding:12px 16px;
+  border-radius:22px;
+  background:linear-gradient(135deg,#111820,#1c2733 55%,#17381b);
+  color:#fff;
+  text-decoration:none;
   overflow:hidden;
-  position:relative;
+  box-shadow:0 14px 32px rgba(16,24,40,.16);
+  scroll-snap-align:start;
 }
 .home-mini-promo-card:before{
-  content:'';
+  content:"";
   position:absolute;
-  inset:0;
-  background:radial-gradient(circle at 80% 20%, rgba(35,225,20,.26), transparent 42%);
-  pointer-events:none;
+  inset:auto -20px -40px auto;
+  width:145px;
+  height:145px;
+  background:radial-gradient(circle,rgba(37,223,18,.32),transparent 62%);
 }
-.home-mini-promo-img{
-  width:76px;
-  height:64px;
-  border-radius:16px;
-  overflow:hidden;
-  background:rgba(255,255,255,.12);
-  flex:0 0 auto;
-  position:relative;
-  z-index:1;
-}
+.home-mini-promo-img{position:relative;z-index:1;flex:0 0 64px;width:64px;height:64px;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.12);display:grid;place-items:center;}
 .home-mini-promo-img img{width:100%;height:100%;object-fit:cover;display:block;}
 .home-mini-promo-content{position:relative;z-index:1;min-width:0;display:grid;gap:4px;}
 .home-mini-promo-content b{font-size:17px;line-height:1.05;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .home-mini-promo-content small{font-size:12px;line-height:1.2;color:rgba(255,255,255,.74);font-weight:800;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.home-mini-promo-arrow{
-  margin-left:auto;
-  width:30px;
-  height:30px;
-  border-radius:999px;
-  display:grid;
-  place-items:center;
-  background:#22e11a;
-  color:#061006;
-  font-size:24px;
-  font-weight:1000;
-  position:relative;
-  z-index:1;
-  flex:0 0 auto;
-}
-@media (max-width:900px){
+.home-mini-promo-arrow{position:relative;z-index:1;margin-left:auto;flex:0 0 34px;width:34px;height:34px;border-radius:999px;background:#25df12;color:#071107;display:grid;place-items:center;font-size:28px;font-weight:1000;line-height:1;}
+@media(max-width:700px){
   .home-mini-promo-card{flex-basis:82%;height:88px;min-width:250px;}
   #banners.home-mini-promos{margin:14px 0 26px;}
 }
+
+/* === AutoStyle promo cards builder === */
+.promo-admin-tabs{display:flex;gap:10px;margin:18px 0 20px;flex-wrap:wrap}
+.promo-admin-tab{border:1px solid #dfe6f0;background:#f3f6fb;color:#0e1726;border-radius:14px;padding:12px 18px;font-weight:800;cursor:pointer}
+.promo-admin-tab.active{background:#22e018;color:#061006;border-color:#22e018;box-shadow:0 10px 24px rgba(34,224,24,.22)}
+.promo-admin-panel h3{margin:8px 0 4px;font-size:22px}
+.promo-admin-card input[type="color"]{height:48px;padding:6px;border-radius:12px}
+.home-mini-promos{display:flex;gap:14px;align-items:stretch;overflow-x:auto;scrollbar-width:none;margin:22px 0 34px;padding:2px 0 4px}
+.home-mini-promos::-webkit-scrollbar{display:none}
+.home-mini-promo-card{--promo-bg:#111820;--promo-text:#fff;--promo-border:#243242;--promo-btn:#25e01a;--promo-btn-text:#061006;--promo-title-size:16px;--promo-weight:800;display:flex;align-items:center;gap:14px;min-width:300px;min-height:78px;padding:12px 16px;border-radius:18px;text-decoration:none;background:linear-gradient(135deg,var(--promo-bg),color-mix(in srgb,var(--promo-bg) 84%,#25e01a));border:1px solid var(--promo-border);color:var(--promo-text);box-shadow:0 18px 36px rgba(13,19,27,.13);transition:transform .15s ease,box-shadow .15s ease}
+.home-mini-promo-card:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(13,19,27,.2)}
+.home-mini-promo-img{width:70px;height:54px;border-radius:13px;overflow:hidden;background:rgba(255,255,255,.08);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.home-mini-promo-img img{width:100%;height:100%;object-fit:cover;display:block}
+.home-mini-promo-content{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.home-mini-promo-content b{font-size:var(--promo-title-size);font-weight:var(--promo-weight);line-height:1.08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--promo-text)}
+.home-mini-promo-content small{font-size:12px;line-height:1.15;color:color-mix(in srgb,var(--promo-text) 72%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-mini-promo-arrow,.home-mini-promo-button{margin-left:auto;flex:0 0 auto;min-width:36px;height:36px;border-radius:999px;background:var(--promo-btn);color:var(--promo-btn-text);font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 13px}
+.home-mini-promo-button{min-width:auto;font-size:12px}
+.home-mini-promo-medium{min-width:360px;min-height:92px}.home-mini-promo-large{min-width:430px;min-height:110px}
+@media(max-width:900px){.home-mini-promos{margin:16px -12px 24px;padding:0 12px}.home-mini-promo-card{min-width:260px}.home-mini-promo-large{min-width:320px}}

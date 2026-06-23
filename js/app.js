@@ -10,13 +10,17 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
+const HORIZONTAL_PROMO_CARDS_COLLECTION = 'autostyle_horizontal_promo_cards';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
   'autostyle_promo_cards',
   'autostyle_promoCards',
-  'autostyle_home_cards',
-  'promoCards',
-  'homeCards'
+  'promoCards'
+].filter(Boolean))];
+const HORIZONTAL_PROMO_CARDS_COLLECTIONS = [...new Set([
+  HORIZONTAL_PROMO_CARDS_COLLECTION,
+  'autostyle_home_promo_cards',
+  'homePromoCards'
 ].filter(Boolean))];
 let cart = [];
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -134,27 +138,50 @@ function defaultPromoCards(){
   // Теперь показываются только карточки, созданные в админке / Firestore.
   return [];
 }
+function buildPromoLink(type, value){
+  const v = String(value || '').trim();
+  if (!v) return '#';
+  if (type === 'category' || type === 'subcategory') return `catalog.html?category=${encodeURIComponent(v)}`;
+  if (type === 'brand') return `catalog.html?brand=${encodeURIComponent(v)}`;
+  if (type === 'page') return v.endsWith('.html') || v.includes('.html#') ? v : `${v}.html`;
+  return v;
+}
+function normalizePromoCard(c){
+  const type = c.linkType || c.targetType || 'url';
+  const value = c.linkValue || c.targetValue || c.link || c.url || '#';
+  return {
+    ...c,
+    key: c.key || c.slug || c.id,
+    title: c.title || c.name || 'Промо',
+    text: c.text || c.description || '',
+    image: c.image || c.imageUrl || c.photoUrl || '',
+    link: c.link || c.url || buildPromoLink(type, value),
+    linkType: type,
+    linkValue: value,
+    buttonText: c.buttonText || c.ctaText || '',
+    bgColor: c.bgColor || c.backgroundColor || '',
+    textColor: c.textColor || '',
+    borderColor: c.borderColor || '',
+    buttonBg: c.buttonBg || c.buttonColor || '',
+    buttonTextColor: c.buttonTextColor || '',
+    titleSize: Number(c.titleSize || c.fontSize || 0) || '',
+    fontWeight: c.fontWeight || '',
+    size: c.size || 'small',
+    order: Number(c.order ?? 999),
+    enabled: c.enabled !== false
+  };
+}
 function mergePromoCards(custom){
   const byKey = new Map();
   defaultPromoCards().forEach(c => byKey.set(c.key, c));
   (custom || []).forEach(c => {
     const key = c.key || c.slug || c.id;
     if (!key) return;
-    byKey.set(key, {
-      key,
-      title: c.title || c.name || key,
-      text: c.text || c.description || '',
-      amount: c.amount || c.countText || '',
-      image: c.image || c.imageUrl || c.photoUrl || '',
-      link: c.link || c.url || '#',
-      width: Number(c.width || c.cardWidth || 0) || '',
-      height: Number(c.height || c.cardHeight || 0) || '',
-      order: Number(c.order ?? 999),
-      enabled: c.enabled !== false
-    });
+    byKey.set(key, normalizePromoCard(c));
   });
   return [...byKey.values()].filter(c => c.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
 }
+
 function renderImageSlides(items, className, fallbackText){
   const slides = (items || []).filter(x => x && x.image && x.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
   if (!slides.length) return `<div class="home-banner-placeholder">${fallbackText || 'Добавьте баннер в админке'}</div>`;
@@ -184,30 +211,29 @@ function initImageBannerSliders(scope=document){
 function renderPromoCards(cards){
   const box = $('#banners');
   if (!box) return;
-  const items = (cards || [])
-    .filter(c => c && c.enabled !== false)
-    .sort((a,b)=>Number(a.order ?? 999) - Number(b.order ?? 999));
-  if (!items.length) {
-    box.innerHTML = '';
-    box.classList.remove('home-mini-promos');
-    return;
-  }
+  const list = (cards || []).filter(c => c.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  if (!list.length) { box.innerHTML = ''; return; }
   box.classList.add('home-mini-promos');
-  box.innerHTML = items.map(c => {
-    const href = c.link || c.url || '#';
-    const image = c.image || c.imageUrl || c.photoUrl || '';
-    const text = c.text || c.description || '';
-    const titleText = c.title || c.name || 'Промо';
-    return `<a class="home-mini-promo-card" href="${href}">
-      ${image ? `<span class="home-mini-promo-img"><img loading="lazy" decoding="async" src="${image}" alt="${titleText}"></span>` : ''}
-      <span class="home-mini-promo-content">
-        <b>${titleText}</b>
-        ${text ? `<small>${text}</small>` : ''}
-      </span>
-      <span class="home-mini-promo-arrow">›</span>
+  box.innerHTML = list.map(card => {
+    const titleText = card.title || 'Промо';
+    const href = card.link || '#';
+    const styles = [
+      card.bgColor ? `--promo-bg:${card.bgColor}` : '',
+      card.textColor ? `--promo-text:${card.textColor}` : '',
+      card.borderColor ? `--promo-border:${card.borderColor}` : '',
+      card.buttonBg ? `--promo-btn:${card.buttonBg}` : '',
+      card.buttonTextColor ? `--promo-btn-text:${card.buttonTextColor}` : '',
+      card.titleSize ? `--promo-title-size:${Number(card.titleSize)}px` : '',
+      card.fontWeight ? `--promo-weight:${card.fontWeight}` : ''
+    ].filter(Boolean).join(';');
+    return `<a class="home-mini-promo-card home-mini-promo-${card.size || 'small'}" href="${href}" style="${styles}">
+      ${card.image ? `<span class="home-mini-promo-img"><img loading="lazy" decoding="async" src="${card.image}" alt="${titleText}"></span>` : ''}
+      <span class="home-mini-promo-content"><b>${titleText}</b>${card.text ? `<small>${card.text}</small>` : ''}</span>
+      ${card.buttonText ? `<span class="home-mini-promo-button">${card.buttonText}</span>` : '<span class="home-mini-promo-arrow">›</span>'}
     </a>`;
   }).join('');
 }
+
 
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
@@ -365,10 +391,11 @@ async function renderHome(){
     const normalizedBanners = banners.map(b => ({...b, image: b.image || b.imageUrl || b.photoUrl || ''}));
     hero.innerHTML = renderImageSlides(normalizedBanners, 'hero-image-slider', 'Загрузите главный баннер в админке');
   }
-  const promoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
+  const verticalPromoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
+  const horizontalPromoCards = mergePromoCards(await safeLoadCollections(HORIZONTAL_PROMO_CARDS_COLLECTIONS));
   const sidePromo = document.getElementById('homePromoBanner');
-  if (sidePromo) sidePromo.innerHTML = renderImageSlides(promoCards, 'promo-image-slider', 'Загрузите промо в админке');
-  renderPromoCards(promoCards);
+  if (sidePromo) sidePromo.innerHTML = renderImageSlides(verticalPromoCards, 'promo-image-slider', 'Загрузите вертикальное промо в админке');
+  renderPromoCards(horizontalPromoCards);
   initImageBannerSliders(document);
   await waitUserCartReady(); cart = getCurrentUserCart(); saveCart(); renderSections(); renderCatalogMenu();
 }

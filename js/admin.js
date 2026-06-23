@@ -62,15 +62,19 @@ let editing = {
   cat: null,
   banner: null,
   homeBlock: null,
-  promoCard: null
+  promoCard: null,
+  horizontalPromoCard: null,
+  horizontalPromoCardCollection: null
 };
 
 let allCatsCache = [];
 let allProductsCache = [];
 let allHomeBlocksCache = [];
 let allPromoCardsCache = [];
+let allHorizontalPromoCardsCache = [];
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
+const HORIZONTAL_PROMO_CARDS_COLLECTION = 'autostyle_horizontal_promo_cards';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
   'autostyle_promo_cards',
@@ -210,6 +214,47 @@ function mergedPromoCards() {
     });
   });
   return [...map.values()].filter(card => card.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+}
+
+
+const HORIZONTAL_PROMO_CARDS_COLLECTIONS = [...new Set([
+  HORIZONTAL_PROMO_CARDS_COLLECTION,
+  'autostyle_home_promo_cards',
+  'homePromoCards'
+].filter(Boolean))];
+
+async function loadHorizontalPromoCards() {
+  const result = [];
+  for (const colName of HORIZONTAL_PROMO_CARDS_COLLECTIONS) {
+    try {
+      const rows = await getCollection(colName);
+      rows.forEach(row => result.push({ ...row, _collection: colName }));
+    } catch (e) { console.warn('horizontal promo cards load error', colName, e); }
+  }
+  const seen = new Set();
+  allHorizontalPromoCardsCache = sortByOrder(result.filter(card => {
+    const key = String(card.key || card.slug || card.id || '').trim();
+    const uniq = key || `${card._collection}:${card.id}`;
+    if (seen.has(uniq)) return false;
+    seen.add(uniq);
+    return true;
+  }));
+}
+
+function mergedHorizontalPromoCards() {
+  return allHorizontalPromoCardsCache
+    .map(card => ({
+      ...card,
+      key: card.key || card.slug || card.id,
+      title: card.title || card.name || 'Промо',
+      text: card.text || card.description || '',
+      image: card.image || card.imageUrl || card.photoUrl || '',
+      link: card.link || card.url || '#',
+      order: Number(card.order ?? 999),
+      enabled: card.enabled !== false
+    }))
+    .filter(card => card.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
 
 
@@ -1884,104 +1929,172 @@ if ($('#settingsForm')) {
 /* HOME BLOCKS */
 
 
+function setupPromoTabs(){
+  const tabs = $$('.promo-admin-tab');
+  const panels = $$('.promo-admin-panel');
+  if (!tabs.length || !panels.length) return;
+  tabs.forEach(tab => {
+    if (tab.dataset.ready) return;
+    tab.dataset.ready = '1';
+    tab.onclick = () => {
+      tabs.forEach(t => t.classList.toggle('active', t === tab));
+      panels.forEach(p => p.style.display = p.dataset.panel === tab.dataset.tab ? 'block' : 'none');
+    };
+  });
+}
+
+function buildPromoLink(type, value){
+  const v = String(value || '').trim();
+  if (!v) return '#';
+  if (type === 'category' || type === 'subcategory') return `catalog.html?category=${encodeURIComponent(v)}`;
+  if (type === 'brand') return `catalog.html?brand=${encodeURIComponent(v)}`;
+  if (type === 'page') return v.endsWith('.html') || v.includes('.html#') ? v : `${v}.html`;
+  return v;
+}
+
+function promoLinkText(card){
+  const type = card.linkType || card.targetType || 'url';
+  const value = card.linkValue || card.targetValue || card.link || card.url || '';
+  if (!value) return '';
+  const names = {url:'ссылка', category:'категория', subcategory:'подкатегория', brand:'бренд', page:'страница'};
+  return `${names[type] || 'ссылка'}: ${value}`;
+}
+
+function setPromoFormValues(prefix, item){
+  setVal(`#${prefix}Title`, item.title || item.name || '');
+  setVal(`#${prefix}Text`, item.text || item.description || '');
+  setVal(`#${prefix}Image`, item.image || item.imageUrl || item.photoUrl || '');
+  setVal(`#${prefix}LinkType`, item.linkType || item.targetType || 'url');
+  setVal(`#${prefix}LinkValue`, item.linkValue || item.targetValue || item.link || item.url || '');
+  setVal(`#${prefix}ButtonText`, item.buttonText || item.ctaText || '');
+  setVal(`#${prefix}Order`, item.order ?? '');
+  setVal(`#${prefix}BgColor`, item.bgColor || item.backgroundColor || '#111820');
+  setVal(`#${prefix}TextColor`, item.textColor || '#ffffff');
+  setVal(`#${prefix}BorderColor`, item.borderColor || '#243242');
+  setVal(`#${prefix}ButtonBg`, item.buttonBg || item.buttonColor || '#25e01a');
+  setVal(`#${prefix}ButtonTextColor`, item.buttonTextColor || '#061006');
+  setVal(`#${prefix}TitleSize`, item.titleSize || item.fontSize || '');
+  setVal(`#${prefix}FontWeight`, item.fontWeight || '700');
+  setVal(`#${prefix}Size`, item.size || 'small');
+  const enabled = $(`#${prefix}Enabled`);
+  if (enabled) enabled.checked = item.enabled !== false;
+}
+
+function buildPromoData(prefix, fallbackTitle){
+  const title = val(`#${prefix}Title`) || `${fallbackTitle} ${Date.now()}`;
+  const linkType = val(`#${prefix}LinkType`) || 'url';
+  const linkValue = val(`#${prefix}LinkValue`) || '#';
+  return {
+    title,
+    key: slugifyBlock(title),
+    text: val(`#${prefix}Text`) || '',
+    description: val(`#${prefix}Text`) || '',
+    linkType,
+    linkValue,
+    link: buildPromoLink(linkType, linkValue),
+    buttonText: val(`#${prefix}ButtonText`) || '',
+    order: Number(val(`#${prefix}Order`) || 999),
+    enabled: $(`#${prefix}Enabled`) ? $(`#${prefix}Enabled`).checked : true,
+    bgColor: val(`#${prefix}BgColor`) || '',
+    textColor: val(`#${prefix}TextColor`) || '',
+    borderColor: val(`#${prefix}BorderColor`) || '',
+    buttonBg: val(`#${prefix}ButtonBg`) || '',
+    buttonTextColor: val(`#${prefix}ButtonTextColor`) || '',
+    titleSize: Number(val(`#${prefix}TitleSize`) || 0) || '',
+    fontWeight: val(`#${prefix}FontWeight`) || '700',
+    size: val(`#${prefix}Size`) || 'small',
+    updatedAt: new Date().toISOString()
+  };
+}
+
 async function renderPromoCardsAdmin() {
+  setupPromoTabs();
+  await renderVerticalPromoCardsAdmin();
+  await renderHorizontalPromoCardsAdmin();
+}
+
+async function renderVerticalPromoCardsAdmin() {
   const list = $('#promoCardList');
   if (!list) return;
-
   await loadPromoCards();
   const cards = mergedPromoCards();
-
   list.innerHTML = cards.length ? cards.map(card => `
     <div class="row banner-row-admin">
       <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
-      <div>
-        <b>${card.title || 'Промо'}</b>
-        <p class="muted">
-          Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}
-          ${card.link ? ` · ссылка: ${card.link}` : ''}
-        </p>
-      </div>
+      <div><b>${card.title || 'Промо'}</b>${card.text || card.description ? `<p class="muted">${card.text || card.description}</p>` : ''}<p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p></div>
       <button class="edit" data-editpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Редактировать</button>
       <button class="danger" data-delpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Удалить</button>
-    </div>
-  `).join('') : '<p class="muted">Пока нет промо-баннеров</p>';
-
-  $$('[data-delpc]').forEach(btn => btn.onclick = async () => {
-    if (!confirm('Удалить промо-баннер?')) return;
-    await deleteDoc(doc(db, btn.dataset.pccol || PROMO_CARDS_COLLECTION, btn.dataset.delpc));
-    await markSiteDataChanged();
-    await renderPromoCardsAdmin();
-  });
-
+    </div>`).join('') : '<p class="muted">Пока нет вертикальных промо</p>';
+  $$('[data-delpc]').forEach(btn => btn.onclick = async () => { if (!confirm('Удалить вертикальное промо?')) return; await deleteDoc(doc(db, btn.dataset.pccol || PROMO_CARDS_COLLECTION, btn.dataset.delpc)); await markSiteDataChanged(); await renderVerticalPromoCardsAdmin(); });
   $$('[data-editpc]').forEach(btn => btn.onclick = () => {
     const item = allPromoCardsCache.find(x => x.id === btn.dataset.editpc && (x._collection || PROMO_CARDS_COLLECTION) === (btn.dataset.pccol || PROMO_CARDS_COLLECTION));
     if (!item) return;
-    editing.promoCard = item.id;
-    editing.promoCardCollection = item._collection || PROMO_CARDS_COLLECTION;
-    setVal('#pcTitle', item.title || item.name || '');
-    setVal('#pcImage', item.image || item.imageUrl || item.photoUrl || '');
-    setVal('#pcLink', item.link || item.url || '');
-    setVal('#pcOrder', item.order ?? '');
-    if ($('#pcEnabled')) $('#pcEnabled').checked = item.enabled !== false;
+    editing.promoCard = item.id; editing.promoCardCollection = item._collection || PROMO_CARDS_COLLECTION;
+    setPromoFormValues('pc', item);
     $('#pcTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+}
+
+async function renderHorizontalPromoCardsAdmin() {
+  const list = $('#horizontalPromoCardList');
+  if (!list) return;
+  await loadHorizontalPromoCards();
+  const cards = mergedHorizontalPromoCards();
+  list.innerHTML = cards.length ? cards.map(card => `
+    <div class="row banner-row-admin">
+      <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
+      <div><b>${card.title || 'Промо'}</b>${card.text ? `<p class="muted">${card.text}</p>` : ''}<p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p></div>
+      <button class="edit" data-edithpc="${card.id}" data-hpccol="${card._collection || HORIZONTAL_PROMO_CARDS_COLLECTION}">Редактировать</button>
+      <button class="danger" data-delhpc="${card.id}" data-hpccol="${card._collection || HORIZONTAL_PROMO_CARDS_COLLECTION}">Удалить</button>
+    </div>`).join('') : '<p class="muted">Пока нет горизонтальных промо-карточек</p>';
+  $$('[data-delhpc]').forEach(btn => btn.onclick = async () => { if (!confirm('Удалить горизонтальную промо-карточку?')) return; await deleteDoc(doc(db, btn.dataset.hpccol || HORIZONTAL_PROMO_CARDS_COLLECTION, btn.dataset.delhpc)); await markSiteDataChanged(); await renderHorizontalPromoCardsAdmin(); });
+  $$('[data-edithpc]').forEach(btn => btn.onclick = () => {
+    const item = allHorizontalPromoCardsCache.find(x => x.id === btn.dataset.edithpc && (x._collection || HORIZONTAL_PROMO_CARDS_COLLECTION) === (btn.dataset.hpccol || HORIZONTAL_PROMO_CARDS_COLLECTION));
+    if (!item) return;
+    editing.horizontalPromoCard = item.id; editing.horizontalPromoCardCollection = item._collection || HORIZONTAL_PROMO_CARDS_COLLECTION;
+    setPromoFormValues('hpc', item);
+    $('#hpcTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
   });
 }
 
 if ($('#promoCardsForm')) {
   $('#promoCardsForm').onsubmit = async e => {
     e.preventDefault();
-
     let imageUrl = val('#pcImage');
     const uploaded = await uploadImage('#pcFile', 'promo-cards', '#pcImage', '#pcUploadStatus');
     if (uploaded) imageUrl = uploaded;
-
-    const title = val('#pcTitle') || `Промо ${Date.now()}`;
-    const key = slugifyBlock(title);
-    const data = {
-      title,
-      key,
-      image: imageUrl,
-      link: val('#pcLink') || '#',
-      order: Number(val('#pcOrder') || 999),
-      enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
-      updatedAt: new Date().toISOString()
-    };
-
+    const data = buildPromoData('pc', 'Вертикальное промо');
+    data.image = imageUrl;
     if (!data.image) return alert('Загрузите фото или вставьте Фото URL');
-
     try {
-      if (editing.promoCard) {
-        await updateDoc(doc(db, editing.promoCardCollection || PROMO_CARDS_COLLECTION, editing.promoCard), data);
-        editing.promoCard = null;
-        editing.promoCardCollection = null;
-      } else {
-        data.createdAt = new Date().toISOString();
-        await addDoc(collection(db, PROMO_CARDS_COLLECTION), data);
-      }
-
-      e.target.reset();
-      if ($('#pcEnabled')) $('#pcEnabled').checked = true;
-      if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
-      await markSiteDataChanged();
-      await renderPromoCardsAdmin();
-      alert('Промо-баннер сохранён');
-    } catch (err) {
-      console.error('promo banner save error', err);
-      alert('Ошибка сохранения промо-баннера: ' + (err?.message || err));
-    }
+      if (editing.promoCard) { await updateDoc(doc(db, editing.promoCardCollection || PROMO_CARDS_COLLECTION, editing.promoCard), data); editing.promoCard = null; editing.promoCardCollection = null; }
+      else { data.createdAt = new Date().toISOString(); await addDoc(collection(db, PROMO_CARDS_COLLECTION), data); }
+      e.target.reset(); if ($('#pcEnabled')) $('#pcEnabled').checked = true; if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
+      await markSiteDataChanged(); await renderVerticalPromoCardsAdmin(); alert('Вертикальное промо сохранено');
+    } catch (err) { console.error('vertical promo save error', err); alert('Ошибка сохранения: ' + (err?.message || err)); }
   };
 }
 
-if ($('#pcReset')) {
-  $('#pcReset').onclick = () => {
-    editing.promoCard = null;
-    editing.promoCardCollection = null;
-    $('#promoCardsForm')?.reset();
-    if ($('#pcEnabled')) $('#pcEnabled').checked = true;
-    if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
-    $('#pcTitle')?.focus();
+if ($('#horizontalPromoCardsForm')) {
+  $('#horizontalPromoCardsForm').onsubmit = async e => {
+    e.preventDefault();
+    let imageUrl = val('#hpcImage');
+    const uploaded = await uploadImage('#hpcFile', 'horizontal-promo-cards', '#hpcImage', '#hpcUploadStatus');
+    if (uploaded) imageUrl = uploaded;
+    const data = buildPromoData('hpc', 'Горизонтальное промо');
+    data.image = imageUrl;
+    if (!data.image) return alert('Загрузите фото или вставьте Фото URL');
+    try {
+      if (editing.horizontalPromoCard) { await updateDoc(doc(db, editing.horizontalPromoCardCollection || HORIZONTAL_PROMO_CARDS_COLLECTION, editing.horizontalPromoCard), data); editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; }
+      else { data.createdAt = new Date().toISOString(); await addDoc(collection(db, HORIZONTAL_PROMO_CARDS_COLLECTION), data); }
+      e.target.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = '';
+      await markSiteDataChanged(); await renderHorizontalPromoCardsAdmin(); alert('Горизонтальная карточка сохранена');
+    } catch (err) { console.error('horizontal promo save error', err); alert('Ошибка сохранения: ' + (err?.message || err)); }
   };
 }
+
+if ($('#pcReset')) $('#pcReset').onclick = () => { editing.promoCard = null; editing.promoCardCollection = null; $('#promoCardsForm')?.reset(); if ($('#pcEnabled')) $('#pcEnabled').checked = true; if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = ''; $('#pcTitle')?.focus(); };
+if ($('#hpcReset')) $('#hpcReset').onclick = () => { editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; $('#horizontalPromoCardsForm')?.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = ''; $('#hpcTitle')?.focus(); };
 
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');

@@ -378,30 +378,90 @@
 
 
     <section id="promocards" class="admin-section">
-      <div class="admin-card">
-        <h2>Промо карточки главной</h2>
-        <p class="muted">Создавай одну или несколько маленьких промо-карточек под главным баннером: название, описание, фото, ссылка, порядок и включение.</p>
+      <div class="admin-card promo-admin-card">
+        <h2>Промо блоки главной</h2>
+        <p class="muted">Раздели крупный правый баннер и маленькие карточки под баннером. Вертикальный блок обычно один и меняется редко, горизонтальные карточки можно часто менять.</p>
 
-        <form id="promoCardsForm" class="grid2 banner-admin-form">
-          <label class="field">Название на карточке<input id="pcTitle" placeholder="Например: Рассрочка 0%"></label>
-          <label class="field">Ссылка при клике<input id="pcLink" placeholder="installment.html или catalog.html?category=..."></label>
-          <label class="field" style="grid-column:1/-1">Описание на карточке<input id="pcText" placeholder="Например: Оформи покупку частями"></label>
-          <label class="field">Порядок<input id="pcOrder" type="number" placeholder="1"></label>
-          <label class="field check-field"><span>Включена</span><input id="pcEnabled" type="checkbox" checked></label>
+        <div class="promo-admin-tabs">
+          <button class="promo-admin-tab active" type="button" data-tab="vertical">Вертикальные промо блоки</button>
+          <button class="promo-admin-tab" type="button" data-tab="horizontal">Горизонтальные промо блоки</button>
+        </div>
 
-          <label class="field" style="grid-column:1/-1">Фото URL<input id="pcImage" placeholder="https://..."></label>
-          <label class="field" style="grid-column:1/-1">
-            Загрузить фото
-            <input id="pcFile" type="file" accept="image/*">
-            <small class="banner-size-hint">Рекомендуемый размер: <b>600×220 px</b> · Низкая горизонтальная карточка · Формат JPG, PNG, WEBP</small>
-          </label>
-          <div id="pcUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+        <div class="promo-admin-panel" data-panel="vertical">
+          <h3>Вертикальные промо блоки</h3>
+          <p class="muted">Большой правый баннер возле главного баннера. Не дублирует маленькие карточки.</p>
+          <form id="promoCardsForm" class="grid2 banner-admin-form">
+            <label class="field">Название<input id="pcTitle" placeholder="Например: Скидочная карта"></label>
+            <label class="field">Краткое описание<input id="pcText" placeholder="Например: Получай скидки"></label>
+            <label class="field">Тип ссылки
+              <select id="pcLinkType">
+                <option value="url">Готовая ссылка</option>
+                <option value="category">Категория каталога</option>
+                <option value="subcategory">Подкатегория</option>
+                <option value="brand">Бренд</option>
+                <option value="page">Страница сайта</option>
+              </select>
+            </label>
+            <label class="field">Значение ссылки<input id="pcLinkValue" placeholder="profile.html#discount-card или ТЕХ. ПОМОЩЬ"></label>
+            <label class="field">Текст кнопки<input id="pcButtonText" placeholder="Подробнее"></label>
+            <label class="field">Порядок<input id="pcOrder" type="number" placeholder="1"></label>
+            <label class="field check-field"><span>Включена</span><input id="pcEnabled" type="checkbox" checked></label>
+            <label class="field">Цвет фона<input id="pcBgColor" type="color" value="#111820"></label>
+            <label class="field">Цвет текста<input id="pcTextColor" type="color" value="#ffffff"></label>
+            <label class="field">Цвет кнопки<input id="pcButtonBg" type="color" value="#25e01a"></label>
+            <label class="field">Цвет текста кнопки<input id="pcButtonTextColor" type="color" value="#061006"></label>
+            <label class="field">Размер заголовка, px<input id="pcTitleSize" type="number" placeholder="22"></label>
+            <label class="field">Жирность шрифта
+              <select id="pcFontWeight"><option value="700">Жирный</option><option value="600">Полужирный</option><option value="500">Средний</option><option value="400">Обычный</option></select>
+            </label>
+            <label class="field" style="grid-column:1/-1">Фото URL<input id="pcImage" placeholder="https://..."></label>
+            <label class="field" style="grid-column:1/-1">Загрузить фото<input id="pcFile" type="file" accept="image/*"><small class="banner-size-hint">Рекомендуемый размер: 600×700 px · JPG, PNG, WEBP</small></label>
+            <div id="pcUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+            <button class="primary">Сохранить вертикальный блок</button>
+            <button id="pcReset" type="button" class="edit">Новый вертикальный блок</button>
+          </form>
+          <div id="promoCardList" class="list banner-admin-list"></div>
+        </div>
 
-          <button class="primary">Сохранить карточку</button>
-          <button id="pcReset" type="button" class="edit" title="Если поля заполнены — создаст новый промо-баннер. Если редактируешь — очистит форму.">Новая карточка</button>
-        </form>
-
-        <div id="promoCardList" class="list banner-admin-list"></div>
+        <div class="promo-admin-panel" data-panel="horizontal" style="display:none">
+          <h3>Горизонтальные промо блоки</h3>
+          <p class="muted">Маленькие карточки под главным баннером. Можно создать несколько карточек и вести их на каталог, категорию, бренд или страницу.</p>
+          <form id="horizontalPromoCardsForm" class="grid2 banner-admin-form">
+            <label class="field">Название<input id="hpcTitle" placeholder="Например: Подбор дворников"></label>
+            <label class="field">Краткое описание<input id="hpcText" placeholder="Например: Быстрый переход в каталог"></label>
+            <label class="field">Тип ссылки
+              <select id="hpcLinkType">
+                <option value="url">Готовая ссылка</option>
+                <option value="category">Категория каталога</option>
+                <option value="subcategory">Подкатегория</option>
+                <option value="brand">Бренд</option>
+                <option value="page">Страница сайта</option>
+              </select>
+            </label>
+            <label class="field">Значение ссылки<input id="hpcLinkValue" placeholder="catalog.html или ТЕХ. ПОМОЩЬ"></label>
+            <label class="field">Текст кнопки<input id="hpcButtonText" placeholder="Открыть"></label>
+            <label class="field">Порядок<input id="hpcOrder" type="number" placeholder="1"></label>
+            <label class="field check-field"><span>Включена</span><input id="hpcEnabled" type="checkbox" checked></label>
+            <label class="field">Размер карточки
+              <select id="hpcSize"><option value="small">Маленькая</option><option value="medium">Средняя</option><option value="large">Большая</option></select>
+            </label>
+            <label class="field">Цвет фона<input id="hpcBgColor" type="color" value="#111820"></label>
+            <label class="field">Цвет текста<input id="hpcTextColor" type="color" value="#ffffff"></label>
+            <label class="field">Цвет рамки<input id="hpcBorderColor" type="color" value="#243242"></label>
+            <label class="field">Цвет кнопки<input id="hpcButtonBg" type="color" value="#25e01a"></label>
+            <label class="field">Цвет текста кнопки<input id="hpcButtonTextColor" type="color" value="#061006"></label>
+            <label class="field">Размер заголовка, px<input id="hpcTitleSize" type="number" placeholder="16"></label>
+            <label class="field">Жирность шрифта
+              <select id="hpcFontWeight"><option value="700">Жирный</option><option value="600">Полужирный</option><option value="500">Средний</option><option value="400">Обычный</option></select>
+            </label>
+            <label class="field" style="grid-column:1/-1">Фото URL<input id="hpcImage" placeholder="https://..."></label>
+            <label class="field" style="grid-column:1/-1">Загрузить фото<input id="hpcFile" type="file" accept="image/*"><small class="banner-size-hint">Рекомендуемый размер: 600×220 px · низкая горизонтальная карточка</small></label>
+            <div id="hpcUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+            <button class="primary">Сохранить горизонтальную карточку</button>
+            <button id="hpcReset" type="button" class="edit">Новая горизонтальная карточка</button>
+          </form>
+          <div id="horizontalPromoCardList" class="list banner-admin-list"></div>
+        </div>
       </div>
     </section>
 
