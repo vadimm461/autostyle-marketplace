@@ -333,3 +333,73 @@
 .continue-shopping-btn{min-height:48px!important;border-radius:16px!important;border:1px solid #dbe3ee!important;background:#fff!important;color:#111827!important;text-decoration:none!important;font-weight:1000!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;box-shadow:0 10px 24px rgba(15,23,42,.06)!important;}
 .continue-shopping-btn:hover{border-color:#24e11a!important;color:#0f8f08!important;transform:translateY(-1px)!important;}
 .continue-shopping-btn img{width:17px!important;height:17px!important;}
+
+
+/* Mini promo cards under hero banner */
+#banners.home-mini-promos{
+  display:flex;
+  gap:14px;
+  margin:18px auto 34px;
+  padding:4px 2px 8px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+#banners.home-mini-promos::-webkit-scrollbar{display:none;}
+.home-mini-promo-card{
+  flex:0 0 min(360px, 32vw);
+  min-width:260px;
+  height:92px;
+  border-radius:22px;
+  background:linear-gradient(135deg,#111820,#202a36);
+  color:#fff;
+  text-decoration:none;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+  box-shadow:0 18px 44px rgba(15,23,42,.14);
+  border:1px solid rgba(255,255,255,.08);
+  overflow:hidden;
+  position:relative;
+}
+.home-mini-promo-card:before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 80% 20%, rgba(35,225,20,.26), transparent 42%);
+  pointer-events:none;
+}
+.home-mini-promo-img{
+  width:76px;
+  height:64px;
+  border-radius:16px;
+  overflow:hidden;
+  background:rgba(255,255,255,.12);
+  flex:0 0 auto;
+  position:relative;
+  z-index:1;
+}
+.home-mini-promo-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.home-mini-promo-content{position:relative;z-index:1;min-width:0;display:grid;gap:4px;}
+.home-mini-promo-content b{font-size:17px;line-height:1.05;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-mini-promo-content small{font-size:12px;line-height:1.2;color:rgba(255,255,255,.74);font-weight:800;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.home-mini-promo-arrow{
+  margin-left:auto;
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:#22e11a;
+  color:#061006;
+  font-size:24px;
+  font-weight:1000;
+  position:relative;
+  z-index:1;
+  flex:0 0 auto;
+}
+@media (max-width:900px){
+  .home-mini-promo-card{flex-basis:82%;height:88px;min-width:250px;}
+  #banners.home-mini-promos{margin:14px 0 26px;}
+}

@@ -160,32 +160,6 @@ function renderHomeSectionOptions() {
   });
 }
 
-function adminEscapeAttr(value) {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function adminEscapeText(value) {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function buildHomeSectionOptions(currentValue = '') {
-  const blocks = mergedHomeBlocks(false);
-  const seen = new Set();
-  const options = blocks.map(b => {
-    const key = String(b.key || b.id || '').trim();
-    if (!key || seen.has(key)) return '';
-    seen.add(key);
-    const selected = key === String(currentValue || '') ? ' selected' : '';
-    return `<option value="${adminEscapeAttr(key)}"${selected}>${adminEscapeText(b.title || b.name || key)}</option>`;
-  }).filter(Boolean);
-
-  if (currentValue && !seen.has(String(currentValue))) {
-    options.unshift(`<option value="${adminEscapeAttr(currentValue)}" selected>${adminEscapeText(currentValue)}</option>`);
-  }
-
-  return options.join('');
-}
-
 function defaultPromoCards() {
   // Старые системные промо-карточки убраны.
   // В админке отображаются и редактируются только карточки из Firestore.
@@ -1173,7 +1147,7 @@ function openInlineProductEditor(item, row) {
         <label class="field field-four">Наличие, шт.<input name="stock" type="number" value="${item.stock ?? item.quantity ?? item.count ?? ''}"></label>
 
         <label class="field">Категория<select name="category"><option value="">Выберите категорию</option>${categoryOptions}</select></label>
-        <label class="field">Блок на главной<select name="homeSection">${buildHomeSectionOptions(currentHomeSection)}</select></label>
+        <label class="field">Блок на главной<select name="homeSection"><option value="hot">Горячие предложения</option><option value="new">Новинки</option><option value="bestsellers">Лидеры продаж</option></select></label>
         <label class="field">Метка товара<select name="tag"><option value="hot">Горячие предложения</option><option value="new">Новинки</option><option value="best">Лидеры продаж</option></select></label>
 
         <div class="checks-row inline-checks">
@@ -1712,7 +1686,7 @@ function bindBannerDimensionPreview(fileSelector, statusSelector, recommendedTex
 }
 
 bindBannerDimensionPreview('#bFile', '#bUploadStatus', 'Рекомендуется: <b>1600×700 px</b> для главного баннера.');
-bindBannerDimensionPreview('#pcFile', '#pcUploadStatus', 'Рекомендуется: <b>600×700 px</b> для промо-баннера.');
+bindBannerDimensionPreview('#pcFile', '#pcUploadStatus', 'Рекомендуется: <b>600×220 px</b> для маленькой промо-карточки.');
 
 /* BANNERS */
 
@@ -1922,6 +1896,7 @@ async function renderPromoCardsAdmin() {
       <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
       <div>
         <b>${card.title || 'Промо'}</b>
+        ${card.text || card.description ? `<p class="muted">${card.text || card.description}</p>` : ''}
         <p class="muted">
           Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}
           ${card.link ? ` · ссылка: ${card.link}` : ''}
@@ -1947,6 +1922,7 @@ async function renderPromoCardsAdmin() {
     setVal('#pcTitle', item.title || item.name || '');
     setVal('#pcImage', item.image || item.imageUrl || item.photoUrl || '');
     setVal('#pcLink', item.link || item.url || '');
+    setVal('#pcText', item.text || item.description || '');
     setVal('#pcOrder', item.order ?? '');
     if ($('#pcEnabled')) $('#pcEnabled').checked = item.enabled !== false;
     $('#pcTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
@@ -1967,6 +1943,8 @@ if ($('#promoCardsForm')) {
       title,
       key,
       image: imageUrl,
+      text: val('#pcText') || '',
+      description: val('#pcText') || '',
       link: val('#pcLink') || '#',
       order: Number(val('#pcOrder') || 999),
       enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
@@ -1990,10 +1968,10 @@ if ($('#promoCardsForm')) {
       if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
       await markSiteDataChanged();
       await renderPromoCardsAdmin();
-      alert('Промо-баннер сохранён');
+      alert('Промо-карточка сохранена');
     } catch (err) {
-      console.error('promo banner save error', err);
-      alert('Ошибка сохранения промо-баннера: ' + (err?.message || err));
+      console.error('promo card save error', err);
+      alert('Ошибка сохранения промо-карточки: ' + (err?.message || err));
     }
   };
 }

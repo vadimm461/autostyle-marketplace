@@ -379,12 +379,13 @@
 
     <section id="promocards" class="admin-section">
       <div class="admin-card">
-        <h2>Правые промо-баннеры</h2>
-        <p class="muted">Маленький блок “Промо” справа от главного баннера теперь тоже картинка. Можно загрузить несколько фото, менять порядок и ссылку.</p>
+        <h2>Промо карточки главной</h2>
+        <p class="muted">Создавай одну или несколько маленьких промо-карточек под главным баннером: название, описание, фото, ссылка, порядок и включение.</p>
 
         <form id="promoCardsForm" class="grid2 banner-admin-form">
-          <label class="field">Название для админки<input id="pcTitle" placeholder="Например: Промо 1"></label>
-          <label class="field">Ссылка при клике<input id="pcLink" placeholder="catalog.html?promo=sale"></label>
+          <label class="field">Название на карточке<input id="pcTitle" placeholder="Например: Рассрочка 0%"></label>
+          <label class="field">Ссылка при клике<input id="pcLink" placeholder="installment.html или catalog.html?category=..."></label>
+          <label class="field" style="grid-column:1/-1">Описание на карточке<input id="pcText" placeholder="Например: Оформи покупку частями"></label>
           <label class="field">Порядок<input id="pcOrder" type="number" placeholder="1"></label>
           <label class="field check-field"><span>Включена</span><input id="pcEnabled" type="checkbox" checked></label>
 
@@ -392,12 +393,12 @@
           <label class="field" style="grid-column:1/-1">
             Загрузить фото
             <input id="pcFile" type="file" accept="image/*">
-            <small class="banner-size-hint">Рекомендуемый размер: <b>600×700 px</b> · Соотношение <b>6:7</b> · Формат JPG, PNG, WEBP</small>
+            <small class="banner-size-hint">Рекомендуемый размер: <b>600×220 px</b> · Низкая горизонтальная карточка · Формат JPG, PNG, WEBP</small>
           </label>
           <div id="pcUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
 
-          <button class="primary">Сохранить промо</button>
-          <button id="pcReset" type="button" class="edit" title="Если поля заполнены — создаст новый промо-баннер. Если редактируешь — очистит форму.">Новый промо</button>
+          <button class="primary">Сохранить карточку</button>
+          <button id="pcReset" type="button" class="edit" title="Если поля заполнены — создаст новый промо-баннер. Если редактируешь — очистит форму.">Новая карточка</button>
         </form>
 
         <div id="promoCardList" class="list banner-admin-list"></div>

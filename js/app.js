@@ -184,7 +184,29 @@ function initImageBannerSliders(scope=document){
 function renderPromoCards(cards){
   const box = $('#banners');
   if (!box) return;
-  box.innerHTML = '';
+  const items = (cards || [])
+    .filter(c => c && c.enabled !== false)
+    .sort((a,b)=>Number(a.order ?? 999) - Number(b.order ?? 999));
+  if (!items.length) {
+    box.innerHTML = '';
+    box.classList.remove('home-mini-promos');
+    return;
+  }
+  box.classList.add('home-mini-promos');
+  box.innerHTML = items.map(c => {
+    const href = c.link || c.url || '#';
+    const image = c.image || c.imageUrl || c.photoUrl || '';
+    const text = c.text || c.description || '';
+    const titleText = c.title || c.name || 'Промо';
+    return `<a class="home-mini-promo-card" href="${href}">
+      ${image ? `<span class="home-mini-promo-img"><img loading="lazy" decoding="async" src="${image}" alt="${titleText}"></span>` : ''}
+      <span class="home-mini-promo-content">
+        <b>${titleText}</b>
+        ${text ? `<small>${text}</small>` : ''}
+      </span>
+      <span class="home-mini-promo-arrow">›</span>
+    </a>`;
+  }).join('');
 }
 
 function card(p){
