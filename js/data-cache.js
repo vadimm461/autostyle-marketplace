@@ -1,13 +1,14 @@
-import { db, COLLECTIONS } from './firebase.js';
+import { db, storage, COLLECTIONS } from './firebase.js';
 import { collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { ref, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
-// v5: принудительно сбрасывает старый localStorage-кэш товаров, где могли сохраниться карточки без фото.
-const CACHE_PREFIX = 'as_cache_v5:';
+// v6: новый кэш. Старые v5-данные не используются, чтобы каталог сразу видел новые товары и фото.
+const CACHE_PREFIX = 'as_cache_v6:';
 const VERSION_KEY = CACHE_PREFIX + 'version';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
-const MAX_CACHE_AGE = 7 * 24 * 60 * 60 * 1000;
-const REFRESH_INTERVAL = 5 * 60 * 1000;
+const MAX_CACHE_AGE = 60 * 60 * 1000;
+const REFRESH_INTERVAL = 30 * 1000;
 
 let versionMemo = { value:null, checkedAt:0 };
 function now(){ return Date.now(); }
@@ -41,8 +42,10 @@ function firstString(...values){
     }
     if (value && typeof value === 'object') {
       const found = firstString(
-        value.url, value.src, value.href, value.downloadURL, value.image, value.imageUrl,
-        value.photo, value.photoUrl, value.path, value.fullPath
+        value.url, value.src, value.href, value.downloadURL, value.downloadUrl,
+        value.image, value.imageUrl, value.photo, value.photoUrl, value.img, value.picture,
+        value.pictureUrl, value.thumbnail, value.thumb, value.path, value.fullPath,
+        value.storagePath, value.filePath
       );
       if (found) return found;
     }
@@ -50,18 +53,32 @@ function firstString(...values){
   return '';
 }
 
-function resolveProductImage(row){
-  return firstString(
-    row?.image, row?.imageUrl, row?.photo, row?.photoUrl, row?.img, row?.picture, row?.pictureUrl,
-    row?.mainImage, row?.mainImageUrl, row?.thumbnail, row?.thumb, row?.url, row?.downloadURL,
-    row?.images, row?.photos, row?.pictures, row?.gallery, row?.files, row?.attachments
-  );
+function looksLikeStoragePath(value){
+  const v = String(value || '').trim();
+  if (!v) return false;
+  if (/^(https?:|data:|blob:)/i.test(v)) return false;
+  return /^gs:\/\//i.test(v) || v.includes('/') || /^products|^images|^uploads|^goods/i.test(v);
 }
 
-function normalizeProductRow(row){
+async function storageUrl(value){
+  const v = String(value || '').trim();
+  if (!v || !looksLikeStoragePath(v)) return v;
+  try { return await getDownloadURL(ref(storage, v)); } catch(e) { return v; }
+}
+
+async function resolveProductImage(row){
+  const raw = firstString(
+    row?.image, row?.imageUrl, row?.photo, row?.photoUrl, row?.img, row?.picture, row?.pictureUrl,
+    row?.mainImage, row?.mainImageUrl, row?.thumbnail, row?.thumb, row?.url, row?.downloadURL, row?.downloadUrl,
+    row?.images, row?.photos, row?.pictures, row?.gallery, row?.files, row?.attachments
+  );
+  return await storageUrl(raw);
+}
+
+async function normalizeProductRow(row){
   const price = Number(row?.price || 0);
   const old = Number(row?.oldPrice || row?.priceOld || row?.priceBefore || row?.compareAtPrice || 0);
-  const image = resolveProductImage(row);
+  const image = await resolveProductImage(row);
   const normalized = image ? { ...row, image, imageUrl: row?.imageUrl || image, photoUrl: row?.photoUrl || image } : { ...row };
   if (old && old <= price) {
     return { ...normalized, oldPrice: 0, priceOld: 0, priceBefore: 0, compareAtPrice: 0 };
@@ -72,7 +89,7 @@ function normalizeProductRow(row){
 async function fetchCollection(name){
   const snap = await getDocs(collection(db, name));
   const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  return name === (COLLECTIONS.products || 'autostyle_products') ? rows.map(normalizeProductRow) : rows;
+  return name === (COLLECTIONS.products || 'autostyle_products') ? await Promise.all(rows.map(normalizeProductRow)) : rows;
 }
 
 export async function bumpCacheVersion(reason='update'){
@@ -95,23 +112,7 @@ export async function getCollectionCached(name, options={}){
   const cached = readJson(cacheKey, null);
   const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
 
-  // Mobile-first speed: if local data exists and is not too old, return it immediately.
-  // Freshness/version checks happen quietly in the background instead of blocking first paint.
-  if (!force && cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE) {
-    if (age > REFRESH_INTERVAL) {
-      getRemoteVersion().then(remoteVersion => {
-        const currentVersion = readJson(VERSION_KEY, '0');
-        if (remoteVersion !== null && String(remoteVersion) !== String(currentVersion)) {
-          return fetchCollection(name).then(rows => {
-            writeJson(cacheKey, { rows, savedAt: now() });
-            writeJson(VERSION_KEY, remoteVersion);
-          });
-        }
-      }).catch(()=>{});
-    }
-    return cached.rows;
-  }
-
+  // Для каталога важнее свежесть: сначала пробуем Firestore, кэш — только запасной вариант.
   let remoteVersion = null;
   if (!force) remoteVersion = await getRemoteVersion();
   try{
@@ -120,6 +121,7 @@ export async function getCollectionCached(name, options={}){
     if (remoteVersion !== null) writeJson(VERSION_KEY, remoteVersion);
     return rows;
   }catch(e){
+    if (!force && cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE) return cached.rows;
     if (cached && Array.isArray(cached.rows)) return cached.rows;
     throw e;
   }

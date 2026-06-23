@@ -87,3 +87,14 @@
 .footer-group a{font-size:13px!important;margin:5px 0!important;line-height:1.25!important;color:#cbd5e1!important;}
 .footer-copy{max-width:1240px!important;margin:0 auto!important;padding:10px 24px 16px!important;font-size:13px!important;}
 @media(max-width:800px){.footer-inner{grid-template-columns:1fr!important;padding:20px 16px!important}.footer-copy{padding:10px 16px 16px!important}}
+
+
+/* ===== Catalog fresh desktop cleanup ===== */
+@media (min-width: 901px){
+  .catalog-card-price-area .first,
+  .catalog-card-price-area .second,
+  .catalog-card-price-area .first-label,
+  .catalog-card-price-area .second-label,
+  .catalog-card-price-area [data-label="first"],
+  .catalog-card-price-area [data-label="second"]{display:none!important;}
+}
