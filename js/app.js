@@ -215,7 +215,7 @@ function makeSection(block, products){
   return `<section id="${id}" class="section-block product-section-carousel" data-block="${block.key}">
     <div class="section-head">
       <h2>${block.title}</h2>
-      <button class="show-section-btn" data-expand="${id}" type="button">Смотреть все</button>
+      
     </div>
     <div class="carousel-shell">
       <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
