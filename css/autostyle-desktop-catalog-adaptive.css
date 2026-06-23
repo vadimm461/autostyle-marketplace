@@ -98,3 +98,121 @@
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
   }
 }
+
+
+/* ===== Desktop small-screen catalog fix =====
+   Desktop version on short/narrow screens: the two-column category chooser must
+   stay inside the filter panel and scroll internally, not push the page below footer. */
+.catalog-page{
+  align-items:start !important;
+}
+.catalog-filters,
+.filters.catalog-filters{
+  box-sizing:border-box !important;
+  min-height:0 !important;
+  overflow:auto !important;
+  overscroll-behavior:contain !important;
+}
+.category-tree-filter,
+#categoryTreeFilter{
+  box-sizing:border-box !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+.cat-tree-grid,
+.cat-tree-col,
+.cat-tree-parents,
+.cat-tree-children{
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+.cat-tree-parents,
+.cat-tree-children{
+  overflow:auto !important;
+  overscroll-behavior:contain !important;
+}
+.cat-tree-parent,
+.cat-tree-child{
+  max-width:100% !important;
+  min-width:0 !important;
+}
+
+@media (min-width: 901px) and (max-width: 1180px){
+  .catalog-page{
+    grid-template-columns:minmax(270px, 305px) minmax(0,1fr) !important;
+    width:calc(100% - 24px) !important;
+    gap:14px !important;
+  }
+  .catalog-filters,
+  .filters.catalog-filters{
+    top:76px !important;
+    max-height:calc(100vh - 92px) !important;
+    padding:14px !important;
+  }
+  .category-tree-filter,
+  #categoryTreeFilter{
+    max-height:calc(100vh - 310px) !important;
+  }
+  .cat-tree-grid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    max-height:calc(100vh - 360px) !important;
+    overflow:hidden !important;
+  }
+  .cat-tree-parents{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    max-height:132px !important;
+  }
+  .cat-tree-children{
+    max-height:clamp(130px, 28vh, 230px) !important;
+  }
+  .cat-tree-parent,
+  .cat-tree-child{
+    min-height:36px !important;
+    padding:8px 9px !important;
+    font-size:12px !important;
+    line-height:1.15 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 760px){
+  .catalog-filters,
+  .filters.catalog-filters{
+    top:72px !important;
+    max-height:calc(100vh - 86px) !important;
+  }
+  .category-tree-filter,
+  #categoryTreeFilter{
+    max-height:calc(100vh - 305px) !important;
+  }
+  .cat-tree-parents,
+  .cat-tree-children{
+    max-height:clamp(145px, 32vh, 260px) !important;
+  }
+  .cat-tree-parent,
+  .cat-tree-child{
+    min-height:36px !important;
+    padding:8px 10px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-height: 650px){
+  .catalog-filters,
+  .filters.catalog-filters{
+    max-height:calc(100vh - 72px) !important;
+  }
+  .category-tree-filter,
+  #categoryTreeFilter{
+    max-height:calc(100vh - 260px) !important;
+  }
+  .cat-tree-parents{
+    max-height:96px !important;
+  }
+  .cat-tree-children{
+    max-height:150px !important;
+  }
+}
