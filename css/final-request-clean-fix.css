@@ -429,19 +429,51 @@
   .home-mini-promo-large.home-mini-promo-image-only{min-width:340px;min-height:126px;}
 }
 
-.admin-cache-clear-card{
-  width:100%;
-  text-align:left;
-  border:1px solid rgba(255,70,70,.28);
-  cursor:pointer;
-  background:linear-gradient(135deg,#fff5f5,#ffffff);
-  color:inherit;
-  font:inherit;
+/* === AutoStyle: широкая полоса горизонтальных промо на главной === */
+body:not(.mobile-page) #banners.home-mini-promos,
+body:not(.mobile-page) .home-mini-promos{
+  width:min(94vw, 1440px) !important;
+  max-width:none !important;
+  margin:22px 0 38px 50% !important;
+  transform:translateX(-50%) !important;
+  display:grid !important;
+  grid-template-columns:repeat(4, minmax(0, 1fr)) !important;
+  gap:16px !important;
+  overflow:visible !important;
+  padding:0 !important;
+  scroll-snap-type:none !important;
 }
-.admin-cache-clear-card:hover{
-  border-color:#ff3b30;
-  box-shadow:0 16px 40px rgba(255,59,48,.14);
-  transform:translateY(-2px);
+
+body:not(.mobile-page) #banners.home-mini-promos .home-mini-promo-card,
+body:not(.mobile-page) .home-mini-promos .home-mini-promo-card{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  flex:none !important;
+  min-height:112px !important;
 }
-.admin-cache-clear-card .admin-home-card-icon{background:#ffe2e2;color:#d71919;}
-.admin-cache-clear-card:disabled{opacity:.7;cursor:wait;transform:none;}
+
+body:not(.mobile-page) #banners.home-mini-promos .home-mini-promo-image-only,
+body:not(.mobile-page) .home-mini-promos .home-mini-promo-image-only{
+  min-height:118px !important;
+  background-size:cover !important;
+  background-position:center !important;
+}
+
+@media(max-width:1100px){
+  body:not(.mobile-page) #banners.home-mini-promos,
+  body:not(.mobile-page) .home-mini-promos{
+    width:calc(100vw - 32px) !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:12px !important;
+  }
+}
+
+@media(max-width:700px){
+  body:not(.mobile-page) #banners.home-mini-promos,
+  body:not(.mobile-page) .home-mini-promos{
+    width:calc(100vw - 24px) !important;
+    grid-template-columns:1fr !important;
+    margin-top:14px !important;
+  }
+}
