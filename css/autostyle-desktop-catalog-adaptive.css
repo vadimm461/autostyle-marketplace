@@ -283,3 +283,66 @@
     width:100% !important;
   }
 }
+
+/* AutoStyle swap: main catalog in left sidebar, child groups in top row */
+.category-tree-filter-main-only{
+  width:100% !important;
+  overflow:visible !important;
+  border:0 !important;
+  padding:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.category-tree-filter-main-only .cat-filter-head{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+  margin:14px 0 10px !important;
+}
+.category-tree-filter-main-only .cat-filter-head b{
+  font-size:14px !important;
+  color:#667085 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.06em !important;
+}
+.main-only-list,
+.category-tree-filter-main-only .cat-tree-parents{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:8px !important;
+  max-height:none !important;
+  overflow:visible !important;
+}
+.category-tree-filter-main-only .cat-tree-parent{
+  display:block !important;
+  width:100% !important;
+  min-height:42px !important;
+  height:auto !important;
+  border:1px solid #e3eaf3 !important;
+  border-radius:14px !important;
+  background:#f8fafc !important;
+  color:#111827 !important;
+  padding:10px 12px !important;
+  text-align:left !important;
+  font-weight:900 !important;
+  font-size:13px !important;
+  line-height:1.15 !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  cursor:pointer !important;
+}
+.category-tree-filter-main-only .cat-tree-parent.active,
+.category-tree-filter-main-only .cat-tree-parent:hover{
+  border-color:#21e51d !important;
+  background:#21e51d !important;
+  color:#041006 !important;
+}
+.category-tree-filter-main-only .cat-tree-child,
+.category-tree-filter-main-only .cat-tree-children{
+  display:none !important;
+}
+.top-category-bar:empty{display:none !important;}
+.top-category-bar .top-cat-btn{
+  text-transform:none !important;
+}
