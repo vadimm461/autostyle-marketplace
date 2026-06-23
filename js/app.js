@@ -226,6 +226,11 @@ function renderPromoCards(cards){
       card.titleSize ? `--promo-title-size:${Number(card.titleSize)}px` : '',
       card.fontWeight ? `--promo-weight:${card.fontWeight}` : ''
     ].filter(Boolean).join(';');
+    const imageOnly = card.displayMode === 'image' || card.imageOnly === true;
+    const imageStyle = imageOnly && card.image ? `background-image:url('${String(card.image).replace(/'/g, "%27")}')` : '';
+    if (imageOnly) {
+      return `<a class="home-mini-promo-card home-mini-promo-${card.size || 'small'} home-mini-promo-image-only" href="${href}" style="${styles};${imageStyle}" aria-label="${titleText}"></a>`;
+    }
     return `<a class="home-mini-promo-card home-mini-promo-${card.size || 'small'}" href="${href}" style="${styles}">
       ${card.image ? `<span class="home-mini-promo-img"><img loading="lazy" decoding="async" src="${card.image}" alt="${titleText}"></span>` : ''}
       <span class="home-mini-promo-content"><b>${titleText}</b>${card.text ? `<small>${card.text}</small>` : ''}</span>

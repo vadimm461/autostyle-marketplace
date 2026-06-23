@@ -406,3 +406,25 @@
 .home-mini-promo-button{min-width:auto;font-size:12px}
 .home-mini-promo-medium{min-width:360px;min-height:92px}.home-mini-promo-large{min-width:430px;min-height:110px}
 @media(max-width:900px){.home-mini-promos{margin:16px -12px 24px;padding:0 12px}.home-mini-promo-card{min-width:260px}.home-mini-promo-large{min-width:320px}}
+
+/* Горизонтальная промо-карточка: режим "Только картинка фоном" */
+.home-mini-promo-card.home-mini-promo-image-only{
+  padding:0;
+  gap:0;
+  overflow:hidden;
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  border-color:transparent;
+  min-height:96px;
+}
+.home-mini-promo-card.home-mini-promo-image-only:before{display:none;}
+.home-mini-promo-card.home-mini-promo-image-only:hover{transform:translateY(-2px);}
+.home-mini-promo-small.home-mini-promo-image-only{min-width:300px;min-height:110px;}
+.home-mini-promo-medium.home-mini-promo-image-only{min-width:360px;min-height:132px;}
+.home-mini-promo-large.home-mini-promo-image-only{min-width:430px;min-height:158px;}
+@media(max-width:900px){
+  .home-mini-promo-small.home-mini-promo-image-only{min-width:260px;min-height:96px;}
+  .home-mini-promo-medium.home-mini-promo-image-only{min-width:310px;min-height:114px;}
+  .home-mini-promo-large.home-mini-promo-image-only{min-width:340px;min-height:126px;}
+}

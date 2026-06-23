@@ -1976,6 +1976,7 @@ function setPromoFormValues(prefix, item){
   setVal(`#${prefix}TitleSize`, item.titleSize || item.fontSize || '');
   setVal(`#${prefix}FontWeight`, item.fontWeight || '700');
   setVal(`#${prefix}Size`, item.size || 'small');
+  setVal(`#${prefix}DisplayMode`, item.displayMode || item.mode || (item.imageOnly ? 'image' : 'classic'));
   const enabled = $(`#${prefix}Enabled`);
   if (enabled) enabled.checked = item.enabled !== false;
 }
@@ -2003,6 +2004,8 @@ function buildPromoData(prefix, fallbackTitle){
     titleSize: Number(val(`#${prefix}TitleSize`) || 0) || '',
     fontWeight: val(`#${prefix}FontWeight`) || '700',
     size: val(`#${prefix}Size`) || 'small',
+    displayMode: val(`#${prefix}DisplayMode`) || 'classic',
+    imageOnly: (val(`#${prefix}DisplayMode`) === 'image'),
     updatedAt: new Date().toISOString()
   };
 }
@@ -2094,7 +2097,7 @@ if ($('#horizontalPromoCardsForm')) {
 }
 
 if ($('#pcReset')) $('#pcReset').onclick = () => { editing.promoCard = null; editing.promoCardCollection = null; $('#promoCardsForm')?.reset(); if ($('#pcEnabled')) $('#pcEnabled').checked = true; if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = ''; $('#pcTitle')?.focus(); };
-if ($('#hpcReset')) $('#hpcReset').onclick = () => { editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; $('#horizontalPromoCardsForm')?.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = ''; $('#hpcTitle')?.focus(); };
+if ($('#hpcReset')) $('#hpcReset').onclick = () => { editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; $('#horizontalPromoCardsForm')?.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcDisplayMode')) $('#hpcDisplayMode').value = 'classic'; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = ''; $('#hpcTitle')?.focus(); };
 
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');
