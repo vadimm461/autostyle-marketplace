@@ -1,7 +1,13 @@
 (function () {
   "use strict";
 
+  const STYLE_ID = "as-home-drag-slider-style";
+  const CARD_SELECTOR = ".product-card, .product-item, .catalog-card, [class*='product-card']";
+
   const sliderSelectors = [
+    ".products",
+    ".products-grid",
+    ".carousel-products",
     ".product-slider-ready",
     ".products-carousel",
     ".product-carousel",
@@ -13,6 +19,10 @@
     ".bestseller-products",
     ".products-slider",
     ".products-row",
+    "#newProductsGrid",
+    "#recentlyViewedGrid",
+    "#bestsellersGrid",
+    "#productsGrid",
     "#hotProducts",
     "#featuredProducts",
     "#bestProducts",
@@ -20,13 +30,75 @@
     "#homeProducts"
   ];
 
+  function injectStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      body:not(.mobile-page) .section-block .as-draggable-slider,
+      body:not(.mobile-page) .home-block .as-draggable-slider,
+      body:not(.mobile-page) .product-section-carousel .as-draggable-slider,
+      body:not(.mobile-page) .as-draggable-slider {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        grid-template-columns: none !important;
+        gap: 18px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scroll-behavior: smooth;
+        cursor: grab;
+        user-select: none;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        padding-bottom: 8px !important;
+        touch-action: pan-y;
+      }
+      body:not(.mobile-page) .as-draggable-slider::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+      body:not(.mobile-page) .as-draggable-slider.is-dragging { cursor: grabbing !important; scroll-behavior: auto !important; }
+      body:not(.mobile-page) .as-draggable-slider.is-dragging, body:not(.mobile-page) .as-draggable-slider.is-dragging * { user-select: none !important; }
+      body:not(.mobile-page) .as-draggable-slider.is-dragging a, body:not(.mobile-page) .as-draggable-slider.is-dragging button { pointer-events: none !important; }
+      body:not(.mobile-page) .as-draggable-slider > .product-card,
+      body:not(.mobile-page) .as-draggable-slider > .product-item,
+      body:not(.mobile-page) .as-draggable-slider > .catalog-card,
+      body:not(.mobile-page) .as-draggable-slider > [class*='product-card'] {
+        flex: 0 0 220px !important;
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+      }
+      @media (max-width: 900px) {
+        body:not(.mobile-page) .as-draggable-slider > .product-card,
+        body:not(.mobile-page) .as-draggable-slider > .product-item,
+        body:not(.mobile-page) .as-draggable-slider > .catalog-card,
+        body:not(.mobile-page) .as-draggable-slider > [class*='product-card'] {
+          flex-basis: 190px !important; width: 190px !important; min-width: 190px !important; max-width: 190px !important;
+        }
+      }
+      @media (max-width: 640px) {
+        body:not(.mobile-page) .as-draggable-slider { gap: 12px !important; scroll-snap-type: x proximity; }
+        body:not(.mobile-page) .as-draggable-slider > .product-card,
+        body:not(.mobile-page) .as-draggable-slider > .product-item,
+        body:not(.mobile-page) .as-draggable-slider > .catalog-card,
+        body:not(.mobile-page) .as-draggable-slider > [class*='product-card'] {
+          flex-basis: 168px !important; width: 168px !important; min-width: 168px !important; max-width: 168px !important; scroll-snap-align: start;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function cardsIn(el) {
+    return el ? Array.from(el.children).filter((child) => child.matches && child.matches(CARD_SELECTOR)) : [];
+  }
+
   function hasProductCards(el) {
     if (!el || el.dataset.asDragSlider === "1") return false;
-    return el.querySelectorAll(".product-card, .product-item, [class*='product-card']").length >= 2;
+    return cardsIn(el).length >= 2 || el.querySelectorAll(CARD_SELECTOR).length >= 2;
   }
 
   function getSlideAmount(slider) {
-    const firstCard = slider.querySelector(".product-card, .product-item, [class*='product-card']");
+    const firstCard = slider.querySelector(CARD_SELECTOR);
     if (!firstCard) return Math.max(260, Math.floor(slider.clientWidth * 0.8));
     const rect = firstCard.getBoundingClientRect();
     const styles = window.getComputedStyle(slider);
@@ -58,7 +130,7 @@
     slider.addEventListener("pointermove", (event) => {
       if (!isDown) return;
       const diff = event.clientX - startX;
-      if (Math.abs(diff) > 4) moved = true;
+      if (Math.abs(diff) > 5) moved = true;
       slider.scrollLeft = startScrollLeft - diff;
       event.preventDefault();
     }, { passive: false });
@@ -68,7 +140,7 @@
       isDown = false;
       slider.classList.remove("is-dragging");
       try { slider.releasePointerCapture?.(event.pointerId); } catch (_) {}
-      setTimeout(() => { moved = false; }, 80);
+      setTimeout(() => { moved = false; }, 90);
     }
 
     slider.addEventListener("pointerup", endDrag);
@@ -84,16 +156,15 @@
   }
 
   function bindNearbyArrows(slider) {
-    const section = slider.closest("section, .section, .home-section, .products-section, .carousel-section, .container") || slider.parentElement;
+    const section = slider.closest("section, .section, .home-section, .section-block, .products-section, .carousel-section, .home-block") || slider.parentElement;
     if (!section || section.dataset.asArrowsBound === "1") return;
     section.dataset.asArrowsBound = "1";
 
     const arrows = section.querySelectorAll(".slider-arrow, .carousel-arrow, .home-slider-arrow, .arrow, [data-slider-arrow]");
     arrows.forEach((arrow) => {
       const text = (arrow.textContent || "").trim();
-      const isPrev = arrow.classList.contains("prev") || arrow.classList.contains("left") || arrow.dataset.sliderArrow === "prev" || text === "‹" || text === "←";
-      const isNext = arrow.classList.contains("next") || arrow.classList.contains("right") || arrow.dataset.sliderArrow === "next" || text === "›" || text === "→";
-
+      const isPrev = arrow.classList.contains("prev") || arrow.classList.contains("left") || arrow.classList.contains("carousel-arrow-left") || arrow.dataset.sliderArrow === "prev" || text === "‹" || text === "←";
+      const isNext = arrow.classList.contains("next") || arrow.classList.contains("right") || arrow.classList.contains("carousel-arrow-right") || arrow.dataset.sliderArrow === "next" || text === "›" || text === "→";
       if (!isPrev && !isNext) return;
       arrow.classList.add("as-slider-arrow");
       arrow.addEventListener("click", (event) => {
@@ -104,6 +175,7 @@
   }
 
   function initSliders() {
+    injectStyle();
     const sliders = new Set();
 
     sliderSelectors.forEach((selector) => {
@@ -112,13 +184,14 @@
       });
     });
 
-    document.querySelectorAll("section, .section, .home-section, .products-section, .carousel-section, .home-block").forEach((section) => {
-      const cards = section.querySelectorAll(".product-card, .product-item, [class*='product-card']");
+    document.querySelectorAll("section, .section, .home-section, .section-block, .products-section, .carousel-section, .home-block").forEach((section) => {
+      const directContainers = section.querySelectorAll(":scope > .products, :scope > .products-grid, :scope .products, :scope .products-grid, :scope .carousel-products");
+      directContainers.forEach((container) => { if (hasProductCards(container)) sliders.add(container); });
+
+      const cards = section.querySelectorAll(CARD_SELECTOR);
       if (cards.length >= 3) {
         const parent = cards[0].parentElement;
-        if (parent && Array.from(cards).every((card) => card.parentElement === parent)) {
-          sliders.add(parent);
-        }
+        if (parent && Array.from(cards).every((card) => card.parentElement === parent)) sliders.add(parent);
       }
     });
 
@@ -134,10 +207,11 @@
     initSliders();
   }
 
+  window.addEventListener("load", initSliders);
+
   const observer = new MutationObserver(() => {
     clearTimeout(window.__asSliderInitTimer);
-    window.__asSliderInitTimer = setTimeout(initSliders, 120);
+    window.__asSliderInitTimer = setTimeout(initSliders, 100);
   });
-
   observer.observe(document.documentElement, { childList: true, subtree: true });
 })();

@@ -1,71 +1,33 @@
-/* AutoStyle smooth draggable product sliders */
+/* AutoStyle draggable product sliders for all home product blocks */
 .as-draggable-slider {
   display: flex !important;
   flex-wrap: nowrap !important;
-  gap: 18px;
+  grid-template-columns: none !important;
+  gap: 18px !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
   scroll-behavior: smooth;
   cursor: grab;
   user-select: none;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding-bottom: 8px;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  padding-bottom: 8px !important;
   touch-action: pan-y;
 }
-
-.as-draggable-slider::-webkit-scrollbar {
-  display: none;
+.as-draggable-slider::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+.as-draggable-slider.is-dragging { cursor: grabbing !important; scroll-behavior: auto !important; }
+.as-draggable-slider.is-dragging, .as-draggable-slider.is-dragging * { user-select: none !important; }
+.as-draggable-slider.is-dragging a, .as-draggable-slider.is-dragging button { pointer-events: none !important; }
+.as-draggable-slider > .product-card,
+.as-draggable-slider > .product-item,
+.as-draggable-slider > .catalog-card,
+.as-draggable-slider > [class*="product-card"] {
+  flex: 0 0 220px !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
 }
-
-.as-draggable-slider.is-dragging {
-  cursor: grabbing;
-  scroll-behavior: auto !important;
-}
-
-.as-draggable-slider.is-dragging * {
-  user-select: none !important;
-  pointer-events: none;
-}
-
-.as-draggable-slider .product-card,
-.as-draggable-slider .product-item,
-.as-draggable-slider [class*="product-card"] {
-  flex: 0 0 220px;
-}
-
-.as-slider-arrow,
-.slider-arrow,
-.carousel-arrow,
-.home-slider-arrow {
-  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
-}
-
-.as-slider-arrow:hover,
-.slider-arrow:hover,
-.carousel-arrow:hover,
-.home-slider-arrow:hover {
-  transform: scale(1.06);
-}
-
-@media (max-width: 900px) {
-  .as-draggable-slider .product-card,
-  .as-draggable-slider .product-item,
-  .as-draggable-slider [class*="product-card"] {
-    flex-basis: 190px;
-  }
-}
-
-@media (max-width: 640px) {
-  .as-draggable-slider {
-    gap: 12px;
-    scroll-snap-type: x proximity;
-  }
-
-  .as-draggable-slider .product-card,
-  .as-draggable-slider .product-item,
-  .as-draggable-slider [class*="product-card"] {
-    flex-basis: 168px;
-    scroll-snap-align: start;
-  }
-}
+.as-slider-arrow,.slider-arrow,.carousel-arrow,.home-slider-arrow{transition:transform .18s ease,background .18s ease,box-shadow .18s ease}.as-slider-arrow:hover,.slider-arrow:hover,.carousel-arrow:hover,.home-slider-arrow:hover{transform:scale(1.06)}
+@media (max-width:900px){.as-draggable-slider > .product-card,.as-draggable-slider > .product-item,.as-draggable-slider > .catalog-card,.as-draggable-slider > [class*="product-card"]{flex-basis:190px!important;width:190px!important;min-width:190px!important;max-width:190px!important}}
+@media (max-width:640px){.as-draggable-slider{gap:12px!important;scroll-snap-type:x proximity}.as-draggable-slider > .product-card,.as-draggable-slider > .product-item,.as-draggable-slider > .catalog-card,.as-draggable-slider > [class*="product-card"]{flex-basis:168px!important;width:168px!important;min-width:168px!important;max-width:168px!important;scroll-snap-align:start}}
