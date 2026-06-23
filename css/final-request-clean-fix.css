@@ -428,3 +428,20 @@
   .home-mini-promo-medium.home-mini-promo-image-only{min-width:310px;min-height:114px;}
   .home-mini-promo-large.home-mini-promo-image-only{min-width:340px;min-height:126px;}
 }
+
+.admin-cache-clear-card{
+  width:100%;
+  text-align:left;
+  border:1px solid rgba(255,70,70,.28);
+  cursor:pointer;
+  background:linear-gradient(135deg,#fff5f5,#ffffff);
+  color:inherit;
+  font:inherit;
+}
+.admin-cache-clear-card:hover{
+  border-color:#ff3b30;
+  box-shadow:0 16px 40px rgba(255,59,48,.14);
+  transform:translateY(-2px);
+}
+.admin-cache-clear-card .admin-home-card-icon{background:#ffe2e2;color:#d71919;}
+.admin-cache-clear-card:disabled{opacity:.7;cursor:wait;transform:none;}

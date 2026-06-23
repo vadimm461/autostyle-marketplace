@@ -1,5 +1,5 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
-import { bumpCacheVersion, clearDataCache } from './data-cache.js';
+import { bumpCacheVersion, clearDataCache, bumpFullCacheResetVersion, clearFullSiteCache, startFullCacheResetWatcher } from './data-cache.js';
 import { createOrderStatusNotification } from './notify-service.js';
 
 import {
@@ -33,6 +33,7 @@ import {
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+startFullCacheResetWatcher({ intervalMs: 60000 });
 
 async function markSiteDataChanged(reason='admin-update'){
   try { await bumpCacheVersion(reason); } catch(e) { console.warn('Не удалось обновить версию кэша', e); }
@@ -57,6 +58,31 @@ async function forceSiteCacheRefresh(btn){
   }
 }
 
+async function forceFullSiteCacheClear(btn){
+  if (!confirm('Запустить полную очистку кэша сайта у всех пользователей? Сайт у клиентов перезагрузится и заново подтянет свежие файлы и данные.')) return;
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Очищаю...'; }
+  try {
+    const version = await bumpFullCacheResetVersion('admin-full-cache-clear');
+    await markSiteDataChanged('admin-full-cache-clear');
+    try { await clearFullSiteCache({ keepFullResetVersion: version }); } catch(e) {}
+    alert('Полная очистка кэша запущена. У пользователей сайт обновится при открытии или в течение минуты на открытой вкладке.');
+    if (btn) { btn.textContent = 'Кэш очищен'; setTimeout(() => { btn.textContent = oldText; btn.disabled = false; }, 2000); }
+  } catch (err) {
+    console.error('full cache clear error', err);
+    alert('Ошибка полной очистки кэша: ' + (err.message || err));
+    if (btn) { btn.textContent = oldText; btn.disabled = false; }
+  }
+}
+
+
+document.addEventListener('click', (e) => {
+  const fullBtn = e.target.closest && e.target.closest('[data-full-cache-clear]');
+  if (fullBtn) {
+    e.preventDefault();
+    forceFullSiteCacheClear(fullBtn);
+  }
+});
 let editing = {
   product: null,
   cat: null,

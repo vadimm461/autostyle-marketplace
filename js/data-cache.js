@@ -149,3 +149,92 @@ export async function getCollectionCached(name, options={}){
 export function getProducts(options={}){ return getCollectionCached(COLLECTIONS.products, options); }
 export function getCategories(options={}){ return getCollectionCached(COLLECTIONS.categories, options); }
 export function getBanners(options={}){ return getCollectionCached(COLLECTIONS.banners, options); }
+
+// Полная очистка кэша сайта у всех пользователей.
+const FULL_CACHE_DOC = 'fullCacheReset';
+const FULL_CACHE_LOCAL_KEY = CACHE_PREFIX + 'fullCacheResetVersion';
+let fullCacheWatcherStarted = false;
+let fullCacheCheckTimer = null;
+
+export async function bumpFullCacheResetVersion(reason='admin-full-cache-clear'){
+  const value = String(Date.now());
+  await setDoc(doc(db, SETTINGS_COLLECTION, FULL_CACHE_DOC), {
+    value,
+    version: value,
+    reason,
+    updatedAt: new Date().toISOString()
+  }, { merge:true });
+  return value;
+}
+
+async function getFullCacheResetVersion(){
+  try{
+    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, FULL_CACHE_DOC));
+    const data = snap.exists() ? snap.data() : null;
+    return safeString(data?.value || data?.version || data?.updatedAt || data?.ts || '0');
+  }catch(e){
+    console.warn('Full cache reset check failed', e);
+    return null;
+  }
+}
+
+export async function clearFullSiteCache(options={}){
+  const keepFullResetVersion = options.keepFullResetVersion || '';
+  try { clearDataCache(); } catch(e) {}
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (
+        k.startsWith('as_cache_') ||
+        k.startsWith('autostyle_') ||
+        k.startsWith('autos_') ||
+        k.includes('products') ||
+        k.includes('categories') ||
+        k.includes('banners') ||
+        k.includes('promo') ||
+        k.includes('homeBlock') ||
+        k.includes('cache')
+      ) localStorage.removeItem(k);
+    });
+    if (keepFullResetVersion) localStorage.setItem(FULL_CACHE_LOCAL_KEY, keepFullResetVersion);
+  } catch(e) {}
+  try { sessionStorage.clear(); } catch(e) {}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch(e) {}
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister().catch(()=>{})));
+    }
+  } catch(e) {}
+}
+
+export function startFullCacheResetWatcher(options={}){
+  if (fullCacheWatcherStarted || typeof window === 'undefined') return;
+  fullCacheWatcherStarted = true;
+  const intervalMs = Math.max(15000, Number(options.intervalMs || 60000));
+  const check = async () => {
+    const remote = await getFullCacheResetVersion();
+    if (!remote || remote === '0') return;
+    let local = '0';
+    try { local = safeString(localStorage.getItem(FULL_CACHE_LOCAL_KEY) || '0'); } catch(e) {}
+    if (local !== remote) {
+      try { localStorage.setItem(FULL_CACHE_LOCAL_KEY, remote); } catch(e) {}
+      await clearFullSiteCache({ keepFullResetVersion: remote });
+      const url = new URL(window.location.href);
+      url.searchParams.set('v', remote);
+      window.location.replace(url.toString());
+    }
+  };
+  setTimeout(check, 1500);
+  fullCacheCheckTimer = setInterval(check, intervalMs);
+}
+
+try {
+  if (typeof window !== 'undefined') {
+    setTimeout(() => startFullCacheResetWatcher({ intervalMs: 60000 }), 0);
+  }
+} catch(e) {}
