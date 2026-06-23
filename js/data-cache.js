@@ -7,10 +7,13 @@ const CACHE_PREFIX = 'as_cache_v6:';
 const VERSION_KEY = CACHE_PREFIX + 'version';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
-const MAX_CACHE_AGE = 60 * 60 * 1000;
-const REFRESH_INTERVAL = 30 * 1000;
+// Кэш показываем сразу, чтобы сайт открывался быстро.
+// Свежие данные подтягиваются в фоне и обновляют экран.
+const MAX_CACHE_AGE = 15 * 60 * 1000;
+const REFRESH_INTERVAL = 60 * 1000;
 
 let versionMemo = { value:null, checkedAt:0 };
+const refreshLocks = new Map();
 function now(){ return Date.now(); }
 function key(name){ return CACHE_PREFIX + name; }
 function readJson(k, fallback=null){
@@ -106,25 +109,50 @@ export function clearDataCache(){
   Object.keys(localStorage).forEach(k => { if (k.startsWith(CACHE_PREFIX)) localStorage.removeItem(k); });
 }
 
+function emitCacheUpdate(name, rows){
+  try {
+    window.dispatchEvent(new CustomEvent('autostyle-cache-updated', { detail: { name, rows } }));
+  } catch(e) {}
+}
+
+async function refreshCollectionInBackground(name, cacheKey){
+  if (refreshLocks.get(name)) return;
+  refreshLocks.set(name, true);
+  try{
+    const rows = await fetchCollection(name);
+    writeJson(cacheKey, { rows, savedAt: now() });
+    emitCacheUpdate(name, rows);
+  }catch(e){
+    console.warn('Фоновое обновление кэша не удалось:', name, e);
+  }finally{
+    refreshLocks.delete(name);
+  }
+}
+
 export async function getCollectionCached(name, options={}){
   const force = options.force === true;
   const cacheKey = key(name);
   const cached = readJson(cacheKey, null);
-  const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
+  const hasCache = cached && Array.isArray(cached.rows);
+  const age = hasCache ? now() - Number(cached.savedAt || 0) : Infinity;
 
-  // Для каталога важнее свежесть: сначала пробуем Firestore, кэш — только запасной вариант.
-  let remoteVersion = null;
-  if (!force) remoteVersion = await getRemoteVersion();
-  try{
+  // force — сразу свежие данные с Firestore.
+  if (force) {
     const rows = await fetchCollection(name);
     writeJson(cacheKey, { rows, savedAt: now() });
-    if (remoteVersion !== null) writeJson(VERSION_KEY, remoteVersion);
     return rows;
-  }catch(e){
-    if (!force && cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE) return cached.rows;
-    if (cached && Array.isArray(cached.rows)) return cached.rows;
-    throw e;
   }
+
+  // Быстрый старт: сразу отдаём localStorage, а Firestore проверяем в фоне.
+  if (hasCache) {
+    if (age > REFRESH_INTERVAL) refreshCollectionInBackground(name, cacheKey);
+    return cached.rows;
+  }
+
+  // Первый заход без кэша — грузим Firestore один раз.
+  const rows = await fetchCollection(name);
+  writeJson(cacheKey, { rows, savedAt: now() });
+  return rows;
 }
 
 export function getProducts(options={}){ return getCollectionCached(COLLECTIONS.products, options); }

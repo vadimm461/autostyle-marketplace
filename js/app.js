@@ -415,6 +415,24 @@ function authModal(){
     document.addEventListener('keydown', e => { if (e.key === 'Escape') accDrop.classList.remove('open'); });
   }
 }
+
+window.addEventListener('autostyle-cache-updated', e => {
+  const name = e.detail?.name;
+  const rows = e.detail?.rows;
+  if (!Array.isArray(rows)) return;
+  if (name === COLLECTIONS.products) {
+    allProducts = rows;
+    renderSections();
+  }
+  if (name === HOME_BLOCKS_COLLECTION) {
+    allBlocks = mergeBlocks(rows);
+    renderSections();
+  }
+  if (name === COLLECTIONS.banners) {
+    renderHome();
+  }
+});
+
 authModal(); setupSearch(); setupExpand(); renderHome().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 
 function setupProductCardOpen(){
