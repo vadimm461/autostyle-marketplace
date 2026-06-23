@@ -1,242 +1,141 @@
 (function () {
-  "use strict";
+  'use strict';
 
-  const STYLE_ID = "as-home-drag-slider-style";
-  const CARD_SELECTOR = ".product-card, .product-item, .catalog-card, [class*='product-card']";
-  const ACTION_SELECTOR = "button, input, select, textarea, label, .fav-btn, .cart, .cart-btn, .catalog-cart-btn, [data-cart], [data-fav]";
+  const CARD_SELECTOR = '.product-card, .home-product-card, .related-card';
+  const ACTION_SELECTOR = 'button, input, select, textarea, label, [data-cart], [data-fav], .fav-btn, .cart, .cart-btn, .catalog-cart-btn';
 
-  // ВАЖНО: этот файл должен работать только с горизонтальными блоками/каруселями.
-  // Обычные сетки каталога/избранного (#productsGrid, .products-grid) не трогаем,
-  // иначе ломаются клики по товару и кнопке «В корзину».
-  const sliderSelectors = [
-    ".carousel-products",
-    ".products-carousel",
-    ".product-carousel",
-    ".home-products-row",
-    ".home-section-products",
-    ".home-products",
-    ".featured-products",
-    ".hot-products",
-    ".bestseller-products",
-    ".products-slider",
-    ".products-row",
-    "#newProductsGrid",
-    "#recentlyViewedGrid",
-    "#bestsellersGrid",
-    "#hotProducts",
-    "#featuredProducts",
-    "#bestProducts",
-    "#newProducts",
-    "#homeProducts"
-  ];
+  const SLIDER_SELECTOR = [
+    '.section-block .carousel-products',
+    '.product-section-carousel .carousel-products',
+    '.carousel-shell > .carousel-products',
+    '.related-carousel',
+    '.home-products',
+    '.home-products-row',
+    '.home-section-products',
+    '.products-slider',
+    '.products-row',
+    '#featuredProducts',
+    '#newProducts',
+    '#bestProducts',
+    '#hotProducts',
+    '#recentlyViewedGrid',
+    '#bestsellersGrid'
+  ].join(',');
 
-  function injectStyle() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = STYLE_ID;
-    style.textContent = `
-      body:not(.mobile-page) .section-block .as-draggable-slider,
-      body:not(.mobile-page) .home-block .as-draggable-slider,
-      body:not(.mobile-page) .product-section-carousel .as-draggable-slider,
-      body:not(.mobile-page) .as-draggable-slider {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        grid-template-columns: none !important;
-        gap: 18px !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        scroll-behavior: smooth;
-        cursor: grab;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
-        padding-bottom: 8px !important;
-        touch-action: pan-y;
-      }
-      body:not(.mobile-page) .as-draggable-slider::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
-      body:not(.mobile-page) .as-draggable-slider.is-dragging { cursor: grabbing !important; scroll-behavior: auto !important; }
-      body:not(.mobile-page) .as-draggable-slider.is-dragging, body:not(.mobile-page) .as-draggable-slider.is-dragging * { user-select: none !important; }
-      body:not(.mobile-page) .as-draggable-slider > .product-card,
-      body:not(.mobile-page) .as-draggable-slider > .product-item,
-      body:not(.mobile-page) .as-draggable-slider > .catalog-card,
-      body:not(.mobile-page) .as-draggable-slider > [class*='product-card'] {
-        flex: 0 0 220px !important;
-        width: 220px !important;
-        min-width: 220px !important;
-        max-width: 220px !important;
-      }
-      @media (max-width: 900px) {
-        body:not(.mobile-page) .as-draggable-slider > .product-card,
-        body:not(.mobile-page) .as-draggable-slider > .product-item,
-        body:not(.mobile-page) .as-draggable-slider > .catalog-card,
-        body:not(.mobile-page) .as-draggable-slider > [class*='product-card'] {
-          flex-basis: 190px !important; width: 190px !important; min-width: 190px !important; max-width: 190px !important;
-        }
-      }
-      @media (max-width: 640px) {
-        body:not(.mobile-page) .as-draggable-slider { gap: 12px !important; scroll-snap-type: x proximity; }
-        body:not(.mobile-page) .as-draggable-slider > .product-card,
-        body:not(.mobile-page) .as-draggable-slider > .product-item,
-        body:not(.mobile-page) .as-draggable-slider > .catalog-card,
-        body:not(.mobile-page) .as-draggable-slider > [class*='product-card'] {
-          flex-basis: 168px !important; width: 168px !important; min-width: 168px !important; max-width: 168px !important; scroll-snap-align: start;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+  function hasCards(el) {
+    return !!el && el.querySelectorAll(CARD_SELECTOR).length >= 2;
   }
 
-  function cardsIn(el) {
-    return el ? Array.from(el.children).filter((child) => child.matches && child.matches(CARD_SELECTOR)) : [];
+  function slideAmount(slider) {
+    const card = slider.querySelector(CARD_SELECTOR);
+    if (!card) return Math.max(240, Math.floor(slider.clientWidth * 0.75));
+    const gap = parseFloat(getComputedStyle(slider).gap || getComputedStyle(slider).columnGap || 18) || 18;
+    return Math.max(180, Math.round(card.getBoundingClientRect().width + gap));
   }
 
-  function hasProductCards(el) {
-    if (!el || el.dataset.asDragSlider === "1") return false;
-    return cardsIn(el).length >= 2;
-  }
+  function bindSlider(slider) {
+    if (!hasCards(slider) || slider.dataset.asDragReady === '1') return;
+    slider.dataset.asDragReady = '1';
+    slider.classList.add('as-draggable-slider');
 
-  function getSlideAmount(slider) {
-    const firstCard = slider.querySelector(CARD_SELECTOR);
-    if (!firstCard) return Math.max(260, Math.floor(slider.clientWidth * 0.8));
-    const rect = firstCard.getBoundingClientRect();
-    const styles = window.getComputedStyle(slider);
-    const gap = parseFloat(styles.columnGap || styles.gap || 18) || 18;
-    return Math.max(180, Math.round(rect.width + gap));
-  }
-
-  function bindDrag(slider) {
-    if (!hasProductCards(slider)) return;
-
-    slider.dataset.asDragSlider = "1";
-    slider.classList.add("as-draggable-slider");
-
-    let isDown = false;
-    let moved = false;
+    let down = false;
+    let dragging = false;
     let startX = 0;
-    let startScrollLeft = 0;
+    let startLeft = 0;
     let pointerId = null;
 
-    slider.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
-      // Кнопки, избранное, поля — кликаются как обычно. С них перетаскивание не стартует.
-      if (event.target.closest(ACTION_SELECTOR)) return;
-      isDown = true;
-      moved = false;
-      pointerId = event.pointerId;
-      startX = event.clientX;
-      startScrollLeft = slider.scrollLeft;
-      slider.setPointerCapture?.(event.pointerId);
-    });
+    slider.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      if (e.target.closest(ACTION_SELECTOR)) return;
+      down = true;
+      dragging = false;
+      startX = e.clientX;
+      startLeft = slider.scrollLeft;
+      pointerId = e.pointerId;
+    }, { passive: true });
 
-    slider.addEventListener("pointermove", (event) => {
-      if (!isDown) return;
-      const diff = event.clientX - startX;
-      if (Math.abs(diff) > 8) {
-        moved = true;
-        slider.dataset.asWasDragged = "1";
-        slider.classList.add("is-dragging");
-        slider.scrollLeft = startScrollLeft - diff;
-        event.preventDefault();
+    slider.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      const dx = e.clientX - startX;
+      if (!dragging && Math.abs(dx) > 7) {
+        dragging = true;
+        slider.classList.add('is-dragging');
+        slider.dataset.asDragging = '1';
+        try { slider.setPointerCapture(pointerId); } catch (_) {}
+      }
+      if (dragging) {
+        slider.scrollLeft = startLeft - dx;
+        e.preventDefault();
       }
     }, { passive: false });
 
-    function endDrag(event) {
-      if (!isDown) return;
-      isDown = false;
-      slider.classList.remove("is-dragging");
-      try { slider.releasePointerCapture?.(event.pointerId || pointerId); } catch (_) {}
-      setTimeout(() => {
-        moved = false;
-        delete slider.dataset.asWasDragged;
-      }, 120);
+    function endDrag() {
+      if (!down) return;
+      down = false;
+      if (dragging) {
+        setTimeout(function () {
+          dragging = false;
+          slider.classList.remove('is-dragging');
+          delete slider.dataset.asDragging;
+        }, 0);
+      }
     }
 
-    slider.addEventListener("pointerup", endDrag);
-    slider.addEventListener("pointercancel", endDrag);
-    slider.addEventListener("pointerleave", endDrag);
+    slider.addEventListener('pointerup', endDrag, { passive: true });
+    slider.addEventListener('pointercancel', endDrag, { passive: true });
+    slider.addEventListener('pointerleave', endDrag, { passive: true });
 
-    slider.addEventListener("click", (event) => {
-      if (moved || slider.dataset.asWasDragged === "1") {
-        event.preventDefault();
-        event.stopPropagation();
+    slider.addEventListener('click', function (e) {
+      if (slider.dataset.asDragging === '1') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
       }
     }, true);
   }
 
-  function bindNearbyArrows(slider) {
-    const section = slider.closest("section, .section, .home-section, .section-block, .products-section, .carousel-section, .home-block") || slider.parentElement;
-    if (!section || section.dataset.asArrowsBound === "1") return;
-    section.dataset.asArrowsBound = "1";
-
-    const arrows = section.querySelectorAll(".slider-arrow, .carousel-arrow, .home-slider-arrow, .arrow, [data-slider-arrow]");
-    arrows.forEach((arrow) => {
-      const text = (arrow.textContent || "").trim();
-      const isPrev = arrow.classList.contains("prev") || arrow.classList.contains("left") || arrow.classList.contains("carousel-arrow-left") || arrow.dataset.sliderArrow === "prev" || text === "‹" || text === "←";
-      const isNext = arrow.classList.contains("next") || arrow.classList.contains("right") || arrow.classList.contains("carousel-arrow-right") || arrow.dataset.sliderArrow === "next" || text === "›" || text === "→";
-      if (!isPrev && !isNext) return;
-      arrow.classList.add("as-slider-arrow");
-      if (arrow.dataset.asArrowClickReady === "1") return;
-      arrow.dataset.asArrowClickReady = "1";
-      arrow.addEventListener("click", (event) => {
-        event.preventDefault();
-        slider.scrollBy({ left: (isPrev ? -1 : 1) * getSlideAmount(slider) * 2, behavior: "smooth" });
+  function bindArrows(section, slider) {
+    if (!section || section.dataset.asArrowReady === '1') return;
+    section.dataset.asArrowReady = '1';
+    section.querySelectorAll('.carousel-arrow, .slider-arrow, .home-slider-arrow, .related-nav, [data-slider-arrow], [data-scroll-left], [data-scroll-right]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        const left = btn.matches('.carousel-arrow-left, .related-prev, .prev, .left, [data-scroll-left]') || btn.dataset.sliderArrow === 'prev';
+        const right = btn.matches('.carousel-arrow-right, .related-next, .next, .right, [data-scroll-right]') || btn.dataset.sliderArrow === 'next';
+        if (!left && !right) return;
+        e.preventDefault();
+        e.stopPropagation();
+        slider.scrollBy({ left: (left ? -1 : 1) * slideAmount(slider) * 2, behavior: 'smooth' });
       });
     });
   }
 
-  function initSliders() {
-    injectStyle();
-    const sliders = new Set();
-
-    sliderSelectors.forEach((selector) => {
-      document.querySelectorAll(selector).forEach((el) => {
-        if (hasProductCards(el)) sliders.add(el);
-      });
-    });
-
-    // Только реальные карусели, не обычные сетки каталога.
-    document.querySelectorAll(".section-block, .product-section-carousel, .home-block, .carousel-section").forEach((section) => {
-      section.querySelectorAll(":scope .carousel-products, :scope .products-carousel, :scope .products-slider, :scope .products-row").forEach((container) => {
-        if (hasProductCards(container)) sliders.add(container);
-      });
-    });
-
-    sliders.forEach((slider) => {
-      bindDrag(slider);
-      bindNearbyArrows(slider);
+  function init() {
+    document.querySelectorAll(SLIDER_SELECTOR).forEach(function (slider) {
+      if (!hasCards(slider)) return;
+      bindSlider(slider);
+      bindArrows(slider.closest('.carousel-shell, .section-block, .product-section-carousel, .related-carousel-wrap, section') || slider.parentElement, slider);
     });
   }
 
-  function productLinkFromCard(card) {
-    if (!card) return null;
-    return card.querySelector("a[href*='product.html']");
-  }
-
-  document.addEventListener("click", (event) => {
-    if (event.defaultPrevented) return;
-    if (event.target.closest(ACTION_SELECTOR)) return;
-    const slider = event.target.closest(".as-draggable-slider");
-    if (slider && slider.dataset.asWasDragged === "1") return;
-    const card = event.target.closest(CARD_SELECTOR);
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented) return;
+    if (e.target.closest(ACTION_SELECTOR)) return;
+    const card = e.target.closest(CARD_SELECTOR);
     if (!card) return;
-    const link = event.target.closest("a[href*='product.html']") || productLinkFromCard(card);
+    const slider = card.closest('.as-draggable-slider');
+    if (slider && slider.dataset.asDragging === '1') return;
+    const link = e.target.closest('a[href*="product.html"]') || card.querySelector('a[href*="product.html"]');
     if (!link || !link.href) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-    event.preventDefault();
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
     window.location.href = link.href;
-  });
+  }, false);
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initSliders);
-  } else {
-    initSliders();
-  }
-
-  window.addEventListener("load", initSliders);
-
-  const observer = new MutationObserver(() => {
-    clearTimeout(window.__asSliderInitTimer);
-    window.__asSliderInitTimer = setTimeout(initSliders, 100);
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  window.addEventListener('load', init);
+  new MutationObserver(function () {
+    clearTimeout(window.__asHomeDragInit);
+    window.__asHomeDragInit = setTimeout(init, 120);
+  }).observe(document.documentElement, { childList: true, subtree: true });
 })();
