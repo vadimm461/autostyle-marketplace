@@ -160,6 +160,32 @@ function renderHomeSectionOptions() {
   });
 }
 
+function adminEscapeAttr(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function adminEscapeText(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildHomeSectionOptions(currentValue = '') {
+  const blocks = mergedHomeBlocks(false);
+  const seen = new Set();
+  const options = blocks.map(b => {
+    const key = String(b.key || b.id || '').trim();
+    if (!key || seen.has(key)) return '';
+    seen.add(key);
+    const selected = key === String(currentValue || '') ? ' selected' : '';
+    return `<option value="${adminEscapeAttr(key)}"${selected}>${adminEscapeText(b.title || b.name || key)}</option>`;
+  }).filter(Boolean);
+
+  if (currentValue && !seen.has(String(currentValue))) {
+    options.unshift(`<option value="${adminEscapeAttr(currentValue)}" selected>${adminEscapeText(currentValue)}</option>`);
+  }
+
+  return options.join('');
+}
+
 function defaultPromoCards() {
   // Старые системные промо-карточки убраны.
   // В админке отображаются и редактируются только карточки из Firestore.
@@ -1147,7 +1173,7 @@ function openInlineProductEditor(item, row) {
         <label class="field field-four">Наличие, шт.<input name="stock" type="number" value="${item.stock ?? item.quantity ?? item.count ?? ''}"></label>
 
         <label class="field">Категория<select name="category"><option value="">Выберите категорию</option>${categoryOptions}</select></label>
-        <label class="field">Блок на главной<select name="homeSection"><option value="hot">Горячие предложения</option><option value="new">Новинки</option><option value="bestsellers">Лидеры продаж</option></select></label>
+        <label class="field">Блок на главной<select name="homeSection">${buildHomeSectionOptions(currentHomeSection)}</select></label>
         <label class="field">Метка товара<select name="tag"><option value="hot">Горячие предложения</option><option value="new">Новинки</option><option value="best">Лидеры продаж</option></select></label>
 
         <div class="checks-row inline-checks">
