@@ -32,9 +32,9 @@ function setupSearch(){
 }
 function card(p){
   const d=discount(p), op=oldPrice(p), s=stock(p);
-  return `<article class="catalog-card favorite-card">
+  return `<article class="catalog-card favorite-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}">
     <button class="fav-btn active" data-fav="${p.id}" type="button">♥</button>
-    <a class="catalog-card-link" href="product.html?id=${p.id}">
+    <a class="catalog-card-link" href="product.html?id=${encodeURIComponent(p.id)}">
       <div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div>
       <div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="installment-badge catalog-installment-badge"></div><div class="catalog-card-stock">${s>0?'В наличии: '+s:'Нет в наличии'}</div></div></div>
     </a>
@@ -67,3 +67,21 @@ onAuthStateChanged(auth, async user => {
   updateCart();
   loadFavorites().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });
+
+
+function setupProductCardOpen(){
+  if (document.dataset && document.documentElement.dataset.productOpenReady === '1') return;
+  document.documentElement.dataset.productOpenReady = '1';
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented) return;
+    if (e.target.closest('button, input, select, textarea, label, .fav-btn, .cart, .cart-btn, .catalog-cart-btn, [data-cart], [data-fav]')) return;
+    const card = e.target.closest('.product-card, .catalog-card, .related-card, .favorite-card, .home-product-card');
+    if (!card) return;
+    const link = e.target.closest('a[href*="product.html"]') || card.querySelector('a[href*="product.html"]');
+    if (!link || !link.href) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    location.href = link.href;
+  });
+}
+setupProductCardOpen();

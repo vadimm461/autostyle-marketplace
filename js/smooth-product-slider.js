@@ -3,6 +3,7 @@
 
   const STYLE_ID = "as-home-drag-slider-style";
   const CARD_SELECTOR = ".product-card, .product-item, .catalog-card, [class*='product-card']";
+  const ACTION_SELECTOR = "button, input, select, textarea, label, .fav-btn, .cart, .cart-btn, .catalog-cart-btn, [data-cart], [data-fav]";
 
   const sliderSelectors = [
     ".products",
@@ -130,9 +131,12 @@
     slider.addEventListener("pointermove", (event) => {
       if (!isDown) return;
       const diff = event.clientX - startX;
-      if (Math.abs(diff) > 5) moved = true;
-      slider.scrollLeft = startScrollLeft - diff;
-      event.preventDefault();
+      if (Math.abs(diff) > 8) {
+        moved = true;
+        slider.dataset.asWasDragged = "1";
+        slider.scrollLeft = startScrollLeft - diff;
+        event.preventDefault();
+      }
     }, { passive: false });
 
     function endDrag(event) {
@@ -140,7 +144,10 @@
       isDown = false;
       slider.classList.remove("is-dragging");
       try { slider.releasePointerCapture?.(event.pointerId); } catch (_) {}
-      setTimeout(() => { moved = false; }, 90);
+      setTimeout(() => {
+        moved = false;
+        delete slider.dataset.asWasDragged;
+      }, 160);
     }
 
     slider.addEventListener("pointerup", endDrag);
@@ -200,6 +207,26 @@
       bindNearbyArrows(slider);
     });
   }
+
+
+  function productLinkFromCard(card) {
+    if (!card) return null;
+    return card.querySelector("a[href*='product.html']");
+  }
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented) return;
+    if (event.target.closest(ACTION_SELECTOR)) return;
+    const slider = event.target.closest(".as-draggable-slider");
+    if (slider && slider.dataset.asWasDragged === "1") return;
+    const card = event.target.closest(CARD_SELECTOR);
+    if (!card) return;
+    const link = event.target.closest("a[href*='product.html']") || productLinkFromCard(card);
+    if (!link || !link.href) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    window.location.href = link.href;
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initSliders);

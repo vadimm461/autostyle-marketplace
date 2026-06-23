@@ -192,9 +192,9 @@ function card(p){
   const priceNum = Number(p.price || 0);
   const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
   const monthPay = Math.ceil(priceNum / 12);
-  return `<article class="product-card">
+  return `<article class="product-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}">
     <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
-    <a class="product-card-link" href="product.html?id=${p.id}">
+    <a class="product-card-link" href="product.html?id=${encodeURIComponent(p.id)}">
       <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
       <div class="product-title">${title(p)}</div>
       <div class="product-group">${group(p)}</div>
@@ -215,7 +215,7 @@ function makeSection(block, products){
   return `<section id="${id}" class="section-block product-section-carousel" data-block="${block.key}">
     <div class="section-head">
       <h2>${block.title}</h2>
-      <button class="show-section-btn" data-expand="${id}" type="button">Смотреть все</button>
+      
     </div>
     <div class="carousel-shell">
       <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
@@ -326,17 +326,11 @@ async function renderCatalogMenu(){
     : '<p class="muted">Категорий пока нет</p>';
 
   if (parents[0]) render(parents[0]);
-  $$('.mega-parent').forEach(btn => {
-    btn.onmouseenter = () => {
-      $$('.mega-parent').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const p = parents.find(x => catId(x) === btn.dataset.parent);
-      if (p) render(p);
-    };
-    btn.onclick = () => {
-      const p = parents.find(x => catId(x) === btn.dataset.parent);
-      if (p) location.href = 'catalog.html?category=' + encodeURIComponent(name(p));
-    };
+  $$('.mega-parent').forEach(btn => btn.onmouseenter = btn.onclick = () => {
+    $$('.mega-parent').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = parents.find(x => catId(x) === btn.dataset.parent);
+    if (p) render(p);
   });
 }
 async function renderHome(){
@@ -422,3 +416,20 @@ function authModal(){
   }
 }
 authModal(); setupSearch(); setupExpand(); renderHome().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
+
+function setupProductCardOpen(){
+  if (document.dataset && document.documentElement.dataset.productOpenReady === '1') return;
+  document.documentElement.dataset.productOpenReady = '1';
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented) return;
+    if (e.target.closest('button, input, select, textarea, label, .fav-btn, .cart, .cart-btn, .catalog-cart-btn, [data-cart], [data-fav]')) return;
+    const card = e.target.closest('.product-card, .catalog-card, .related-card, .favorite-card, .home-product-card');
+    if (!card) return;
+    const link = e.target.closest('a[href*="product.html"]') || card.querySelector('a[href*="product.html"]');
+    if (!link || !link.href) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    location.href = link.href;
+  });
+}
+setupProductCardOpen();

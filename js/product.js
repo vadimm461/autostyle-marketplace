@@ -234,3 +234,21 @@ onAuthStateChanged(auth, async user => {
   saveCart();
   loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });
+
+
+function setupProductCardOpen(){
+  if (document.dataset && document.documentElement.dataset.productOpenReady === '1') return;
+  document.documentElement.dataset.productOpenReady = '1';
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented) return;
+    if (e.target.closest('button, input, select, textarea, label, .fav-btn, .cart, .cart-btn, .catalog-cart-btn, [data-cart], [data-fav]')) return;
+    const card = e.target.closest('.product-card, .catalog-card, .related-card, .favorite-card, .home-product-card');
+    if (!card) return;
+    const link = e.target.closest('a[href*="product.html"]') || card.querySelector('a[href*="product.html"]');
+    if (!link || !link.href) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    location.href = link.href;
+  });
+}
+setupProductCardOpen();
