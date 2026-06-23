@@ -472,14 +472,21 @@
     display:none !important;
   }
 
-  /* Remove text title "Каталог" above parent categories, keep the "Все товары" button */
+  /* Header above parent categories: title on the left, "Все товары" button on the right */
   .category-tree-filter .cat-filter-head{
-    justify-content:flex-end !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:12px !important;
     padding:0 0 10px !important;
     margin-bottom:10px !important;
   }
   .category-tree-filter .cat-filter-head b{
-    display:none !important;
+    display:block !important;
+    font-size:22px !important;
+    line-height:1 !important;
+    font-weight:950 !important;
+    color:#111827 !important;
   }
 
   /* Remove big product count text in the top panel */
