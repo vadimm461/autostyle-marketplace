@@ -215,7 +215,7 @@ function makeSection(block, products){
   return `<section id="${id}" class="section-block product-section-carousel" data-block="${block.key}">
     <div class="section-head">
       <h2>${block.title}</h2>
-      
+      <button class="show-section-btn" data-expand="${id}" type="button">Смотреть все</button>
     </div>
     <div class="carousel-shell">
       <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
@@ -322,15 +322,21 @@ async function renderCatalogMenu(){
   }
 
   pb.innerHTML = parents.length
-    ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" type="button">${name(p)}</button>`).join('')
+    ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" data-href="catalog.html?category=${encodeURIComponent(name(p))}" type="button">${name(p)}</button>`).join('')
     : '<p class="muted">Категорий пока нет</p>';
 
   if (parents[0]) render(parents[0]);
-  $$('.mega-parent').forEach(btn => btn.onmouseenter = btn.onclick = () => {
-    $$('.mega-parent').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const p = parents.find(x => catId(x) === btn.dataset.parent);
-    if (p) render(p);
+  $$('.mega-parent').forEach(btn => {
+    btn.onmouseenter = () => {
+      $$('.mega-parent').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const p = parents.find(x => catId(x) === btn.dataset.parent);
+      if (p) render(p);
+    };
+    btn.onclick = () => {
+      const href = btn.dataset.href;
+      if (href) window.location.href = href;
+    };
   });
 }
 async function renderHome(){

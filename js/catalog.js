@@ -138,9 +138,9 @@ async function renderCatalogMenu(){
     const allItem = `<a href="catalog.html?category=${encodeURIComponent(catName(parent))}" class="mega-child mega-child-all"><div><b>${parentAllLabel(parent)}</b><small>Основная категория и все подкатегории</small></div></a>`;
     cb.innerHTML = allItem + list.map(ch=>`<a href="catalog.html?category=${encodeURIComponent(catName(ch))}" class="mega-child"><div><b>${shortChildName(ch,parent)}</b><small>${catName(ch)}</small></div></a>`).join('');
   }
-  pb.innerHTML=parents.length?parents.map((p,i)=>`<button class="mega-parent ${i?'':'active'}" type="button" data-parent="${catId(p)}">${catName(p)}</button>`).join(''):'<p class="muted">Категорий пока нет</p>';
+  pb.innerHTML=parents.length?parents.map((p,i)=>`<button class="mega-parent ${i?'':'active'}" type="button" data-parent="${catId(p)}" data-href="catalog.html?category=${encodeURIComponent(catName(p))}">${catName(p)}</button>`).join(''):'<p class="muted">Категорий пока нет</p>';
   if(parents[0])render(parents[0]);
-  $$('.mega-parent').forEach(b=>b.onmouseenter=b.onclick=()=>{$$('.mega-parent').forEach(x=>x.classList.remove('active'));b.classList.add('active');const p=parents.find(x=>catId(x)===b.dataset.parent);if(p)render(p)});
+  $$('.mega-parent').forEach(b=>{b.onmouseenter=()=>{$$('.mega-parent').forEach(x=>x.classList.remove('active'));b.classList.add('active');const p=parents.find(x=>catId(x)===b.dataset.parent);if(p)render(p)};b.onclick=()=>{const href=b.dataset.href;if(href)window.location.href=href};});
 }
 function renderCategoryFilter(){
   const field = cat?.closest('.field');
