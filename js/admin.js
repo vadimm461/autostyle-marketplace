@@ -1686,7 +1686,7 @@ function bindBannerDimensionPreview(fileSelector, statusSelector, recommendedTex
 }
 
 bindBannerDimensionPreview('#bFile', '#bUploadStatus', 'Рекомендуется: <b>1600×700 px</b> для главного баннера.');
-bindBannerDimensionPreview('#pcFile', '#pcUploadStatus', 'Рекомендуется: <b>600×220 px</b> для маленькой промо-карточки.');
+bindBannerDimensionPreview('#pcFile', '#pcUploadStatus', 'Рекомендуется: <b>600×700 px</b> для промо-баннера.');
 
 /* BANNERS */
 
@@ -1896,7 +1896,6 @@ async function renderPromoCardsAdmin() {
       <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
       <div>
         <b>${card.title || 'Промо'}</b>
-        ${card.text || card.description ? `<p class="muted">${card.text || card.description}</p>` : ''}
         <p class="muted">
           Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}
           ${card.link ? ` · ссылка: ${card.link}` : ''}
@@ -1922,7 +1921,6 @@ async function renderPromoCardsAdmin() {
     setVal('#pcTitle', item.title || item.name || '');
     setVal('#pcImage', item.image || item.imageUrl || item.photoUrl || '');
     setVal('#pcLink', item.link || item.url || '');
-    setVal('#pcText', item.text || item.description || '');
     setVal('#pcOrder', item.order ?? '');
     if ($('#pcEnabled')) $('#pcEnabled').checked = item.enabled !== false;
     $('#pcTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
@@ -1943,8 +1941,6 @@ if ($('#promoCardsForm')) {
       title,
       key,
       image: imageUrl,
-      text: val('#pcText') || '',
-      description: val('#pcText') || '',
       link: val('#pcLink') || '#',
       order: Number(val('#pcOrder') || 999),
       enabled: $('#pcEnabled') ? $('#pcEnabled').checked : true,
@@ -1968,10 +1964,10 @@ if ($('#promoCardsForm')) {
       if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = '';
       await markSiteDataChanged();
       await renderPromoCardsAdmin();
-      alert('Промо-карточка сохранена');
+      alert('Промо-баннер сохранён');
     } catch (err) {
-      console.error('promo card save error', err);
-      alert('Ошибка сохранения промо-карточки: ' + (err?.message || err));
+      console.error('promo banner save error', err);
+      alert('Ошибка сохранения промо-баннера: ' + (err?.message || err));
     }
   };
 }
