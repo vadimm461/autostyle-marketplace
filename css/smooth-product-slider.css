@@ -18,7 +18,6 @@
 .as-draggable-slider::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 .as-draggable-slider.is-dragging { cursor: grabbing !important; scroll-behavior: auto !important; }
 .as-draggable-slider.is-dragging, .as-draggable-slider.is-dragging * { user-select: none !important; }
-.as-draggable-slider.is-dragging a, .as-draggable-slider.is-dragging button { pointer-events: none !important; }
 .as-draggable-slider > .product-card,
 .as-draggable-slider > .product-item,
 .as-draggable-slider > .catalog-card,

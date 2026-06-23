@@ -58,7 +58,6 @@
       body:not(.mobile-page) .as-draggable-slider::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
       body:not(.mobile-page) .as-draggable-slider.is-dragging { cursor: grabbing !important; scroll-behavior: auto !important; }
       body:not(.mobile-page) .as-draggable-slider.is-dragging, body:not(.mobile-page) .as-draggable-slider.is-dragging * { user-select: none !important; }
-      body:not(.mobile-page) .as-draggable-slider.is-dragging a, body:not(.mobile-page) .as-draggable-slider.is-dragging button { pointer-events: none !important; }
       body:not(.mobile-page) .as-draggable-slider > .product-card,
       body:not(.mobile-page) .as-draggable-slider > .product-item,
       body:not(.mobile-page) .as-draggable-slider > .catalog-card,
@@ -120,11 +119,11 @@
 
     slider.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
+      if (event.target.closest(ACTION_SELECTOR)) return;
       isDown = true;
       moved = false;
       startX = event.clientX;
       startScrollLeft = slider.scrollLeft;
-      slider.classList.add("is-dragging");
       slider.setPointerCapture?.(event.pointerId);
     });
 
@@ -134,6 +133,7 @@
       if (Math.abs(diff) > 8) {
         moved = true;
         slider.dataset.asWasDragged = "1";
+        slider.classList.add("is-dragging");
         slider.scrollLeft = startScrollLeft - diff;
         event.preventDefault();
       }
