@@ -34,11 +34,28 @@ import {
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-async function markSiteDataChanged(){
-  try { await bumpCacheVersion('admin-update'); } catch(e) { console.warn('Не удалось обновить версию кэша', e); }
+async function markSiteDataChanged(reason='admin-update'){
+  try { await bumpCacheVersion(reason); } catch(e) { console.warn('Не удалось обновить версию кэша', e); }
   try { clearDataCache(); } catch(e) {}
 }
 
+
+async function forceSiteCacheRefresh(btn){
+  if (!btn) return;
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Обновляю...';
+  try {
+    await markSiteDataChanged('admin-force-refresh');
+    btn.textContent = 'Кэш обновлён';
+    setTimeout(() => { btn.textContent = oldText; btn.disabled = false; }, 1800);
+  } catch (err) {
+    console.error('force cache refresh error', err);
+    alert('Не удалось обновить кэш: ' + (err.message || err));
+    btn.textContent = oldText;
+    btn.disabled = false;
+  }
+}
 
 let editing = {
   product: null,
@@ -889,6 +906,7 @@ document.addEventListener('input', e => {
   if (e.target?.id === 'discountCardSearch') renderDiscountCardsAdmin();
 });
 document.addEventListener('click', async e => {
+  if (e.target?.id === 'forceSiteCacheRefresh') { await forceSiteCacheRefresh(e.target); return; }
   if (e.target?.id === 'discountCardSearchBtn') renderDiscountCardsAdmin();
   const saveBtn = e.target?.closest?.('[data-save-discount-card]');
   if (saveBtn) {

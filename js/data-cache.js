@@ -2,32 +2,34 @@ import { db, storage, COLLECTIONS } from './firebase.js';
 import { collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
-// v6: новый кэш. Старые v5-данные не используются, чтобы каталог сразу видел новые товары и фото.
-const CACHE_PREFIX = 'as_cache_v6:';
-const VERSION_KEY = CACHE_PREFIX + 'version';
+// v7: быстрый кэш + глобальная версия из Firestore.
+// Админка меняет autostyle_settings/cacheVersion.value — у всех пользователей сайт видит новую версию и обновляет кэш.
+const CACHE_PREFIX = 'as_cache_v7:';
+const VERSION_KEY = CACHE_PREFIX + 'siteVersion';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
-// Кэш показываем сразу, чтобы сайт открывался быстро.
-// Свежие данные подтягиваются в фоне и обновляют экран.
-const MAX_CACHE_AGE = 15 * 60 * 1000;
-const REFRESH_INTERVAL = 60 * 1000;
+const MAX_CACHE_AGE = 15 * 60 * 1000; // 15 минут — под выгрузку из 1С
+const VERSION_CHECK_TTL = 10 * 1000;
 
-let versionMemo = { value:null, checkedAt:0 };
-const refreshLocks = new Map();
+let versionMemo = { value: null, checkedAt: 0 };
+
 function now(){ return Date.now(); }
 function key(name){ return CACHE_PREFIX + name; }
+
 function readJson(k, fallback=null){
   try { return JSON.parse(localStorage.getItem(k) || 'null') ?? fallback; } catch(e){ return fallback; }
 }
 function writeJson(k, value){
   try { localStorage.setItem(k, JSON.stringify(value)); } catch(e){}
 }
-async function getRemoteVersion(){
-  if (versionMemo.value !== null && now() - versionMemo.checkedAt < 5000) return versionMemo.value;
+function safeString(value){ return value === undefined || value === null ? '' : String(value); }
+
+async function getRemoteVersion(force=false){
+  if (!force && versionMemo.value !== null && now() - versionMemo.checkedAt < VERSION_CHECK_TTL) return versionMemo.value;
   try{
     const snap = await getDoc(doc(db, SETTINGS_COLLECTION, VERSION_DOC));
     const data = snap.exists() ? snap.data() : null;
-    const value = String(data?.value || data?.updatedAt || data?.ts || '0');
+    const value = safeString(data?.value || data?.version || data?.updatedAt || data?.ts || '0');
     versionMemo = { value, checkedAt: now() };
     return value;
   }catch(e){
@@ -95,64 +97,53 @@ async function fetchCollection(name){
   return name === (COLLECTIONS.products || 'autostyle_products') ? await Promise.all(rows.map(normalizeProductRow)) : rows;
 }
 
-export async function bumpCacheVersion(reason='update'){
+export async function bumpCacheVersion(reason='admin-force-refresh'){
   const value = String(Date.now());
   await setDoc(doc(db, SETTINGS_COLLECTION, VERSION_DOC), {
     value,
+    version: value,
     reason,
     updatedAt: new Date().toISOString()
   }, { merge:true });
+  versionMemo = { value, checkedAt: now() };
+  try { localStorage.setItem(VERSION_KEY, value); } catch(e) {}
   return value;
 }
 
 export function clearDataCache(){
-  Object.keys(localStorage).forEach(k => { if (k.startsWith(CACHE_PREFIX)) localStorage.removeItem(k); });
-}
-
-function emitCacheUpdate(name, rows){
   try {
-    window.dispatchEvent(new CustomEvent('autostyle-cache-updated', { detail: { name, rows } }));
+    Object.keys(localStorage).forEach(k => { if (k.startsWith(CACHE_PREFIX) || k.startsWith('as_cache_v5:') || k.startsWith('as_cache_v6:')) localStorage.removeItem(k); });
   } catch(e) {}
-}
-
-async function refreshCollectionInBackground(name, cacheKey){
-  if (refreshLocks.get(name)) return;
-  refreshLocks.set(name, true);
-  try{
-    const rows = await fetchCollection(name);
-    writeJson(cacheKey, { rows, savedAt: now() });
-    emitCacheUpdate(name, rows);
-  }catch(e){
-    console.warn('Фоновое обновление кэша не удалось:', name, e);
-  }finally{
-    refreshLocks.delete(name);
-  }
 }
 
 export async function getCollectionCached(name, options={}){
   const force = options.force === true;
   const cacheKey = key(name);
   const cached = readJson(cacheKey, null);
-  const hasCache = cached && Array.isArray(cached.rows);
-  const age = hasCache ? now() - Number(cached.savedAt || 0) : Infinity;
+  const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
 
-  // force — сразу свежие данные с Firestore.
-  if (force) {
+  let remoteVersion = null;
+  if (!force) remoteVersion = await getRemoteVersion();
+
+  // Быстрый старт: если версия сайта не изменилась и кэш свежий — сразу отдаём его.
+  if (!force && cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE) {
+    const cachedVersion = safeString(cached.version || localStorage.getItem(VERSION_KEY) || '0');
+    if (remoteVersion === null || cachedVersion === safeString(remoteVersion || '0')) {
+      return cached.rows;
+    }
+  }
+
+  // Если админ нажал принудительное обновление — version поменяется, этот блок загрузит свежие данные.
+  try{
     const rows = await fetchCollection(name);
-    writeJson(cacheKey, { rows, savedAt: now() });
+    const saveVersion = safeString(remoteVersion || await getRemoteVersion(true) || '0');
+    writeJson(cacheKey, { rows, savedAt: now(), version: saveVersion });
+    try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
     return rows;
+  }catch(e){
+    if (cached && Array.isArray(cached.rows)) return cached.rows;
+    throw e;
   }
-
-  // Быстрый старт: сразу отдаём localStorage, а Firestore проверяем в фоне.
-  if (hasCache) {
-    if (age > REFRESH_INTERVAL) refreshCollectionInBackground(name, cacheKey);
-    return cached.rows;
-  }
-
-  // Первый заход без кэша — грузим Firestore один раз.
-  const rows = await fetchCollection(name);
-  writeJson(cacheKey, { rows, savedAt: now() });
-  return rows;
 }
 
 export function getProducts(options={}){ return getCollectionCached(COLLECTIONS.products, options); }
