@@ -90,7 +90,9 @@ let editing = {
   homeBlock: null,
   promoCard: null,
   horizontalPromoCard: null,
-  horizontalPromoCardCollection: null
+  horizontalPromoCardCollection: null,
+  sectionPromoCard: null,
+  sectionPromoCardCollection: null
 };
 
 let allCatsCache = [];
@@ -98,9 +100,11 @@ let allProductsCache = [];
 let allHomeBlocksCache = [];
 let allPromoCardsCache = [];
 let allHorizontalPromoCardsCache = [];
+let allSectionPromoCardsCache = [];
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 const HORIZONTAL_PROMO_CARDS_COLLECTION = 'autostyle_horizontal_promo_cards';
+const SECTION_PROMO_CARDS_COLLECTION = 'autostyle_section_promo_cards';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
   'autostyle_promo_cards',
@@ -180,7 +184,7 @@ async function loadHomeBlocks() {
 }
 
 function renderHomeSectionOptions() {
-  const selects = [$('#pHomeSection')].filter(Boolean);
+  const selects = [$('#pHomeSection'), $('#spcPlacementBlock')].filter(Boolean);
   if (!selects.length) return;
   const opts = mergedHomeBlocks().map(b => `<option value="${b.key}">${b.title}</option>`).join('');
   selects.forEach(select => {
@@ -248,6 +252,11 @@ const HORIZONTAL_PROMO_CARDS_COLLECTIONS = [...new Set([
   'autostyle_home_promo_cards',
   'homePromoCards'
 ].filter(Boolean))];
+const SECTION_PROMO_CARDS_COLLECTIONS = [...new Set([
+  SECTION_PROMO_CARDS_COLLECTION,
+  'autostyle_between_promo_cards',
+  'sectionPromoCards'
+].filter(Boolean))];
 
 async function loadHorizontalPromoCards() {
   const result = [];
@@ -282,6 +291,44 @@ function mergedHorizontalPromoCards() {
     .filter(card => card.enabled !== false)
     .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
+
+async function loadSectionPromoCards() {
+  const result = [];
+  for (const colName of SECTION_PROMO_CARDS_COLLECTIONS) {
+    try {
+      const rows = await getCollection(colName);
+      rows.forEach(row => result.push({ ...row, _collection: colName }));
+    } catch (e) { console.warn('section promo cards load error', colName, e); }
+  }
+  const seen = new Set();
+  allSectionPromoCardsCache = sortByOrder(result.filter(card => {
+    const key = String(card.key || card.slug || card.id || '').trim();
+    const uniq = key || `${card._collection}:${card.id}`;
+    if (seen.has(uniq)) return false;
+    seen.add(uniq);
+    return true;
+  }));
+}
+
+function mergedSectionPromoCards() {
+  return allSectionPromoCardsCache
+    .map(card => ({
+      ...card,
+      key: card.key || card.slug || card.id,
+      title: card.title || card.name || 'Промо',
+      text: card.text || card.description || '',
+      image: card.image || card.imageUrl || card.photoUrl || '',
+      link: card.link || card.url || '#',
+      order: Number(card.order ?? 999),
+      enabled: card.enabled !== false,
+      placementBlock: String(card.placementBlock || card.homeBlock || card.targetBlock || '').trim(),
+      placementPosition: String(card.placementPosition || card.position || 'after').trim()
+    }))
+    .filter(card => card.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+}
+
+
 
 
 async function getCollection(name) {
@@ -2003,6 +2050,8 @@ function setPromoFormValues(prefix, item){
   setVal(`#${prefix}FontWeight`, item.fontWeight || '700');
   setVal(`#${prefix}Size`, item.size || 'small');
   setVal(`#${prefix}DisplayMode`, item.displayMode || item.mode || (item.imageOnly ? 'image' : 'classic'));
+  setVal(`#${prefix}PlacementBlock`, item.placementBlock || item.homeBlock || item.targetBlock || 'new');
+  setVal(`#${prefix}PlacementPosition`, item.placementPosition || item.position || 'after');
   const enabled = $(`#${prefix}Enabled`);
   if (enabled) enabled.checked = item.enabled !== false;
 }
@@ -2032,6 +2081,8 @@ function buildPromoData(prefix, fallbackTitle){
     size: val(`#${prefix}Size`) || 'small',
     displayMode: val(`#${prefix}DisplayMode`) || 'classic',
     imageOnly: (val(`#${prefix}DisplayMode`) === 'image'),
+    placementBlock: val(`#${prefix}PlacementBlock`) || '',
+    placementPosition: val(`#${prefix}PlacementPosition`) || 'after',
     updatedAt: new Date().toISOString()
   };
 }
@@ -2040,6 +2091,7 @@ async function renderPromoCardsAdmin() {
   setupPromoTabs();
   await renderVerticalPromoCardsAdmin();
   await renderHorizontalPromoCardsAdmin();
+  await renderSectionPromoCardsAdmin();
 }
 
 async function renderVerticalPromoCardsAdmin() {
@@ -2086,6 +2138,57 @@ async function renderHorizontalPromoCardsAdmin() {
   });
 }
 
+
+async function renderSectionPromoCardsAdmin() {
+  const list = $('#sectionPromoCardList');
+  if (!list) return;
+  await loadHomeBlocks();
+  renderHomeSectionOptions();
+  await loadSectionPromoCards();
+  const cards = mergedSectionPromoCards();
+  const blockTitle = key => {
+    const found = mergedHomeBlocks(true).find(b => String(b.key) === String(key));
+    return found ? found.title : (key || 'не выбран');
+  };
+  list.innerHTML = cards.length ? cards.map(card => `
+    <div class="row banner-row-admin">
+      <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
+      <div>
+        <b>${card.title || 'Промо'}</b>
+        ${card.text ? `<p class="muted">${card.text}</p>` : ''}
+        <p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'} · ${card.placementPosition === 'before' ? 'перед' : 'после'} блока: ${blockTitle(card.placementBlock)}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p>
+      </div>
+      <button class="edit" data-editsc="${card.id}" data-sccol="${card._collection || SECTION_PROMO_CARDS_COLLECTION}">Редактировать</button>
+      <button class="edit" data-movesc="${card.id}" data-sccol="${card._collection || SECTION_PROMO_CARDS_COLLECTION}" data-dir="-1">↑</button>
+      <button class="edit" data-movesc="${card.id}" data-sccol="${card._collection || SECTION_PROMO_CARDS_COLLECTION}" data-dir="1">↓</button>
+      <button class="danger" data-delsc="${card.id}" data-sccol="${card._collection || SECTION_PROMO_CARDS_COLLECTION}">Удалить</button>
+    </div>`).join('') : '<p class="muted">Пока нет промо между разделами</p>';
+
+  $$('[data-delsc]').forEach(btn => btn.onclick = async () => {
+    if (!confirm('Удалить промо между разделами?')) return;
+    await deleteDoc(doc(db, btn.dataset.sccol || SECTION_PROMO_CARDS_COLLECTION, btn.dataset.delsc));
+    await markSiteDataChanged();
+    await renderSectionPromoCardsAdmin();
+  });
+  $$('[data-editsc]').forEach(btn => btn.onclick = () => {
+    const item = allSectionPromoCardsCache.find(x => x.id === btn.dataset.editsc && (x._collection || SECTION_PROMO_CARDS_COLLECTION) === (btn.dataset.sccol || SECTION_PROMO_CARDS_COLLECTION));
+    if (!item) return;
+    editing.sectionPromoCard = item.id;
+    editing.sectionPromoCardCollection = item._collection || SECTION_PROMO_CARDS_COLLECTION;
+    setPromoFormValues('spc', item);
+    $('#spcTitle')?.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+  $$('[data-movesc]').forEach(btn => btn.onclick = async () => {
+    const item = allSectionPromoCardsCache.find(x => x.id === btn.dataset.movesc && (x._collection || SECTION_PROMO_CARDS_COLLECTION) === (btn.dataset.sccol || SECTION_PROMO_CARDS_COLLECTION));
+    if (!item) return;
+    const delta = Number(btn.dataset.dir || 0) * 10;
+    const nextOrder = Math.max(1, Number(item.order ?? 999) + delta);
+    await updateDoc(doc(db, item._collection || SECTION_PROMO_CARDS_COLLECTION, item.id), { order: nextOrder, updatedAt: new Date().toISOString() });
+    await markSiteDataChanged();
+    await renderSectionPromoCardsAdmin();
+  });
+}
+
 if ($('#promoCardsForm')) {
   $('#promoCardsForm').onsubmit = async e => {
     e.preventDefault();
@@ -2122,8 +2225,44 @@ if ($('#horizontalPromoCardsForm')) {
   };
 }
 
+
+if ($('#sectionPromoCardsForm')) {
+  $('#sectionPromoCardsForm').onsubmit = async e => {
+    e.preventDefault();
+    let imageUrl = val('#spcImage');
+    const uploaded = await uploadImage('#spcFile', 'section-promo-cards', '#spcImage', '#spcUploadStatus');
+    if (uploaded) imageUrl = uploaded;
+    const data = buildPromoData('spc', 'Промо между разделами');
+    data.image = imageUrl;
+    if (!data.image) return alert('Загрузите фото или вставьте Фото URL');
+    if (!data.placementBlock) return alert('Выберите блок, перед или после которого показывать промо');
+    try {
+      if (editing.sectionPromoCard) {
+        await updateDoc(doc(db, editing.sectionPromoCardCollection || SECTION_PROMO_CARDS_COLLECTION, editing.sectionPromoCard), data);
+        editing.sectionPromoCard = null;
+        editing.sectionPromoCardCollection = null;
+      } else {
+        data.createdAt = new Date().toISOString();
+        await addDoc(collection(db, SECTION_PROMO_CARDS_COLLECTION), data);
+      }
+      e.target.reset();
+      if ($('#spcEnabled')) $('#spcEnabled').checked = true;
+      if ($('#spcDisplayMode')) $('#spcDisplayMode').value = 'image';
+      if ($('#spcPlacementPosition')) $('#spcPlacementPosition').value = 'after';
+      if ($('#spcUploadStatus')) $('#spcUploadStatus').innerHTML = '';
+      await markSiteDataChanged();
+      await renderSectionPromoCardsAdmin();
+      alert('Промо между разделами сохранено');
+    } catch (err) {
+      console.error('section promo save error', err);
+      alert('Ошибка сохранения: ' + (err?.message || err));
+    }
+  };
+}
+
 if ($('#pcReset')) $('#pcReset').onclick = () => { editing.promoCard = null; editing.promoCardCollection = null; $('#promoCardsForm')?.reset(); if ($('#pcEnabled')) $('#pcEnabled').checked = true; if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = ''; $('#pcTitle')?.focus(); };
 if ($('#hpcReset')) $('#hpcReset').onclick = () => { editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; $('#horizontalPromoCardsForm')?.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcDisplayMode')) $('#hpcDisplayMode').value = 'classic'; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = ''; $('#hpcTitle')?.focus(); };
+if ($('#spcReset')) $('#spcReset').onclick = () => { editing.sectionPromoCard = null; editing.sectionPromoCardCollection = null; $('#sectionPromoCardsForm')?.reset(); if ($('#spcEnabled')) $('#spcEnabled').checked = true; if ($('#spcDisplayMode')) $('#spcDisplayMode').value = 'image'; if ($('#spcPlacementPosition')) $('#spcPlacementPosition').value = 'after'; if ($('#spcUploadStatus')) $('#spcUploadStatus').innerHTML = ''; $('#spcTitle')?.focus(); };
 
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');

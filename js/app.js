@@ -11,6 +11,7 @@ const $$ = s => document.querySelectorAll(s);
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTION = COLLECTIONS.promoCards || 'autostyle_promo_cards';
 const HORIZONTAL_PROMO_CARDS_COLLECTION = 'autostyle_horizontal_promo_cards';
+const SECTION_PROMO_CARDS_COLLECTION = 'autostyle_section_promo_cards';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
   'autostyle_promo_cards',
@@ -21,6 +22,11 @@ const HORIZONTAL_PROMO_CARDS_COLLECTIONS = [...new Set([
   HORIZONTAL_PROMO_CARDS_COLLECTION,
   'autostyle_home_promo_cards',
   'homePromoCards'
+].filter(Boolean))];
+const SECTION_PROMO_CARDS_COLLECTIONS = [...new Set([
+  SECTION_PROMO_CARDS_COLLECTION,
+  'autostyle_between_promo_cards',
+  'sectionPromoCards'
 ].filter(Boolean))];
 let cart = [];
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -208,6 +214,62 @@ function initImageBannerSliders(scope=document){
   });
 }
 
+
+function normalizePromoCardForHome(card){
+  const type = card.linkType || card.targetType || 'url';
+  const value = String(card.linkValue || card.targetValue || card.link || card.url || '').trim();
+  const build = (t,v) => {
+    if (!v) return '#';
+    if (t === 'category' || t === 'subcategory') return `catalog.html?category=${encodeURIComponent(v)}`;
+    if (t === 'brand') return `catalog.html?brand=${encodeURIComponent(v)}`;
+    if (t === 'page') return v.endsWith('.html') || v.includes('.html#') ? v : `${v}.html`;
+    return v;
+  };
+  return {
+    ...card,
+    title: card.title || card.name || 'Промо',
+    text: card.text || card.description || '',
+    image: card.image || card.imageUrl || card.photoUrl || '',
+    link: card.link || card.url || build(type, value),
+    order: Number(card.order ?? 999),
+    enabled: card.enabled !== false,
+    placementBlock: String(card.placementBlock || card.homeBlock || card.targetBlock || '').trim(),
+    placementPosition: String(card.placementPosition || card.position || 'after').trim()
+  };
+}
+
+function renderSectionPromoCard(card){
+  const c = normalizePromoCardForHome(card);
+  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
+  const href = c.link || '#';
+  const styleVars = [
+    c.bgColor ? `--section-promo-bg:${c.bgColor}` : '',
+    c.textColor ? `--section-promo-text:${c.textColor}` : '',
+    c.borderColor ? `--section-promo-border:${c.borderColor}` : '',
+    c.buttonBg ? `--section-promo-btn:${c.buttonBg}` : '',
+    c.buttonTextColor ? `--section-promo-btn-text:${c.buttonTextColor}` : '',
+    c.titleSize ? `--section-promo-title-size:${Number(c.titleSize)}px` : '',
+    c.fontWeight ? `--section-promo-weight:${c.fontWeight}` : '',
+    imageOnly && c.image ? `background-image:url('${String(c.image).replace(/'/g, "%27")}')` : ''
+  ].filter(Boolean).join(';');
+  const titleText = c.title || 'Промо';
+  if (imageOnly) {
+    return `<section class="section-block section-promo-block section-promo-image-only" data-promo="${c.key || c.id || ''}">
+      <a class="section-promo-link" href="${href}" style="${styleVars}" aria-label="${titleText}"></a>
+    </section>`;
+  }
+  return `<section class="section-block section-promo-block" data-promo="${c.key || c.id || ''}">
+    <a class="section-promo-link" href="${href}" style="${styleVars}">
+      <span class="section-promo-content">
+        <b>${titleText}</b>
+        ${c.text ? `<small>${c.text}</small>` : ''}
+        ${c.buttonText ? `<em>${c.buttonText}</em>` : ''}
+      </span>
+      ${c.image ? `<span class="section-promo-img"><img loading="lazy" decoding="async" src="${c.image}" alt="${titleText}"></span>` : ''}
+    </a>
+  </section>`;
+}
+
 function renderPromoCards(cards){
   const box = $('#banners');
   if (!box) return;
@@ -280,12 +342,26 @@ function makeSection(block, products){
 function renderSections(){
   const container = $('main.container'); if(!container) return;
   container.querySelectorAll('.section-block').forEach(s => s.remove());
+  const sectionPromos = (window.__autostyleSectionPromos || [])
+    .map(normalizePromoCardForHome)
+    .filter(p => p.enabled !== false)
+    .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+  const promosFor = (block, pos) => sectionPromos.filter(p => {
+    const target = String(p.placementBlock || '').trim();
+    const position = String(p.placementPosition || 'after').trim();
+    return target === String(block.key) && position === pos;
+  });
   let html = '';
   allBlocks.forEach(block => {
     const list = productsForBlock(block);
     if ((block.recent || block.key === 'recentlyViewed') && !list.length) return;
+    promosFor(block, 'before').forEach(p => { html += renderSectionPromoCard(p); });
     html += makeSection(block, list);
+    promosFor(block, 'after').forEach(p => { html += renderSectionPromoCard(p); });
   });
+  const placed = new Set();
+  allBlocks.forEach(block => ['before','after'].forEach(pos => promosFor(block,pos).forEach(p => placed.add(p.id || p.key))));
+  sectionPromos.filter(p => !placed.has(p.id || p.key)).forEach(p => { html += renderSectionPromoCard(p); });
   container.insertAdjacentHTML('beforeend', html);
   bindProductButtons(container);
   applyHomeSectionColors(container);
@@ -398,6 +474,8 @@ async function renderHome(){
   }
   const verticalPromoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
   const horizontalPromoCards = mergePromoCards(await safeLoadCollections(HORIZONTAL_PROMO_CARDS_COLLECTIONS));
+  const sectionPromoCards = mergePromoCards(await safeLoadCollections(SECTION_PROMO_CARDS_COLLECTIONS));
+  window.__autostyleSectionPromos = sectionPromoCards;
   const sidePromo = document.getElementById('homePromoBanner');
   if (sidePromo) sidePromo.innerHTML = renderImageSlides(verticalPromoCards, 'promo-image-slider', 'Загрузите вертикальное промо в админке');
   renderPromoCards(horizontalPromoCards);

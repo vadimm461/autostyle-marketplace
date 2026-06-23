@@ -393,6 +393,7 @@
         <div class="promo-admin-tabs">
           <button class="promo-admin-tab active" type="button" data-tab="vertical">Вертикальные промо блоки</button>
           <button class="promo-admin-tab" type="button" data-tab="horizontal">Горизонтальные промо блоки</button>
+          <button class="promo-admin-tab" type="button" data-tab="section">Промо между разделами</button>
         </div>
 
         <div class="promo-admin-panel" data-panel="vertical">
@@ -476,6 +477,58 @@
             <button id="hpcReset" type="button" class="edit">Новая горизонтальная карточка</button>
           </form>
           <div id="horizontalPromoCardList" class="list banner-admin-list"></div>
+        </div>
+
+        <div class="promo-admin-panel" data-panel="section" style="display:none">
+          <h3>Промо между товарными разделами</h3>
+          <p class="muted">Большой промо-баннер такого же размера и ширины, как товарный блок. Можно поставить перед или после любого блока главной и двигать по порядку.</p>
+          <form id="sectionPromoCardsForm" class="grid2 banner-admin-form">
+            <label class="field">Название<input id="spcTitle" placeholder="Например: Летние товары"></label>
+            <label class="field">Краткое описание<input id="spcText" placeholder="Например: Полироли, чернители, губки"></label>
+            <label class="field">Тип ссылки
+              <select id="spcLinkType">
+                <option value="url">Готовая ссылка</option>
+                <option value="category">Категория каталога</option>
+                <option value="subcategory">Подкатегория</option>
+                <option value="brand">Бренд</option>
+                <option value="page">Страница сайта</option>
+              </select>
+            </label>
+            <label class="field">Значение ссылки<input id="spcLinkValue" placeholder="catalog.html или ТЕХ. ПОМОЩЬ"></label>
+            <label class="field">Показать
+              <select id="spcPlacementPosition">
+                <option value="before">Перед выбранным блоком</option>
+                <option value="after" selected>После выбранного блока</option>
+              </select>
+            </label>
+            <label class="field">Блок главной
+              <select id="spcPlacementBlock"></select>
+            </label>
+            <label class="field">Текст кнопки<input id="spcButtonText" placeholder="Открыть"></label>
+            <label class="field">Порядок<input id="spcOrder" type="number" placeholder="1"></label>
+            <label class="field check-field"><span>Включена</span><input id="spcEnabled" type="checkbox" checked></label>
+            <label class="field">Режим карточки
+              <select id="spcDisplayMode">
+                <option value="image" selected>Только картинка фоном</option>
+                <option value="classic">Текст + фото</option>
+              </select>
+            </label>
+            <label class="field">Цвет фона<input id="spcBgColor" type="color" value="#111820"></label>
+            <label class="field">Цвет текста<input id="spcTextColor" type="color" value="#ffffff"></label>
+            <label class="field">Цвет рамки<input id="spcBorderColor" type="color" value="#243242"></label>
+            <label class="field">Цвет кнопки<input id="spcButtonBg" type="color" value="#25e01a"></label>
+            <label class="field">Цвет текста кнопки<input id="spcButtonTextColor" type="color" value="#061006"></label>
+            <label class="field">Размер заголовка, px<input id="spcTitleSize" type="number" placeholder="34"></label>
+            <label class="field">Жирность шрифта
+              <select id="spcFontWeight"><option value="800">Очень жирный</option><option value="700">Жирный</option><option value="600">Полужирный</option><option value="500">Средний</option><option value="400">Обычный</option></select>
+            </label>
+            <label class="field" style="grid-column:1/-1">Фото URL<input id="spcImage" placeholder="https://..."></label>
+            <label class="field" style="grid-column:1/-1">Загрузить фото<input id="spcFile" type="file" accept="image/*"><small class="banner-size-hint">Рекомендуемый размер: широкий баннер 1800×500 px или похожий формат</small></label>
+            <div id="spcUploadStatus" class="upload-box" style="grid-column:1/-1"></div>
+            <button class="primary">Сохранить промо между разделами</button>
+            <button id="spcReset" type="button" class="edit">Новое промо</button>
+          </form>
+          <div id="sectionPromoCardList" class="list banner-admin-list"></div>
         </div>
       </div>
     </section>
