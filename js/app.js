@@ -322,7 +322,7 @@ async function renderCatalogMenu(){
   }
 
   pb.innerHTML = parents.length
-    ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" data-href="catalog.html?category=${encodeURIComponent(name(p))}" type="button">${name(p)}</button>`).join('')
+    ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" type="button">${name(p)}</button>`).join('')
     : '<p class="muted">Категорий пока нет</p>';
 
   if (parents[0]) render(parents[0]);
@@ -334,8 +334,8 @@ async function renderCatalogMenu(){
       if (p) render(p);
     };
     btn.onclick = () => {
-      const href = btn.dataset.href;
-      if (href) window.location.href = href;
+      const p = parents.find(x => catId(x) === btn.dataset.parent);
+      if (p) location.href = 'catalog.html?category=' + encodeURIComponent(name(p));
     };
   });
 }

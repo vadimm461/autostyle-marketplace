@@ -2136,3 +2136,193 @@ html.admin-locked .admin-layout{display:none!important;}
 .topbar .as-account-wrap > .icon-btn.as-head-icon-btn{position:relative!important}
 @media(max-width:900px){.topbar .bar .icon-btn.as-head-icon-btn{min-width:58px!important;height:48px!important;padding:5px 7px!important}.topbar .as-head-icon{font-size:19px!important;height:22px!important}.topbar .as-head-label{font-size:10px!important}}
 .topbar .icon-btn.as-head-icon-btn{position:relative!important;text-decoration:none!important}
+
+/* ===== AutoStyle real top catalog menu fix: no overlay, no dead empty left area ===== */
+.catalog-overlay,
+.page-dim,
+body.catalog-open .page-dim{
+  display:none !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  background:transparent !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.topbar .catalog-menu{
+  position:relative !important;
+  z-index:10060 !important;
+}
+.catalog-popup.mega-catalog,
+.mega-catalog,
+.catalog-popup{
+  position:absolute !important;
+  top:calc(100% + 14px) !important;
+  left:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  width:min(860px, calc(100vw - 72px)) !important;
+  max-width:calc(100vw - 72px) !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:calc(100vh - 120px) !important;
+  overflow:hidden !important;
+  display:none !important;
+  grid-template-columns:290px minmax(0,1fr) !important;
+  align-items:start !important;
+  gap:24px !important;
+  padding:22px !important;
+  border-radius:26px !important;
+  background:#fff !important;
+  color:#111318 !important;
+  border:1px solid #e5eaf0 !important;
+  box-shadow:0 26px 70px rgba(15,23,42,.22) !important;
+  z-index:10080 !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+.catalog-menu.open .catalog-popup.mega-catalog,
+.catalog-menu.open .mega-catalog,
+.catalog-menu:hover .catalog-popup.mega-catalog,
+.catalog-menu:hover .mega-catalog{
+  display:grid !important;
+}
+.catalog-popup.mega-catalog .mega-left,
+.mega-catalog .mega-left{
+  height:auto !important;
+  max-height:calc(100vh - 170px) !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  align-self:start !important;
+  padding:18px !important;
+  background:#f3f5f7 !important;
+  border:0 !important;
+  border-radius:22px !important;
+}
+.catalog-popup.mega-catalog .mega-left h3,
+.mega-catalog .mega-left h3{
+  display:block !important;
+  margin:0 0 14px !important;
+  font-size:18px !important;
+  line-height:1.2 !important;
+  color:#111318 !important;
+}
+.catalog-popup.mega-catalog .mega-parent-list,
+.mega-catalog .mega-parent-list{
+  height:auto !important;
+  max-height:calc(100vh - 232px) !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding:0 !important;
+  display:grid !important;
+  align-content:start !important;
+  gap:10px !important;
+  scrollbar-width:none !important;
+}
+.catalog-popup.mega-catalog .mega-parent-list::-webkit-scrollbar,
+.mega-catalog .mega-parent-list::-webkit-scrollbar{
+  width:0 !important;
+  height:0 !important;
+  display:none !important;
+}
+.catalog-popup.mega-catalog .mega-parent,
+.mega-catalog .mega-parent{
+  width:100% !important;
+  min-height:48px !important;
+  height:auto !important;
+  border:0 !important;
+  border-radius:15px !important;
+  padding:12px 36px 12px 14px !important;
+  background:#fff !important;
+  color:#111827 !important;
+  font-weight:950 !important;
+  text-align:left !important;
+  white-space:normal !important;
+  line-height:1.15 !important;
+  cursor:pointer !important;
+  position:relative !important;
+}
+.catalog-popup.mega-catalog .mega-parent::after,
+.mega-catalog .mega-parent::after{
+  content:'›' !important;
+  position:absolute !important;
+  right:14px !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  color:#98a2b3 !important;
+  font-size:24px !important;
+  font-weight:1000 !important;
+}
+.catalog-popup.mega-catalog .mega-parent.active,
+.catalog-popup.mega-catalog .mega-parent:hover,
+.mega-catalog .mega-parent.active,
+.mega-catalog .mega-parent:hover{
+  background:#21e51d !important;
+  color:#061009 !important;
+}
+.catalog-popup.mega-catalog .mega-parent.active::after,
+.catalog-popup.mega-catalog .mega-parent:hover::after,
+.mega-catalog .mega-parent.active::after,
+.mega-catalog .mega-parent:hover::after{
+  color:#061009 !important;
+}
+.catalog-popup.mega-catalog .mega-right,
+.mega-catalog .mega-right{
+  height:auto !important;
+  min-height:0 !important;
+  max-height:calc(100vh - 170px) !important;
+  overflow:auto !important;
+  padding:0 !important;
+  background:#fff !important;
+  display:block !important;
+  align-self:start !important;
+}
+.catalog-popup.mega-catalog .mega-right h3,
+.mega-catalog .mega-right h3,
+#megaTitle{
+  margin:0 0 16px !important;
+  font-size:20px !important;
+  line-height:1.2 !important;
+  color:#111318 !important;
+}
+.catalog-popup.mega-catalog .mega-child-grid,
+.mega-catalog .mega-child-grid{
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  overflow:visible !important;
+  display:grid !important;
+  grid-template-columns:repeat(2, minmax(180px,1fr)) !important;
+  align-content:start !important;
+  gap:12px !important;
+  padding:0 !important;
+}
+.catalog-popup.mega-catalog .mega-child,
+.mega-catalog .mega-child{
+  min-height:70px !important;
+  height:auto !important;
+  border-radius:16px !important;
+  padding:14px 16px !important;
+  background:#f4f6f8 !important;
+  border:1px solid #e5eaf0 !important;
+  color:#111318 !important;
+  text-decoration:none !important;
+}
+@media (max-width:760px){
+  .catalog-popup.mega-catalog,
+  .mega-catalog,
+  .catalog-popup{
+    width:calc(100vw - 24px) !important;
+    max-width:calc(100vw - 24px) !important;
+    grid-template-columns:1fr !important;
+    gap:14px !important;
+    padding:16px !important;
+  }
+  .catalog-popup.mega-catalog .mega-child-grid,
+  .mega-catalog .mega-child-grid{
+    grid-template-columns:1fr !important;
+  }
+}

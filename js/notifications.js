@@ -129,11 +129,17 @@ async function renderNotificationCatalogMenu(){
   pb.dataset.loaded = '1';
   pb.innerHTML = parents.length ? parents.map((p,i)=>`<button class="mega-parent ${i ? '' : 'active'}" data-parent="${catId(p)}" type="button">${catName(p)}</button>`).join('') : '<p class="muted">Категорий пока нет</p>';
   if (parents[0]) render(parents[0]);
-  $$('.mega-parent').forEach(btn => btn.onmouseenter = btn.onclick = () => {
-    $$('.mega-parent').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const p = parents.find(x => catId(x) === btn.dataset.parent);
-    if (p) render(p);
+  $$('.mega-parent').forEach(btn => {
+    btn.onmouseenter = () => {
+      $$('.mega-parent').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const p = parents.find(x => catId(x) === btn.dataset.parent);
+      if (p) render(p);
+    };
+    btn.onclick = () => {
+      const p = parents.find(x => catId(x) === btn.dataset.parent);
+      if (p) location.href = 'catalog.html?category=' + encodeURIComponent(catName(p));
+    };
   });
 }
 
