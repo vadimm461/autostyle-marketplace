@@ -1494,7 +1494,7 @@ function renderCategoryTree() {
       parentId: cat.parentId || '',
       parentTitle,
       type: cat.parentId ? 'Подкатегория' : 'Основная категория',
-      showInTopCatalog: cat.showInTopCatalog !== false,
+      showInTopCatalog: cat.showInTopCatalog !== false && cat.showInCatalog !== false,
       blocked: isBlockedCatalogCategory(title)
     });
   });
@@ -1548,7 +1548,7 @@ function renderCategoryTree() {
             <span>${row.type}</span>
             ${row.parentTitle ? `<span>Родитель: ${row.parentTitle}</span>` : ''}
             ${row.order !== 999999 ? `<span>Порядок: ${row.order}</span>` : '<span>Порядок: как в товарах</span>'}
-            ${row.real ? `<span>${row.showInTopCatalog ? 'В верхнем каталоге' : 'Скрыта в верхнем каталоге'}</span>` : ''}
+            ${row.real ? `<span>${row.showInTopCatalog ? 'В простом каталоге' : 'Скрыта в простом каталоге'}</span>` : ''}
             ${row.blocked ? '<span>Не попадает в каталоги</span>' : ''}
           </div>
         </div>
@@ -1606,7 +1606,7 @@ function renderCategoryTree() {
       setVal('#cOrder', item.order ?? '');
 
       if ($('#cParent')) $('#cParent').value = item.parentId || '';
-      if ($('#cShowTop')) $('#cShowTop').checked = item.showInTopCatalog !== false;
+      if ($('#cShowTop')) $('#cShowTop').checked = item.showInTopCatalog !== false && item.showInCatalog !== false;
       $('#cTitle')?.focus();
     };
   });
@@ -1623,6 +1623,7 @@ if ($('#catForm')) {
         order: Number(val('#cOrder') || 0),
         parentId: val('#cParent'),
         showInTopCatalog: $('#cShowTop') ? $('#cShowTop').checked : true,
+        showInCatalog: $('#cShowTop') ? $('#cShowTop').checked : true,
         updatedAt: new Date().toISOString()
       };
 
