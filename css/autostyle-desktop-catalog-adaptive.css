@@ -354,3 +354,40 @@
     padding-bottom:8px !important;
   }
 }
+
+/* No visible scrollbars, but keep mouse/touch scrolling working. */
+@media (min-width: 981px){
+  .filters.catalog-filters,
+  aside.filters.catalog-filters,
+  .top-child-groups{
+    scrollbar-width:none !important;
+    -ms-overflow-style:none !important;
+  }
+
+  .filters.catalog-filters::-webkit-scrollbar,
+  aside.filters.catalog-filters::-webkit-scrollbar,
+  .top-child-groups::-webkit-scrollbar{
+    width:0 !important;
+    height:0 !important;
+    display:none !important;
+  }
+
+  .filters.catalog-filters,
+  aside.filters.catalog-filters{
+    cursor:grab !important;
+    user-select:none !important;
+  }
+
+  .filters.catalog-filters.dragging-scroll,
+  aside.filters.catalog-filters.dragging-scroll,
+  .top-child-groups.dragging-scroll{
+    cursor:grabbing !important;
+  }
+
+  .top-child-groups{
+    cursor:grab !important;
+    user-select:none !important;
+    scrollbar-width:none !important;
+    -ms-overflow-style:none !important;
+  }
+}
