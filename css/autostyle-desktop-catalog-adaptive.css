@@ -393,107 +393,71 @@
 }
 
 
-/* Move sorting/zero/price controls into the left sidebar as real DOM blocks.
-   No overlay: JS appends the existing elements into #catalogSidebarControls. */
+/* Вернуть кнопки/фильтры в верхнюю панель возле количества товаров, не в левое меню. */
 @media (min-width: 981px){
-  .catalog-sidebar-controls{
+  .filters.catalog-filters .field:has(#sort){
+    display:none !important;
+  }
+
+  .catalog-top .catalog-top-sort-field{
     display:flex !important;
-    flex-direction:column !important;
-    gap:10px !important;
-    padding:0 0 14px !important;
-    margin:0 0 14px !important;
-    border-bottom:1px solid #edf0f4 !important;
-  }
-
-  .catalog-sidebar-controls .field,
-  .catalog-sidebar-controls .sidebar-sort-field{
-    display:block !important;
+    align-items:center !important;
+    gap:8px !important;
+    width:auto !important;
+    min-width:0 !important;
     margin:0 !important;
-    width:100% !important;
+    order:2 !important;
   }
 
-  .catalog-sidebar-controls .field select,
-  .catalog-sidebar-controls .sidebar-sort-field select{
-    width:100% !important;
-    height:46px !important;
+  .catalog-top .catalog-top-sort-field::before{
+    content:'Сортировка' !important;
+    font-size:14px !important;
+    font-weight:950 !important;
+    color:#667085 !important;
+    white-space:nowrap !important;
+  }
+
+  .catalog-top .catalog-top-sort-field > *:not(select){
+    display:none !important;
+  }
+
+  .catalog-top .catalog-top-sort-field select{
+    width:190px !important;
+    height:44px !important;
     border:1px solid #dfe6ef !important;
     border-radius:14px !important;
     background:#fff !important;
     padding:0 14px !important;
-    font-size:15px !important;
+    font-size:14px !important;
     font-weight:850 !important;
     color:#111827 !important;
     outline:none !important;
   }
 
-  .catalog-sidebar-controls .field::before,
-  .catalog-sidebar-controls .sidebar-sort-field::before{
-    content:'Сортировка' !important;
-    display:block !important;
-    margin:0 0 7px !important;
-    color:#667085 !important;
-    font-size:14px !important;
-    font-weight:950 !important;
-  }
-
-  .catalog-sidebar-controls .sidebar-sort-field{
+  .catalog-top h1,
+  #catalogCount{
     order:1 !important;
   }
 
-  .catalog-sidebar-controls #zeroNotice,
-  .catalog-sidebar-controls .sidebar-zero-btn{
-    order:2 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    width:100% !important;
-    min-height:44px !important;
-    margin:0 !important;
-    border-radius:14px !important;
-    font-size:13px !important;
-    font-weight:950 !important;
-    white-space:normal !important;
-    line-height:1.15 !important;
-  }
-
-  .catalog-sidebar-controls .sidebar-price-filter,
-  .catalog-sidebar-controls .catalog-top-price{
+  .catalog-top-price{
     order:3 !important;
-    display:grid !important;
-    grid-template-columns:1fr 1fr !important;
-    gap:8px !important;
+  }
+
+  .catalog-top #zeroNotice{
+    order:4 !important;
+  }
+
+  .catalog-top .top-category-bar{
+    order:5 !important;
+  }
+}
+
+@media (min-width:981px) and (max-width:1280px){
+  .catalog-top .catalog-top-sort-field{
+    flex:1 1 240px !important;
+  }
+  .catalog-top .catalog-top-sort-field select{
+    flex:1 1 auto !important;
     width:100% !important;
-    margin:0 !important;
-    padding:0 !important;
-    background:transparent !important;
-    border:0 !important;
-  }
-
-  .catalog-sidebar-controls .catalog-top-price span{
-    grid-column:1 / -1 !important;
-    font-size:14px !important;
-    font-weight:950 !important;
-    color:#667085 !important;
-  }
-
-  .catalog-sidebar-controls .catalog-top-price input{
-    width:100% !important;
-    min-width:0 !important;
-    height:42px !important;
-    border:1px solid #dfe6ef !important;
-    border-radius:12px !important;
-    background:#fff !important;
-    padding:0 12px !important;
-    font-size:14px !important;
-    font-weight:850 !important;
-  }
-
-  .category-tree-filter{
-    margin-top:0 !important;
-  }
-
-  .catalog-top > .catalog-top-price,
-  .catalog-top > #zeroNotice{
-    display:none !important;
   }
 }
