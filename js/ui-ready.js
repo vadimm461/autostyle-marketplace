@@ -11,11 +11,13 @@
       menu.classList.remove('open');
       popup.classList.remove('active');
       document.body.classList.remove('catalog-open');
+      document.querySelector('.page-dim')?.classList.remove('active');
     }
     function open(){
       menu.classList.add('open');
       popup.classList.add('active');
-      document.body.classList.remove('catalog-open');
+      document.body.classList.add('catalog-open');
+      document.querySelector('.page-dim')?.classList.add('active');
     }
     btn.addEventListener('click', function(e){
       e.preventDefault();
@@ -23,6 +25,7 @@
       menu.classList.contains('open') ? close() : open();
     });
     popup.addEventListener('click', function(e){ e.stopPropagation(); });
+    document.querySelector('.page-dim')?.addEventListener('click', close);
     document.addEventListener('click', function(e){ if(!menu.contains(e.target)) close(); });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
   }

@@ -2326,3 +2326,50 @@ body.catalog-open .page-dim{
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* ===== AutoStyle final: dim background + wider gap in real catalog menu ===== */
+.page-dim{
+  display:block !important;
+  position:fixed !important;
+  inset:0 !important;
+  z-index:10040 !important;
+  background:rgba(0,0,0,.46) !important;
+  backdrop-filter:blur(4px) !important;
+  -webkit-backdrop-filter:blur(4px) !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  transition:opacity .18s ease, visibility .18s ease !important;
+}
+body.catalog-open .page-dim,
+.page-dim.active{
+  opacity:1 !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+.topbar,
+header.topbar{
+  z-index:10060 !important;
+}
+.topbar .catalog-menu{
+  position:relative !important;
+  z-index:10070 !important;
+}
+.catalog-popup.mega-catalog,
+.mega-catalog,
+.catalog-popup{
+  width:min(980px, calc(100vw - 72px)) !important;
+  max-width:calc(100vw - 72px) !important;
+  grid-template-columns:290px minmax(0,1fr) !important;
+  gap:40px !important;
+  z-index:10080 !important;
+}
+.catalog-popup.mega-catalog .mega-left,
+.mega-catalog .mega-left{
+  margin-right:0 !important;
+}
+.catalog-popup.mega-catalog .mega-right,
+.mega-catalog .mega-right{
+  padding-left:0 !important;
+}
