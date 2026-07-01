@@ -347,46 +347,41 @@ function bindProductButtons(scope=document){
   scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
   scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
 }
-function makeSection(block, products, sidePromos = []){
+function makeSection(block, products){
   const id = `homeBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
-  const sideHtml = (sidePromos || []).length
-    ? `<aside class="section-side-promo-col">${sidePromos.map(renderSectionSidePromoCard).join('')}</aside>`
-    : '';
-  return `<section id="${id}" class="section-block product-section-carousel ${sideHtml ? 'has-section-side-promo' : ''}" data-block="${block.key}">
+  return `<section id="${id}" class="section-block product-section-carousel" data-block="${block.key}">
     <div class="section-head">
       <h2>${block.title}</h2>
       
     </div>
-    <div class="carousel-shell section-carousel-layout">
-      ${sideHtml}
-      <div class="section-products-carousel-wrap">
-        <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
-        <div class="products carousel-products" data-limit="5">${products.length ? products.map(card).join('') : `<div class="notice">Товары для этого блока пока не выбраны.</div>`}</div>
-        <button class="carousel-arrow carousel-arrow-right" data-scroll-right="${id}" type="button" aria-label="Листать вправо">›</button>
-      </div>
+    <div class="carousel-shell">
+      <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
+      <div class="products carousel-products" data-limit="5">${products.length ? products.map(card).join('') : `<div class="notice">Товары для этого блока пока не выбраны.</div>`}</div>
+      <button class="carousel-arrow carousel-arrow-right" data-scroll-right="${id}" type="button" aria-label="Листать вправо">›</button>
     </div>
   </section>`;
 }
 function renderSections(){
   const container = $('main.container'); if(!container) return;
-  container.querySelectorAll('.section-block').forEach(s => s.remove());
+  container.querySelectorAll('.section-block, .section-promo-block').forEach(s => s.remove());
   const sectionPromos = (window.__autostyleSectionPromos || [])
     .map(normalizePromoCardForHome)
     .filter(p => p.enabled !== false)
     .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
-  const promosForBlock = (block) => sectionPromos.filter(p => {
+  const promosForBlock = (block, position) => sectionPromos.filter(p => {
     const target = String(p.placementBlock || '').trim();
-    return target === String(block.key);
+    const pos = String(p.placementPosition || 'after').trim().toLowerCase();
+    return target === String(block.key) && pos === position;
   });
   let html = '';
+  const placed = new Set();
   allBlocks.forEach(block => {
     const list = productsForBlock(block);
     if ((block.recent || block.key === 'recentlyViewed') && !list.length) return;
-    const sidePromos = promosForBlock(block);
-    html += makeSection(block, list, sidePromos);
+    promosForBlock(block, 'before').forEach(p => { html += renderSectionPromoCard(p); placed.add(p.id || p.key); });
+    html += makeSection(block, list);
+    promosForBlock(block, 'after').forEach(p => { html += renderSectionPromoCard(p); placed.add(p.id || p.key); });
   });
-  const placed = new Set();
-  allBlocks.forEach(block => promosForBlock(block).forEach(p => placed.add(p.id || p.key)));
   sectionPromos.filter(p => !placed.has(p.id || p.key)).forEach(p => { html += renderSectionPromoCard(p); });
   container.insertAdjacentHTML('beforeend', html);
   bindProductButtons(container);
