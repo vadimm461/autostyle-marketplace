@@ -561,100 +561,44 @@ body:not(.mobile-page) .home-mini-promos .home-mini-promo-image-only{
   .section-promo-content b{font-size:26px}
 }
 
-/* ===== Section side promo: banner is separate from product carousel, not inside goods ===== */
-.product-section-carousel.has-section-side-promo .section-carousel-layout{
-  display:flex !important;
-  align-items:stretch !important;
-  gap:18px !important;
-  overflow:visible !important;
-}
-.section-side-promo-col{
-  flex:0 0 190px !important;
-  width:190px !important;
-  display:flex !important;
-  align-items:stretch !important;
-  min-height:338px !important;
-  position:relative !important;
-  z-index:1 !important;
-}
-.section-side-promo-card{
-  width:100% !important;
-  min-height:338px !important;
-  border-radius:24px !important;
-  overflow:hidden !important;
-  text-decoration:none !important;
-  color:var(--section-promo-text,#fff) !important;
-  background-color:var(--section-promo-bg,#111820) !important;
-  background-size:cover !important;
-  background-position:center !important;
-  background-repeat:no-repeat !important;
-  border:1px solid var(--section-promo-border,rgba(255,255,255,.10)) !important;
-  box-shadow:0 18px 48px rgba(15,23,42,.14) !important;
-  display:flex !important;
-  align-items:flex-end !important;
-  padding:18px !important;
-  box-sizing:border-box !important;
-}
-.section-side-promo-image-only{
+/* === Section promo standalone: before/after product block, not inside carousel === */
+body:not(.mobile-page) main.container > .section-promo-block{
+  width:min(100%, 1280px);
+  margin:34px auto;
   padding:0 !important;
+  background:transparent !important;
+  border-radius:30px;
+  overflow:hidden;
+  box-shadow:0 24px 70px rgba(13,22,32,.16);
+  position:relative;
+  z-index:1;
 }
-.section-side-promo-content{
-  display:flex !important;
-  flex-direction:column !important;
-  gap:8px !important;
-  position:relative !important;
-  z-index:2 !important;
+body:not(.mobile-page) main.container > .section-promo-block .section-promo-link{
+  width:100%;
+  min-height:356px;
+  display:block;
+  padding:0;
+  border-radius:30px;
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  border:0;
+  box-sizing:border-box;
 }
-.section-side-promo-content b{
-  font-size:var(--section-promo-title-size,24px) !important;
-  line-height:1.05 !important;
-  font-weight:var(--section-promo-weight,900) !important;
+body:not(.mobile-page) main.container > .section-promo-block.section-promo-image-only .section-promo-link{
+  min-height:356px;
 }
-.section-side-promo-content small{
-  font-size:13px !important;
-  line-height:1.25 !important;
-  opacity:.82 !important;
+body:not(.mobile-page) main.container > .section-promo-block + .product-section-carousel,
+body:not(.mobile-page) main.container > .product-section-carousel + .section-promo-block{
+  margin-top:34px;
 }
-.section-side-promo-content em{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  width:max-content !important;
-  padding:9px 12px !important;
-  border-radius:999px !important;
-  background:var(--section-promo-btn,#25e01a) !important;
-  color:var(--section-promo-btn-text,#061006) !important;
-  font-style:normal !important;
-  font-weight:900 !important;
-}
-.product-section-carousel.has-section-side-promo .section-products-carousel-wrap{
-  flex:1 1 auto !important;
-  min-width:0 !important;
-  position:relative !important;
-  display:flex !important;
-  align-items:stretch !important;
-}
-.product-section-carousel.has-section-side-promo .section-products-carousel-wrap .carousel-products{
-  min-width:0 !important;
-  flex:1 1 auto !important;
-}
-.product-section-carousel.has-section-side-promo .carousel-shell > .carousel-arrow{
+body:not(.mobile-page) .product-section-carousel .section-promo-block,
+body:not(.mobile-page) .carousel-products .section-promo-block,
+body:not(.mobile-page) .carousel-shell .section-promo-block{
   display:none !important;
 }
-.product-section-carousel.has-section-side-promo .section-products-carousel-wrap > .carousel-arrow{
-  display:flex !important;
-}
-@media(max-width:900px){
-  .product-section-carousel.has-section-side-promo .section-carousel-layout{
-    flex-direction:column !important;
-  }
-  .section-side-promo-col{
-    width:100% !important;
-    flex:0 0 auto !important;
-    min-height:180px !important;
-  }
-  .section-side-promo-card{
-    min-height:180px !important;
-    border-radius:20px !important;
-  }
+@media (max-width: 900px){
+  body:not(.mobile-page) main.container > .section-promo-block{width:auto;margin:22px 14px;border-radius:22px;}
+  body:not(.mobile-page) main.container > .section-promo-block .section-promo-link,
+  body:not(.mobile-page) main.container > .section-promo-block.section-promo-image-only .section-promo-link{min-height:220px;border-radius:22px;}
 }

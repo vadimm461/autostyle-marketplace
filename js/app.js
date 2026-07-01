@@ -238,8 +238,11 @@ function normalizePromoCardForHome(card){
   };
 }
 
-function sectionPromoStyleVars(c){
-  return [
+function renderSectionPromoCard(card){
+  const c = normalizePromoCardForHome(card);
+  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
+  const href = c.link || '#';
+  const styleVars = [
     c.bgColor ? `--section-promo-bg:${c.bgColor}` : '',
     c.textColor ? `--section-promo-text:${c.textColor}` : '',
     c.borderColor ? `--section-promo-border:${c.borderColor}` : '',
@@ -247,33 +250,8 @@ function sectionPromoStyleVars(c){
     c.buttonTextColor ? `--section-promo-btn-text:${c.buttonTextColor}` : '',
     c.titleSize ? `--section-promo-title-size:${Number(c.titleSize)}px` : '',
     c.fontWeight ? `--section-promo-weight:${c.fontWeight}` : '',
-    c.image ? `background-image:url('${String(c.image).replace(/'/g, "%27")}')` : ''
+    imageOnly && c.image ? `background-image:url('${String(c.image).replace(/'/g, "%27")}')` : ''
   ].filter(Boolean).join(';');
-}
-
-function renderSectionSidePromoCard(card){
-  const c = normalizePromoCardForHome(card);
-  const href = c.link || '#';
-  const titleText = c.title || 'Промо';
-  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
-  const styleVars = sectionPromoStyleVars(c);
-  if (imageOnly) {
-    return `<a class="section-side-promo-card section-side-promo-image-only" href="${href}" style="${styleVars}" aria-label="${titleText}"></a>`;
-  }
-  return `<a class="section-side-promo-card" href="${href}" style="${styleVars}">
-    <span class="section-side-promo-content">
-      <b>${titleText}</b>
-      ${c.text ? `<small>${c.text}</small>` : ''}
-      ${c.buttonText ? `<em>${c.buttonText}</em>` : ''}
-    </span>
-  </a>`;
-}
-
-function renderSectionPromoCard(card){
-  const c = normalizePromoCardForHome(card);
-  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
-  const href = c.link || '#';
-  const styleVars = sectionPromoStyleVars(c);
   const titleText = c.title || 'Промо';
   if (imageOnly) {
     return `<section class="section-block section-promo-block section-promo-image-only" data-promo="${c.key || c.id || ''}">
@@ -363,26 +341,44 @@ function makeSection(block, products){
 }
 function renderSections(){
   const container = $('main.container'); if(!container) return;
-  container.querySelectorAll('.section-block, .section-promo-block').forEach(s => s.remove());
+  container.querySelectorAll('.section-block').forEach(s => s.remove());
   const sectionPromos = (window.__autostyleSectionPromos || [])
     .map(normalizePromoCardForHome)
     .filter(p => p.enabled !== false)
     .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
-  const promosForBlock = (block, position) => sectionPromos.filter(p => {
-    const target = String(p.placementBlock || '').trim();
-    const pos = String(p.placementPosition || 'after').trim().toLowerCase();
-    return target === String(block.key) && pos === position;
+  const norm = v => String(v || '').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е');
+  const promoId = p => String(p.id || p.key || p.title || Math.random()).trim();
+  const positionOf = p => {
+    const raw = norm(p.placementPosition || p.position || 'after');
+    return (raw === 'before' || raw.includes('перед') || raw.includes('до')) ? 'before' : 'after';
+  };
+  const blockKeys = block => [block.key, block.id, block.title, block.name].map(norm).filter(Boolean);
+  const promosFor = (block, pos) => sectionPromos.filter(p => {
+    const target = norm(p.placementBlock || p.homeBlock || p.targetBlock || p.block || '');
+    if (!target) return false;
+    return blockKeys(block).includes(target) && positionOf(p) === pos;
   });
+
+  // ВАЖНО: промо НЕ вставляется внутрь product-section и НЕ является карточкой товара.
+  // Порядок DOM: промо перед секцией -> секция товаров -> промо после секции.
   let html = '';
-  const placed = new Set();
   allBlocks.forEach(block => {
     const list = productsForBlock(block);
     if ((block.recent || block.key === 'recentlyViewed') && !list.length) return;
-    promosForBlock(block, 'before').forEach(p => { html += renderSectionPromoCard(p); placed.add(p.id || p.key); });
+
+    promosFor(block, 'before').forEach(p => { html += renderSectionPromoCard(p); });
     html += makeSection(block, list);
-    promosForBlock(block, 'after').forEach(p => { html += renderSectionPromoCard(p); placed.add(p.id || p.key); });
+    promosFor(block, 'after').forEach(p => { html += renderSectionPromoCard(p); });
   });
-  sectionPromos.filter(p => !placed.has(p.id || p.key)).forEach(p => { html += renderSectionPromoCard(p); });
+
+  const placed = new Set();
+  allBlocks.forEach(block => ['before','after'].forEach(pos => {
+    promosFor(block,pos).forEach(p => placed.add(promoId(p)));
+  }));
+  sectionPromos.filter(p => !placed.has(promoId(p))).forEach(p => {
+    html += renderSectionPromoCard(p);
+  });
+
   container.insertAdjacentHTML('beforeend', html);
   bindProductButtons(container);
   applyHomeSectionColors(container);
