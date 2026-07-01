@@ -561,44 +561,80 @@ body:not(.mobile-page) .home-mini-promos .home-mini-promo-image-only{
   .section-promo-content b{font-size:26px}
 }
 
-/* === Section promo standalone: before/after product block, not inside carousel === */
-body:not(.mobile-page) main.container > .section-promo-block{
-  width:min(100%, 1280px);
+/* ===== Промо перед/после товарного раздела: отдельная колонка, без наложений ===== */
+.home-section-row{
+  width:min(100%,1280px);
   margin:34px auto;
-  padding:0 !important;
-  background:transparent !important;
-  border-radius:30px;
+  display:flex;
+  align-items:stretch;
+  gap:22px;
+}
+.home-section-row > .product-section-carousel{
+  flex:1 1 auto;
+  min-width:0;
+  width:auto !important;
+  margin:0 !important;
+}
+.home-section-side-promos{
+  flex:0 0 210px;
+  width:210px;
+  min-width:210px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.home-section-side-promos .section-promo-block{
+  width:100% !important;
+  height:100%;
+  min-height:0;
+  margin:0 !important;
+  padding:0;
+  border-radius:28px;
   overflow:hidden;
   box-shadow:0 24px 70px rgba(13,22,32,.16);
-  position:relative;
-  z-index:1;
 }
-body:not(.mobile-page) main.container > .section-promo-block .section-promo-link{
+.home-section-side-promos .section-promo-link{
   width:100%;
-  min-height:356px;
-  display:block;
+  height:100%;
+  min-height:420px;
   padding:0;
-  border-radius:30px;
+  display:block;
+  border-radius:28px;
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
-  border:0;
-  box-sizing:border-box;
 }
-body:not(.mobile-page) main.container > .section-promo-block.section-promo-image-only .section-promo-link{
-  min-height:356px;
-}
-body:not(.mobile-page) main.container > .section-promo-block + .product-section-carousel,
-body:not(.mobile-page) main.container > .product-section-carousel + .section-promo-block{
-  margin-top:34px;
-}
-body:not(.mobile-page) .product-section-carousel .section-promo-block,
-body:not(.mobile-page) .carousel-products .section-promo-block,
-body:not(.mobile-page) .carousel-shell .section-promo-block{
+.home-section-side-promos .section-promo-content,
+.home-section-side-promos .section-promo-img{
   display:none !important;
 }
-@media (max-width: 900px){
-  body:not(.mobile-page) main.container > .section-promo-block{width:auto;margin:22px 14px;border-radius:22px;}
-  body:not(.mobile-page) main.container > .section-promo-block .section-promo-link,
-  body:not(.mobile-page) main.container > .section-promo-block.section-promo-image-only .section-promo-link{min-height:220px;border-radius:22px;}
+.home-section-side-promos .section-promo-image-only .section-promo-link{
+  min-height:420px;
+}
+/* Одиночные промо без привязки к разделу остаются широкими отдельными баннерами */
+main.container > .section-promo-block{
+  width:min(100%,1280px);
+  margin:34px auto;
+}
+@media(max-width:900px){
+  .home-section-row{
+    width:auto;
+    margin:22px 14px;
+    flex-direction:column;
+    gap:14px;
+  }
+  .home-section-side-promos{
+    width:100%;
+    min-width:0;
+    flex:0 0 auto;
+    order:0;
+  }
+  .home-section-row > .product-section-carousel{
+    order:1;
+  }
+  .home-section-side-promos .section-promo-link,
+  .home-section-side-promos .section-promo-image-only .section-promo-link{
+    min-height:160px;
+    background-position:center;
+  }
 }

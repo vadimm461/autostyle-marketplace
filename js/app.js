@@ -346,39 +346,35 @@ function renderSections(){
     .map(normalizePromoCardForHome)
     .filter(p => p.enabled !== false)
     .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
-  const norm = v => String(v || '').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е');
-  const promoId = p => String(p.id || p.key || p.title || Math.random()).trim();
-  const positionOf = p => {
-    const raw = norm(p.placementPosition || p.position || 'after');
-    return (raw === 'before' || raw.includes('перед') || raw.includes('до')) ? 'before' : 'after';
-  };
-  const blockKeys = block => [block.key, block.id, block.title, block.name].map(norm).filter(Boolean);
   const promosFor = (block, pos) => sectionPromos.filter(p => {
-    const target = norm(p.placementBlock || p.homeBlock || p.targetBlock || p.block || '');
-    if (!target) return false;
-    return blockKeys(block).includes(target) && positionOf(p) === pos;
+    const target = String(p.placementBlock || '').trim();
+    const position = String(p.placementPosition || 'after').trim();
+    return target === String(block.key) && position === pos;
   });
-
-  // ВАЖНО: промо НЕ вставляется внутрь product-section и НЕ является карточкой товара.
-  // Порядок DOM: промо перед секцией -> секция товаров -> промо после секции.
   let html = '';
   allBlocks.forEach(block => {
     const list = productsForBlock(block);
     if ((block.recent || block.key === 'recentlyViewed') && !list.length) return;
 
-    promosFor(block, 'before').forEach(p => { html += renderSectionPromoCard(p); });
-    html += makeSection(block, list);
-    promosFor(block, 'after').forEach(p => { html += renderSectionPromoCard(p); });
-  });
+    const beforePromos = promosFor(block, 'before');
+    const afterPromos = promosFor(block, 'after');
+    const sectionHtml = makeSection(block, list);
 
+    // Промо НЕ вставляется внутрь товарного блока и НЕ накладывается поверх.
+    // Оно ставится отдельной колонкой слева/справа от секции, а сама секция просто сдвигается.
+    if (beforePromos.length || afterPromos.length) {
+      html += `<div class="home-section-row${beforePromos.length ? ' has-left-promo' : ''}${afterPromos.length ? ' has-right-promo' : ''}" data-row-block="${String(block.key).replace(/"/g, '&quot;')}">`;
+      if (beforePromos.length) html += `<div class="home-section-side-promos home-section-side-promos-left">${beforePromos.map(renderSectionPromoCard).join('')}</div>`;
+      html += sectionHtml;
+      if (afterPromos.length) html += `<div class="home-section-side-promos home-section-side-promos-right">${afterPromos.map(renderSectionPromoCard).join('')}</div>`;
+      html += `</div>`;
+    } else {
+      html += sectionHtml;
+    }
+  });
   const placed = new Set();
-  allBlocks.forEach(block => ['before','after'].forEach(pos => {
-    promosFor(block,pos).forEach(p => placed.add(promoId(p)));
-  }));
-  sectionPromos.filter(p => !placed.has(promoId(p))).forEach(p => {
-    html += renderSectionPromoCard(p);
-  });
-
+  allBlocks.forEach(block => ['before','after'].forEach(pos => promosFor(block,pos).forEach(p => placed.add(p.id || p.key))));
+  sectionPromos.filter(p => !placed.has(p.id || p.key)).forEach(p => { html += renderSectionPromoCard(p); });
   container.insertAdjacentHTML('beforeend', html);
   bindProductButtons(container);
   applyHomeSectionColors(container);
