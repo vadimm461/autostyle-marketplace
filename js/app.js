@@ -238,11 +238,8 @@ function normalizePromoCardForHome(card){
   };
 }
 
-function renderSectionPromoCard(card){
-  const c = normalizePromoCardForHome(card);
-  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
-  const href = c.link || '#';
-  const styleVars = [
+function sectionPromoStyleVars(c){
+  return [
     c.bgColor ? `--section-promo-bg:${c.bgColor}` : '',
     c.textColor ? `--section-promo-text:${c.textColor}` : '',
     c.borderColor ? `--section-promo-border:${c.borderColor}` : '',
@@ -250,8 +247,33 @@ function renderSectionPromoCard(card){
     c.buttonTextColor ? `--section-promo-btn-text:${c.buttonTextColor}` : '',
     c.titleSize ? `--section-promo-title-size:${Number(c.titleSize)}px` : '',
     c.fontWeight ? `--section-promo-weight:${c.fontWeight}` : '',
-    imageOnly && c.image ? `background-image:url('${String(c.image).replace(/'/g, "%27")}')` : ''
+    c.image ? `background-image:url('${String(c.image).replace(/'/g, "%27")}')` : ''
   ].filter(Boolean).join(';');
+}
+
+function renderSectionSidePromoCard(card){
+  const c = normalizePromoCardForHome(card);
+  const href = c.link || '#';
+  const titleText = c.title || 'Промо';
+  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
+  const styleVars = sectionPromoStyleVars(c);
+  if (imageOnly) {
+    return `<a class="section-side-promo-card section-side-promo-image-only" href="${href}" style="${styleVars}" aria-label="${titleText}"></a>`;
+  }
+  return `<a class="section-side-promo-card" href="${href}" style="${styleVars}">
+    <span class="section-side-promo-content">
+      <b>${titleText}</b>
+      ${c.text ? `<small>${c.text}</small>` : ''}
+      ${c.buttonText ? `<em>${c.buttonText}</em>` : ''}
+    </span>
+  </a>`;
+}
+
+function renderSectionPromoCard(card){
+  const c = normalizePromoCardForHome(card);
+  const imageOnly = c.displayMode === 'image' || c.imageOnly === true;
+  const href = c.link || '#';
+  const styleVars = sectionPromoStyleVars(c);
   const titleText = c.title || 'Промо';
   if (imageOnly) {
     return `<section class="section-block section-promo-block section-promo-image-only" data-promo="${c.key || c.id || ''}">
@@ -325,17 +347,23 @@ function bindProductButtons(scope=document){
   scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
   scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
 }
-function makeSection(block, products){
+function makeSection(block, products, sidePromos = []){
   const id = `homeBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
-  return `<section id="${id}" class="section-block product-section-carousel" data-block="${block.key}">
+  const sideHtml = (sidePromos || []).length
+    ? `<aside class="section-side-promo-col">${sidePromos.map(renderSectionSidePromoCard).join('')}</aside>`
+    : '';
+  return `<section id="${id}" class="section-block product-section-carousel ${sideHtml ? 'has-section-side-promo' : ''}" data-block="${block.key}">
     <div class="section-head">
       <h2>${block.title}</h2>
       
     </div>
-    <div class="carousel-shell">
-      <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
-      <div class="products carousel-products" data-limit="5">${products.length ? products.map(card).join('') : `<div class="notice">Товары для этого блока пока не выбраны.</div>`}</div>
-      <button class="carousel-arrow carousel-arrow-right" data-scroll-right="${id}" type="button" aria-label="Листать вправо">›</button>
+    <div class="carousel-shell section-carousel-layout">
+      ${sideHtml}
+      <div class="section-products-carousel-wrap">
+        <button class="carousel-arrow carousel-arrow-left" data-scroll-left="${id}" type="button" aria-label="Листать влево">‹</button>
+        <div class="products carousel-products" data-limit="5">${products.length ? products.map(card).join('') : `<div class="notice">Товары для этого блока пока не выбраны.</div>`}</div>
+        <button class="carousel-arrow carousel-arrow-right" data-scroll-right="${id}" type="button" aria-label="Листать вправо">›</button>
+      </div>
     </div>
   </section>`;
 }
@@ -346,21 +374,19 @@ function renderSections(){
     .map(normalizePromoCardForHome)
     .filter(p => p.enabled !== false)
     .sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
-  const promosFor = (block, pos) => sectionPromos.filter(p => {
+  const promosForBlock = (block) => sectionPromos.filter(p => {
     const target = String(p.placementBlock || '').trim();
-    const position = String(p.placementPosition || 'after').trim();
-    return target === String(block.key) && position === pos;
+    return target === String(block.key);
   });
   let html = '';
   allBlocks.forEach(block => {
     const list = productsForBlock(block);
     if ((block.recent || block.key === 'recentlyViewed') && !list.length) return;
-    promosFor(block, 'before').forEach(p => { html += renderSectionPromoCard(p); });
-    html += makeSection(block, list);
-    promosFor(block, 'after').forEach(p => { html += renderSectionPromoCard(p); });
+    const sidePromos = promosForBlock(block);
+    html += makeSection(block, list, sidePromos);
   });
   const placed = new Set();
-  allBlocks.forEach(block => ['before','after'].forEach(pos => promosFor(block,pos).forEach(p => placed.add(p.id || p.key))));
+  allBlocks.forEach(block => promosForBlock(block).forEach(p => placed.add(p.id || p.key)));
   sectionPromos.filter(p => !placed.has(p.id || p.key)).forEach(p => { html += renderSectionPromoCard(p); });
   container.insertAdjacentHTML('beforeend', html);
   bindProductButtons(container);
