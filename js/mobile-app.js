@@ -3,8 +3,8 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
-import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart } from './user-cart-store.js';
-import { createPasswordChangedNotification } from './notify-service.js';
+import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, clearUserCart } from './user-cart-store.js';
+import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, fmt } from './notify-service.js';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 
 const $ = s => document.querySelector(s);
@@ -23,7 +23,7 @@ const waitAuthUser = () => new Promise(resolve => {
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const PROMO_CARDS_COLLECTIONS = [...new Set([
   COLLECTIONS.promoCards || 'autostyle_promo_cards',
-  'autostyle_promo_cards', 'autostyle_promoCards', 'autostyle_home_cards', 'promoCards', 'homeCards'
+  'autostyle_horizontal_promo_cards', 'autostyle_promo_cards', 'autostyle_promoCards', 'autostyle_home_cards', 'promoCards', 'homeCards'
 ].filter(Boolean))];
 const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
@@ -43,7 +43,10 @@ const appUrl = url => {
     .replace(/^installment\.html(.*)$/i, 'mobile-installment.html$1')
     .replace(/^certificates\.html(.*)$/i, 'mobile-certificates.html$1')
     .replace(/^login\.html(.*)$/i, 'mobile-profile.html$1')
-    .replace(/^register\.html(.*)$/i, 'mobile-profile.html$1');
+    .replace(/^register\.html(.*)$/i, 'mobile-profile.html$1')
+    .replace(/^notifications\.html(.*)$/i, 'mobile-notifications.html$1')
+    .replace(/^orders\.html(.*)$/i, 'mobile-orders.html$1')
+    .replace(/^discount-card\.html(.*)$/i, 'mobile-discount-card.html$1');
 };
 const safeLoadCollection = async name => { try { return await getCollectionCached(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
 const safeLoadCollections = async names => {
@@ -90,10 +93,21 @@ function productsForHomeBlock(block){
   if (key === 'hot') return availableProducts.filter(isMarkedForHome).concat(availableProducts).filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i).slice(0,20);
   return availableProducts.filter(p => isMarkedForHome(p)).slice(0,20);
 }
+function promoLink(c){
+  const type = String(c.linkType || c.type || '').toLowerCase();
+  const value = c.linkValue || c.value || c.target || '';
+  if (type === 'category' && value) return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
+  if (type === 'subcategory' && value) return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
+  if (type === 'brand' && value) return `mobile-catalog.html?brand=${encodeURIComponent(value)}`;
+  if (type === 'page' && value) return appUrl(value);
+  return appUrl(c.link || c.url || value || 'mobile-catalog.html');
+}
 function promoCard(c){
-  const image = c.image || c.imageUrl || c.photoUrl || '';
+  const image = c.image || c.imageUrl || c.photoUrl || c.photo || '';
   const titleText = escapeHtml(c.title || c.name || 'AutoStyle');
-  return `<a class="m-promo-card" href="${appUrl(c.link || c.url || 'mobile-catalog.html')}">${image ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span></a>`;
+  const imageOnly = c.imageOnly === true || c.mode === 'image' || c.viewMode === 'image' || c.displayMode === 'image' || c.cardMode === 'imageOnly';
+  const style = imageOnly && image ? ` style="background-image:url('${String(image).replaceAll("'",'%27')}')"` : '';
+  return `<a class="m-promo-card ${imageOnly?'m-promo-image-only':''}" href="${promoLink(c)}"${style}>${(!imageOnly && image) ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}${imageOnly?'':`<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span>`}</a>`;
 }
 function renderMobileSection(block, list){
   list = (list || []).slice(0, 12);
@@ -350,6 +364,9 @@ async function renderCart(){
   const total=rows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
   $('#mCartList').innerHTML=rows.map(({item,product:p})=>`<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a><div><b>${title(p)}</b><div class="m-group">${group(p)}</div><div class="m-qty-row"><button class="m-qty" data-minus="${p.id}">−</button><span>${Number(item.qty||1)} × ${money(price(p))}</span><button class="m-qty" data-plus="${p.id}">+</button><button class="m-danger" data-remove="${p.id}">Удалить</button></div></div></div>`).join('')||'<div class="m-empty">Корзина пустая</div>';
   $('#mTotal').textContent=money(total);
+  const totalBox = document.querySelector('.m-total');
+  if(totalBox && !$('#mCheckoutBtn')) totalBox.insertAdjacentHTML('afterend', `<button id="mCheckoutBtn" class="m-primary m-checkout" type="button" ${rows.length?'':'disabled'}>Оформить заказ</button>`);
+  if($('#mCheckoutBtn')) $('#mCheckoutBtn').onclick = createMobileOrder;
   $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await renderCart();});
   $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart();});
   $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await renderCart();});
@@ -358,6 +375,43 @@ async function renderCart(){
 async function renderFavorites(){
   setupShell('fav'); await initData(); const list=products.filter(p=>favs.includes(p.id));
   $('#mFavGrid').innerHTML=list.map(card).join('')||'<div class="m-empty">В избранном пока пусто</div>'; bind(); clearLoader();
+}
+
+let mobileCheckoutBusy = false;
+async function createMobileOrder(){
+  const user = await waitAuthUser();
+  if(!user){ alert('Войдите в аккаунт, чтобы оформить заказ.'); location.href='mobile-profile.html'; return; }
+  const check = await getProfileVerification(user);
+  if(!check.verified){ alert(profileVerificationMessage()); location.href='mobile-profile.html#security'; return; }
+  if(mobileCheckoutBusy) return;
+  mobileCheckoutBusy = true;
+  const btn = $('#mCheckoutBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Создаём заказ...'; }
+  try{
+    await loadUserCart(user);
+    const cartRows = getCurrentUserCart();
+    const byId = new Map(products.map(p=>[String(p.id),p]));
+    const rows = cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
+    if(!rows.length){ alert('Корзина пустая.'); return; }
+    const stockProblem = rows.find(({item, product}) => stock(product) <= 0 || (Number(item.qty||1)||1) > stock(product));
+    if(stockProblem){ alert(`Нельзя оформить заказ: «${title(stockProblem.product)}». В корзине больше, чем в наличии.`); await renderCart(); return; }
+    const profile = await getUserDoc(user.uid).catch(()=>({data:{}}));
+    const d = profile.data || {};
+    const items = rows.map(({item, product:p})=>{ const qty=Number(item.qty||1)||1; const pr=price(p); return { productId:String(p.id), title:title(p), group:group(p), image:img(p), price:pr, qty, lineTotal:pr*qty }; });
+    const total = items.reduce((sum,i)=>sum+Number(i.lineTotal||0),0);
+    const totalQty = items.reduce((sum,i)=>sum+Number(i.qty||0),0);
+    const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
+    await addDoc(collection(db, COLLECTIONS.orders || 'autostyle_orders'), {
+      orderNumber, status:'new', statusTitle:'Новый', source:'mobile-cart',
+      userId:user.uid, uid:user.uid, userEmail:user.email || '', userName:d.name || user.displayName || '', userPhone:d.phone || '', userCar:d.car || d.carText || '',
+      items, subtotal:total, total, totalQty, paymentMethod:'cash', paymentMethodTitle:'При получении',
+      createdAt:serverTimestamp(), createdAtText:new Date().toISOString()
+    });
+    await clearUserCart();
+    alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
+    location.href='mobile-orders.html';
+  }catch(e){ console.error('mobile order create error', e); alert('Не удалось оформить заказ: '+(e?.message || e)); }
+  finally{ mobileCheckoutBusy = false; if(btn){ btn.disabled=false; btn.textContent='Оформить заказ'; } }
 }
 
 const usersCollection = COLLECTIONS.users || 'autostyle_users';
@@ -432,17 +486,21 @@ function formatDate(value){
 async function loadMobileOrders(user){
   if(!user) return [];
   const ordersCollection = COLLECTIONS.orders || 'autostyle_orders';
-  try{
-    const snap = await getDocs(query(collection(db, ordersCollection), where('userId','==',user.uid), orderBy('createdAt','desc'), limit(30)));
-    return snap.docs.map(d=>({id:d.id, ...d.data()}));
-  }catch(e){
-    const snap = await getDocs(query(collection(db, ordersCollection), where('userId','==',user.uid), limit(50)));
-    return snap.docs.map(d=>({id:d.id, ...d.data()}));
+  const map = new Map();
+  async function addFrom(q){
+    try{ const snap = await getDocs(q); snap.docs.forEach(d=>map.set(d.id,{id:d.id, ...d.data()})); }catch(e){ console.warn('mobile orders query error', e); }
   }
+  await addFrom(query(collection(db, ordersCollection), where('userId','==',user.uid), limit(50)));
+  await addFrom(query(collection(db, ordersCollection), where('uid','==',user.uid), limit(50)));
+  return [...map.values()].sort((a,b)=>{
+    const ad = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || a.createdAtText || 0).getTime();
+    const bd = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || b.createdAtText || 0).getTime();
+    return bd - ad;
+  });
 }
 function renderOrdersList(orders=[]){
   if(!orders.length) return '<div class="m-empty">Заказов пока нет.</div>';
-  return orders.map(o=>`<article class="m-order-card"><div><b>Заказ ${escapeHtml(o.number || o.id || '')}</b><small>${formatDate(o.createdAt || o.createdAtText)}</small></div><span>${escapeHtml(orderStatusText(o))}</span><strong>${money(o.total || o.totalPrice || o.sum || 0)}</strong></article>`).join('');
+  return orders.map(o=>{ const items = Array.isArray(o.items) ? o.items : []; return `<article class="m-order-card"><div><b>Заказ ${escapeHtml(o.orderNumber || o.number || o.id || '')}</b><small>${formatDate(o.createdAt || o.createdAtText)}</small>${items.length?`<em>${items.slice(0,3).map(i=>escapeHtml(i.title||i.name||'Товар')).join(', ')}${items.length>3?'…':''}</em>`:''}</div><span>${escapeHtml(orderStatusText(o))}</span><strong>${money(o.total || o.totalPrice || o.sum || 0)}</strong></article>`; }).join('');
 }
 async function sendMobileFeedback(user){
   if(!user){ alert('Войдите в аккаунт'); return; }
@@ -525,6 +583,29 @@ async function registerByEmail(){
 }
 
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
+
+let mobileNotificationsUnsub = null;
+function renderMobileNotificationList(root, data){
+  const list = data.list || [];
+  const readIds = data.readIds || new Set();
+  const selected = new URLSearchParams(location.search).get('id') || '';
+  const open = selected ? list.find(n => n.id === selected) : null;
+  if(open){
+    root.innerHTML = `<section class="m-profile-pane"><a class="m-btn" href="mobile-notifications.html">← Все уведомления</a><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${open.html || `<p>${escapeHtml(notificationText(open))}</p>`}</div></section>`;
+    markNotificationRead(auth.currentUser, open.id).catch(()=>{});
+    return;
+  }
+  root.innerHTML = `<section class="m-profile-pane"><h2>Уведомления</h2>${data.unread ? `<button id="mReadAllNotifications" class="m-btn" type="button" style="width:100%;margin-bottom:10px">Прочитать все</button>` : ''}<div class="m-notifications-list">${list.length ? list.map(n=>`<a class="m-notification-item ${readIds.has(n.id)?'is-read':'is-unread'}" href="mobile-notifications.html?id=${encodeURIComponent(n.id)}"><b>${!readIds.has(n.id)?'<i></i>':''}${escapeHtml(n.title || 'Уведомление')}</b><span>${escapeHtml(notificationText(n))}</span><small>${escapeHtml(fmt(n.createdAt || n.createdAtLocal))}</small></a>`).join('') : '<div class="m-empty">Пока уведомлений нет.</div>'}</div></section>`;
+  const readAll = $('#mReadAllNotifications');
+  if(readAll) readAll.onclick = async()=>{ await markNotificationsRead(auth.currentUser, list.map(n=>n.id)); };
+}
+function startMobileNotifications(user, root){
+  if(mobileNotificationsUnsub){ try{ mobileNotificationsUnsub(); }catch(e){} mobileNotificationsUnsub = null; }
+  if(!user){ root.innerHTML = `<div class="m-empty"><b>Войдите в аккаунт</b><br>Уведомления доступны после входа.<br><br><a class="m-primary" href="mobile-profile.html">Войти</a></div>`; return; }
+  root.innerHTML = '<div class="m-empty">Загружаем уведомления...</div>';
+  mobileNotificationsUnsub = watchNotifications(user, data => renderMobileNotificationList(root, data));
+}
+
 async function renderProfile(){
   setupShell('profile');
   onAuthStateChanged(auth, async u=>{
@@ -564,8 +645,9 @@ async function renderProfile(){
     if(page === 'discount-card') body = `<section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section>`;
     if(page === 'orders') body = `<section id="orders" class="m-profile-pane"><h2>Мои заказы</h2><div class="m-orders-list">${renderOrdersList(myOrders)}</div></section>`;
     if(page === 'feedback') body = `<section id="feedback" class="m-profile-pane m-feedback-pane"><h2>Предложения и жалобы</h2><p class="m-group">Напишите администрации сайта. Можно прикрепить фото.</p><select id="mFeedbackType" class="m-input"><option value="proposal">Предложение</option><option value="complaint">Жалоба</option><option value="question">Вопрос</option></select><input id="mFeedbackSubject" class="m-input" placeholder="Тема обращения"><textarea id="mFeedbackText" class="m-input m-textarea" placeholder="Опишите обращение"></textarea><label class="m-file-input"><input id="mFeedbackPhoto" type="file" accept="image/*">📷 Прикрепить фото</label><button id="mSendFeedback" class="m-primary" style="width:100%;margin-top:10px">Отправить администрации</button></section>`;
-    if(page === 'notifications') body = `<section class="m-profile-pane"><h2>Уведомления</h2><p class="m-group">Все уведомления открываются на основной странице уведомлений.</p><a class="m-primary" style="width:100%;text-decoration:none;display:flex;align-items:center;justify-content:center;margin-top:10px" href="notifications.html">Открыть уведомления</a></section>`;
+    if(page === 'notifications') body = `<section class="m-profile-pane" id="mMobileNotifications"><h2>Уведомления</h2><div class="m-empty">Загружаем...</div></section>`;
     box.innerHTML = `${profileTop}${body}`;
+    if(page === 'notifications') startMobileNotifications(u, $('#mMobileNotifications'));
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
     if($('#saveProfile')) $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
     if($('#mGetDiscount')) $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
