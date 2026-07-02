@@ -305,21 +305,20 @@ function renderPromoCards(cards){
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
   const href = `product.html?id=${encodeURIComponent(p.id)}`;
-  const priceNum = Number(p.price || 0);
-  const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
-  const monthPay = Math.ceil(priceNum / 12);
+  const s = stock(p);
+  const inStock = s > 0;
   return `<article class="product-card" data-product-href="${href}">
     <div class="product-img">
       <a class="product-image-link" href="${href}">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</a>
-      <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button" aria-label="Избранное">♡</button>
-      <button class="cart" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
     </div>
+    <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button" aria-label="Избранное">${favs.includes(p.id) ? '♥' : '♡'}</button>
     <a class="product-title" href="${href}">${title(p)}</a>
     <div class="product-group">${group(p)}</div>
     <div class="product-card-price-area">
       <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
-      <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : '<span class="installment-badge"></span>'}</div>
+      <div class="catalog-card-stock">${inStock ? 'В наличии' : 'Нет в наличии'}</div>
     </div>
+    <button class="cart" data-cart="${p.id}" type="button" ${!inStock ? 'disabled' : ''} aria-label="В корзину">🛒</button>
   </article>`;
 }
 function bindProductButtons(scope=document){

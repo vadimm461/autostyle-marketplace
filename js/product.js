@@ -49,16 +49,12 @@ function relatedCard(p){
           ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
           ${im ? `<img loading="lazy" decoding="async" src="${escapeHtml(im)}" alt="${escapeHtml(name)}">` : `<div class="photo-empty">Фото</div>`}
         </a>
-        <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
-        <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
       </div>
+      <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
       <a class="product-title" href="${href}">${escapeHtml(name)}</a>
       <div class="product-group">${escapeHtml(group(p))}</div>
-      <div class="price-row-card">
-        <div class="price">${money(p.price)}</div>
-        ${op ? `<div class="old-price">${money(op)}</div>` : ''}
-      </div>
-      ${s > 0 ? `<div class="catalog-card-stock">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
+      <div class="product-card-price-area"><div class="price-row-card"><div class="price">${money(p.price)}</div>${op ? `<div class="old-price">${money(op)}</div>` : ''}</div><div class="catalog-card-stock">${s > 0 ? 'В наличии' : 'Нет в наличии'}</div></div>
+      <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
     </article>`;
 }
 function setupRelatedActions(){

@@ -273,15 +273,21 @@ function setupAuth(){const modal=$('#authModal');const say=t=>{const m=$('#authF
 async function load(){await waitUserCartReady();cart=getCurrentUserCart();updateCart();items=await getCollection(COLLECTIONS.products);try{categories=await getCollection(COLLECTIONS.categories)}catch(e){}categories=categories.filter(c=>!isBlockedCategory(c));categories.sort((a,b)=>Number(a.order??999)-Number(b.order??999)||String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'ru'));const visibleCategories=categories.filter(showInCatalog);const hiddenCategoryNames=new Set(categories.filter(c=>!showInCatalog(c)).map(c=>catName(c).toLowerCase()));const opts=new Map();visibleCategories.forEach(c=>opts.set((c.title||c.name||'').toLowerCase(),c.title||c.name));items.forEach(p=>{const g=group(p);if(g&&g!=='Без группы'&&!isBlockedCatalogName(g)&&!hiddenCategoryNames.has(String(g).toLowerCase()))opts.set(g.toLowerCase(),g)});cat&&(cat.innerHTML='<option value="">Все группы</option>'+[...opts.values()].map(x=>`<option value="${x}">${x}</option>`).join(''));await renderCatalogMenu();const params=new URLSearchParams(location.search);if(params.get('category'))cat.value=params.get('category');if(params.get('search')){search.value=params.get('search');topSearch&&(topSearch.value=params.get('search'))}
 if(params.get('brand')){search.value=params.get('brand');topSearch&&(topSearch.value=params.get('brand'))}renderCategoryFilter();renderTopCategoryBar();setupCatalogTopControls();setupCatalogDragScroll();updateCart();render()}
 function card(p){
-  const d=discount(p),op=oldPrice(p),priceNum=Number(p.price||0),installment=(p.installment===true||p.installmentAvailable===true||p.credit===true||priceNum>=199),monthPay=Math.ceil(priceNum/12);
+  const d=discount(p),op=oldPrice(p),s=stock(p);
   const href=`product.html?id=${encodeURIComponent(p.id)}`;
   return `<article class="catalog-card" data-product-href="${href}">
     <div class="catalog-card-photo product-img">
       <a class="product-image-link" href="${href}">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</a>
-      <button class="fav-btn ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button" aria-label="Избранное">♡</button>
-      <button class="catalog-cart-btn" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
     </div>
-    <a class="catalog-card-link" href="${href}"><div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div>${installment?`<div class="installment-badge catalog-installment-badge">Рассрочка от ${money(monthPay)}/мес</div>`:'<div class="installment-badge catalog-installment-badge"></div>'}<div class="catalog-card-stock">${stock(p)>0?'В наличии: '+stock(p):'Нет в наличии'}</div></div></div></a>
+    <button class="fav-btn ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button" aria-label="Избранное">${favs.includes(p.id)?'♥':'♡'}</button>
+    <a class="catalog-card-link" href="${href}">
+      <div class="catalog-card-body">
+        <h3>${title(p)}</h3>
+        <div class="catalog-card-category">${group(p)}</div>
+        <div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="catalog-card-stock">${s>0?'В наличии':'Нет в наличии'}</div></div>
+      </div>
+    </a>
+    <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
   </article>`
 }
 function render(){const q=(search?.value||'').toLowerCase(),c=cat?.value||'',pf=Number($('#priceFrom')?.value||0),pt=Number($('#priceTo')?.value||999999999),params=new URLSearchParams(location.search),brandParam=(params.get('brand')||'').toLowerCase();let list=items.filter(p=>{const brand=String(p.brand||p.brandName||p.manufacturer||p.vendor||'').toLowerCase();const text=`${title(p)} ${p.description||''} ${group(p)} ${p.code||''} ${brand}`.toLowerCase();const pr=Number(p.price||0);if(c&&!categoryNamesFor(c).includes(group(p)))return false;if(brandParam&&brand!==brandParam&&!text.includes(brandParam))return false;if(q&&!text.includes(q))return false;if(pr<pf||pr>pt)return false;if(!showZero&&stock(p)<=0)return false;return true});if(sort?.value==='priceAsc')list.sort((a,b)=>Number(a.price||0)-Number(b.price||0));if(sort?.value==='priceDesc')list.sort((a,b)=>Number(b.price||0)-Number(a.price||0));if(sort?.value==='nameAsc')list.sort((a,b)=>title(a).localeCompare(title(b),'ru'));count&&(count.textContent=`${list.length} товаров`);$('#zeroNotice')&&($('#zeroNotice').textContent=showZero?'Показаны все товары':'Товары с нулевым остатком');grid.innerHTML=list.length?list.map(card).join(''):'<div class="notice">Товары не найдены.</div>';bind()}
