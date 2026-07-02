@@ -177,14 +177,17 @@ async function addCart(id, btn){ try{ await addUserCartItem(id, 1); if(btn){ con
 function toggleFav(id, btn){ favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; save(); if(btn) btn.classList.toggle('active', favs.includes(id)); }
 function card(p){
   const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p));
-  return `<article class="m-card">
-    <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
-    <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
-    <a class="m-card-title" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${t}</a>
-    <div class="m-group">${g}</div>
-    ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
-    <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
-    <button class="m-cart" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
+  const href = appUrl(`product.html?id=${encodeURIComponent(p.id)}`);
+  const isFav = favs.includes(p.id);
+  return `<article class="m-card m-wb-card">
+    <div class="m-wb-media">
+      <a class="m-card-img m-wb-photo" href="${href}" aria-label="${t}">${d?`<span class="m-discount">-${d}%</span>`:''}${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
+      <button class="m-fav ${isFav?'active':''}" data-fav="${p.id}" type="button" aria-label="Избранное">${isFav?'♥':'♡'}</button>
+      <button class="m-cart m-wb-cart" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
+    </div>
+    <a class="m-card-title m-wb-title" href="${href}">${t}</a>
+    <div class="m-group m-wb-group">${g}</div>
+    <div class="m-price m-wb-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
   </article>`;
 }
 function bind(scope=document){

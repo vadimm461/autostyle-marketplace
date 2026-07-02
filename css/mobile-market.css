@@ -653,3 +653,39 @@
   .m-card-title{font-size:13.5px !important;min-height:33px !important;}
   .m-price b{font-size:20px !important;}
 }
+
+/* ===== Mobile WB-style product cards: real component replacement ===== */
+.m-card.m-wb-card{
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:305px !important;
+  height:305px !important;
+  padding:10px !important;
+  border-radius:22px !important;
+  background:#fff !important;
+  overflow:hidden !important;
+  border:1px solid rgba(229,231,235,.9) !important;
+  box-shadow:0 10px 24px rgba(15,23,42,.08) !important;
+}
+.m-wb-media{position:relative !important;height:190px !important;min-height:190px !important;border-radius:18px !important;background:#f4f6f8 !important;overflow:hidden !important;}
+.m-card.m-wb-card .m-card-img.m-wb-photo{display:grid !important;place-items:center !important;width:100% !important;height:100% !important;min-height:0 !important;margin:0 !important;padding:10px !important;border-radius:18px !important;background:#f4f6f8 !important;color:#101828 !important;text-decoration:none !important;overflow:hidden !important;}
+.m-card.m-wb-card .m-card-img.m-wb-photo img{width:100% !important;height:100% !important;object-fit:contain !important;object-position:center !important;display:block !important;}
+.m-card.m-wb-card .m-fav{position:absolute !important;right:8px !important;top:8px !important;width:38px !important;height:38px !important;border-radius:50% !important;background:rgba(255,255,255,.96) !important;color:#101828 !important;z-index:5 !important;display:grid !important;place-items:center !important;border:0 !important;box-shadow:0 8px 18px rgba(15,23,42,.14) !important;font-size:20px !important;line-height:1 !important;}
+.m-card.m-wb-card .m-fav.active{background:#eaffea !important;color:#14d914 !important;}
+.m-card.m-wb-card .m-cart.m-wb-cart{position:absolute !important;right:10px !important;bottom:10px !important;z-index:6 !important;width:52px !important;height:52px !important;min-width:52px !important;min-height:52px !important;border-radius:50% !important;border:0 !important;background:#24e11a !important;color:#061006 !important;display:grid !important;place-items:center !important;margin:0 !important;padding:0 !important;box-shadow:0 12px 24px rgba(36,225,26,.38) !important;font-size:0 !important;line-height:1 !important;}
+.m-card.m-wb-card .m-cart.m-wb-cart::before{content:'🛒' !important;font-size:24px !important;line-height:1 !important;}
+.m-card.m-wb-card .m-card-title.m-wb-title{display:-webkit-box !important;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;text-overflow:ellipsis !important;margin:9px 0 0 !important;min-height:39px !important;max-height:39px !important;color:#101828 !important;text-decoration:none !important;font-size:15px !important;line-height:1.25 !important;font-weight:950 !important;}
+.m-card.m-wb-card .m-group.m-wb-group{margin-top:4px !important;min-height:15px !important;color:#667085 !important;font-size:12px !important;line-height:1.2 !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;font-weight:800 !important;}
+.m-card.m-wb-card .m-price.m-wb-price{margin-top:auto !important;display:flex !important;align-items:baseline !important;gap:6px !important;}
+.m-card.m-wb-card .m-price.m-wb-price b{font-size:24px !important;line-height:1 !important;color:#050814 !important;font-weight:950 !important;white-space:nowrap !important;}
+.m-card.m-wb-card .m-old{font-size:13px !important;color:#98a2b3 !important;text-decoration:line-through !important;font-weight:800 !important;}
+.m-card.m-wb-card .m-discount{position:absolute !important;left:8px !important;top:8px !important;z-index:4 !important;}
+.m-carousel .m-card.m-wb-card{min-width:calc(50% - 6px) !important;scroll-snap-align:start !important;}
+@media(max-width:380px){
+  .m-card.m-wb-card{height:288px !important;min-height:288px !important;padding:9px !important;}
+  .m-wb-media{height:174px !important;min-height:174px !important;}
+  .m-card.m-wb-card .m-card-title.m-wb-title{font-size:13.5px !important;min-height:34px !important;max-height:34px !important;}
+  .m-card.m-wb-card .m-price.m-wb-price b{font-size:22px !important;}
+  .m-card.m-wb-card .m-cart.m-wb-cart{width:48px !important;height:48px !important;min-width:48px !important;min-height:48px !important;}
+}

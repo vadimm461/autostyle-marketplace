@@ -304,25 +304,27 @@ function renderPromoCards(cards){
 
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
-  const priceNum = Number(p.price || 0);
-  const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
-  const monthPay = Math.ceil(priceNum / 12);
-  return `<article class="product-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}">
-    <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
-    <a class="product-card-link" href="product.html?id=${encodeURIComponent(p.id)}">
-      <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
-      <div class="product-title">${title(p)}</div>
-      <div class="product-group">${group(p)}</div>
-      <div class="product-card-price-area">
-        <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
-        <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : '<span class="installment-badge"></span>'}</div>
+  const href = `product.html?id=${encodeURIComponent(p.id)}`;
+  const isFav = favs.includes(p.id);
+  return `<article class="product-card as-wb-card" data-product-href="${href}">
+    <div class="as-wb-media">
+      <a class="product-card-link as-wb-photo-link" href="${href}" aria-label="${title(p)}">
+        <div class="product-img as-wb-photo">${d ? `<span class="discount-badge as-wb-discount">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span class="as-wb-empty">Фото</span>'}</div>
+      </a>
+      <button class="fav-btn as-wb-fav ${isFav ? 'active' : ''}" data-fav="${p.id}" type="button" aria-label="Избранное">${isFav ? '♥' : '♡'}</button>
+      <button class="cart as-wb-cart" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
+    </div>
+    <a class="as-wb-info" href="${href}">
+      <div class="product-title as-wb-title">${title(p)}</div>
+      <div class="product-group as-wb-group">${group(p)}</div>
+      <div class="product-card-price-area as-wb-price-area">
+        <div class="price-row-card as-wb-price-row"><div class="price-current price as-wb-price">${money(p.price)}</div>${op ? `<div class="old-price price-old as-wb-old">${money(op)}</div>` : ''}</div>
       </div>
     </a>
-    <button class="cart" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
   </article>`;
 }
 function bindProductButtons(scope=document){
-  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='🛒',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
+  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓'; setTimeout(()=>b.textContent='🛒',700); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
   scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
 }
 function makeSection(block, products){
