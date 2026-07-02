@@ -32,20 +32,21 @@ function setupSearch(){
 }
 function card(p){
   const d=discount(p), op=oldPrice(p), s=stock(p), href=`product.html?id=${encodeURIComponent(p.id)}`;
-  return `<article class="catalog-card favorite-card product-card as-desktop-card" data-product-href="${href}">
-    ${d?`<span class="as-card-badge">-${d}%</span>`:''}
-    <a class="as-card-photo" href="${href}" aria-label="${title(p)}">
-      ${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span class="as-card-no-photo">Фото</span>'}
+  const badge=d?`<span class="as-exact-badge">-${d}%</span>`:(p.isNew||p.new||p.isNewProduct?`<span class="as-exact-badge new">НОВИНКА</span>`:(p.hit||p.bestseller?`<span class="as-exact-badge hit">ХИТ</span>`:''));
+  return `<article class="as-product-card-exact catalog-card favorite-card product-card" data-product-href="${href}">
+    ${badge}
+    <a class="as-exact-photo" href="${href}" aria-label="${title(p)}">
+      ${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span class="as-exact-no-photo">Фото</span>'}
     </a>
-    <button class="fav-btn as-card-fav active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
-    <div class="as-card-info">
-      <a class="as-card-title catalog-card-link" href="${href}">${title(p)}</a>
-      <div class="as-card-category catalog-card-category">${group(p)}</div>
+    <button class="fav-btn as-exact-fav active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
+    <div class="as-exact-info">
+      <a class="as-exact-title catalog-card-link product-title" href="${href}">${title(p)}</a>
+      <div class="as-exact-category catalog-card-category product-group">${group(p)}</div>
     </div>
-    <div class="as-card-bottom">
-      <div class="as-card-price-row price-row-card"><div class="as-card-price catalog-card-price">${money(p.price)}</div>${op?`<div class="as-card-old-price old-price">${money(op)}</div>`:''}</div>
-      <div class="as-card-stock catalog-card-stock ${s>0?'':'out'}">${s>0?'В наличии':'Нет в наличии'}</div>
-      <button class="as-card-cart catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
+    <div class="as-exact-bottom">
+      <div class="as-exact-price-row price-row-card"><div class="as-exact-price catalog-card-price">${money(p.price)}</div>${op?`<div class="as-exact-old-price old-price">${money(op)}</div>`:''}</div>
+      <div class="as-exact-stock catalog-card-stock ${s>0?'':'out'}">${s>0?'В наличии':'Нет в наличии'}</div>
+      <button class="as-exact-cart catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину"></button>
     </div>
   </article>`;
 }
