@@ -38,11 +38,11 @@ function card(p){
       <button class="fav-btn active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
       <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
     </div>
-    <a class="catalog-card-link" href="${href}"><div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="installment-badge catalog-installment-badge"></div><div class="catalog-card-stock">${s>0?'В наличии':'Нет в наличии'}</div></div></div></a>
+    <a class="catalog-card-link" href="${href}"><div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="installment-badge catalog-installment-badge"></div><div class="catalog-card-stock">${s>0?'В наличии: '+s:'Нет в наличии'}</div></div></div></a>
   </article>`;
 }
 function bind(){
-  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='🛒',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
+  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.classList.add('added'); setTimeout(()=>b.classList.remove('added'),700); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.filter(x=>x!==id); saveFav(); loadFavorites();});
 }
 async function loadFavorites(){
