@@ -304,29 +304,25 @@ function renderPromoCards(cards){
 
 function card(p){
   const d = discount(p), op = oldPrice(p), im = img(p);
-  const href = `product.html?id=${encodeURIComponent(p.id)}`;
-  const s = Number(p.stock ?? p.quantity ?? p.count ?? 1);
-  const favActive = favs.includes(p.id);
-  const badge = d ? `<span class="as-exact-badge">-${d}%</span>` : (p.isNew || p.new || p.isNewProduct ? `<span class="as-exact-badge new">НОВИНКА</span>` : (p.hit || p.bestseller ? `<span class="as-exact-badge hit">ХИТ</span>` : ''));
-  return `<article class="as-product-card-exact product-card catalog-card" data-product-href="${href}">
-    ${badge}
-    <a class="as-exact-photo" href="${href}" aria-label="${title(p)}">
-      ${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span class="as-exact-no-photo">Фото</span>'}
+  const priceNum = Number(p.price || 0);
+  const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
+  const monthPay = Math.ceil(priceNum / 12);
+  return `<article class="product-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}">
+    <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
+    <a class="product-card-link" href="product.html?id=${encodeURIComponent(p.id)}">
+      <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
+      <div class="product-title">${title(p)}</div>
+      <div class="product-group">${group(p)}</div>
+      <div class="product-card-price-area">
+        <div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div>
+        <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : '<span class="installment-badge"></span>'}</div>
+      </div>
     </a>
-    <button class="fav-btn as-exact-fav ${favActive ? 'active' : ''}" data-fav="${p.id}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
-    <div class="as-exact-info">
-      <a class="as-exact-title product-title" href="${href}">${title(p)}</a>
-      <div class="as-exact-category product-group">${group(p)}</div>
-    </div>
-    <div class="as-exact-bottom">
-      <div class="as-exact-price-row price-row-card"><div class="as-exact-price price-current price">${money(p.price)}</div>${op ? `<div class="as-exact-old-price old-price price-old">${money(op)}</div>` : ''}</div>
-      <div class="as-exact-stock catalog-card-stock ${s > 0 ? '' : 'out'}">${s > 0 ? 'В наличии' : 'Нет в наличии'}</div>
-      <button class="as-exact-cart cart" data-cart="${p.id}" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину"></button>
-    </div>
+    <button class="cart" data-cart="${p.id}" type="button">В корзину</button>
   </article>`;
 }
 function bindProductButtons(scope=document){
-  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.classList.add('added'); setTimeout(()=>b.classList.remove('added'),700); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
+  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
   scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
 }
 function makeSection(block, products){

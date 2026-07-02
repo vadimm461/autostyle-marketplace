@@ -39,26 +39,25 @@ function escapeHtml(value){
 }
 function productHref(p){ return `product.html?id=${encodeURIComponent(p.id)}`; }
 function relatedCard(p){
-  const s = stock(p), name = title(p), im = image(p), d = discount(p), op = oldPrice(p);
+  const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p);
   const favActive = favs.includes(p.id);
-  const href = productHref(p);
-  const badge = d ? `<span class="as-exact-badge">-${d}%</span>` : (p.isNew || p.new || p.isNewProduct ? `<span class="as-exact-badge new">НОВИНКА</span>` : (p.hit || p.bestseller ? `<span class="as-exact-badge hit">ХИТ</span>` : ''));
   return `
-    <article class="as-product-card-exact related-card product-card" data-id="${escapeHtml(p.id)}" data-product-href="${href}">
-      ${badge}
-      <a class="as-exact-photo" href="${href}" aria-label="${escapeHtml(name)}">
-        ${im ? `<img loading="lazy" decoding="async" src="${escapeHtml(im)}" alt="${escapeHtml(name)}">` : `<span class="as-exact-no-photo">Фото</span>`}
+    <article class="related-card product-card" data-id="${escapeHtml(p.id)}">
+      <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
+      <a class="product-card-link" href="${productHref(p)}">
+        <div class="product-img related-img">
+          ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
+          ${img ? `<img loading="lazy" decoding="async" src="${escapeHtml(img)}" alt="${escapeHtml(name)}">` : `<div class="photo-empty">Фото</div>`}
+        </div>
+        <div class="product-title">${escapeHtml(name)}</div>
+        <div class="product-group">${escapeHtml(group(p))}</div>
+        <div class="price-row-card">
+          <div class="price">${money(p.price)}</div>
+          ${op ? `<div class="old-price">${money(op)}</div>` : ''}
+        </div>
+        ${s > 0 ? `<div class="catalog-card-stock">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
       </a>
-      <button class="fav-btn as-exact-fav related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
-      <div class="as-exact-info">
-        <a class="as-exact-title product-title" href="${href}">${escapeHtml(name)}</a>
-        <div class="as-exact-category product-group">${escapeHtml(group(p))}</div>
-      </div>
-      <div class="as-exact-bottom">
-        <div class="as-exact-price-row price-row-card"><div class="as-exact-price price">${money(p.price)}</div>${op ? `<div class="as-exact-old-price old-price">${money(op)}</div>` : ''}</div>
-        <div class="as-exact-stock catalog-card-stock ${s > 0 ? '' : 'out'}">${s > 0 ? 'В наличии' : 'Нет в наличии'}</div>
-        <button class="as-exact-cart cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину"></button>
-      </div>
+      <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''}>В корзину</button>
     </article>`;
 }
 function setupRelatedActions(){
@@ -69,7 +68,7 @@ function setupRelatedActions(){
       if (!id) return;
       await addUserCartItem(id); cart = getCurrentUserCart(); saveCart();
       e.currentTarget.textContent = '✓ Добавлено';
-      setTimeout(() => e.currentTarget.textContent = '🛒', 1000);
+      setTimeout(() => e.currentTarget.textContent = 'В корзину', 1000);
     };
   });
   document.querySelectorAll('.related-fav').forEach(btn => {

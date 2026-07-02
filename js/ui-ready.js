@@ -41,18 +41,3 @@
 
   document.addEventListener('DOMContentLoaded',()=>{ setupCatalogMenu(); setupBottomNav(); });
 })();
-
-// AutoStyle: catalog button must be a normal link when there is no real dropdown menu.
-(function(){
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('a.catalog-btn[href]');
-    if(!btn) return;
-    if(btn.closest('.catalog-menu')) return;
-    const href = btn.getAttribute('href') || 'catalog.html';
-    if(!/catalog\.html/i.test(href)) return;
-    if(location.pathname.split('/').pop() === 'catalog.html' && (!btn.search || btn.search === location.search)) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    window.location.href = href;
-  }, true);
-})();

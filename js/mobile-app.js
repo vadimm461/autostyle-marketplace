@@ -82,7 +82,7 @@ function productsForHomeBlock(block){
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
     const byId = new Map(availableProducts.map(p => [p.id, p]));
-    return ids.map(id => byId.get(String(id))).filter(Boolean).slice(0, 12);
+    return ids.map(id => byId.get(id)).filter(Boolean).filter(id => id === 'password' || id === 'phone');
   }
   let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
@@ -108,26 +108,6 @@ function promoCard(c){
   const imageOnly = c.imageOnly === true || c.mode === 'image' || c.viewMode === 'image' || c.displayMode === 'image' || c.cardMode === 'imageOnly';
   const style = imageOnly && image ? ` style="background-image:url('${String(image).replaceAll("'",'%27')}')"` : '';
   return `<a class="m-promo-card ${imageOnly?'m-promo-image-only':''}" href="${promoLink(c)}"${style}>${(!imageOnly && image) ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}${imageOnly?'':`<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span>`}</a>`;
-}
-
-let mobilePromoAutoTimer = 0;
-function startMobilePromoAutoScroll(){
-  clearInterval(mobilePromoAutoTimer);
-  const row = document.querySelector('.m-promo-row');
-  if(!row) return;
-  const cards = Array.from(row.querySelectorAll('.m-promo-card'));
-  if(cards.length <= 1) return;
-  let paused = false;
-  const pause = () => { paused = true; setTimeout(()=>{ paused = false; }, 3500); };
-  row.addEventListener('touchstart', pause, { passive:true });
-  row.addEventListener('pointerdown', pause, { passive:true });
-  mobilePromoAutoTimer = setInterval(()=>{
-    if(paused || document.hidden) return;
-    const cardWidth = cards[0]?.getBoundingClientRect().width || row.clientWidth;
-    const maxLeft = row.scrollWidth - row.clientWidth - 4;
-    const next = row.scrollLeft >= maxLeft ? 0 : row.scrollLeft + cardWidth + 14;
-    row.scrollTo({ left: next, behavior:'smooth' });
-  }, 4200);
 }
 function renderMobileSection(block, list){
   list = (list || []).slice(0, 12);
@@ -173,21 +153,18 @@ const installment = p => price(p) >= 199 || p.installment === true || p.installm
 const monthPay = p => Math.ceil(price(p) / 12);
 function save(){ localStorage.setItem('favorites', JSON.stringify(favs)); updateCounts(); }
 function updateCounts(){ $$('#mFavCount').forEach(x=>x.textContent=favs.length); waitUserCartReady().then(rows=>{$$('#mCartCount').forEach(x=>x.textContent=cartQtyCount(rows));}).catch(()=>{$$('#mCartCount').forEach(x=>x.textContent='0');}); }
-async function addCart(id, btn){ try{ await addUserCartItem(id, 1); if(btn){ const t=btn.textContent || '🛒'; btn.textContent='✓'; setTimeout(()=>btn.textContent=t,900); } updateCounts(); }catch(e){ alert(e?.message || profileVerificationMessage()); if(String(e?.message||'').includes('Подтвердите')) location.href='mobile-profile.html#security'; } }
+async function addCart(id, btn){ try{ await addUserCartItem(id, 1); if(btn){ const t=btn.textContent; btn.textContent='✓ Добавлено'; setTimeout(()=>btn.textContent=t,900); } updateCounts(); }catch(e){ alert(e?.message || profileVerificationMessage()); if(String(e?.message||'').includes('Подтвердите')) location.href='mobile-profile.html#security'; } }
 function toggleFav(id, btn){ favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; save(); if(btn) btn.classList.toggle('active', favs.includes(id)); }
 function card(p){
   const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p));
-  const href=appUrl(`product.html?id=${encodeURIComponent(p.id)}`);
   return `<article class="m-card">
-    <div class="m-card-img">
-      <a class="m-card-img-link" href="${href}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
-      <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button" aria-label="Избранное">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
-      <button class="m-cart" data-cart="${p.id}" type="button" aria-label="В корзину">🛒</button>
-    </div>
-    <a class="m-card-title" href="${href}">${t}</a>
+    <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
+    <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
+    <a class="m-card-title" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${t}</a>
     <div class="m-group">${g}</div>
     ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
     <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
+    <button class="m-cart" data-cart="${p.id}" type="button">В корзину</button>
   </article>`;
 }
 function bind(scope=document){
@@ -312,8 +289,8 @@ async function renderHome(){
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
   const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
   const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
-  $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section m-promo-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
-  bind(); startMobilePromoAutoScroll(); clearLoader();
+  $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
+  bind(); clearLoader();
 }
 async function renderCatalog(){
   setupShell('catalog'); await initData();
@@ -369,99 +346,6 @@ async function renderProduct(){
   if (desc && descBtn) descBtn.onclick = () => { const closed = desc.classList.toggle('m-collapsed'); descBtn.textContent = closed ? 'Показать' : 'Скрыть'; };
   clearLoader();
 }
-
-let mobilePaymentMethod = localStorage.getItem('as_mobile_payment_method') || 'cash';
-let mobileDiscountApplied = false;
-let mobileDiscountPercent = 0;
-let mobileDiscountLoadedFor = '';
-
-const MOBILE_INSTALLMENT_BANKS = [
-  { bank:'Agroprombank', months:12 },
-  { bank:'Eximbank', months:12 },
-  { bank:'Sberbank', months:12 }
-];
-let mobileSelectedInstallment = JSON.parse(localStorage.getItem('as_mobile_selected_installment') || 'null') || MOBILE_INSTALLMENT_BANKS[0];
-
-function paymentTitle(method){
-  return ({ cash:'При получении', card:'Картой при получении', installment:'Рассрочка' })[method] || 'При получении';
-}
-function installmentForTotal(total){
-  const bank = mobileSelectedInstallment?.bank || MOBILE_INSTALLMENT_BANKS[0].bank;
-  const months = Number(mobileSelectedInstallment?.months || 12);
-  const monthlyPayment = Math.ceil(Number(total || 0) / months);
-  return { bank, months, monthsTitle:`${months} мес.`, monthlyPayment, monthlyPaymentText:money(monthlyPayment) };
-}
-async function loadMobileDiscountPercent(user){
-  if(!user) return 0;
-  if(mobileDiscountLoadedFor === user.uid) return mobileDiscountPercent;
-  mobileDiscountLoadedFor = user.uid;
-  mobileDiscountPercent = 0;
-  try{
-    const profile = await getUserDoc(user.uid);
-    const d = profile.data || {};
-    const card = d.discountCard || {};
-    if(card.active || d.discountCardActive){
-      mobileDiscountPercent = Number(card.discount ?? card.discountPercent ?? d.discount ?? d.discountPercent ?? 0) || 0;
-    }
-    const snap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', user.uid)).catch(()=>null);
-    if(snap && snap.exists()){
-      const cd = snap.data() || {};
-      if(cd.active !== false){
-        mobileDiscountPercent = Number(cd.discount ?? cd.discountPercent ?? cd.percent ?? mobileDiscountPercent ?? 0) || 0;
-      }
-    }
-  }catch(e){ console.warn('mobile discount load error', e); }
-  return mobileDiscountPercent;
-}
-function finalCartTotal(total){
-  if(mobilePaymentMethod === 'installment') return Number(total || 0);
-  const pct = mobileDiscountApplied ? Math.max(0, Math.min(100, Number(mobileDiscountPercent || 0))) : 0;
-  return Math.round(Number(total || 0) * (100 - pct) / 100);
-}
-function renderMobileCheckoutControls(total, rows){
-  const finalTotal = finalCartTotal(total);
-  const discountDisabled = mobilePaymentMethod === 'installment';
-  const inst = installmentForTotal(total);
-  return `<div class="m-cart-options">
-    <h3>Оплата</h3>
-    <div class="m-pay-tabs">
-      <button type="button" data-pay="cash" class="${mobilePaymentMethod==='cash'?'active':''}">При получении</button>
-      <button type="button" data-pay="card" class="${mobilePaymentMethod==='card'?'active':''}">Картой</button>
-      <button type="button" data-pay="installment" class="${mobilePaymentMethod==='installment'?'active':''}">Рассрочка</button>
-    </div>
-    <button id="mApplyDiscountCard" type="button" class="m-discount-card-btn ${mobileDiscountApplied?'active':''}" ${discountDisabled?'disabled':''}>${discountDisabled?'Скидочная карта недоступна в рассрочку':(mobileDiscountApplied ? `Скидочная карта применена${mobileDiscountPercent?` −${mobileDiscountPercent}%`:''}` : 'Применить скидочную карту')}</button>
-    <div class="m-installment-options" ${mobilePaymentMethod==='installment'?'':'hidden'}>
-      <b>Выберите банк рассрочки</b>
-      <div class="m-bank-row">${MOBILE_INSTALLMENT_BANKS.map(b=>`<button type="button" data-bank="${b.bank}" class="${mobileSelectedInstallment?.bank===b.bank?'active':''}">${b.bank}<small>${money(Math.ceil(Number(total||0)/Number(b.months||12)))}/мес</small></button>`).join('')}</div>
-      <small>Итого в рассрочку: ${money(total)} · ${inst.monthsTitle}</small>
-    </div>
-    <div class="m-cart-final"><span>${mobileDiscountApplied && mobilePaymentMethod!=='installment' ? `С учётом скидки −${mobileDiscountPercent}%` : 'К оплате'}</span><b>${money(finalTotal)}</b></div>
-  </div>`;
-}
-function bindMobileCheckoutControls(total){
-  document.querySelectorAll('[data-pay]').forEach(btn=>btn.onclick=()=>{
-    mobilePaymentMethod = btn.dataset.pay || 'cash';
-    localStorage.setItem('as_mobile_payment_method', mobilePaymentMethod);
-    if(mobilePaymentMethod === 'installment') mobileDiscountApplied = false;
-    renderCart();
-  });
-  document.querySelectorAll('[data-bank]').forEach(btn=>btn.onclick=()=>{
-    mobileSelectedInstallment = { bank:btn.dataset.bank, months:12 };
-    localStorage.setItem('as_mobile_selected_installment', JSON.stringify(mobileSelectedInstallment));
-    renderCart();
-  });
-  const discountBtn = document.getElementById('mApplyDiscountCard');
-  if(discountBtn) discountBtn.onclick=async()=>{
-    const user = await waitAuthUser();
-    if(!user){ alert('Войдите в аккаунт, чтобы применить скидочную карту.'); return; }
-    if(mobilePaymentMethod === 'installment') return;
-    const pct = await loadMobileDiscountPercent(user);
-    if(!pct){ alert('Скидочная карта не активна или скидка не задана.'); return; }
-    mobileDiscountApplied = true;
-    renderCart();
-  };
-}
-
 async function renderCart(){
   setupShell('cart'); await initData();
   const user = await waitAuthUser();
@@ -474,37 +358,18 @@ async function renderCart(){
     $('#mCartList').innerHTML = `<div class="m-empty"><b>Подтвердите профиль</b><br>${profileVerificationMessage()}<br><br><a class="m-primary" href="mobile-profile.html#security">Подтвердить профиль</a></div>`;
     $('#mTotal').textContent = money(0); clearLoader(); return;
   }
-  await waitUserCartReady();
-  await loadMobileDiscountPercent(user);
-  const cartRows = getCurrentUserCart();
+  const cartRows = await waitUserCartReady();
   const byId=new Map(products.map(p=>[String(p.id),p]));
   const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
   const total=rows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
-  const finalTotal = finalCartTotal(total);
-  $('#mCartList').innerHTML=rows.map(({item,product:p})=>{
-    const qty = Number(item.qty||1)||1;
-    const max = Math.max(0, stock(p));
-    return `<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a><div><b>${title(p)}</b><div class="m-group">${group(p)}</div><div class="m-qty-row"><button class="m-qty" data-minus="${p.id}" ${qty<=1?'disabled':''}>−</button><span>${qty} × ${money(price(p))}</span><button class="m-qty" data-plus="${p.id}" ${qty>=max?'disabled':''}>+</button><button class="m-danger" data-remove="${p.id}">Удалить</button></div>${max?`<small class="m-stock-note">В наличии: ${max}</small>`:'<small class="m-stock-note danger">Нет в наличии</small>'}</div></div>`;
-  }).join('')||'<div class="m-empty">Корзина пустая</div>';
-  $('#mTotal').textContent=money(finalTotal);
-  const section = document.querySelector('.m-content .m-section');
-  if(section){
-    let old = document.getElementById('mCartOptions');
-    if(old) old.remove();
-    const totalBox = document.querySelector('.m-total');
-    if(totalBox) totalBox.insertAdjacentHTML('afterend', `<div id="mCartOptions">${renderMobileCheckoutControls(total, rows)}<button id="mCheckoutBtn" class="m-primary m-checkout" type="button" ${rows.length?'':'disabled'}>Оформить заказ</button></div>`);
-  }
-  bindMobileCheckoutControls(total);
+  $('#mCartList').innerHTML=rows.map(({item,product:p})=>`<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a><div><b>${title(p)}</b><div class="m-group">${group(p)}</div><div class="m-qty-row"><button class="m-qty" data-minus="${p.id}">−</button><span>${Number(item.qty||1)} × ${money(price(p))}</span><button class="m-qty" data-plus="${p.id}">+</button><button class="m-danger" data-remove="${p.id}">Удалить</button></div></div></div>`).join('')||'<div class="m-empty">Корзина пустая</div>';
+  $('#mTotal').textContent=money(total);
+  const totalBox = document.querySelector('.m-total');
+  if(totalBox && !$('#mCheckoutBtn')) totalBox.insertAdjacentHTML('afterend', `<button id="mCheckoutBtn" class="m-primary m-checkout" type="button" ${rows.length?'':'disabled'}>Оформить заказ</button>`);
   if($('#mCheckoutBtn')) $('#mCheckoutBtn').onclick = createMobileOrder;
-  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await loadUserCart(user); await renderCart();});
-  $$('[data-plus]').forEach(b=>b.onclick=async()=>{
-    const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.plus));
-    const prod=byId.get(String(b.dataset.plus));
-    const next = Number(row?.qty||1)+1;
-    if(next > stock(prod)){ alert(`В наличии только ${stock(prod)} шт.`); return; }
-    await setUserCartQty(b.dataset.plus,next); await loadUserCart(user); await renderCart();
-  });
-  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await loadUserCart(user); await renderCart();});
+  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await renderCart();});
+  $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart();});
+  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await renderCart();});
   clearLoader();
 }
 async function renderFavorites(){
@@ -534,18 +399,12 @@ async function createMobileOrder(){
     const d = profile.data || {};
     const items = rows.map(({item, product:p})=>{ const qty=Number(item.qty||1)||1; const pr=price(p); return { productId:String(p.id), title:title(p), group:group(p), image:img(p), price:pr, qty, lineTotal:pr*qty }; });
     const total = items.reduce((sum,i)=>sum+Number(i.lineTotal||0),0);
-    const finalTotal = finalCartTotal(total);
-    const installmentData = mobilePaymentMethod === 'installment' ? installmentForTotal(total) : null;
     const totalQty = items.reduce((sum,i)=>sum+Number(i.qty||0),0);
     const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
     await addDoc(collection(db, COLLECTIONS.orders || 'autostyle_orders'), {
       orderNumber, status:'new', statusTitle:'Новый', source:'mobile-cart',
       userId:user.uid, uid:user.uid, userEmail:user.email || '', userName:d.name || user.displayName || '', userPhone:d.phone || '', userCar:d.car || d.carText || '',
-      items, subtotal:total, total:finalTotal, totalBeforeDiscount:total, totalQty,
-      paymentMethod:mobilePaymentMethod, paymentMethodTitle:paymentTitle(mobilePaymentMethod),
-      discountCardApplied: mobilePaymentMethod !== 'installment' && mobileDiscountApplied,
-      discountCardPercent: mobilePaymentMethod !== 'installment' && mobileDiscountApplied ? mobileDiscountPercent : 0,
-      installment: installmentData, installmentBank: installmentData?.bank || '', installmentMonths: installmentData?.months || null, installmentMonthlyPayment: installmentData?.monthlyPayment || null,
+      items, subtotal:total, total, totalQty, paymentMethod:'cash', paymentMethodTitle:'При получении',
       createdAt:serverTimestamp(), createdAtText:new Date().toISOString()
     });
     await clearUserCart();
@@ -818,13 +677,9 @@ async function refreshCurrentMobilePage(reason='refresh'){
       else if(page==='home') await renderHome();
       else if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
     }catch(e){ console.warn('mobile refresh error', reason, e); }
-    finally{
-      mobileRefreshBusy = false;
-      window.dispatchEvent(new CustomEvent('autostyle-mobile-rendered', { detail:{ reason } }));
-    }
+    finally{ mobileRefreshBusy = false; }
   }, 80);
 }
-window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
   updateCounts();
@@ -851,6 +706,5 @@ window.addEventListener('online', () => refreshCurrentMobilePage('online'));
     if(page==='favorites') await renderFavorites();
     if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
     if(['about','contacts','installment','certificates','more'].includes(page)) renderInfoShell(page==='more'?'profile':'home');
-    window.dispatchEvent(new CustomEvent('autostyle-mobile-rendered', { detail:{ reason:'initial' } }));
   }catch(e){ console.error(e); clearLoader(); }
 })();

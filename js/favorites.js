@@ -31,27 +31,18 @@ function setupSearch(){
   btn&&(btn.onclick=go); input&&input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}});
 }
 function card(p){
-  const d=discount(p), op=oldPrice(p), s=stock(p), href=`product.html?id=${encodeURIComponent(p.id)}`;
-  const badge=d?`<span class="as-exact-badge">-${d}%</span>`:(p.isNew||p.new||p.isNewProduct?`<span class="as-exact-badge new">НОВИНКА</span>`:(p.hit||p.bestseller?`<span class="as-exact-badge hit">ХИТ</span>`:''));
-  return `<article class="as-product-card-exact catalog-card favorite-card product-card" data-product-href="${href}">
-    ${badge}
-    <a class="as-exact-photo" href="${href}" aria-label="${title(p)}">
-      ${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span class="as-exact-no-photo">Фото</span>'}
+  const d=discount(p), op=oldPrice(p), s=stock(p);
+  return `<article class="catalog-card favorite-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}">
+    <button class="fav-btn active" data-fav="${p.id}" type="button">♥</button>
+    <a class="catalog-card-link" href="product.html?id=${encodeURIComponent(p.id)}">
+      <div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div>
+      <div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="installment-badge catalog-installment-badge"></div><div class="catalog-card-stock">${s>0?'В наличии: '+s:'Нет в наличии'}</div></div></div>
     </a>
-    <button class="fav-btn as-exact-fav active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
-    <div class="as-exact-info">
-      <a class="as-exact-title catalog-card-link product-title" href="${href}">${title(p)}</a>
-      <div class="as-exact-category catalog-card-category product-group">${group(p)}</div>
-    </div>
-    <div class="as-exact-bottom">
-      <div class="as-exact-price-row price-row-card"><div class="as-exact-price catalog-card-price">${money(p.price)}</div>${op?`<div class="as-exact-old-price old-price">${money(op)}</div>`:''}</div>
-      <div class="as-exact-stock catalog-card-stock ${s>0?'':'out'}">${s>0?'В наличии':'Нет в наличии'}</div>
-      <button class="as-exact-cart catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину"></button>
-    </div>
+    <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''}>В корзину</button>
   </article>`;
 }
 function bind(){
-  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.classList.add('added'); setTimeout(()=>b.classList.remove('added'),700); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
+  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.filter(x=>x!==id); saveFav(); loadFavorites();});
 }
 async function loadFavorites(){
