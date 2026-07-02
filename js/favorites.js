@@ -32,13 +32,16 @@ function setupSearch(){
 }
 function card(p){
   const d=discount(p), op=oldPrice(p), s=stock(p), href=`product.html?id=${encodeURIComponent(p.id)}`;
-  return `<article class="catalog-card favorite-card" data-product-href="${href}">
-    <div class="catalog-card-photo product-img">
+  return `<article class="as-desktop-product-card catalog-card favorite-card" data-product-href="${href}">
+    <div class="catalog-card-photo product-img as-card-photo">
       <a class="product-image-link" href="${href}">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</a>
-      <button class="fav-btn active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
-      <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
     </div>
-    <a class="catalog-card-link" href="${href}"><div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="installment-badge catalog-installment-badge"></div><div class="catalog-card-stock">${s>0?'В наличии: '+s:'Нет в наличии'}</div></div></div></a>
+    <button class="fav-btn active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
+    <a class="catalog-card-link product-card-link" href="${href}">
+      <div class="catalog-card-body as-card-info"><h3 class="catalog-card-title product-title">${title(p)}</h3><div class="catalog-card-category product-group">${group(p)}</div></div>
+      <div class="catalog-card-price-area as-card-bottom"><div class="price-row-card"><div class="catalog-card-price price-current">${money(p.price)}</div>${op?`<div class="old-price price-old">${money(op)}</div>`:''}</div><div class="catalog-card-stock as-card-stock">${s>0?'В наличии':'Нет в наличии'}</div></div>
+    </a>
+    <button class="catalog-cart-btn as-card-cart" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
   </article>`;
 }
 function bind(){
