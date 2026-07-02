@@ -413,3 +413,48 @@
 .m-qty:disabled{opacity:.45;pointer-events:none}.m-stock-note{display:block;margin-top:6px;color:#667085;font-size:12px;font-weight:850}.m-stock-note.danger{color:#d92d20}
 .m-pull-refresh{transform:translate(-50%,-72px)}
 @media(max-width:380px){.m-promo-row .m-promo-card{height:128px!important}.m-promo-card.m-promo-image-only{height:128px!important;min-height:128px!important}.m-pay-tabs{gap:6px}.m-pay-tabs button{font-size:11px;padding-left:5px;padding-right:5px}}
+
+
+/* ===== Mobile final fixes: one promo, safe swipe, cart controls ===== */
+.m-promo-section{overflow:hidden!important;max-width:100%!important;}
+.m-promo-row{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:0!important;
+  overflow-x:auto!important;
+  scroll-snap-type:x mandatory!important;
+  scroll-padding:0!important;
+  padding:2px 0 18px!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-x:contain!important;
+  touch-action:pan-x pinch-zoom!important;
+}
+.m-promo-row::-webkit-scrollbar{display:none!important;}
+.m-promo-row .m-promo-card{
+  flex:0 0 100%!important;
+  min-width:100%!important;
+  max-width:100%!important;
+  width:100%!important;
+  height:142px!important;
+  margin:0!important;
+  scroll-snap-align:start!important;
+  scroll-snap-stop:always!important;
+}
+.m-promo-card.m-promo-image-only{height:142px!important;min-height:142px!important;background-size:cover!important;background-position:center!important;}
+.m-pull-refresh{transform:translate(-50%,-78px);}
+.m-qty:disabled{opacity:.45!important;pointer-events:none!important;}
+.m-stock-note{display:block;margin-top:6px;color:#667085;font-size:12px;font-weight:850;}
+.m-stock-note.danger{color:#d92d20;}
+#mCartOptions{margin-bottom:16px;}
+.m-cart-options{margin:12px 0 0;background:#fff;border:1px solid rgba(229,231,235,.95);border-radius:22px;padding:14px;box-shadow:0 12px 30px rgba(15,23,42,.06);}
+.m-pay-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.m-pay-tabs button,.m-bank-row button,.m-discount-card-btn{border:1px solid rgba(229,231,235,.95);background:#f7f8fa;color:#101828;border-radius:15px;min-height:44px;padding:9px 8px;font-weight:950;font-size:12px;text-align:center;}
+.m-pay-tabs button.active,.m-bank-row button.active,.m-discount-card-btn.active{background:#e8ffe6;border-color:rgba(40,225,26,.62);color:#0b7f16;}
+.m-discount-card-btn{width:100%;margin:2px 0 10px;text-align:left;padding:12px 14px;font-size:14px;background:#fff;}
+.m-discount-card-btn:disabled{opacity:.55;filter:grayscale(.3);}
+.m-installment-options[hidden]{display:none!important;}
+.m-bank-row{display:grid;grid-template-columns:1fr;gap:8px;}
+.m-bank-row button{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;}
+.m-cart-final{margin-top:10px;border-top:1px solid rgba(229,231,235,.95);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.m-cart-final b{font-size:24px;color:#101828;white-space:nowrap;}
+@media(max-width:380px){.m-promo-row .m-promo-card{height:128px!important}.m-promo-card.m-promo-image-only{height:128px!important;min-height:128px!important}}

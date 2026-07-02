@@ -5,7 +5,7 @@
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
   const scrollKey = keyBase + ':scroll';
-  const skip = new Set(['profile','profile-data']);
+  const skip = new Set(['profile','profile-data','cart','orders','notifications','discount-card']);
   const contentSelector = '.m-content';
   function now(){ return Date.now(); }
   function canCache(){ return !skip.has(page) && !!document.querySelector(contentSelector); }
@@ -49,6 +49,7 @@
     save: write,
     restore,
     clear(){ Object.keys(localStorage).filter(k=>k.startsWith('as_mobile_page_cache:')).forEach(k=>localStorage.removeItem(k)); },
+    clearCurrent(){ localStorage.removeItem(keyBase); localStorage.removeItem(scrollKey); },
     key: keyBase
   };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restore, { once:true });

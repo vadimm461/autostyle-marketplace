@@ -93,6 +93,14 @@ function productsForHomeBlock(block){
   if (key === 'hot') return availableProducts.filter(isMarkedForHome).concat(availableProducts).filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i).slice(0,20);
   return availableProducts.filter(p => isMarkedForHome(p)).slice(0,20);
 }
+
+function isHorizontalPromo(c){
+  const raw = String(c.promoType || c.promoKind || c.kind || c.layout || c.orientation || c.group || c.positionType || '').toLowerCase();
+  if(['vertical','side','desktop-vertical','right','left'].includes(raw)) return false;
+  if(c.vertical === true || c.isVertical === true || c.showOnMobile === false) return false;
+  return true;
+}
+
 function promoLink(c){
   const type = String(c.linkType || c.type || '').toLowerCase();
   const value = c.linkValue || c.value || c.target || '';
@@ -307,8 +315,8 @@ async function renderHome(){
   }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
-  const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
+  const promoHtml = promoCards.filter(c=>c.enabled!==false && isHorizontalPromo(c)).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
+  const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).map(x => renderMobileSection(x.block, x.list)).join('');
   $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section m-promo-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
   bind(); startMobilePromoAutoScroll(); clearLoader();
 }
@@ -460,6 +468,7 @@ function bindMobileCheckoutControls(total){
 }
 
 async function renderCart(){
+  window.AutoStyleMobilePageCache?.clearCurrent?.();
   setupShell('cart'); await initData();
   const user = await waitAuthUser();
   if(!user){
@@ -493,15 +502,21 @@ async function renderCart(){
   }
   bindMobileCheckoutControls(total);
   if($('#mCheckoutBtn')) $('#mCheckoutBtn').onclick = createMobileOrder;
-  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await loadUserCart(user); await renderCart();});
+
+  async function rerenderCartFast(){
+    updateCounts();
+    await loadUserCart(user);
+    await renderCart();
+  }
+  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await rerenderCartFast();});
   $$('[data-plus]').forEach(b=>b.onclick=async()=>{
     const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.plus));
     const prod=byId.get(String(b.dataset.plus));
     const next = Number(row?.qty||1)+1;
     if(next > stock(prod)){ alert(`В наличии только ${stock(prod)} шт.`); return; }
-    await setUserCartQty(b.dataset.plus,next); await loadUserCart(user); await renderCart();
+    await setUserCartQty(b.dataset.plus,next); await rerenderCartFast();
   });
-  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await loadUserCart(user); await renderCart();});
+  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await rerenderCartFast();});
   clearLoader();
 }
 async function renderFavorites(){

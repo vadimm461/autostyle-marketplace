@@ -1,8 +1,12 @@
 (function(){
   'use strict';
-  const TRIGGER = 128;          // было слишком чувствительно
-  const START_MAX_Y = 2;
-  const HORIZONTAL_RATIO = 1.25; // если жест больше вбок — не обновляем
+  // Pull-to-refresh стал менее чувствительным:
+  // срабатывает только от верхнего края, только при явном вертикальном жесте вниз.
+  const TRIGGER = 165;
+  const START_MAX_Y = 1;
+  const MIN_SHOW_DY = 58;
+  const MAX_START_Y = 96;
+  const VERTICAL_RATIO = 2.15;
   let startX = 0, startY = 0;
   let pulling = false;
   let lockedHorizontal = false;
@@ -13,6 +17,7 @@
   function isInsideHorizontalScroller(target){
     return !!target?.closest?.('.m-promo-row,.m-carousel,.m-home-products,[data-horizontal-scroll]');
   }
+  function atTop(){ return (window.scrollY || document.documentElement.scrollTop || 0) <= START_MAX_Y; }
   function el(){
     if(indicator) return indicator;
     indicator = document.createElement('div');
@@ -24,7 +29,8 @@
   function setState(text, active){
     const x = el();
     x.classList.toggle('active', !!active);
-    x.querySelector('b').textContent = text;
+    const b = x.querySelector('b');
+    if(b) b.textContent = text;
   }
   function reset(){
     pulling = false;
@@ -39,7 +45,7 @@
     busy = true;
     setState('Обновляем...', true);
     try{
-      if(window.AutoStyleMobilePageCache) window.AutoStyleMobilePageCache.clear();
+      if(window.AutoStyleMobilePageCache) window.AutoStyleMobilePageCache.clearCurrent?.();
       if(typeof window.autostyleMobileRefresh === 'function') await window.autostyleMobileRefresh('pull-refresh');
       else location.reload();
       setState('Обновлено', true);
@@ -48,8 +54,9 @@
   }
 
   document.addEventListener('touchstart', e=>{
-    if(window.scrollY > START_MAX_Y || busy || isInsideHorizontalScroller(e.target)) return;
-    const t = e.touches[0];
+    if(!atTop() || busy || isInsideHorizontalScroller(e.target)) return;
+    const t = e.touches && e.touches[0];
+    if(!t || t.clientY > MAX_START_Y) return;
     startX = t.clientX;
     startY = t.clientY;
     pulling = true;
@@ -59,19 +66,25 @@
 
   document.addEventListener('touchmove', e=>{
     if(!pulling || busy) return;
-    const t = e.touches[0];
+    const t = e.touches && e.touches[0];
+    if(!t) return reset();
     const dx = Math.abs(t.clientX - startX);
     const dy = t.clientY - startY;
-    if(dy < 0) return reset();
-    if(dx > 18 && dx > dy * HORIZONTAL_RATIO){
+    if(dy <= 0) return reset();
+
+    // Любой ранний боковой жест блокирует pull-refresh.
+    if(dx > 14 && dx >= dy * 0.75){
       lockedHorizontal = true;
       return reset();
     }
-    if(lockedHorizontal || dy < 22) return;
+    if(lockedHorizontal) return;
+
+    // Показываем индикатор только когда жест явно вертикальный.
+    if(dy < MIN_SHOW_DY || dy < dx * VERTICAL_RATIO) return;
     distance = dy;
     const ready = distance > TRIGGER;
     setState(ready ? 'Отпустите для обновления' : 'Потяните вниз для обновления', true);
-    el().style.transform = `translate(-50%, ${Math.min(distance / 3, 64)}px)`;
+    el().style.transform = `translate(-50%, ${Math.min(distance / 3.4, 70)}px)`;
   }, { passive:true });
 
   document.addEventListener('touchend', ()=>{
@@ -79,4 +92,5 @@
     const should = !lockedHorizontal && distance > TRIGGER;
     if(should) refresh(); else reset();
   }, { passive:true });
+  document.addEventListener('touchcancel', reset, { passive:true });
 })();
