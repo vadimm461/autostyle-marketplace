@@ -38,11 +38,11 @@ function card(p){
       <div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div>
       <div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div><div class="installment-badge catalog-installment-badge"></div><div class="catalog-card-stock">${s>0?'В наличии: '+s:'Нет в наличии'}</div></div></div>
     </a>
-    <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''}>В корзину</button>
+    <button class="catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
   </article>`;
 }
 function bind(){
-  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
+  document.querySelectorAll('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='🛒',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.filter(x=>x!==id); saveFav(); loadFavorites();});
 }
 async function loadFavorites(){

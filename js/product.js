@@ -57,7 +57,7 @@ function relatedCard(p){
         </div>
         ${s > 0 ? `<div class="catalog-card-stock">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
       </a>
-      <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''}>В корзину</button>
+      <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
     </article>`;
 }
 function setupRelatedActions(){
@@ -68,7 +68,7 @@ function setupRelatedActions(){
       if (!id) return;
       await addUserCartItem(id); cart = getCurrentUserCart(); saveCart();
       e.currentTarget.textContent = '✓ Добавлено';
-      setTimeout(() => e.currentTarget.textContent = 'В корзину', 1000);
+      setTimeout(() => e.currentTarget.textContent = '🛒', 1000);
     };
   });
   document.querySelectorAll('.related-fav').forEach(btn => {

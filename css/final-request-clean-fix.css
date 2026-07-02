@@ -638,3 +638,168 @@ main.container > .section-promo-block{
     background-position:center;
   }
 }
+
+/* ===== WB-style product cards: white large photo, title, price, icon cart ===== */
+.product-card,
+.catalog-card,
+.related-card,
+.favorite-card,
+.home-product-card{
+  position:relative !important;
+  background:#fff !important;
+  border:1px solid rgba(229,231,235,.9) !important;
+  border-radius:18px !important;
+  padding:8px 10px 12px !important;
+  box-shadow:0 8px 24px rgba(15,23,42,.06) !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:360px !important;
+}
+.product-card-link,
+.catalog-card-link,
+.related-card .product-card-link,
+.favorite-card .catalog-card-link{
+  display:flex !important;
+  flex-direction:column !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  color:#111827 !important;
+  text-decoration:none !important;
+}
+.product-img,
+.catalog-card-photo,
+.related-card .product-img,
+.favorite-card .catalog-card-photo,
+.home-product-card .product-img{
+  height:70% !important;
+  min-height:220px !important;
+  max-height:260px !important;
+  flex:0 0 70% !important;
+  background:#fff !important;
+  border-radius:16px !important;
+  overflow:hidden !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:6px !important;
+  margin:0 0 8px !important;
+}
+.product-img img,
+.catalog-card-photo img,
+.related-card .product-img img,
+.favorite-card .catalog-card-photo img,
+.home-product-card .product-img img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  transform:scale(1.08) !important;
+  display:block !important;
+  mix-blend-mode:multiply;
+}
+.product-title,
+.catalog-card-body h3,
+.home-product-card .product-title{
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+  min-height:38px !important;
+  margin:0 0 6px !important;
+  color:#111827 !important;
+  font-size:14px !important;
+  line-height:1.25 !important;
+  font-weight:700 !important;
+}
+.catalog-card-body{padding:0 !important;display:flex !important;flex-direction:column !important;gap:0 !important;}
+.product-group,
+.catalog-card-category,
+.catalog-card-stock,
+.product-badges,
+.installment-badge,
+.catalog-installment-badge{
+  display:none !important;
+}
+.product-card-price-area,
+.catalog-card-price-area{
+  margin-top:0 !important;
+  padding-right:48px !important;
+}
+.price-row-card,
+.catalog-card-price-area .price-row-card{
+  display:flex !important;
+  align-items:flex-end !important;
+  gap:6px !important;
+  flex-wrap:wrap !important;
+  min-height:31px !important;
+}
+.price-current,
+.catalog-card-price,
+.price,
+.product-card .price-current{
+  color:#111827 !important;
+  font-size:22px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  letter-spacing:-.02em !important;
+}
+.old-price,
+.price-old{
+  color:#9ca3af !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  text-decoration:line-through !important;
+}
+.product-card .cart,
+.catalog-cart-btn,
+.related-cart,
+.favorite-card .catalog-cart-btn,
+.home-product-card .cart-btn{
+  position:absolute !important;
+  right:10px !important;
+  bottom:10px !important;
+  width:42px !important;
+  height:42px !important;
+  min-width:42px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#28e11a !important;
+  color:#061006 !important;
+  box-shadow:0 10px 24px rgba(40,225,26,.28) !important;
+  display:grid !important;
+  place-items:center !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  cursor:pointer !important;
+}
+.product-card .cart::before,
+.catalog-cart-btn::before,
+.related-cart::before,
+.favorite-card .catalog-cart-btn::before,
+.home-product-card .cart-btn::before{
+  content:'🛒';
+  font-size:18px;
+  line-height:1;
+}
+.product-card .cart:disabled,
+.catalog-cart-btn:disabled,
+.related-cart:disabled{
+  background:#e5e7eb !important;
+  color:#9ca3af !important;
+  box-shadow:none !important;
+}
+.fav-btn{
+  top:14px !important;
+  right:14px !important;
+  z-index:3 !important;
+  background:rgba(255,255,255,.92) !important;
+  box-shadow:0 8px 22px rgba(15,23,42,.12) !important;
+}
+.discount-badge{
+  z-index:3 !important;
+}
+@media (max-width: 760px){
+  .product-card,.catalog-card,.related-card,.favorite-card,.home-product-card{min-height:320px !important;}
+  .product-img,.catalog-card-photo,.related-card .product-img,.favorite-card .catalog-card-photo,.home-product-card .product-img{min-height:190px !important;max-height:220px !important;}
+}
