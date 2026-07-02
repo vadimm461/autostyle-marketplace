@@ -1,75 +1,911 @@
-/* AutoStyle exact compact product cards — desktop + mobile override */
-:root{--as-green:#28d318;--as-text:#10141b;--as-muted:#667085;--as-card:#fff;--as-soft:#f5f7fa;}
+/* ЕДИНЫЙ ВИД КАРТОЧЕК ТОВАРА
+   Взято за основу оформление из страницы "Избранное".
+   Этот файл подключен последним почти на всех страницах, поэтому он перебивает старые разные стили. */
 
-/* containers */
-.products,.carousel-products,.product-grid,#productsGrid,#favoritesGrid,.related-grid,.related-products{gap:16px!important;align-items:stretch!important;}
-.carousel-products,.products.carousel-products{display:grid!important;grid-auto-flow:column!important;grid-auto-columns:minmax(280px,1fr)!important;overflow-x:auto!important;padding:0 0 10px!important;scroll-snap-type:x mandatory!important;}
-.product-grid,#productsGrid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:16px!important;}
-#favoritesGrid,.related-grid,.related-products{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:16px!important;}
-.catalog-layout .product-grid,.catalog-products #productsGrid,.catalog-main #productsGrid{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+/* сетки на главной, в каталоге, избранном, похожих товарах */
+.products,
+.catalog-grid,
+#catalogGrid,
+#favoritesGrid,
+.product-related-wrap,
+.related-products,
+.carousel-products {
+  align-items: stretch !important;
+}
 
-/* universal compact horizontal card */
-.product-card,.catalog-card,.favorite-card,.related-card,.home-product-card{position:relative!important;box-sizing:border-box!important;height:180px!important;min-height:180px!important;max-height:180px!important;background:#fff!important;border:1px solid #e9edf3!important;border-radius:16px!important;box-shadow:0 8px 22px rgba(16,24,40,.07)!important;overflow:hidden!important;padding:16px 14px 52px 14px!important;display:grid!important;grid-template-columns:44% 1fr!important;grid-template-rows:auto 1fr!important;column-gap:14px!important;align-items:start!important;scroll-snap-align:start!important;color:var(--as-text)!important;}
-.product-card:hover,.catalog-card:hover,.favorite-card:hover,.related-card:hover{transform:translateY(-1px)!important;box-shadow:0 12px 28px rgba(16,24,40,.10)!important;border-color:#dfe6ee!important;}
+.products,
+.carousel-products {
+  gap: 18px !important;
+}
 
-/* image left */
-.product-img,.catalog-card-photo,.related-img{grid-column:1!important;grid-row:1 / span 2!important;position:relative!important;width:100%!important;height:112px!important;min-height:112px!important;max-height:112px!important;background:#f4f6f8!important;border-radius:12px!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important;overflow:hidden!important;}
-.product-image-link,.catalog-card-photo>a{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;text-decoration:none!important;color:#667085!important;}
-.product-img img,.catalog-card-photo img,.related-img img{max-width:92%!important;max-height:92%!important;width:auto!important;height:auto!important;object-fit:contain!important;display:block!important;margin:auto!important;}
+#catalogGrid,
+.catalog-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 22px !important;
+}
 
-/* content right */
-.product-title,.catalog-card-link,.related-card .product-title{grid-column:2!important;grid-row:1!important;display:block!important;text-decoration:none!important;color:var(--as-text)!important;min-width:0!important;margin:0!important;padding:0!important;}
-.catalog-card-link{height:auto!important;overflow:visible!important;}
-.catalog-card-body{display:block!important;padding:0!important;margin:0!important;height:auto!important;min-height:0!important;}
-.product-title,.catalog-card-body h3,.related-card .product-title{font-size:15px!important;line-height:1.25!important;font-weight:900!important;letter-spacing:-.01em!important;max-height:56px!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;margin:0 28px 9px 0!important;text-align:left!important;}
-.product-group,.catalog-card-category{font-size:13px!important;line-height:1.25!important;color:#667085!important;font-weight:600!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:left!important;}
+/* Избранное — размер карточек как на главной: 5 карточек в ряд */
+#favoritesGrid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
 
-/* remove extra vertical stuff */
-.installment-badge,.catalog-installment-badge,.product-badges{display:none!important;}
-.product-card-price-area,.catalog-card-price-area{display:contents!important;}
+.product-related-wrap {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 22px !important;
+}
 
-/* bottom row: price, old price, stock and cart */
-.price-row-card{position:absolute!important;left:14px!important;right:70px!important;bottom:18px!important;display:flex!important;align-items:baseline!important;gap:10px!important;margin:0!important;padding:0!important;z-index:3!important;}
-.price,.price-current,.catalog-card-price{font-size:24px!important;line-height:1!important;font-weight:950!important;color:#0d1117!important;white-space:nowrap!important;margin:0!important;}
-.old-price,.price-old{font-size:14px!important;line-height:1!important;color:#98a2b3!important;text-decoration:line-through!important;font-weight:700!important;margin:0!important;}
-.catalog-card-stock,.stock-zero{position:absolute!important;left:150px!important;bottom:21px!important;font-size:12px!important;line-height:1!important;color:#3d4a5c!important;font-weight:700!important;white-space:nowrap!important;margin:0!important;z-index:4!important;}
-.catalog-card-stock::before{content:'●';color:#23b828;margin-right:6px;font-size:11px;}
-.stock-zero::before{content:'●';color:#b8c0cc;margin-right:6px;font-size:11px;}
-.catalog-card-stock{font-size:0!important;}
-.catalog-card-stock::after{content:'В наличии';font-size:12px!important;color:#3d4a5c!important;}
+.carousel-products .product-card,
+.products .product-card {
+  flex: 0 0 calc((100% - 72px) / 5) !important;
+  min-width: 205px !important;
+}
 
-/* buttons */
-.fav-btn,.related-fav{position:absolute!important;right:14px!important;top:14px!important;width:34px!important;height:34px!important;border-radius:50%!important;border:0!important;background:#fff!important;box-shadow:0 5px 16px rgba(16,24,40,.12)!important;color:#111827!important;font-size:20px!important;line-height:34px!important;display:flex!important;align-items:center!important;justify-content:center!important;z-index:8!important;padding:0!important;margin:0!important;cursor:pointer!important;}
-.fav-btn.active,.related-fav.active{color:var(--as-green)!important;}
-.cart,.catalog-cart-btn,.related-cart{position:absolute!important;right:14px!important;bottom:14px!important;width:48px!important;height:48px!important;border-radius:11px!important;border:0!important;background:linear-gradient(180deg,#35e728,#20b817)!important;box-shadow:0 10px 24px rgba(40,211,24,.30)!important;color:#fff!important;font-size:0!important;font-weight:900!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;margin:0!important;z-index:8!important;cursor:pointer!important;}
-.cart::before,.catalog-cart-btn::before,.related-cart::before{content:'🛒';font-size:22px;line-height:1;filter:brightness(0) invert(1);}
-.cart:disabled,.catalog-cart-btn:disabled,.related-cart:disabled{opacity:.45!important;filter:grayscale(1)!important;cursor:not-allowed!important;}
+/* сама карточка — как в избранном */
+.product-card,
+.catalog-card,
+.favorite-card,
+.related-card,
+.home-product-card,
+[class$="-card"].product-card {
+  position: relative !important;
+  width: 100% !important;
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  padding: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #fff !important;
+  border: 1px solid #e8edf3 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
+  overflow: hidden !important;
+  color: #111827 !important;
+  transform: none !important;
+}
 
-/* badges */
-.discount-badge{position:absolute!important;left:10px!important;top:10px!important;background:#ff2028!important;color:#fff!important;border-radius:999px!important;padding:5px 9px!important;font-size:12px!important;line-height:1!important;font-weight:900!important;z-index:7!important;box-shadow:none!important;}
-.product-card.is-new::before,.catalog-card.is-new::before,.favorite-card.is-new::before{content:'НОВИНКА';position:absolute;left:10px;top:10px;background:#126ee2;color:#fff;border-radius:999px;padding:5px 9px;font-size:11px;line-height:1;font-weight:900;z-index:7;}
+.product-card:hover,
+.catalog-card:hover,
+.favorite-card:hover,
+.related-card:hover,
+.home-product-card:hover {
+  transform: none !important;
+  border-color: #e8edf3 !important;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .10) !important;
+}
 
-/* links/click overlays should not cover buttons */
-.catalog-card-link::before,.product-title::before{display:none!important;content:none!important;}
-.product-card a,.catalog-card a,.related-card a{z-index:2!important;}
-.product-card button,.catalog-card button,.related-card button{pointer-events:auto!important;}
+.product-card::before,
+.catalog-card::before,
+.home-product-card::before { display: none !important; }
 
-@media (max-width:1300px){.product-grid,#productsGrid,.catalog-layout .product-grid,.catalog-products #productsGrid,.catalog-main #productsGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}.carousel-products,.products.carousel-products{grid-auto-columns:300px!important}}
-@media (max-width:980px){.product-grid,#productsGrid,#favoritesGrid,.related-grid,.related-products{grid-template-columns:repeat(2,minmax(0,1fr))!important}.carousel-products,.products.carousel-products{grid-auto-columns:calc(50% - 8px)!important}}
-@media (max-width:640px){
-  .product-grid,#productsGrid,#favoritesGrid,.related-grid,.related-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
-  .carousel-products,.products.carousel-products{display:grid!important;grid-auto-flow:initial!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-columns:initial!important;overflow:visible!important;gap:10px!important;}
-  .product-card,.catalog-card,.favorite-card,.related-card,.home-product-card{height:210px!important;min-height:210px!important;max-height:210px!important;padding:10px 10px 50px!important;display:block!important;border-radius:14px!important;}
-  .product-img,.catalog-card-photo,.related-img{width:100%!important;height:100px!important;min-height:100px!important;max-height:100px!important;margin:0 0 8px!important;border-radius:12px!important;}
-  .product-title,.catalog-card-body h3,.related-card .product-title{font-size:12px!important;line-height:1.2!important;max-height:43px!important;-webkit-line-clamp:3!important;margin:0 26px 5px 0!important;}
-  .product-group,.catalog-card-category{font-size:11px!important;margin:0!important;}
-  .price-row-card{left:10px!important;right:54px!important;bottom:15px!important;gap:5px!important;}
-  .price,.price-current,.catalog-card-price{font-size:18px!important;}
-  .old-price,.price-old{font-size:11px!important;}
-  .catalog-card-stock,.stock-zero{left:auto!important;right:58px!important;bottom:17px!important;}
-  .catalog-card-stock::after{font-size:10px!important;}
-  .fav-btn,.related-fav{right:9px!important;top:9px!important;width:30px!important;height:30px!important;font-size:18px!important;}
-  .cart,.catalog-cart-btn,.related-cart{right:10px!important;bottom:10px!important;width:40px!important;height:40px!important;border-radius:10px!important;}
-  .cart::before,.catalog-cart-btn::before,.related-cart::before{font-size:18px!important;}
-  .discount-badge{left:8px!important;top:8px!important;font-size:10px!important;padding:4px 7px!important;}
+/* ссылка внутри карточки */
+.product-card-link,
+.catalog-card-link,
+.home-product-link,
+.product-link,
+.catalog-link,
+.home-link {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+}
+
+.catalog-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+/* фото — не режется, всегда целиком */
+.product-img,
+.catalog-card-photo,
+.product-photo,
+.home-product-img,
+.home-photo,
+.related-img,
+.product-card-img,
+.product-card .image,
+.home-product-card .image {
+  width: 100% !important;
+  height: 126px !important;
+  min-height: 126px !important;
+  max-height: 126px !important;
+  flex: 0 0 126px !important;
+  margin: 0 0 12px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #f4f6f8 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+.product-img img,
+.catalog-card-photo img,
+.product-photo img,
+.home-product-img img,
+.home-photo img,
+.related-img img,
+.product-card-img img,
+.product-card .image img,
+.home-product-card .image img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  padding: 8px !important;
+  object-fit: contain !important;
+  transform: none !important;
+  background: transparent !important;
+}
+
+.product-card:hover .product-img img,
+.catalog-card:hover .catalog-card-photo img { transform: none !important; }
+
+/* название — максимум 2 строки, одинаковая высота */
+.product-title,
+.catalog-card h3,
+.catalog-card-title,
+.product-card-title,
+.home-product-title,
+.product-card h3,
+.product-link h3,
+.catalog-link h3,
+.home-link h3 {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  margin: 0 0 7px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
+  font-weight: 900 !important;
+  color: #111827 !important;
+}
+
+/* группа/категория — одна строка */
+.product-group,
+.product-cat,
+.catalog-card-category,
+.home-product-category,
+.home-cat,
+.catalog-cat,
+.muted.product-group {
+  display: block !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px !important;
+  margin: 0 0 10px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  color: #667085 !important;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  font-weight: 500 !important;
+}
+
+/* низ карточки прижат вниз — цена и кнопка на одном уровне */
+.product-card-price-area,
+.catalog-card-price-area,
+.home-product-price-area,
+.price-area {
+  margin-top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  min-height: 34px !important;
+  height: auto !important;
+  gap: 0 !important;
+}
+
+.price-row-card,
+.price-row,
+.catalog-card-price-row,
+.home-price-row {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+
+.price,
+.price-current,
+.catalog-card-price,
+.home-product-price,
+.home-price,
+.catalog-price {
+  font-size: 24px !important;
+  line-height: 28px !important;
+  font-weight: 950 !important;
+  color: #05070d !important;
+}
+
+.old-price,
+.price-old {
+  font-size: 14px !important;
+  line-height: 18px !important;
+  color: #9aa3af !important;
+  text-decoration: line-through !important;
+}
+
+/* служебные строки не должны раздувать карточку */
+.product-badges,
+.installment-badge,
+.catalog-installment-badge,
+.catalog-card-stock,
+.stock-zero,
+.stock,
+.product-meta-spacer,
+.card-spacer,
+.product-spacer {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* кнопка */
+.product-card .cart,
+.product-card .cart-btn,
+.product-card button.cart,
+.catalog-cart-btn,
+.home-product-card button,
+.home-product-card .cart,
+.home-product-card .cart-btn,
+.related-cart,
+.cart-button {
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+  margin: 10px 0 0 !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: #05070d !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  line-height: 38px !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+}
+
+.product-card .cart:disabled,
+.catalog-cart-btn:disabled,
+.related-cart:disabled { opacity: .55 !important; cursor: not-allowed !important; }
+
+/* сердечко как в избранном */
+.fav-btn,
+.related-fav {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 3 !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #fff !important;
+  color: #16bf0a !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .12) !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.fav-btn.active,
+.related-fav.active { background: #eaffea !important; color: #16bf0a !important; }
+
+.discount-badge {
+  position: absolute !important;
+  top: 18px !important;
+  left: 18px !important;
+  z-index: 3 !important;
+}
+
+/* корзина: рекомендованные/быстрые товары тоже в такой же карточке */
+.quick-product-card,
+.cart-product-card {
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  border: 1px solid #e8edf3 !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
+  overflow: hidden !important;
+}
+
+.quick-product-img,
+.cart-product-img {
+  height: 126px !important;
+  min-height: 126px !important;
+  max-height: 126px !important;
+  background: #f4f6f8 !important;
+  border-radius: 10px !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+
+.quick-product-img img,
+.cart-product-img img { width: 100% !important; height: 100% !important; object-fit: contain !important; padding: 8px !important; }
+
+/* адаптив */
+@media (max-width: 1180px) {
+  #catalogGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  #favoritesGrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 18px !important; }
+  .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 54px) / 4) !important; }
+  #relatedProducts .related-card.product-card,
+  .product-page #relatedProducts .related-card.product-card {
+    flex-basis: calc((100% - 54px) / 4) !important;
+    width: calc((100% - 54px) / 4) !important;
+  }
+}
+
+@media (max-width: 920px) {
+  #catalogGrid, #favoritesGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; }
+  .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 18px) / 2) !important; min-width: 190px !important; }
+}
+
+@media (max-width: 560px) {
+  .product-card,
+  .catalog-card,
+  .favorite-card,
+  .related-card,
+  .home-product-card,
+  .quick-product-card,
+  .cart-product-card {
+    height: 318px !important;
+    min-height: 318px !important;
+    max-height: 318px !important;
+    padding: 10px !important;
+    border-radius: 13px !important;
+  }
+  .product-img,
+  .catalog-card-photo,
+  .product-photo,
+  .home-product-img,
+  .home-photo,
+  .related-img,
+  .product-card-img,
+  .quick-product-img,
+  .cart-product-img {
+    height: 116px !important;
+    min-height: 116px !important;
+    max-height: 116px !important;
+    flex-basis: 116px !important;
+  }
+  .product-title,
+  .catalog-card h3,
+  .product-card h3 { font-size: 14px !important; line-height: 18px !important; height: 36px !important; min-height: 36px !important; max-height: 36px !important; }
+  .price, .price-current, .catalog-card-price, .home-product-price { font-size: 21px !important; line-height: 26px !important; }
+  .product-card .cart, .catalog-cart-btn, .related-cart { height: 36px !important; min-height: 36px !important; max-height: 36px !important; line-height: 36px !important; }
+}
+
+/* FIX: product.html — блок "Похожие товары" не должен становиться сеткой из 4 колонок.
+   Раньше #relatedProducts имел класс product-related-wrap, и общее правило делало сам контейнер grid,
+   из-за чего вся секция с похожими товарами сжималась в одну карточку. */
+#relatedProducts.product-related-wrap,
+.product-page #relatedProducts.product-related-wrap {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+}
+
+#relatedProducts .related-section,
+.product-page #relatedProducts .related-section {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 24px 0 0 !important;
+  padding: 24px !important;
+  border-radius: 30px !important;
+  background: #fff !important;
+  overflow: visible !important;
+}
+
+#relatedProducts .related-head,
+.product-page #relatedProducts .related-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin: 0 0 18px !important;
+}
+
+#relatedProducts .related-carousel-wrap,
+.product-page #relatedProducts .related-carousel-wrap {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+#relatedProducts .related-carousel,
+.product-page #relatedProducts .related-carousel {
+  display: flex !important;
+  grid-template-columns: none !important;
+  gap: 22px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x mandatory !important;
+  scroll-behavior: smooth !important;
+  padding: 2px 4px 14px !important;
+  scrollbar-width: none !important;
+  align-items: stretch !important;
+}
+
+#relatedProducts .related-carousel::-webkit-scrollbar,
+.product-page #relatedProducts .related-carousel::-webkit-scrollbar { display: none !important; }
+
+/* В product.html карточки похожих товаров теперь такие же, как в избранном */
+#relatedProducts .related-card.product-card,
+.product-page #relatedProducts .related-card.product-card {
+  /* Похожие товары — тот же размер, что карточки на главной: 5 карточек в ряд */
+  flex: 0 0 calc((100% - 72px) / 5) !important;
+  width: calc((100% - 72px) / 5) !important;
+  min-width: 205px !important;
+  max-width: none !important;
+  height: 340px !important;
+  min-height: 340px !important;
+  max-height: 340px !important;
+  scroll-snap-align: start !important;
+}
+
+#relatedProducts .related-card .product-card-link,
+.product-page #relatedProducts .related-card .product-card-link {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+
+#relatedProducts .related-card .product-img,
+#relatedProducts .related-card .related-img,
+.product-page #relatedProducts .related-card .product-img,
+.product-page #relatedProducts .related-card .related-img {
+  height: 126px !important;
+  min-height: 126px !important;
+  max-height: 126px !important;
+  flex: 0 0 126px !important;
+  background: #f4f6f8 !important;
+  border-radius: 10px !important;
+}
+
+#relatedProducts .related-card .product-img img,
+#relatedProducts .related-card .related-img img,
+.product-page #relatedProducts .related-card .product-img img,
+.product-page #relatedProducts .related-card .related-img img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  padding: 8px !important;
+}
+
+#relatedProducts .related-nav,
+.product-page #relatedProducts .related-nav {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 20 !important;
+}
+
+#relatedProducts .related-prev,
+.product-page #relatedProducts .related-prev { left: -22px !important; }
+#relatedProducts .related-next,
+.product-page #relatedProducts .related-next { right: -22px !important; }
+
+@media (max-width: 920px) {
+  #relatedProducts .related-card.product-card,
+  .product-page #relatedProducts .related-card.product-card {
+    flex-basis: calc((100% - 18px) / 2) !important;
+    width: calc((100% - 18px) / 2) !important;
+    min-width: 190px !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 560px) {
+  #relatedProducts .related-section,
+  .product-page #relatedProducts .related-section { padding: 16px !important; border-radius: 22px !important; }
+  #relatedProducts .related-card.product-card,
+  .product-page #relatedProducts .related-card.product-card {
+    flex-basis: 82vw !important;
+    width: 82vw !important;
+    min-width: 82vw !important;
+    max-width: 82vw !important;
+    height: 318px !important;
+    min-height: 318px !important;
+    max-height: 318px !important;
+  }
+  #relatedProducts .related-nav,
+  .product-page #relatedProducts .related-nav { display: none !important; }
+}
+
+/* === FIX: Favorites cards must have the same desktop size as main-page cards === */
+@media (min-width: 921px) {
+  #favoritesGrid.catalog-grid,
+  .favorites-page #favoritesGrid.catalog-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 18px !important;
+    grid-auto-rows: 340px !important;
+  }
+
+  #favoritesGrid .catalog-card.favorite-card,
+  .favorites-page #favoritesGrid .catalog-card.favorite-card,
+  #favoritesGrid .catalog-card {
+    width: 205px !important;
+    min-width: 205px !important;
+    max-width: 205px !important;
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  #favoritesGrid .catalog-card-link,
+  .favorites-page #favoritesGrid .catalog-card-link {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+
+  #favoritesGrid .catalog-card-photo,
+  .favorites-page #favoritesGrid .catalog-card-photo {
+    width: 100% !important;
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
+    flex: 0 0 126px !important;
+    aspect-ratio: auto !important;
+    margin: 0 0 10px !important;
+    border-radius: 10px !important;
+    background: #f4f6f8 !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+  }
+
+  #favoritesGrid .catalog-card-photo img,
+  .favorites-page #favoritesGrid .catalog-card-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    padding: 8px !important;
+  }
+
+  #favoritesGrid .catalog-card-body,
+  .favorites-page #favoritesGrid .catalog-card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 0 2px !important;
+  }
+
+  #favoritesGrid .catalog-card h3,
+  .favorites-page #favoritesGrid .catalog-card h3 {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    height: 36px !important;
+    margin: 0 0 6px !important;
+    font-size: 14px !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+  }
+
+  #favoritesGrid .catalog-card-category,
+  .favorites-page #favoritesGrid .catalog-card-category {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 17px !important;
+    max-height: 17px !important;
+    height: 17px !important;
+    margin: 0 0 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  #favoritesGrid .catalog-card-price-area,
+  .favorites-page #favoritesGrid .catalog-card-price-area {
+    margin-top: auto !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    gap: 4px !important;
+    justify-content: flex-end !important;
+  }
+
+  #favoritesGrid .catalog-card-price,
+  .favorites-page #favoritesGrid .catalog-card-price {
+    font-size: 23px !important;
+    line-height: 1 !important;
+    font-weight: 1000 !important;
+  }
+
+  #favoritesGrid .catalog-installment-badge,
+  #favoritesGrid .catalog-card-stock,
+  .favorites-page #favoritesGrid .catalog-installment-badge,
+  .favorites-page #favoritesGrid .catalog-card-stock {
+    display: none !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #favoritesGrid .catalog-cart-btn,
+  .favorites-page #favoritesGrid .catalog-cart-btn {
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin-top: 10px !important;
+    border-radius: 13px !important;
+    flex: 0 0 42px !important;
+  }
+}
+
+@media (max-width: 920px) {
+  #favoritesGrid.catalog-grid,
+  .favorites-page #favoritesGrid.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+/* === FIX: Catalog cards only — same size as main page/favorites/related ===
+   Touches only catalog.html (#catalogGrid). Главная, избранное и похожие товары не меняются. */
+@media (min-width: 921px) {
+  .catalog-page #catalogGrid.catalog-grid,
+  .catalog-page #catalogGrid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 18px !important;
+    grid-auto-rows: 340px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card {
+    width: 205px !important;
+    min-width: 205px !important;
+    max-width: 205px !important;
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border-radius: 14px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-link {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-photo {
+    width: 100% !important;
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
+    flex: 0 0 126px !important;
+    aspect-ratio: auto !important;
+    margin: 0 0 10px !important;
+    border-radius: 10px !important;
+    background: #f4f6f8 !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-photo img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    padding: 8px !important;
+    display: block !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 0 2px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card h3 {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    height: 36px !important;
+    margin: 0 0 6px !important;
+    font-size: 14px !important;
+    line-height: 1.28 !important;
+    font-weight: 950 !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-category {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 17px !important;
+    max-height: 17px !important;
+    height: 17px !important;
+    margin: 0 0 8px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-price-area {
+    margin-top: auto !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-price {
+    font-size: 23px !important;
+    line-height: 1 !important;
+    font-weight: 1000 !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-installment-badge,
+  .catalog-page #catalogGrid .catalog-card-stock {
+    display: none !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-cart-btn {
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin-top: 10px !important;
+    border-radius: 13px !important;
+    flex: 0 0 42px !important;
+  }
+}
+
+/* ===== FIX 2026-06-08: catalog overlay must stay BEHIND catalog window ===== */
+.catalog-overlay,
+.page-dim {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 8000 !important;
+  background: rgba(0, 0, 0, .46) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.catalog-overlay.active,
+.page-dim.active,
+body.catalog-open .catalog-overlay,
+body.catalog-open .page-dim {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.catalog-popup,
+.catalog-popup.mega-catalog,
+.mega-catalog,
+.catalog-dropdown {
+  position: fixed !important;
+  top: 92px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483000 !important;
+  background: #fff !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.catalog-popup.active,
+.catalog-popup.mega-catalog.active,
+.mega-catalog.active,
+.catalog-dropdown.active {
+  display: grid !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+.catalog-popup.active *,
+.catalog-popup.mega-catalog.active *,
+.mega-catalog.active *,
+.catalog-dropdown.active * {
+  filter: none !important;
+  -webkit-filter: none !important;
+  opacity: 1 !important;
+}
+
+.topbar,
+header.topbar {
+  z-index: 9000 !important;
 }
