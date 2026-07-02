@@ -43,22 +43,22 @@ function relatedCard(p){
   const favActive = favs.includes(p.id);
   const href = productHref(p);
   return `
-    <article class="related-card product-card as-wb-card" data-id="${escapeHtml(p.id)}" data-product-href="${href}">
-      <div class="as-wb-media">
-        <a class="product-card-link as-wb-photo-link" href="${href}" aria-label="${escapeHtml(name)}">
-          <div class="product-img related-img as-wb-photo">
-            ${d ? `<span class="discount-badge as-wb-discount">-${d}%</span>` : ''}
-            ${im ? `<img loading="lazy" decoding="async" src="${escapeHtml(im)}" alt="${escapeHtml(name)}">` : `<span class="as-wb-empty">Фото</span>`}
-          </div>
+    <article class="related-card product-card" data-id="${escapeHtml(p.id)}" data-product-href="${href}">
+      <div class="product-img related-img">
+        <a class="product-image-link" href="${href}">
+          ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
+          ${im ? `<img loading="lazy" decoding="async" src="${escapeHtml(im)}" alt="${escapeHtml(name)}">` : `<div class="photo-empty">Фото</div>`}
         </a>
-        <button class="fav-btn related-fav as-wb-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
-        <button class="cart related-cart as-wb-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
+        <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
+        <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
       </div>
-      <a class="as-wb-info" href="${href}">
-        <div class="product-title as-wb-title">${escapeHtml(name)}</div>
-        <div class="product-group as-wb-group">${escapeHtml(group(p))}</div>
-        <div class="price-row-card as-wb-price-row"><div class="price as-wb-price">${money(p.price)}</div>${op ? `<div class="old-price as-wb-old">${money(op)}</div>` : ''}</div>
-      </a>
+      <a class="product-title" href="${href}">${escapeHtml(name)}</a>
+      <div class="product-group">${escapeHtml(group(p))}</div>
+      <div class="price-row-card">
+        <div class="price">${money(p.price)}</div>
+        ${op ? `<div class="old-price">${money(op)}</div>` : ''}
+      </div>
+      ${s > 0 ? `<div class="catalog-card-stock">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
     </article>`;
 }
 function setupRelatedActions(){
@@ -68,7 +68,7 @@ function setupRelatedActions(){
       const id = card?.dataset.id;
       if (!id) return;
       await addUserCartItem(id); cart = getCurrentUserCart(); saveCart();
-      e.currentTarget.textContent = '✓';
+      e.currentTarget.textContent = '✓ Добавлено';
       setTimeout(() => e.currentTarget.textContent = '🛒', 1000);
     };
   });
