@@ -43,19 +43,21 @@ function relatedCard(p){
   const favActive = favs.includes(p.id);
   const href = productHref(p);
   return `
-    <article class="as-desktop-product-card related-card product-card" data-id="${escapeHtml(p.id)}" data-product-href="${href}">
-      <div class="product-img related-img as-card-photo">
-        <a class="product-image-link" href="${href}">
-          ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
-          ${im ? `<img loading="lazy" decoding="async" src="${escapeHtml(im)}" alt="${escapeHtml(name)}">` : `<span>Фото</span>`}
-        </a>
-      </div>
-      <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
-      <a class="catalog-card-link product-card-link" href="${href}">
-        <div class="as-card-info product-card-body"><h3 class="product-title catalog-card-title">${escapeHtml(name)}</h3><div class="product-group catalog-card-category">${escapeHtml(group(p))}</div></div>
-        <div class="as-card-bottom product-card-price-area"><div class="price-row-card"><div class="price-current price">${money(p.price)}</div>${op ? `<div class="old-price price-old">${money(op)}</div>` : ''}</div><div class="catalog-card-stock as-card-stock">${s > 0 ? 'В наличии' : 'Нет в наличии'}</div></div>
+    <article class="related-card product-card as-desktop-card" data-id="${escapeHtml(p.id)}" data-product-href="${href}">
+      ${d ? `<span class="as-card-badge">-${d}%</span>` : ''}
+      <a class="as-card-photo" href="${href}" aria-label="${escapeHtml(name)}">
+        ${im ? `<img loading="lazy" decoding="async" src="${escapeHtml(im)}" alt="${escapeHtml(name)}">` : `<span class="as-card-no-photo">Фото</span>`}
       </a>
-      <button class="cart related-cart as-card-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
+      <button class="fav-btn as-card-fav related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
+      <div class="as-card-info">
+        <a class="as-card-title product-title" href="${href}">${escapeHtml(name)}</a>
+        <div class="as-card-category product-group">${escapeHtml(group(p))}</div>
+      </div>
+      <div class="as-card-bottom">
+        <div class="as-card-price-row price-row-card"><div class="as-card-price price">${money(p.price)}</div>${op ? `<div class="as-card-old-price old-price">${money(op)}</div>` : ''}</div>
+        <div class="as-card-stock catalog-card-stock ${s > 0 ? '' : 'out'}">${s > 0 ? 'В наличии' : 'Нет в наличии'}</div>
+        <button class="as-card-cart cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''} aria-label="В корзину">🛒</button>
+      </div>
     </article>`;
 }
 function setupRelatedActions(){

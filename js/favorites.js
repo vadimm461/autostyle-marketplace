@@ -32,16 +32,21 @@ function setupSearch(){
 }
 function card(p){
   const d=discount(p), op=oldPrice(p), s=stock(p), href=`product.html?id=${encodeURIComponent(p.id)}`;
-  return `<article class="as-desktop-product-card catalog-card favorite-card" data-product-href="${href}">
-    <div class="catalog-card-photo product-img as-card-photo">
-      <a class="product-image-link" href="${href}">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</a>
-    </div>
-    <button class="fav-btn active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
-    <a class="catalog-card-link product-card-link" href="${href}">
-      <div class="catalog-card-body as-card-info"><h3 class="catalog-card-title product-title">${title(p)}</h3><div class="catalog-card-category product-group">${group(p)}</div></div>
-      <div class="catalog-card-price-area as-card-bottom"><div class="price-row-card"><div class="catalog-card-price price-current">${money(p.price)}</div>${op?`<div class="old-price price-old">${money(op)}</div>`:''}</div><div class="catalog-card-stock as-card-stock">${s>0?'В наличии':'Нет в наличии'}</div></div>
+  return `<article class="catalog-card favorite-card product-card as-desktop-card" data-product-href="${href}">
+    ${d?`<span class="as-card-badge">-${d}%</span>`:''}
+    <a class="as-card-photo" href="${href}" aria-label="${title(p)}">
+      ${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span class="as-card-no-photo">Фото</span>'}
     </a>
-    <button class="catalog-cart-btn as-card-cart" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
+    <button class="fav-btn as-card-fav active" data-fav="${p.id}" type="button" aria-label="Избранное">♥</button>
+    <div class="as-card-info">
+      <a class="as-card-title catalog-card-link" href="${href}">${title(p)}</a>
+      <div class="as-card-category catalog-card-category">${group(p)}</div>
+    </div>
+    <div class="as-card-bottom">
+      <div class="as-card-price-row price-row-card"><div class="as-card-price catalog-card-price">${money(p.price)}</div>${op?`<div class="as-card-old-price old-price">${money(op)}</div>`:''}</div>
+      <div class="as-card-stock catalog-card-stock ${s>0?'':'out'}">${s>0?'В наличии':'Нет в наличии'}</div>
+      <button class="as-card-cart catalog-cart-btn" data-cart="${p.id}" type="button" ${s<=0?'disabled':''} aria-label="В корзину">🛒</button>
+    </div>
   </article>`;
 }
 function bind(){
