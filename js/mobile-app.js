@@ -11,11 +11,6 @@ const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 let products = [], categories = [], banners = [], homeBlocks = [], promoCards = [], userNow = null;
 let dataPromise = null;
-let mobilePaymentMethod = localStorage.getItem('mobilePaymentMethod') || 'cash';
-let mobileDiscountApplied = localStorage.getItem('mobileDiscountApplied') === '1';
-let mobileDiscountPercent = Number(localStorage.getItem('mobileDiscountPercent') || 0) || 0;
-let mobileInstallmentChoice = localStorage.getItem('mobileInstallmentChoice') || 'Агропромбанк|12';
-let mobileCartRenderTimer = null;
 const PAGE_SIZE = 24;
 let cart = [];
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -26,12 +21,9 @@ const waitAuthUser = () => new Promise(resolve => {
 });
 
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
-// Мобильная главная показывает только ГОРИЗОНТАЛЬНЫЕ промо.
-// Вертикальные промо остаются только для десктопа/больших блоков и не выводятся на мобильной главной.
 const PROMO_CARDS_COLLECTIONS = [...new Set([
-  'autostyle_horizontal_promo_cards',
-  'autostyle_home_promo_cards',
-  'homePromoCards'
+  COLLECTIONS.promoCards || 'autostyle_promo_cards',
+  'autostyle_horizontal_promo_cards', 'autostyle_promo_cards', 'autostyle_promoCards', 'autostyle_home_cards', 'promoCards', 'homeCards'
 ].filter(Boolean))];
 const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
@@ -159,48 +151,6 @@ const discount = p => {
 const available = p => stock(p) > 0;
 const installment = p => price(p) >= 199 || p.installment === true || p.installmentAvailable === true;
 const monthPay = p => Math.ceil(price(p) / 12);
-
-function paymentTitle(value){
-  return {cash:'При получении', card:'Банковской картой', installment:'Рассрочка'}[value] || 'При получении';
-}
-function discountTotal(total){
-  if (mobilePaymentMethod === 'installment') return Math.round(Number(total||0));
-  const pct = mobileDiscountApplied ? Math.max(0, Math.min(100, Number(mobileDiscountPercent||0))) : 0;
-  return Math.max(0, Math.round(Number(total||0) * (100 - pct) / 100));
-}
-function mobileInstallmentOptions(total){
-  const rows = [
-    {bank:'Агропромбанк', months:3, k:.955}, {bank:'Агропромбанк', months:6, k:.93}, {bank:'Агропромбанк', months:9, k:.9}, {bank:'Агропромбанк', months:12, k:.875},
-    {bank:'Эксимбанк', months:3, k:.955}, {bank:'Эксимбанк', months:6, k:.93}, {bank:'Эксимбанк', months:9, k:.9}, {bank:'Эксимбанк', months:12, k:.886},
-    {bank:'Сбербанк', months:3, k:.96}, {bank:'Сбербанк', months:6, k:.93}, {bank:'Сбербанк', months:9, k:.9}, {bank:'Сбербанк', months:12, k:.88}
-  ];
-  return rows.map(r => ({...r, key:`${r.bank}|${r.months}`, monthly:Math.ceil((Number(total||0) * r.k) / r.months)}));
-}
-function selectedMobileInstallment(total){
-  return mobileInstallmentOptions(total).find(x=>x.key===mobileInstallmentChoice) || mobileInstallmentOptions(total)[3] || null;
-}
-async function getActiveMobileDiscountCard(user){
-  if(!user) return null;
-  let data = {};
-  try { data = (await getUserDoc(user.uid)).data || {}; } catch(e) {}
-  let active = Boolean(data?.discountCard?.active || data?.discountCardActive || data?.active === true);
-  let percent = Number(data?.discountCard?.discount ?? data?.discountCard?.discountPercent ?? data?.discount ?? data?.discountPercent ?? 0) || 0;
-  try {
-    const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', user.uid));
-    if(cardSnap.exists()){
-      const card = cardSnap.data() || {};
-      active = card.active !== false;
-      percent = Number(card.discount ?? card.discountPercent ?? percent) || percent;
-    }
-  } catch(e) { console.warn('mobile discount card load error', e); }
-  return active ? {active:true, percent:Math.max(0, Math.min(100, Math.round(percent)))} : null;
-}
-function scheduleMobileCartRender(){
-  if(page !== 'cart') return;
-  clearTimeout(mobileCartRenderTimer);
-  mobileCartRenderTimer = setTimeout(()=>renderCart().catch(console.warn), 80);
-}
-window.addEventListener('autostyle-cart-updated', scheduleMobileCartRender);
 function save(){ localStorage.setItem('favorites', JSON.stringify(favs)); updateCounts(); }
 function updateCounts(){ $$('#mFavCount').forEach(x=>x.textContent=favs.length); waitUserCartReady().then(rows=>{$$('#mCartCount').forEach(x=>x.textContent=cartQtyCount(rows));}).catch(()=>{$$('#mCartCount').forEach(x=>x.textContent='0');}); }
 async function addCart(id, btn){ try{ await addUserCartItem(id, 1); if(btn){ const t=btn.textContent; btn.textContent='✓ Добавлено'; setTimeout(()=>btn.textContent=t,900); } updateCounts(); }catch(e){ alert(e?.message || profileVerificationMessage()); if(String(e?.message||'').includes('Подтвердите')) location.href='mobile-profile.html#security'; } }
@@ -324,21 +274,6 @@ async function initData(options={}){
   }
   return dataPromise;
 }
-
-function setupMobilePromoSlider(){
-  const row = document.querySelector('.m-promo-row');
-  if(!row || row.dataset.sliderReady === '1') return;
-  row.dataset.sliderReady = '1';
-  const cards = Array.from(row.querySelectorAll('.m-promo-card'));
-  if(cards.length <= 1) return;
-  let index = 0, userLock = false;
-  const go = i => {
-    index = (i + cards.length) % cards.length;
-    row.scrollTo({left: cards[index].offsetLeft - row.offsetLeft, behavior:'smooth'});
-  };
-  row.addEventListener('pointerdown', () => { userLock = true; setTimeout(()=>userLock=false, 4200); }, {passive:true});
-  setInterval(()=>{ if(!userLock) go(index + 1); }, 4200);
-}
 async function renderHome(){
   setupShell('home'); await initData();
   const slides=banners.map(b=>({ ...b, image:b.image||b.imageUrl||b.photoUrl||'' })).filter(b=>b.image);
@@ -355,7 +290,7 @@ async function renderHome(){
   const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
   const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
   $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
-  bind(); setupMobilePromoSlider(); clearLoader();
+  bind(); clearLoader();
 }
 async function renderCatalog(){
   setupShell('catalog'); await initData();
@@ -413,65 +348,29 @@ async function renderProduct(){
 }
 async function renderCart(){
   setupShell('cart'); await initData();
-  const user=await waitAuthUser();
+  const user = await waitAuthUser();
   if(!user){
     $('#mCartList').innerHTML = `<div class="m-empty"><b>Войдите в аккаунт</b><br>Корзина сохраняется в профиле и доступна после входа.<br><br><a class="m-primary" href="mobile-profile.html">Войти</a></div>`;
-    $('#mTotal').textContent=money(0); clearLoader(); return;
+    $('#mTotal').textContent = money(0); clearLoader(); return;
   }
   const check = await getProfileVerification(user);
   if(!check.verified){
     $('#mCartList').innerHTML = `<div class="m-empty"><b>Подтвердите профиль</b><br>${profileVerificationMessage()}<br><br><a class="m-primary" href="mobile-profile.html#security">Подтвердить профиль</a></div>`;
-    $('#mTotal').textContent=money(0); clearLoader(); return;
+    $('#mTotal').textContent = money(0); clearLoader(); return;
   }
-  await loadUserCart(user);
-  const cartRows = getCurrentUserCart();
+  const cartRows = await waitUserCartReady();
   const byId=new Map(products.map(p=>[String(p.id),p]));
   const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
-  const subtotal=rows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
-  const activeCard = await getActiveMobileDiscountCard(user);
-  if(!activeCard){ mobileDiscountApplied = false; mobileDiscountPercent = 0; localStorage.removeItem('mobileDiscountApplied'); localStorage.removeItem('mobileDiscountPercent'); }
-  if(mobilePaymentMethod === 'installment'){ mobileDiscountApplied = false; }
-  const total = discountTotal(subtotal);
-  const installment = selectedMobileInstallment(total);
-  $('#mCartList').innerHTML=rows.map(({item,product:p})=>{
-    const qty = Number(item.qty||1)||1;
-    const left = stock(p);
-    const atMax = qty >= left;
-    return `<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a><div><b>${escapeHtml(title(p))}</b><div class="m-group">${escapeHtml(group(p))}</div><small class="m-cart-stock">В наличии: ${left}</small><div class="m-qty-row"><button class="m-qty" data-minus="${p.id}">−</button><span>${qty} × ${money(price(p))}</span><button class="m-qty" data-plus="${p.id}" ${atMax?'disabled':''}>+</button><button class="m-danger" data-remove="${p.id}">Удалить</button></div></div></div>`;
-  }).join('')||'<div class="m-empty">Корзина пустая</div>';
-  $('#mTotal').textContent = mobileDiscountApplied && mobileDiscountPercent > 0
-    ? `${money(total)}  −${mobileDiscountPercent}%`
-    : money(total);
-  const section = document.querySelector('.m-section');
-  const oldPay = $('#mCartPaymentBox'); if(oldPay) oldPay.remove();
-  const oldBtn = $('#mCheckoutBtn'); if(oldBtn) oldBtn.remove();
-  const paymentHtml = `<div id="mCartPaymentBox" class="m-cart-payment-box">
-    <h2>Оплата</h2>
-    <div class="m-payment-grid">
-      <label class="m-payment-option ${mobilePaymentMethod==='cash'?'active':''}"><input name="mPaymentMethod" type="radio" value="cash" ${mobilePaymentMethod==='cash'?'checked':''}>При получении</label>
-      <label class="m-payment-option ${mobilePaymentMethod==='card'?'active':''}"><input name="mPaymentMethod" type="radio" value="card" ${mobilePaymentMethod==='card'?'checked':''}>Картой</label>
-      <label class="m-payment-option ${mobilePaymentMethod==='installment'?'active':''}"><input name="mPaymentMethod" type="radio" value="installment" ${mobilePaymentMethod==='installment'?'checked':''}>Рассрочка</label>
-    </div>
-    <button id="mApplyDiscount" class="m-discount-apply ${mobileDiscountApplied?'applied':''}" type="button" ${mobilePaymentMethod==='installment'?'disabled':''}>${mobilePaymentMethod==='installment'?'Скидочная карта недоступна в рассрочку':(mobileDiscountApplied?(mobileDiscountPercent?`Скидка ${mobileDiscountPercent}% применена`:'Скидочная карта применена'):'Применить скидочную карту')}</button>
-    ${mobilePaymentMethod==='installment'?`<div class="m-installment-panel"><b>Выберите рассрочку</b><select id="mInstallmentSelect" class="m-select">${mobileInstallmentOptions(total).map(o=>`<option value="${o.key}" ${o.key===mobileInstallmentChoice?'selected':''}>${o.bank} — ${o.months} мес. × ${money(o.monthly)}</option>`).join('')}</select><small>${installment?`Платёж: ${money(installment.monthly)} в месяц`:''}</small></div>`:''}
-  </div>`;
-  section.insertAdjacentHTML('beforeend', paymentHtml);
-  section.insertAdjacentHTML('beforeend', `<button id="mCheckoutBtn" class="m-primary m-checkout" type="button" ${rows.length?'':'disabled'}>Оформить заказ</button>`);
-  $('#mCheckoutBtn').onclick = createMobileOrder;
-  $$('input[name="mPaymentMethod"]').forEach(input=>input.onchange=async()=>{ mobilePaymentMethod = input.value; localStorage.setItem('mobilePaymentMethod', mobilePaymentMethod); if(mobilePaymentMethod==='installment'){ mobileDiscountApplied=false; localStorage.removeItem('mobileDiscountApplied'); } await renderCart(); });
-  $('#mInstallmentSelect') && ($('#mInstallmentSelect').onchange=e=>{ mobileInstallmentChoice=e.target.value; localStorage.setItem('mobileInstallmentChoice', mobileInstallmentChoice); renderCart(); });
-  $('#mApplyDiscount') && ($('#mApplyDiscount').onclick=async()=>{
-    if(mobilePaymentMethod==='installment') return;
-    const card = await getActiveMobileDiscountCard(user);
-    if(!card?.active){ alert('Сначала получите скидочную карту в профиле.'); location.href='mobile-discount-card.html'; return; }
-    mobileDiscountApplied = true; mobileDiscountPercent = Number(card.percent || 0);
-    localStorage.setItem('mobileDiscountApplied','1'); localStorage.setItem('mobileDiscountPercent', String(mobileDiscountPercent));
-    await renderCart();
-  });
-  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await loadUserCart(user); await renderCart();});
-  $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.plus)); const p = byId.get(String(b.dataset.plus)); const next=(Number(row?.qty||1)+1); if(p && next > stock(p)){ alert(`В наличии только ${stock(p)} шт.`); return; } await setUserCartQty(b.dataset.plus,next); await loadUserCart(user); await renderCart();});
-  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await loadUserCart(user); await renderCart();});
-  updateCounts(); clearLoader();
+  const total=rows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
+  $('#mCartList').innerHTML=rows.map(({item,product:p})=>`<div class="m-list-item"><a class="m-list-img" href="mobile-product.html?id=${p.id}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a><div><b>${title(p)}</b><div class="m-group">${group(p)}</div><div class="m-qty-row"><button class="m-qty" data-minus="${p.id}">−</button><span>${Number(item.qty||1)} × ${money(price(p))}</span><button class="m-qty" data-plus="${p.id}">+</button><button class="m-danger" data-remove="${p.id}">Удалить</button></div></div></div>`).join('')||'<div class="m-empty">Корзина пустая</div>';
+  $('#mTotal').textContent=money(total);
+  const totalBox = document.querySelector('.m-total');
+  if(totalBox && !$('#mCheckoutBtn')) totalBox.insertAdjacentHTML('afterend', `<button id="mCheckoutBtn" class="m-primary m-checkout" type="button" ${rows.length?'':'disabled'}>Оформить заказ</button>`);
+  if($('#mCheckoutBtn')) $('#mCheckoutBtn').onclick = createMobileOrder;
+  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await renderCart();});
+  $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart();});
+  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id)===String(b.dataset.minus)); await setUserCartQty(b.dataset.minus,Math.max(1,Number(row?.qty||1)-1)); await renderCart();});
+  clearLoader();
 }
 async function renderFavorites(){
   setupShell('fav'); await initData(); const list=products.filter(p=>favs.includes(p.id));
@@ -499,20 +398,13 @@ async function createMobileOrder(){
     const profile = await getUserDoc(user.uid).catch(()=>({data:{}}));
     const d = profile.data || {};
     const items = rows.map(({item, product:p})=>{ const qty=Number(item.qty||1)||1; const pr=price(p); return { productId:String(p.id), title:title(p), group:group(p), image:img(p), price:pr, qty, lineTotal:pr*qty }; });
-    const subtotal = items.reduce((sum,i)=>sum+Number(i.lineTotal||0),0);
-    if (mobilePaymentMethod === 'installment') mobileDiscountApplied = false;
-    const total = discountTotal(subtotal);
+    const total = items.reduce((sum,i)=>sum+Number(i.lineTotal||0),0);
     const totalQty = items.reduce((sum,i)=>sum+Number(i.qty||0),0);
     const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
-    const installment = mobilePaymentMethod === 'installment' ? selectedMobileInstallment(total) : null;
     await addDoc(collection(db, COLLECTIONS.orders || 'autostyle_orders'), {
       orderNumber, status:'new', statusTitle:'Новый', source:'mobile-cart',
       userId:user.uid, uid:user.uid, userEmail:user.email || '', userName:d.name || user.displayName || '', userPhone:d.phone || '', userCar:d.car || d.carText || '',
-      items, subtotal, total, totalQty, paymentMethod:mobilePaymentMethod, paymentMethodTitle:paymentTitle(mobilePaymentMethod),
-      discountCardApplied: mobileDiscountApplied && mobilePaymentMethod !== 'installment',
-      discountCardPercent: mobileDiscountApplied && mobilePaymentMethod !== 'installment' ? Number(mobileDiscountPercent || 0) : 0,
-      installment: installment ? { bank:installment.bank, months:installment.months, monthlyPayment:installment.monthly, monthlyPaymentText:money(installment.monthly) } : null,
-      installmentBank: installment?.bank || '', installmentMonths: installment?.months || null, installmentMonthlyPayment: installment?.monthly || null,
+      items, subtotal:total, total, totalQty, paymentMethod:'cash', paymentMethodTitle:'При получении',
       createdAt:serverTimestamp(), createdAtText:new Date().toISOString()
     });
     await clearUserCart();
@@ -785,9 +677,13 @@ async function refreshCurrentMobilePage(reason='refresh'){
       else if(page==='home') await renderHome();
       else if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
     }catch(e){ console.warn('mobile refresh error', reason, e); }
-    finally{ mobileRefreshBusy = false; }
+    finally{
+      mobileRefreshBusy = false;
+      window.dispatchEvent(new CustomEvent('autostyle-mobile-rendered', { detail:{ reason } }));
+    }
   }, 80);
 }
+window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
   updateCounts();
@@ -814,5 +710,6 @@ window.addEventListener('online', () => refreshCurrentMobilePage('online'));
     if(page==='favorites') await renderFavorites();
     if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
     if(['about','contacts','installment','certificates','more'].includes(page)) renderInfoShell(page==='more'?'profile':'home');
+    window.dispatchEvent(new CustomEvent('autostyle-mobile-rendered', { detail:{ reason:'initial' } }));
   }catch(e){ console.error(e); clearLoader(); }
 })();
