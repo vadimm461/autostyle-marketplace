@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   const VERSION = '20260702-mobile-cache-v1';
-  const MAX_AGE = 1000 * 60 * 60 * 24 * 7;
+  const MAX_AGE = 1000 * 60; // 1 минута: только минимальный кеш для быстрых переходов
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
   const scrollKey = keyBase + ':scroll';
