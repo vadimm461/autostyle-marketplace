@@ -1,911 +1,519 @@
-/* ЕДИНЫЙ ВИД КАРТОЧЕК ТОВАРА
-   Взято за основу оформление из страницы "Избранное".
-   Этот файл подключен последним почти на всех страницах, поэтому он перебивает старые разные стили. */
+/* AutoStyle — ЕДИНАЯ КОМПАКТНАЯ КАРТОЧКА ТОВАРА
+   1:1 по макету: низкая карточка, фото слева, информация справа,
+   цена + наличие снизу, зеленая кнопка корзины справа. Без рейтинга. */
 
-/* сетки на главной, в каталоге, избранном, похожих товарах */
+:root{
+  --as-green:#23d21f;
+  --as-green-dark:#18b915;
+  --as-card-border:#e9eef5;
+  --as-card-text:#101722;
+  --as-card-muted:#687386;
+}
+
+/* ===== СЕТКИ ===== */
 .products,
+.carousel-products{
+  display:flex!important;
+  gap:14px!important;
+  padding:0!important;
+  align-items:stretch!important;
+  overflow-x:auto!important;
+  scroll-snap-type:x mandatory!important;
+}
+
+.carousel-products .product-card,
+.products .product-card{
+  flex:0 0 282px!important;
+  min-width:282px!important;
+  max-width:282px!important;
+  scroll-snap-align:start!important;
+}
+
 .catalog-grid,
 #catalogGrid,
 #favoritesGrid,
 .product-related-wrap,
-.related-products,
-.carousel-products {
-  align-items: stretch !important;
+.related-products{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fill,minmax(270px,1fr))!important;
+  gap:14px!important;
+  align-items:stretch!important;
 }
 
-.products,
-.carousel-products {
-  gap: 18px !important;
-}
+/* чтобы каталог не делал узкие вертикальные плитки */
+.catalog-page .catalog-content{min-width:0!important;}
+.catalog-page .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(265px,1fr))!important;}
 
-#catalogGrid,
-.catalog-grid {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 22px !important;
-}
-
-/* Избранное — размер карточек как на главной: 5 карточек в ряд */
-#favoritesGrid {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 18px !important;
-}
-
-.product-related-wrap {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 22px !important;
-}
-
-.carousel-products .product-card,
-.products .product-card {
-  flex: 0 0 calc((100% - 72px) / 5) !important;
-  min-width: 205px !important;
-}
-
-/* сама карточка — как в избранном */
+/* ===== ОБЩАЯ КАРТОЧКА ===== */
 .product-card,
 .catalog-card,
 .favorite-card,
 .related-card,
-.home-product-card,
-[class$="-card"].product-card {
-  position: relative !important;
-  width: 100% !important;
-  height: 340px !important;
-  min-height: 340px !important;
-  max-height: 340px !important;
-  padding: 12px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  background: #fff !important;
-  border: 1px solid #e8edf3 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
-  overflow: hidden !important;
-  color: #111827 !important;
-  transform: none !important;
+.home-product-card{
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:172px!important;
+  min-height:172px!important;
+  max-height:172px!important;
+  padding:14px!important;
+  background:#fff!important;
+  border:1px solid var(--as-card-border)!important;
+  border-radius:14px!important;
+  box-shadow:0 8px 24px rgba(15,23,42,.07)!important;
+  overflow:hidden!important;
+  color:var(--as-card-text)!important;
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease!important;
 }
-
 .product-card:hover,
 .catalog-card:hover,
 .favorite-card:hover,
 .related-card:hover,
-.home-product-card:hover {
-  transform: none !important;
-  border-color: #e8edf3 !important;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, .10) !important;
+.home-product-card:hover{
+  transform:translateY(-2px)!important;
+  border-color:rgba(35,210,31,.35)!important;
+  box-shadow:0 14px 34px rgba(15,23,42,.11)!important;
 }
-
 .product-card::before,
 .catalog-card::before,
-.home-product-card::before { display: none !important; }
+.favorite-card::before,
+.related-card::before,
+.home-product-card::before{display:none!important;content:none!important;}
 
-/* ссылка внутри карточки */
-.product-card-link,
-.catalog-card-link,
-.home-product-link,
-.product-link,
-.catalog-link,
-.home-link {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  color: inherit !important;
-  text-decoration: none !important;
-  overflow: hidden !important;
+/* ===== СТРУКТУРА: карточки главной ===== */
+.product-card .product-card-link,
+.home-product-card .product-card-link{
+  height:100%!important;
+  display:grid!important;
+  grid-template-columns:43% 1fr!important;
+  grid-template-rows:auto auto 1fr!important;
+  column-gap:13px!important;
+  color:inherit!important;
+  text-decoration:none!important;
+  min-width:0!important;
+}
+.product-card .product-img,
+.home-product-card .product-img{
+  grid-column:1!important;
+  grid-row:1 / 4!important;
+}
+.product-card .product-title,
+.home-product-card .product-title{
+  grid-column:2!important;
+  grid-row:1!important;
+}
+.product-card .product-group,
+.home-product-card .product-group{
+  grid-column:2!important;
+  grid-row:2!important;
+}
+.product-card .product-card-price-area,
+.home-product-card .product-card-price-area{
+  grid-column:2!important;
+  grid-row:3!important;
 }
 
-.catalog-card-body {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
+/* ===== СТРУКТУРА: каталог/избранное/похожие ===== */
+.catalog-card,
+.favorite-card,
+.related-card{
+  display:grid!important;
+  grid-template-columns:43% 1fr!important;
+  column-gap:13px!important;
+}
+.catalog-card .catalog-card-photo,
+.favorite-card .catalog-card-photo,
+.related-card .catalog-card-photo,
+.catalog-card .product-img,
+.favorite-card .product-img,
+.related-card .product-img{
+  grid-column:1!important;
+  grid-row:1!important;
+}
+.catalog-card .catalog-card-link,
+.favorite-card .catalog-card-link,
+.related-card .catalog-card-link{
+  grid-column:2!important;
+  grid-row:1!important;
+  height:100%!important;
+  min-width:0!important;
+  display:block!important;
+  color:inherit!important;
+  text-decoration:none!important;
+}
+.catalog-card .catalog-card-body,
+.favorite-card .catalog-card-body,
+.related-card .catalog-card-body{
+  height:100%!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  padding:0!important;
 }
 
-/* фото — не режется, всегда целиком */
+/* ===== ФОТО ===== */
 .product-img,
 .catalog-card-photo,
-.product-photo,
-.home-product-img,
-.home-photo,
-.related-img,
 .product-card-img,
-.product-card .image,
-.home-product-card .image {
-  width: 100% !important;
-  height: 126px !important;
-  min-height: 126px !important;
-  max-height: 126px !important;
-  flex: 0 0 126px !important;
-  margin: 0 0 12px !important;
-  padding: 0 !important;
-  display: grid !important;
-  place-items: center !important;
-  background: #f4f6f8 !important;
-  border-radius: 10px !important;
-  overflow: hidden !important;
+.home-product-img{
+  position:relative!important;
+  width:100%!important;
+  height:118px!important;
+  min-height:118px!important;
+  max-height:118px!important;
+  aspect-ratio:auto!important;
+  margin:0!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#f7f9fb!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
 }
-
 .product-img img,
 .catalog-card-photo img,
-.product-photo img,
-.home-product-img img,
-.home-photo img,
-.related-img img,
 .product-card-img img,
-.product-card .image img,
-.home-product-card .image img {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  padding: 8px !important;
-  object-fit: contain !important;
-  transform: none !important;
-  background: transparent !important;
+.home-product-img img{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  padding:8px!important;
+  background:transparent!important;
+  transform:none!important;
+}
+.product-img span:not(.discount-badge),
+.catalog-card-photo span:not(.discount-badge){
+  color:#657085!important;
+  font-size:13px!important;
+  font-weight:800!important;
 }
 
-.product-card:hover .product-img img,
-.catalog-card:hover .catalog-card-photo img { transform: none !important; }
-
-/* название — максимум 2 строки, одинаковая высота */
+/* ===== ТЕКСТ ===== */
 .product-title,
 .catalog-card h3,
 .catalog-card-title,
-.product-card-title,
 .home-product-title,
-.product-card h3,
-.product-link h3,
-.catalog-link h3,
-.home-link h3 {
-  display: -webkit-box !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-line-clamp: 2 !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  margin: 0 0 7px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: normal !important;
-  font-size: 15px !important;
-  line-height: 20px !important;
-  font-weight: 900 !important;
-  color: #111827 !important;
+.related-card h3{
+  height:auto!important;
+  min-height:0!important;
+  max-height:58px!important;
+  margin:0!important;
+  padding:0 34px 0 0!important;
+  color:var(--as-card-text)!important;
+  font-size:14px!important;
+  line-height:1.28!important;
+  font-weight:950!important;
+  letter-spacing:-.02em!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:3!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:normal!important;
 }
-
-/* группа/категория — одна строка */
+.catalog-card h3{padding-right:30px!important;}
 .product-group,
-.product-cat,
 .catalog-card-category,
-.home-product-category,
-.home-cat,
-.catalog-cat,
-.muted.product-group {
-  display: block !important;
-  height: 18px !important;
-  min-height: 18px !important;
-  max-height: 18px !important;
-  margin: 0 0 10px !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-  color: #667085 !important;
-  font-size: 13px !important;
-  line-height: 18px !important;
-  font-weight: 500 !important;
+.home-product-category{
+  height:auto!important;
+  min-height:0!important;
+  max-height:18px!important;
+  margin:8px 0 0!important;
+  padding:0!important;
+  color:var(--as-card-muted)!important;
+  font-size:12px!important;
+  line-height:18px!important;
+  font-weight:700!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  text-transform:none!important;
 }
 
-/* низ карточки прижат вниз — цена и кнопка на одном уровне */
+/* ===== НИЗ: ЦЕНА, НАЛИЧИЕ ===== */
 .product-card-price-area,
 .catalog-card-price-area,
-.home-product-price-area,
-.price-area {
-  margin-top: auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-end !important;
-  min-height: 34px !important;
-  height: auto !important;
-  gap: 0 !important;
+.home-product-price-area{
+  margin-top:auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-end!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  padding:0 56px 0 0!important;
 }
-
-.price-row-card,
-.price-row,
-.catalog-card-price-row,
-.home-price-row {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  margin: 0 !important;
-  display: flex !important;
-  align-items: baseline !important;
-  gap: 8px !important;
-  overflow: hidden !important;
+.price-row-card{
+  display:flex!important;
+  align-items:baseline!important;
+  gap:7px!important;
+  height:auto!important;
+  min-width:0!important;
 }
-
-.price,
 .price-current,
+.price,
 .catalog-card-price,
-.home-product-price,
-.home-price,
-.catalog-price {
-  font-size: 24px !important;
-  line-height: 28px !important;
-  font-weight: 950 !important;
-  color: #05070d !important;
+.home-product-price{
+  color:#0a101a!important;
+  font-size:22px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.04em!important;
+  white-space:nowrap!important;
 }
-
 .old-price,
-.price-old {
-  font-size: 14px !important;
-  line-height: 18px !important;
-  color: #9aa3af !important;
-  text-decoration: line-through !important;
+.price-old{
+  color:#8f98a8!important;
+  font-size:13px!important;
+  line-height:1!important;
+  font-weight:800!important;
+  text-decoration:line-through!important;
+  white-space:nowrap!important;
 }
-
-/* служебные строки не должны раздувать карточку */
 .product-badges,
 .installment-badge,
-.catalog-installment-badge,
-.catalog-card-stock,
-.stock-zero,
-.stock,
-.product-meta-spacer,
-.card-spacer,
-.product-spacer {
-  display: none !important;
-  height: 0 !important;
-  min-height: 0 !important;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
+.catalog-installment-badge{display:none!important;}
+.catalog-card-stock{
+  margin:0!important;
+  color:#505b6d!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:700!important;
+  white-space:nowrap!important;
+}
+.catalog-card-stock::before,
+.product-card-price-area::after,
+.home-product-price-area::after{
+  content:""!important;
+  display:inline-block!important;
+  width:8px!important;
+  height:8px!important;
+  margin-right:6px!important;
+  border-radius:50%!important;
+  background:var(--as-green-dark)!important;
+  vertical-align:middle!important;
+}
+.product-card-price-area::after,
+.home-product-price-area::after{
+  content:"В наличии"!important;
+  width:auto!important;
+  height:auto!important;
+  padding-left:14px!important;
+  margin:0!important;
+  background:radial-gradient(circle at 4px 50%, var(--as-green-dark) 0 4px, transparent 4.5px)!important;
+  color:#505b6d!important;
+  font-size:12px!important;
+  line-height:16px!important;
+  font-weight:700!important;
+  white-space:nowrap!important;
 }
 
-/* кнопка */
+/* ===== КНОПКИ ===== */
+.fav-btn{
+  position:absolute!important;
+  top:14px!important;
+  right:14px!important;
+  z-index:6!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  min-height:32px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  color:#101722!important;
+  box-shadow:0 6px 16px rgba(15,23,42,.12)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:23px!important;
+  line-height:1!important;
+}
+.fav-btn.active{color:var(--as-green)!important;}
+
 .product-card .cart,
 .product-card .cart-btn,
-.product-card button.cart,
+.product-card [data-cart],
 .catalog-cart-btn,
-.home-product-card button,
-.home-product-card .cart,
-.home-product-card .cart-btn,
-.related-cart,
-.cart-button {
-  width: 100% !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  flex: 0 0 38px !important;
-  margin: 10px 0 0 !important;
-  padding: 0 12px !important;
-  border: 0 !important;
-  border-radius: 10px !important;
-  background: #05070d !important;
-  color: #fff !important;
-  font-size: 14px !important;
-  line-height: 38px !important;
-  font-weight: 900 !important;
-  text-align: center !important;
-  cursor: pointer !important;
+.related-card .cart,
+.home-product-card .cart{
+  position:absolute!important;
+  right:14px!important;
+  bottom:14px!important;
+  z-index:7!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  max-width:44px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:11px!important;
+  background:linear-gradient(180deg,var(--as-green),var(--as-green-dark))!important;
+  color:#fff!important;
+  box-shadow:0 10px 22px rgba(35,210,31,.28)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:0!important;
+  line-height:0!important;
+  overflow:hidden!important;
 }
-
-.product-card .cart:disabled,
-.catalog-cart-btn:disabled,
-.related-cart:disabled { opacity: .55 !important; cursor: not-allowed !important; }
-
-/* сердечко как в избранном */
-.fav-btn,
-.related-fav {
-  position: absolute !important;
-  top: 12px !important;
-  right: 12px !important;
-  z-index: 3 !important;
-  width: 34px !important;
-  height: 34px !important;
-  min-width: 34px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: #fff !important;
-  color: #16bf0a !important;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, .12) !important;
-  font-size: 18px !important;
-  line-height: 1 !important;
+.product-card .cart::before,
+.product-card .cart-btn::before,
+.product-card [data-cart]::before,
+.catalog-cart-btn::before,
+.related-card .cart::before,
+.home-product-card .cart::before{
+  content:"🛒"!important;
+  font-size:21px!important;
+  line-height:1!important;
+  filter:brightness(0) invert(1)!important;
 }
+.product-card .cart:hover,
+.catalog-cart-btn:hover{transform:translateY(-1px)!important;}
 
-.fav-btn.active,
-.related-fav.active { background: #eaffea !important; color: #16bf0a !important; }
-
-.discount-badge {
-  position: absolute !important;
-  top: 18px !important;
-  left: 18px !important;
-  z-index: 3 !important;
+/* бейджи */
+.discount-badge{
+  position:absolute!important;
+  top:9px!important;
+  left:9px!important;
+  z-index:5!important;
+  padding:4px 8px!important;
+  border-radius:999px!important;
+  background:#ff2638!important;
+  color:#fff!important;
+  font-size:11px!important;
+  line-height:1!important;
+  font-weight:1000!important;
 }
+.product-card.is-new::after,.catalog-card.is-new::after{content:"Новинка";}
 
-/* корзина: рекомендованные/быстрые товары тоже в такой же карточке */
-.quick-product-card,
-.cart-product-card {
-  height: 340px !important;
-  min-height: 340px !important;
-  max-height: 340px !important;
-  padding: 12px !important;
-  border-radius: 14px !important;
-  background: #fff !important;
-  border: 1px solid #e8edf3 !important;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, .08) !important;
-  overflow: hidden !important;
-}
+/* стрелки каруселей поверх, но не ломают карточки */
+.carousel-arrow{z-index:20!important;}
 
-.quick-product-img,
-.cart-product-img {
-  height: 126px !important;
-  min-height: 126px !important;
-  max-height: 126px !important;
-  background: #f4f6f8 !important;
-  border-radius: 10px !important;
-  display: grid !important;
-  place-items: center !important;
-  overflow: hidden !important;
-}
-
-.quick-product-img img,
-.cart-product-img img { width: 100% !important; height: 100% !important; object-fit: contain !important; padding: 8px !important; }
-
-/* адаптив */
-@media (max-width: 1180px) {
-  #catalogGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-  #favoritesGrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 18px !important; }
-  .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 54px) / 4) !important; }
-  #relatedProducts .related-card.product-card,
-  .product-page #relatedProducts .related-card.product-card {
-    flex-basis: calc((100% - 54px) / 4) !important;
-    width: calc((100% - 54px) / 4) !important;
+/* ===== МОБИЛЬНАЯ ВЕРСИЯ: 2 товара в строке ===== */
+@media(max-width:680px){
+  .products,
+  .carousel-products,
+  .catalog-grid,
+  #catalogGrid,
+  #favoritesGrid,
+  .product-related-wrap,
+  .related-products{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    overflow:visible!important;
   }
-}
-
-@media (max-width: 920px) {
-  #catalogGrid, #favoritesGrid, .catalog-grid, .product-related-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; }
-  .carousel-products .product-card, .products .product-card { flex-basis: calc((100% - 18px) / 2) !important; min-width: 190px !important; }
-}
-
-@media (max-width: 560px) {
+  .carousel-products .product-card,
+  .products .product-card{
+    min-width:0!important;
+    max-width:none!important;
+    width:100%!important;
+    flex:initial!important;
+  }
   .product-card,
   .catalog-card,
   .favorite-card,
   .related-card,
-  .home-product-card,
-  .quick-product-card,
-  .cart-product-card {
-    height: 318px !important;
-    min-height: 318px !important;
-    max-height: 318px !important;
-    padding: 10px !important;
-    border-radius: 13px !important;
+  .home-product-card{
+    height:235px!important;
+    min-height:235px!important;
+    max-height:235px!important;
+    padding:9px!important;
+    border-radius:14px!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .product-card .product-card-link,
+  .home-product-card .product-card-link,
+  .catalog-card,
+  .favorite-card,
+  .related-card{
+    display:flex!important;
+    flex-direction:column!important;
+    grid-template-columns:none!important;
+    gap:0!important;
+  }
+  .catalog-card .catalog-card-link,
+  .favorite-card .catalog-card-link,
+  .related-card .catalog-card-link{
+    height:auto!important;
+    flex:1 1 auto!important;
   }
   .product-img,
   .catalog-card-photo,
-  .product-photo,
-  .home-product-img,
-  .home-photo,
-  .related-img,
   .product-card-img,
-  .quick-product-img,
-  .cart-product-img {
-    height: 116px !important;
-    min-height: 116px !important;
-    max-height: 116px !important;
-    flex-basis: 116px !important;
+  .home-product-img{
+    width:100%!important;
+    height:105px!important;
+    min-height:105px!important;
+    max-height:105px!important;
+    margin:0 0 8px!important;
   }
   .product-title,
   .catalog-card h3,
-  .product-card h3 { font-size: 14px !important; line-height: 18px !important; height: 36px !important; min-height: 36px !important; max-height: 36px !important; }
-  .price, .price-current, .catalog-card-price, .home-product-price { font-size: 21px !important; line-height: 26px !important; }
-  .product-card .cart, .catalog-cart-btn, .related-cart { height: 36px !important; min-height: 36px !important; max-height: 36px !important; line-height: 36px !important; }
-}
-
-/* FIX: product.html — блок "Похожие товары" не должен становиться сеткой из 4 колонок.
-   Раньше #relatedProducts имел класс product-related-wrap, и общее правило делало сам контейнер grid,
-   из-за чего вся секция с похожими товарами сжималась в одну карточку. */
-#relatedProducts.product-related-wrap,
-.product-page #relatedProducts.product-related-wrap {
-  display: block !important;
-  grid-template-columns: none !important;
-  grid-column: 1 / -1 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  gap: 0 !important;
-  align-items: stretch !important;
-}
-
-#relatedProducts .related-section,
-.product-page #relatedProducts .related-section {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  margin: 24px 0 0 !important;
-  padding: 24px !important;
-  border-radius: 30px !important;
-  background: #fff !important;
-  overflow: visible !important;
-}
-
-#relatedProducts .related-head,
-.product-page #relatedProducts .related-head {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 16px !important;
-  margin: 0 0 18px !important;
-}
-
-#relatedProducts .related-carousel-wrap,
-.product-page #relatedProducts .related-carousel-wrap {
-  position: relative !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow: visible !important;
-}
-
-#relatedProducts .related-carousel,
-.product-page #relatedProducts .related-carousel {
-  display: flex !important;
-  grid-template-columns: none !important;
-  gap: 22px !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
-  scroll-snap-type: x mandatory !important;
-  scroll-behavior: smooth !important;
-  padding: 2px 4px 14px !important;
-  scrollbar-width: none !important;
-  align-items: stretch !important;
-}
-
-#relatedProducts .related-carousel::-webkit-scrollbar,
-.product-page #relatedProducts .related-carousel::-webkit-scrollbar { display: none !important; }
-
-/* В product.html карточки похожих товаров теперь такие же, как в избранном */
-#relatedProducts .related-card.product-card,
-.product-page #relatedProducts .related-card.product-card {
-  /* Похожие товары — тот же размер, что карточки на главной: 5 карточек в ряд */
-  flex: 0 0 calc((100% - 72px) / 5) !important;
-  width: calc((100% - 72px) / 5) !important;
-  min-width: 205px !important;
-  max-width: none !important;
-  height: 340px !important;
-  min-height: 340px !important;
-  max-height: 340px !important;
-  scroll-snap-align: start !important;
-}
-
-#relatedProducts .related-card .product-card-link,
-.product-page #relatedProducts .related-card .product-card-link {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-}
-
-#relatedProducts .related-card .product-img,
-#relatedProducts .related-card .related-img,
-.product-page #relatedProducts .related-card .product-img,
-.product-page #relatedProducts .related-card .related-img {
-  height: 126px !important;
-  min-height: 126px !important;
-  max-height: 126px !important;
-  flex: 0 0 126px !important;
-  background: #f4f6f8 !important;
-  border-radius: 10px !important;
-}
-
-#relatedProducts .related-card .product-img img,
-#relatedProducts .related-card .related-img img,
-.product-page #relatedProducts .related-card .product-img img,
-.product-page #relatedProducts .related-card .related-img img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain !important;
-  padding: 8px !important;
-}
-
-#relatedProducts .related-nav,
-.product-page #relatedProducts .related-nav {
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  z-index: 20 !important;
-}
-
-#relatedProducts .related-prev,
-.product-page #relatedProducts .related-prev { left: -22px !important; }
-#relatedProducts .related-next,
-.product-page #relatedProducts .related-next { right: -22px !important; }
-
-@media (max-width: 920px) {
-  #relatedProducts .related-card.product-card,
-  .product-page #relatedProducts .related-card.product-card {
-    flex-basis: calc((100% - 18px) / 2) !important;
-    width: calc((100% - 18px) / 2) !important;
-    min-width: 190px !important;
-    max-width: none !important;
+  .catalog-card-title,
+  .home-product-title,
+  .related-card h3{
+    max-height:47px!important;
+    padding-right:26px!important;
+    font-size:12.5px!important;
+    line-height:1.25!important;
+    -webkit-line-clamp:3!important;
   }
-}
-
-@media (max-width: 560px) {
-  #relatedProducts .related-section,
-  .product-page #relatedProducts .related-section { padding: 16px !important; border-radius: 22px !important; }
-  #relatedProducts .related-card.product-card,
-  .product-page #relatedProducts .related-card.product-card {
-    flex-basis: 82vw !important;
-    width: 82vw !important;
-    min-width: 82vw !important;
-    max-width: 82vw !important;
-    height: 318px !important;
-    min-height: 318px !important;
-    max-height: 318px !important;
+  .product-group,
+  .catalog-card-category,
+  .home-product-category{
+    margin-top:5px!important;
+    font-size:11px!important;
+    line-height:14px!important;
   }
-  #relatedProducts .related-nav,
-  .product-page #relatedProducts .related-nav { display: none !important; }
-}
-
-/* === FIX: Favorites cards must have the same desktop size as main-page cards === */
-@media (min-width: 921px) {
-  #favoritesGrid.catalog-grid,
-  .favorites-page #favoritesGrid.catalog-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, 205px) !important;
-    justify-content: start !important;
-    align-items: start !important;
-    gap: 18px !important;
-    grid-auto-rows: 340px !important;
+  .product-card-price-area,
+  .catalog-card-price-area,
+  .home-product-price-area{
+    padding-right:42px!important;
+    margin-top:auto!important;
+    align-items:flex-end!important;
   }
-
-  #favoritesGrid .catalog-card.favorite-card,
-  .favorites-page #favoritesGrid .catalog-card.favorite-card,
-  #favoritesGrid .catalog-card {
-    width: 205px !important;
-    min-width: 205px !important;
-    max-width: 205px !important;
-    height: 340px !important;
-    min-height: 340px !important;
-    max-height: 340px !important;
-    padding: 12px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
+  .price-current,.price,.catalog-card-price,.home-product-price{
+    font-size:18px!important;
   }
-
-  #favoritesGrid .catalog-card-link,
-  .favorites-page #favoritesGrid .catalog-card-link {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
+  .catalog-card-stock,
+  .product-card-price-area::after,
+  .home-product-price-area::after{
+    font-size:10.5px!important;
   }
-
-  #favoritesGrid .catalog-card-photo,
-  .favorites-page #favoritesGrid .catalog-card-photo {
-    width: 100% !important;
-    height: 126px !important;
-    min-height: 126px !important;
-    max-height: 126px !important;
-    flex: 0 0 126px !important;
-    aspect-ratio: auto !important;
-    margin: 0 0 10px !important;
-    border-radius: 10px !important;
-    background: #f4f6f8 !important;
-    display: grid !important;
-    place-items: center !important;
-    overflow: hidden !important;
+  .fav-btn{
+    top:9px!important;
+    right:9px!important;
+    width:28px!important;
+    height:28px!important;
+    min-width:28px!important;
+    min-height:28px!important;
+    font-size:20px!important;
   }
-
-  #favoritesGrid .catalog-card-photo img,
-  .favorites-page #favoritesGrid .catalog-card-photo img {
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    padding: 8px !important;
+  .product-card .cart,
+  .product-card .cart-btn,
+  .product-card [data-cart],
+  .catalog-cart-btn,
+  .related-card .cart,
+  .home-product-card .cart{
+    right:9px!important;
+    bottom:9px!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    max-width:36px!important;
+    border-radius:10px!important;
   }
-
-  #favoritesGrid .catalog-card-body,
-  .favorites-page #favoritesGrid .catalog-card-body {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    padding: 0 2px !important;
-  }
-
-  #favoritesGrid .catalog-card h3,
-  .favorites-page #favoritesGrid .catalog-card h3 {
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
-    height: 36px !important;
-    margin: 0 0 6px !important;
-    font-size: 14px !important;
-    line-height: 1.28 !important;
-    font-weight: 950 !important;
-  }
-
-  #favoritesGrid .catalog-card-category,
-  .favorites-page #favoritesGrid .catalog-card-category {
-    display: -webkit-box !important;
-    -webkit-line-clamp: 1 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    min-height: 17px !important;
-    max-height: 17px !important;
-    height: 17px !important;
-    margin: 0 0 8px !important;
-    font-size: 12px !important;
-    line-height: 1.2 !important;
-  }
-
-  #favoritesGrid .catalog-card-price-area,
-  .favorites-page #favoritesGrid .catalog-card-price-area {
-    margin-top: auto !important;
-    min-height: 58px !important;
-    max-height: 58px !important;
-    gap: 4px !important;
-    justify-content: flex-end !important;
-  }
-
-  #favoritesGrid .catalog-card-price,
-  .favorites-page #favoritesGrid .catalog-card-price {
-    font-size: 23px !important;
-    line-height: 1 !important;
-    font-weight: 1000 !important;
-  }
-
-  #favoritesGrid .catalog-installment-badge,
-  #favoritesGrid .catalog-card-stock,
-  .favorites-page #favoritesGrid .catalog-installment-badge,
-  .favorites-page #favoritesGrid .catalog-card-stock {
-    display: none !important;
-    min-height: 0 !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-  }
-
-  #favoritesGrid .catalog-cart-btn,
-  .favorites-page #favoritesGrid .catalog-cart-btn {
-    width: 100% !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    max-height: 42px !important;
-    margin-top: 10px !important;
-    border-radius: 13px !important;
-    flex: 0 0 42px !important;
-  }
-}
-
-@media (max-width: 920px) {
-  #favoritesGrid.catalog-grid,
-  .favorites-page #favoritesGrid.catalog-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 14px !important;
-  }
-}
-
-/* === FIX: Catalog cards only — same size as main page/favorites/related ===
-   Touches only catalog.html (#catalogGrid). Главная, избранное и похожие товары не меняются. */
-@media (min-width: 921px) {
-  .catalog-page #catalogGrid.catalog-grid,
-  .catalog-page #catalogGrid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, 205px) !important;
-    justify-content: start !important;
-    align-items: start !important;
-    gap: 18px !important;
-    grid-auto-rows: 340px !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card {
-    width: 205px !important;
-    min-width: 205px !important;
-    max-width: 205px !important;
-    height: 340px !important;
-    min-height: 340px !important;
-    max-height: 340px !important;
-    padding: 12px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    border-radius: 14px !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-link {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-photo {
-    width: 100% !important;
-    height: 126px !important;
-    min-height: 126px !important;
-    max-height: 126px !important;
-    flex: 0 0 126px !important;
-    aspect-ratio: auto !important;
-    margin: 0 0 10px !important;
-    border-radius: 10px !important;
-    background: #f4f6f8 !important;
-    display: grid !important;
-    place-items: center !important;
-    overflow: hidden !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-photo img {
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    padding: 8px !important;
-    display: block !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-body {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    padding: 0 2px !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card h3 {
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
-    height: 36px !important;
-    margin: 0 0 6px !important;
-    font-size: 14px !important;
-    line-height: 1.28 !important;
-    font-weight: 950 !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-category {
-    display: -webkit-box !important;
-    -webkit-line-clamp: 1 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    min-height: 17px !important;
-    max-height: 17px !important;
-    height: 17px !important;
-    margin: 0 0 8px !important;
-    font-size: 12px !important;
-    line-height: 1.2 !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-price-area {
-    margin-top: auto !important;
-    min-height: 58px !important;
-    max-height: 58px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    gap: 4px !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-card-price {
-    font-size: 23px !important;
-    line-height: 1 !important;
-    font-weight: 1000 !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-installment-badge,
-  .catalog-page #catalogGrid .catalog-card-stock {
-    display: none !important;
-    min-height: 0 !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .catalog-page #catalogGrid .catalog-cart-btn {
-    width: 100% !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    max-height: 42px !important;
-    margin-top: 10px !important;
-    border-radius: 13px !important;
-    flex: 0 0 42px !important;
-  }
-}
-
-/* ===== FIX 2026-06-08: catalog overlay must stay BEHIND catalog window ===== */
-.catalog-overlay,
-.page-dim {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 8000 !important;
-  background: rgba(0, 0, 0, .46) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-.catalog-overlay.active,
-.page-dim.active,
-body.catalog-open .catalog-overlay,
-body.catalog-open .page-dim {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-.catalog-popup,
-.catalog-popup.mega-catalog,
-.mega-catalog,
-.catalog-dropdown {
-  position: fixed !important;
-  top: 92px !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: translateX(-50%) !important;
-  z-index: 2147483000 !important;
-  background: #fff !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.catalog-popup.active,
-.catalog-popup.mega-catalog.active,
-.mega-catalog.active,
-.catalog-dropdown.active {
-  display: grid !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-}
-
-.catalog-popup.active *,
-.catalog-popup.mega-catalog.active *,
-.mega-catalog.active *,
-.catalog-dropdown.active * {
-  filter: none !important;
-  -webkit-filter: none !important;
-  opacity: 1 !important;
-}
-
-.topbar,
-header.topbar {
-  z-index: 9000 !important;
+  .product-card .cart::before,
+  .catalog-cart-btn::before{font-size:18px!important;}
 }
