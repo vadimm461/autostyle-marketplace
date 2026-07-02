@@ -749,3 +749,188 @@
   .m-card > .m-cart{top:123px !important;}
   .m-card-title{font-size:14px !important;line-height:1.16 !important;min-height:0 !important;}
 }
+
+
+
+/* ===== ULTIMATE MOBILE PRODUCT CARD RESET 2026-07-02 =====
+   Фото ~60%, кнопка корзины по центру нижней части фото, название снизу, цена под названием.
+*/
+.m-products,
+.m-carousel,
+.m-grid,
+#mProducts,
+#mFavorites,
+#mRelated{
+  align-items:flex-start !important;
+}
+
+.m-card{
+  position:relative !important;
+  background:#fff !important;
+  border-radius:22px !important;
+  padding:9px !important;
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:7px !important;
+  overflow:visible !important;
+  box-shadow:0 8px 24px rgba(15,23,42,.06) !important;
+}
+
+.m-card-img{
+  position:relative !important;
+  width:100% !important;
+  height:160px !important;
+  min-height:160px !important;
+  max-height:160px !important;
+  flex:0 0 160px !important;
+  padding:10px !important;
+  margin:0 !important;
+  background:#f4f6f8 !important;
+  border-radius:18px !important;
+  overflow:hidden !important;
+  display:grid !important;
+  place-items:center !important;
+}
+
+.m-card-img-link{
+  display:grid !important;
+  place-items:center !important;
+  width:100% !important;
+  height:100% !important;
+  padding:0 !important;
+  margin:0 !important;
+  text-decoration:none !important;
+  color:#111827 !important;
+}
+
+.m-card-img img{
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  transform:none !important;
+  mix-blend-mode:multiply;
+}
+
+.m-card-title{
+  display:-webkit-box !important;
+  -webkit-line-clamp:3 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  font-size:15px !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+  color:#111827 !important;
+  text-decoration:none !important;
+}
+
+.m-group,
+.m-installment{
+  display:none !important;
+}
+
+.m-price{
+  display:flex !important;
+  align-items:flex-end !important;
+  gap:6px !important;
+  margin:2px 0 0 !important;
+  padding:0 !important;
+  min-height:0 !important;
+  height:auto !important;
+}
+
+.m-price b{
+  color:#111827 !important;
+  font-size:23px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  letter-spacing:-.025em !important;
+}
+
+.m-old{
+  color:#9ca3af !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  text-decoration:line-through !important;
+}
+
+.m-cart{
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:126px !important;
+  bottom:auto !important;
+  transform:translateX(-50%) !important;
+  width:42px !important;
+  height:42px !important;
+  min-width:42px !important;
+  max-width:42px !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#28e11a !important;
+  color:#061006 !important;
+  box-shadow:0 10px 24px rgba(40,225,26,.35) !important;
+  display:grid !important;
+  place-items:center !important;
+  font-size:0 !important;
+  z-index:10 !important;
+}
+
+.m-cart::before{
+  content:'' !important;
+  width:20px !important;
+  height:20px !important;
+  display:block !important;
+  background:#061006 !important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L23 6H6'/%3E%3C/svg%3E") center/contain no-repeat !important;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L23 6H6'/%3E%3C/svg%3E") center/contain no-repeat !important;
+}
+
+.m-fav{
+  position:absolute !important;
+  right:10px !important;
+  top:10px !important;
+  width:36px !important;
+  height:36px !important;
+  z-index:11 !important;
+  background:rgba(255,255,255,.96) !important;
+}
+
+.m-discount{
+  position:absolute !important;
+  left:10px !important;
+  top:10px !important;
+  z-index:11 !important;
+}
+
+.m-carousel .m-card{
+  min-width:46% !important;
+  scroll-snap-align:start !important;
+}
+
+@media (max-width:390px){
+  .m-card-img{
+    height:150px !important;
+    min-height:150px !important;
+    max-height:150px !important;
+    flex-basis:150px !important;
+  }
+  .m-cart{top:116px !important;}
+  .m-card-title{
+    font-size:14px !important;
+    line-height:1.15 !important;
+    min-height:0 !important;
+  }
+  .m-price b{font-size:22px !important;}
+}
