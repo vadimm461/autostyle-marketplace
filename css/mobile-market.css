@@ -516,3 +516,140 @@
   .m-card-title{font-size:13px !important;}
   .m-price b{font-size:20px !important;}
 }
+
+/* ===== Mobile WB product cards replacement fix ===== */
+.m-card{
+  position:relative !important;
+  background:#fff !important;
+  border-radius:20px !important;
+  padding:9px !important;
+  box-shadow:0 8px 22px rgba(15,23,42,.07) !important;
+  border:1px solid rgba(229,231,235,.8) !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+  min-height:292px !important;
+}
+
+.m-card-img{
+  position:relative !important;
+  height:172px !important;
+  min-height:172px !important;
+  background:#fff !important;
+  border-radius:16px !important;
+  display:grid !important;
+  place-items:center !important;
+  overflow:hidden !important;
+  color:#111827 !important;
+  font-size:13px !important;
+  margin:0 0 9px !important;
+}
+
+.m-card-img img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  transform:scale(1.08) !important;
+  display:block !important;
+  mix-blend-mode:multiply;
+}
+
+.m-card-title{
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+  text-decoration:none !important;
+  color:#111827 !important;
+  font-weight:900 !important;
+  line-height:1.18 !important;
+  margin:0 0 7px !important;
+  font-size:14px !important;
+  min-height:34px !important;
+}
+
+.m-group,
+.m-installment{
+  display:none !important;
+}
+
+.m-price{
+  display:flex !important;
+  align-items:flex-end !important;
+  gap:6px !important;
+  margin-top:auto !important;
+  padding-right:0 !important;
+}
+
+.m-price b{
+  font-size:22px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  color:#111827 !important;
+  letter-spacing:-.02em !important;
+}
+
+.m-old{
+  font-size:12px !important;
+  font-weight:800 !important;
+  color:#9ca3af !important;
+  text-decoration:line-through !important;
+}
+
+.m-cart{
+  position:absolute !important;
+  right:16px !important;
+  top:139px !important;
+  width:40px !important;
+  height:40px !important;
+  min-width:40px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#28e11a !important;
+  color:#061006 !important;
+  box-shadow:0 10px 24px rgba(40,225,26,.35) !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  font-size:0 !important;
+  z-index:5 !important;
+}
+
+.m-cart::before{
+  content:'' !important;
+  width:20px !important;
+  height:20px !important;
+  display:block !important;
+  background:#061006 !important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L23 6H6'/%3E%3C/svg%3E") center/contain no-repeat !important;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6L23 6H6'/%3E%3C/svg%3E") center/contain no-repeat !important;
+}
+
+.m-fav{
+  right:15px !important;
+  top:15px !important;
+  width:36px !important;
+  height:36px !important;
+  z-index:6 !important;
+}
+
+.m-discount{
+  left:15px !important;
+  top:15px !important;
+  z-index:6 !important;
+}
+
+.m-carousel .m-card{
+  min-width:46% !important;
+  scroll-snap-align:start !important;
+}
+
+@media (max-width: 390px){
+  .m-card{min-height:270px !important;}
+  .m-card-img{height:152px !important;min-height:152px !important;}
+  .m-cart{top:121px !important;}
+  .m-card-title{font-size:13.5px !important;min-height:33px !important;}
+  .m-price b{font-size:20px !important;}
+}
