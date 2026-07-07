@@ -12,6 +12,10 @@ let lastSnapshotAt = 0;
 let protectLocalCartUntil = 0;
 let lastLocalCartJson = '';
 
+function shouldKeepLocalCart(remoteCart) {
+  return Date.now() < protectLocalCartUntil && lastLocalCartJson && cartJson(remoteCart) !== lastLocalCartJson;
+}
+
 function cartJson(rows) {
   try { return JSON.stringify(normalizeUserCart(rows)); } catch (e) { return ''; }
 }
@@ -74,7 +78,7 @@ function bindUserCartSnapshot(user = currentUser) {
     const data = snap.exists() ? (snap.data() || {}) : {};
     const remoteCart = normalizeUserCart(data.cart || data.cartItems || []);
     const now = Date.now();
-    if (now < protectLocalCartUntil && lastLocalCartJson && cartJson(remoteCart) !== lastLocalCartJson) {
+    if (shouldKeepLocalCart(remoteCart)) {
       return;
     }
     currentCart = remoteCart;
@@ -94,7 +98,12 @@ export async function loadUserCart(user = currentUser) {
   }
   const snap = await getDoc(userRef(currentUser));
   const data = snap.exists() ? (snap.data() || {}) : {};
-  currentCart = normalizeUserCart(data.cart || data.cartItems || []);
+  const remoteCart = normalizeUserCart(data.cart || data.cartItems || []);
+  if (shouldKeepLocalCart(remoteCart)) {
+    emitCartChanged();
+    return currentCart;
+  }
+  currentCart = remoteCart;
   emitCartChanged();
   return currentCart;
 }
@@ -102,15 +111,25 @@ export async function loadUserCart(user = currentUser) {
 export async function saveUserCart(rows = currentCart, user = currentUser) {
   currentUser = user || auth.currentUser || null;
   if (!currentUser) throw new Error('Для корзины нужно войти в аккаунт');
-  currentCart = normalizeUserCart(rows);
-  lastLocalCartJson = cartJson(currentCart);
-  protectLocalCartUntil = Date.now() + 2500;
+
+  // Optimistic update: UI must keep the clicked +/- value immediately.
+  // Old Firestore snapshots can arrive for 1-2 seconds after setDoc and used to roll the quantity back.
+  const nextCart = normalizeUserCart(rows);
+  currentCart = nextCart;
+  lastLocalCartJson = cartJson(nextCart);
+  protectLocalCartUntil = Date.now() + 7000;
   emitCartChanged();
+
   await setDoc(userRef(currentUser), {
-    cart: currentCart,
+    cart: nextCart,
+    cartItems: nextCart,
     cartUpdatedAt: serverTimestamp()
   }, { merge: true });
-  protectLocalCartUntil = Date.now() + 800;
+
+  // Keep the local value protected a little longer so a delayed old snapshot/load cannot undo the click.
+  currentCart = nextCart;
+  lastLocalCartJson = cartJson(nextCart);
+  protectLocalCartUntil = Date.now() + 7000;
   emitCartChanged();
   return currentCart;
 }
