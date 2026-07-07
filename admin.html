@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="css/minimal-file-icons-fix.css">
 <link rel="stylesheet" href="css/admin-users.css">
 <link rel="stylesheet" href="css/feedback-admin-user.css?v=20260616-1">
-<link rel="stylesheet" href="css/admin-analytics.css?v=20260707-full">
+<link rel="stylesheet" href="css/admin-analytics.css?v=20260707-1">
 </head>
 <body class="admin-locked"><script src="js/page-loader.js"></script>
 
@@ -91,128 +91,66 @@
     <h1>Панель управления</h1>
     <p class="muted">Полное управление контентом сайта AutoStyle.</p>
 <section id="dashboard" class="admin-section active">
-  <div class="admin-dashboard-grid">
-  <a href="#products" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">📦</div>
-      <h3>Товары</h3>
-      <p>Добавление, редактирование, остатки, фото и цены.</p>
+  <div class="admin-home-tree">
+    <div class="admin-home-tree-head">
+      <div>
+        <h2>Быстрое управление</h2>
+        <p>Разделы собраны деревом: товары отдельно, главная отдельно, продажи и система отдельно.</p>
+      </div>
     </div>
-  </a>
 
-  <a href="#categories" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">🗂️</div>
-      <h3>Категории</h3>
-      <p>Основные группы, подгруппы и порядок вывода.</p>
+    <div class="admin-tree-grid">
+      <div class="admin-tree-group">
+        <div class="admin-tree-title"><span>📦</span><b>Товары</b></div>
+        <div class="admin-tree-list">
+          <a href="#products" class="admin-tree-item"><span>Товары</span><small>цены, фото, остатки</small></a>
+          <a href="#categories" class="admin-tree-item"><span>Категории</span><small>группы и подгруппы</small></a>
+          <a href="#discountCards" class="admin-tree-item"><span>Скидочные карты</span><small>карты клиентов</small></a>
+        </div>
+      </div>
+
+      <div class="admin-tree-group">
+        <div class="admin-tree-title"><span>🏠</span><b>Главная</b></div>
+        <div class="admin-tree-list">
+          <a href="#banners" class="admin-tree-item"><span>Баннеры</span><small>слайдеры и промо</small></a>
+          <a href="#homeblocks" class="admin-tree-item"><span>Блоки главной</span><small>новинки, лидеры, подборки</small></a>
+          <a href="#promocards" class="admin-tree-item"><span>Промо карточки</span><small>акции и спецпредложения</small></a>
+          <a href="#pages" class="admin-tree-item"><span>Страницы</span><small>информационные страницы</small></a>
+        </div>
+      </div>
+
+      <div class="admin-tree-group">
+        <div class="admin-tree-title"><span>🛒</span><b>Продажи</b></div>
+        <div class="admin-tree-list">
+          <a href="#orders" class="admin-tree-item admin-tree-alert" data-admin-home-badge="orders">
+            <span>Заказы <em data-admin-card-dot="orders" hidden>новые</em></span><small>обработка заказов</small>
+          </a>
+          <a href="#analytics" class="admin-tree-item"><span>Аналитика</span><small>посещения, конверсии, товары</small></a>
+        </div>
+      </div>
+
+      <div class="admin-tree-group">
+        <div class="admin-tree-title"><span>💬</span><b>Клиенты</b></div>
+        <div class="admin-tree-list">
+          <a href="#feedback" class="admin-tree-item admin-tree-alert" data-admin-home-badge="feedback">
+            <span>Предложения и жалобы <em data-admin-card-dot="feedback" hidden>новые</em></span><small>обращения пользователей</small>
+          </a>
+          <a href="#notifications" class="admin-tree-item"><span>Уведомления</span><small>рассылка клиентам</small></a>
+          <a href="#users" class="admin-tree-item"><span>Пользователи</span><small>группы и доступы</small></a>
+        </div>
+      </div>
+
+      <div class="admin-tree-group">
+        <div class="admin-tree-title"><span>⚙️</span><b>Система</b></div>
+        <div class="admin-tree-list">
+          <a href="#media" class="admin-tree-item"><span>Медиа</span><small>фото и файлы</small></a>
+          <a href="#settings" class="admin-tree-item"><span>Настройки</span><small>параметры сайта</small></a>
+          <button type="button" class="admin-tree-item admin-tree-button" data-full-cache-clear><span>Очистка кэша</span><small>сброс старых файлов</small></button>
+          <a href="index.html" class="admin-tree-item"><span>На сайт</span><small>открыть витрину</small></a>
+        </div>
+      </div>
     </div>
-  </a>
-
-  <a href="#banners" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">🖼️</div>
-      <h3>Баннеры</h3>
-      <p>Баннеры главной страницы и промо-визуалы.</p>
-    </div>
-  </a>
-
-  <a href="#homeBlocks" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">🏠</div>
-      <h3>Блоки главной</h3>
-      <p>Подборки, лидеры, новинки и секции главной.</p>
-    </div>
-  </a>
-
-  <a href="#promoCards" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">🎁</div>
-      <h3>Промо карточки</h3>
-      <p>Акции, спецпредложения и рекламные карточки.</p>
-    </div>
-  </a>
-
-  <a href="#orders" class="admin-home-card" data-admin-home-badge="orders">
-    <div>
-      <div class="admin-home-card-icon">🛒</div>
-      <h3>Заказы <span class="admin-card-alert" data-admin-card-dot="orders" hidden>новые</span></h3>
-      <p>Просмотр и обработка заказов клиентов.</p>
-    </div>
-  </a>
-
-  <a href="#feedback" class="admin-home-card" data-admin-home-badge="feedback">
-    <div>
-      <div class="admin-home-card-icon">📨</div>
-      <h3>Предложения и жалобы <span class="admin-card-alert" data-admin-card-dot="feedback" hidden>новые</span></h3>
-      <p>Письма от пользователей сайта с возможностью приложить фото.</p>
-    </div>
-  </a>
-
-  <a href="#discountCards" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">💳</div>
-      <h3>Скидочные карты</h3>
-      <p>Карты клиентов, скидки и привязки.</p>
-    </div>
-  </a>
-
-  <a href="#media" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">📁</div>
-      <h3>Медиа</h3>
-      <p>Загрузка изображений и файлов.</p>
-    </div>
-  </a>
-
-
-  <a href="#notifications" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">🔔</div>
-      <h3>Уведомления</h3>
-      <p>Отправка уведомлений всем пользователям.</p>
-    </div>
-  </a>
-
-  <a href="#users" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">👥</div>
-      <h3>Пользователи</h3>
-      <p>Группы пользователей и рассылка уведомлений.</p>
-    </div>
-  </a>
-
-  <a href="#pages" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">📄</div>
-      <h3>Страницы</h3>
-      <p>Редактирование информационных страниц сайта.</p>
-    </div>
-  </a>
-
-  <a href="#settings" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">⚙️</div>
-      <h3>Настройки</h3>
-      <p>Основные параметры магазина и сайта.</p>
-    </div>
-  </a>
-
-  <button type="button" class="admin-home-card admin-cache-clear-card" data-full-cache-clear>
-    <div>
-      <div class="admin-home-card-icon">🧹</div>
-      <h3>Полная очистка кэша сайта</h3>
-      <p>Сбросить старые файлы, данные, Cache Storage и service worker у всех пользователей.</p>
-    </div>
-  </button>
-
-  <a href="index.html" class="admin-home-card">
-    <div>
-      <div class="admin-home-card-icon">🌐</div>
-      <h3>На сайт</h3>
-      <p>Открыть витрину AutoStyle.</p>
-    </div>
-  </a>
-</div>
+  </div>
 </section>
 
     <section id="products" class="admin-section">
@@ -668,6 +606,58 @@
       </div>
     </section>
 
+
+    <section id="analytics" class="admin-section">
+      <div class="admin-card" id="analyticsRoot">
+        <div class="analytics-head">
+          <div>
+            <h2>Аналитика сайта</h2>
+            <p class="muted" data-analytics-status>Откройте раздел, чтобы загрузить статистику.</p>
+          </div>
+          <button type="button" class="analytics-refresh" data-refresh-analytics>Обновить аналитику</button>
+        </div>
+
+        <div class="analytics-metrics">
+          <div class="analytics-metric" id="analyticsVisits"><strong>0</strong><span>посещений</span></div>
+          <div class="analytics-metric" id="analyticsUsers"><strong>0</strong><span>пользователей</span></div>
+          <div class="analytics-metric" id="analyticsProfiles"><strong>0</strong><span>активаций профиля</span></div>
+          <div class="analytics-metric" id="analyticsCards"><strong>0</strong><span>скидочных карт</span></div>
+          <div class="analytics-metric" id="analyticsOrders"><strong>0</strong><span>заказов</span></div>
+          <div class="analytics-metric" id="analyticsFeedback"><strong>0</strong><span>обращений</span></div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="analytics-panel analytics-panel-wide">
+            <h3>Посещения сайта</h3>
+            <div id="analyticsVisitsChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Регистрации</h3>
+            <div id="analyticsRegistrationsChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Скидочные карты</h3>
+            <div id="analyticsCardsChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Популярные страницы и разделы</h3>
+            <div id="analyticsPagesChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Действия пользователей</h3>
+            <div id="analyticsEventsChart"></div>
+          </div>
+          <div class="analytics-panel analytics-panel-wide">
+            <h3>Последние 7 дней</h3>
+            <table class="analytics-table">
+              <thead><tr><th>Дата</th><th>Посещения</th><th>Регистрации</th><th>Профили</th><th>Карты</th><th>Заказы</th></tr></thead>
+              <tbody id="analyticsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="pages" class="admin-section">
       <div class="admin-card">
         <h2>Страницы сайта</h2>
@@ -704,48 +694,6 @@
 
           <button class="primary">Сохранить настройки</button>
         </form>
-      </div>
-    </section>
-
-
-
-    <section id="analytics" class="admin-section">
-      <div class="admin-card">
-        <div class="admin-analytics-head">
-          <div>
-            <h2>Аналитика сайта</h2>
-            <p class="muted">Полная статистика посещений, пользователей, заказов, товаров и действий на сайте.</p>
-            <p id="analyticsStatus" class="analytics-status"></p>
-          </div>
-          <div class="analytics-actions">
-            <button id="refreshAnalytics" type="button">Обновить аналитику</button>
-          </div>
-        </div>
-
-        <div class="analytics-grid">
-          <div class="analytics-kpi"><b data-analytics-kpi="visits">0</b><span>посещений</span><small>все открытия страниц</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="visitors">0</b><span>посетителей</span><small>уникальные браузеры</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="users">0</b><span>регистраций</span><small>пользователи сайта</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="profiles">0</b><span>активаций профиля</span><small>заполненные профили</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="cards">0</b><span>скидочных карт</span><small>активированные карты</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="online">0</b><span>онлайн сейчас</span><small>за последние 2 минуты</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="cartAdds">0</b><span>добавили в корзину</span><small>клики по корзине</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="favAdds">0</b><span>добавили в избранное</span><small>клики по избранному</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="orders">0</b><span>заказов</span><small>из базы заказов</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="conversion">0%</b><span>конверсия</span><small>посетитель → заказ</small></div>
-          <div class="analytics-kpi"><b data-analytics-kpi="avgTime">0 сек</b><span>среднее время</span><small>по открытым страницам</small></div>
-        </div>
-
-        <div class="analytics-panels">
-          <div class="analytics-panel analytics-panel-wide"><h3>📈 Посещения по дням</h3><div id="analyticsVisitsChart" class="analytics-bars"></div></div>
-          <div class="analytics-panel analytics-panel-wide"><h3>🕒 Посещения по часам</h3><div id="analyticsHoursChart" class="analytics-bars"></div></div>
-          <div class="analytics-panel"><h3>📄 Популярные страницы</h3><div id="analyticsPagesList" class="analytics-list"></div></div>
-          <div class="analytics-panel"><h3>🌍 Откуда пришли</h3><div id="analyticsSourcesList" class="analytics-list"></div></div>
-          <div class="analytics-panel"><h3>🔍 Что ищут чаще всего</h3><div id="analyticsSearchesList" class="analytics-list"></div></div>
-          <div class="analytics-panel"><h3>🚗 Какие товары смотрят</h3><div id="analyticsProductsList" class="analytics-list"></div></div>
-          <div class="analytics-panel"><h3>📱 Мобильные / ПК</h3><div id="analyticsDevicesList" class="analytics-list"></div></div>
-          <div class="analytics-panel"><h3>💰 Воронка посетитель → регистрация → заказ</h3><div id="analyticsConversionChart" class="analytics-bars"></div></div>
-        </div>
       </div>
     </section>
 
@@ -801,7 +749,7 @@
 <script src="js/admin-dashboard-home.js"></script>
 <script type="module" src="js/admin-notifications.js"></script>
 <script type="module" src="js/admin-users.js"></script>
-<script type="module" src="js/admin-analytics.js?v=20260707-full"></script>
+<script type="module" src="js/admin-analytics.js?v=20260707-1"></script>
 <script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 <script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
   <script src="js/as-file-icons.js"></script>
