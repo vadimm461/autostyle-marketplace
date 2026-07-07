@@ -147,6 +147,19 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+
+
+    /* Аналитика сайта */
+    match /autostyle_analytics_daily/{dayId} {
+      allow create, update: if true;
+      allow read, delete: if isAdmin();
+    }
+
+    match /autostyle_analytics_events/{eventId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
     /* Старые коллекции */
     match /site/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /products/{document=**} { allow read: if true; allow write: if isAdmin(); }

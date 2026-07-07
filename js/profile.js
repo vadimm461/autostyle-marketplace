@@ -13,6 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/fireba
 import { updateCartCount, fmtPrice, productTitle, productImage } from './common.js';
 import { sendLinkSmsCode, confirmLinkSmsCode, resendEmailVerification, userProviders, providerTitle, ensureUserProfile, getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { createPasswordChangedNotification } from './notify-service.js';
+import { trackEvent } from './site-analytics.js';
 
 const $ = s => document.querySelector(s);
 
@@ -82,6 +83,8 @@ async function saveProfile(user){
     await verifyBeforeUpdateEmail(user, email);
   }
   const current = await getUserDoc(user.uid);
+  const profileComplete = isProfileComplete({ name, email, phone, city, address, car });
+  const firstProfileActivation = profileComplete && !current.data.profileActivated;
   await setDoc(current.ref, {
     uid: user.uid,
     name,
@@ -90,11 +93,14 @@ async function saveProfile(user){
     city,
     address,
     car,
+    profileActivated: profileComplete ? true : (current.data.profileActivated || false),
+    profileActivatedAt: firstProfileActivation ? new Date().toISOString() : (current.data.profileActivatedAt || ''),
     photoURL: user.photoURL || current.data.photoURL || '',
     updatedAt: new Date().toISOString(),
     createdAt: current.data.createdAt || new Date().toISOString(),
     role: current.data.role || 'user'
   }, { merge: true });
+  try { await trackEvent(firstProfileActivation ? 'profile_completed' : 'profile_saved'); } catch(e) {}
   const shownName = name || 'пользователь';
   setText($('#profileNameTitle'), name || 'Пользователь');
   setText($('#profileWelcomeName'), shownName);
@@ -204,6 +210,7 @@ async function submitFeedback(user){
     createdAt: serverTimestamp(),
     createdAtText: new Date().toLocaleString('ru-RU')
   });
+  try { await trackEvent('feedback_sent'); } catch(e) {}
   $('#feedbackForm')?.reset();
   message(msg, 'Письмо отправлено администрации. Спасибо!', true);
 }
@@ -485,6 +492,7 @@ async function getDiscountCard(user) {
     createdAt: current.data.discountCard?.issuedAt || issuedAt,
     createdAtServer: serverTimestamp()
   }, { merge: true });
+  try { await trackEvent('discount_card_activated'); } catch(e) {}
   updateDiscountCardUI(user, { ...data, discountCard: { active: true, number } });
   message(msg, 'Скидочная карта активирована.', true);
 }

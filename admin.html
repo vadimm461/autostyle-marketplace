@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/minimal-file-icons-fix.css">
 <link rel="stylesheet" href="css/admin-users.css">
 <link rel="stylesheet" href="css/feedback-admin-user.css?v=20260616-1">
+<link rel="stylesheet" href="css/admin-analytics.css?v=20260707-1">
 </head>
 <body class="admin-locked"><script src="js/page-loader.js"></script>
 
@@ -69,6 +70,7 @@
       <button data-section="discountCards">Скидочные карты</button>
       <button data-section="media">Медиа</button>
       <button data-section="notifications">Уведомления</button>
+      <button data-section="analytics">Аналитика</button>
       <button data-section="users">Пользователи</button>
       <button data-section="pages">Страницы</button>
       <button data-section="settings">Настройки</button>
@@ -168,6 +170,15 @@
       <div class="admin-home-card-icon">🔔</div>
       <h3>Уведомления</h3>
       <p>Отправка уведомлений всем пользователям.</p>
+    </div>
+  </a>
+
+
+  <a href="#analytics" class="admin-home-card">
+    <div>
+      <div class="admin-home-card-icon">📊</div>
+      <h3>Аналитика</h3>
+      <p>Посещения сайта, регистрации, профили, скидочные карты, заказы и страницы.</p>
     </div>
   </a>
 
@@ -666,6 +677,58 @@
       </div>
     </section>
 
+
+    <section id="analytics" class="admin-section">
+      <div class="admin-card" id="analyticsRoot">
+        <div class="analytics-head">
+          <div>
+            <h2>Аналитика сайта</h2>
+            <p class="muted" data-analytics-status>Откройте раздел, чтобы загрузить статистику.</p>
+          </div>
+          <button type="button" class="analytics-refresh" data-refresh-analytics>Обновить аналитику</button>
+        </div>
+
+        <div class="analytics-metrics">
+          <div class="analytics-metric" id="analyticsVisits"><strong>0</strong><span>посещений</span></div>
+          <div class="analytics-metric" id="analyticsUsers"><strong>0</strong><span>пользователей</span></div>
+          <div class="analytics-metric" id="analyticsProfiles"><strong>0</strong><span>активаций профиля</span></div>
+          <div class="analytics-metric" id="analyticsCards"><strong>0</strong><span>скидочных карт</span></div>
+          <div class="analytics-metric" id="analyticsOrders"><strong>0</strong><span>заказов</span></div>
+          <div class="analytics-metric" id="analyticsFeedback"><strong>0</strong><span>обращений</span></div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="analytics-panel analytics-panel-wide">
+            <h3>Посещения сайта</h3>
+            <div id="analyticsVisitsChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Регистрации</h3>
+            <div id="analyticsRegistrationsChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Скидочные карты</h3>
+            <div id="analyticsCardsChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Популярные страницы и разделы</h3>
+            <div id="analyticsPagesChart"></div>
+          </div>
+          <div class="analytics-panel">
+            <h3>Действия пользователей</h3>
+            <div id="analyticsEventsChart"></div>
+          </div>
+          <div class="analytics-panel analytics-panel-wide">
+            <h3>Последние 7 дней</h3>
+            <table class="analytics-table">
+              <thead><tr><th>Дата</th><th>Посещения</th><th>Регистрации</th><th>Профили</th><th>Карты</th><th>Заказы</th></tr></thead>
+              <tbody id="analyticsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="pages" class="admin-section">
       <div class="admin-card">
         <h2>Страницы сайта</h2>
@@ -757,6 +820,7 @@
 <script src="js/admin-dashboard-home.js"></script>
 <script type="module" src="js/admin-notifications.js"></script>
 <script type="module" src="js/admin-users.js"></script>
+<script type="module" src="js/admin-analytics.js?v=20260707-1"></script>
 <script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 <script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
   <script src="js/as-file-icons.js"></script>

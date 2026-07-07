@@ -538,7 +538,8 @@ function adminSectionTitle(id) {
     homeblocks: 'Загружаем блоки главной...',
     promocards: 'Загружаем промо карточки...',
     notifications: 'Загружаем уведомления...',
-    users: 'Загружаем пользователей...'
+    users: 'Загружаем пользователей...',
+    analytics: 'Загружаем аналитику...'
   };
   return titles[id] || 'Загрузка раздела...';
 }
@@ -572,6 +573,10 @@ async function loadAdminSection(sectionId, force = false) {
     else if (id === 'discountCards') await renderDiscountCardsAdmin();
     else if (id === 'homeblocks') await renderHomeBlocksAdmin();
     else if (id === 'promocards') await renderPromoCardsAdmin();
+    else if (id === 'analytics') {
+      window.renderAdminAnalytics?.();
+      window.dispatchEvent(new CustomEvent('autostyle:admin-section-open', { detail: { section: id } }));
+    }
     else if (id === 'notifications' || id === 'users') {
       window.dispatchEvent(new CustomEvent('autostyle:admin-section-open', { detail: { section: id } }));
     }

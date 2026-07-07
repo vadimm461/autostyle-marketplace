@@ -1,4 +1,5 @@
 import { auth, db, COLLECTIONS } from './firebase.js';
+import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
@@ -669,6 +670,7 @@ async function createOrderFromCart() {
     await saveUserCart(cart);
     writeCartSelected(new Set(cart.map(i => String(i.id || i.productId))));
     await render();
+    try { await trackEvent('order_created'); } catch(e) {}
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
   } catch (err) {
     console.error('order create error', err);

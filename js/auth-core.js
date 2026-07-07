@@ -6,6 +6,7 @@ import {
   updateProfile, unlink
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { trackEvent } from './site-analytics.js';
 
 const USERS = COLLECTIONS.users || 'autostyle_users';
 export const providerTitle = id => ({ password:'Email/пароль', 'password':'Email/пароль', phone:'SMS/телефон', 'phone':'SMS/телефон' }[id] || id);
@@ -62,12 +63,14 @@ export async function resetPassword(email){
 export async function loginEmail(email, pass){
   const res = await signInWithEmailAndPassword(auth, email, pass);
   await ensureUserProfile(res.user);
+  try { await trackEvent('login'); } catch(e) {}
   return res.user;
 }
 export async function registerEmail(name, email, pass, phone=''){
   const res = await createUserWithEmailAndPassword(auth, email, pass);
   if(name) await updateProfile(res.user, { displayName:name });
   await ensureUserProfile(res.user, { name, email, phone });
+  try { await trackEvent('registration'); } catch(e) {}
   await sendEmailVerification(res.user);
   return res.user;
 }

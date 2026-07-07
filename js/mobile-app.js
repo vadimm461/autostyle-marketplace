@@ -1,4 +1,5 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
+import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, RecaptchaVerifier, signInWithPhoneNumber, linkWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
@@ -644,6 +645,7 @@ async function createMobileOrder(){
     await Promise.all([...selectedIds].map(id => removeUserCartItem(id)));
     writeMobileCartSelected(new Set(remainingCart.map(i => String(i.id || i.productId))));
     localStorage.removeItem(MOBILE_DISCOUNT_KEY);
+    try { await trackEvent('order_created'); } catch(e) {}
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
     location.href='mobile-orders.html';
   }catch(e){ console.error('mobile order create error', e); alert('Не удалось оформить заказ: '+(e?.message || e)); }
