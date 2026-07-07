@@ -9,6 +9,12 @@ let currentCart = [];
 let readyPromise = null;
 let cartUnsubscribe = null;
 let lastSnapshotAt = 0;
+let protectLocalCartUntil = 0;
+let lastLocalCartJson = '';
+
+function cartJson(rows) {
+  try { return JSON.stringify(normalizeUserCart(rows)); } catch (e) { return ''; }
+}
 
 function userRef(user = currentUser) {
   return user ? doc(db, USERS_COLLECTION, user.uid) : null;
@@ -66,8 +72,13 @@ function bindUserCartSnapshot(user = currentUser) {
   }
   cartUnsubscribe = onSnapshot(userRef(currentUser), snap => {
     const data = snap.exists() ? (snap.data() || {}) : {};
-    currentCart = normalizeUserCart(data.cart || data.cartItems || []);
-    lastSnapshotAt = Date.now();
+    const remoteCart = normalizeUserCart(data.cart || data.cartItems || []);
+    const now = Date.now();
+    if (now < protectLocalCartUntil && lastLocalCartJson && cartJson(remoteCart) !== lastLocalCartJson) {
+      return;
+    }
+    currentCart = remoteCart;
+    lastSnapshotAt = now;
     emitCartChanged();
   }, err => {
     console.warn('user cart snapshot error', err);
@@ -92,10 +103,14 @@ export async function saveUserCart(rows = currentCart, user = currentUser) {
   currentUser = user || auth.currentUser || null;
   if (!currentUser) throw new Error('Для корзины нужно войти в аккаунт');
   currentCart = normalizeUserCart(rows);
+  lastLocalCartJson = cartJson(currentCart);
+  protectLocalCartUntil = Date.now() + 2500;
+  emitCartChanged();
   await setDoc(userRef(currentUser), {
     cart: currentCart,
     cartUpdatedAt: serverTimestamp()
   }, { merge: true });
+  protectLocalCartUntil = Date.now() + 800;
   emitCartChanged();
   return currentCart;
 }

@@ -280,7 +280,7 @@ function setupAdvancedMobileSearch(){
     const nq = norm(q);
     const result = products
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
-      .slice(0, 30);
+      .slice(0, 20);
 
     box.replaceChildren();
     if (result.length) {
@@ -514,7 +514,8 @@ function calcMobileDiscount(total, value){
   if(!code) return 0;
   return Math.min(Math.round(total * 0.03), total); // карта даёт 3%, точный процент можно поменять в одном месте
 }
-async function renderCart(){
+async function renderCart(options = {}){
+  const skipReload = Boolean(options && options.skipReload);
   setupShell('cart'); await initData();
   const user = await waitAuthUser();
   if(!user){
@@ -526,8 +527,8 @@ async function renderCart(){
     $('#mCartList').innerHTML = `<div class="m-empty"><b>Подтвердите профиль</b><br>${profileVerificationMessage()}<br><br><a class="m-primary" href="mobile-profile.html#security">Подтвердить профиль</a></div>`;
     $('#mTotal').textContent = money(0); clearLoader(); return;
   }
-  await loadUserCart(user).catch(()=>{});
-  const cartRows = await waitUserCartReady();
+  if(!skipReload) await loadUserCart(user).catch(()=>{});
+  const cartRows = skipReload ? getCurrentUserCart() : await waitUserCartReady();
   const byId=new Map(products.map(p=>[String(p.id),p]));
   const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
   const selectedIds = syncMobileSelection(rows);
@@ -575,13 +576,13 @@ async function renderCart(){
   const note = $('#mCheckoutNote');
   if(note) note.textContent = `${mobilePaymentTitle(payment)} · выбрано ${selectedRows.length} товар${selectedRows.length===1?'':'ов'}${discountSum ? ` · скидка ${money(discountSum)}` : ''}${payment === 'installment' ? ' · скидочная карта на рассрочку не применяется' : ''}`;
   if($('#mCheckoutBtn')){ $('#mCheckoutBtn').disabled = !selectedRows.length; $('#mCheckoutBtn').onclick = createMobileOrder; }
-  $('#mSelectAllCart') && ($('#mSelectAllCart').onchange=e=>{ const next = new Set(e.target.checked ? rows.map(({product})=>String(product.id)) : []); writeMobileCartSelected(next); renderCart(); });
-  $$('.mCartPick').forEach(input=>input.onchange=()=>{ const selected = readMobileCartSelected(); const id=String(input.dataset.pick||''); if(input.checked) selected.add(id); else selected.delete(id); writeMobileCartSelected(selected); renderCart(); });
+  $('#mSelectAllCart') && ($('#mSelectAllCart').onchange=e=>{ const next = new Set(e.target.checked ? rows.map(({product})=>String(product.id)) : []); writeMobileCartSelected(next); renderCart({skipReload:true}); });
+  $$('.mCartPick').forEach(input=>input.onchange=()=>{ const selected = readMobileCartSelected(); const id=String(input.dataset.pick||''); if(input.checked) selected.add(id); else selected.delete(id); writeMobileCartSelected(selected); renderCart({skipReload:true}); });
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.onclick=()=>{ setSelectedMobilePayment(b.dataset.pay); if(b.dataset.pay === 'installment') localStorage.removeItem(MOBILE_DISCOUNT_KEY); renderCart(); });
   $('#mApplyDiscount') && ($('#mApplyDiscount').onclick=()=>{ const v=($('#mDiscountCardInput')?.value||'').trim(); if(selectedMobilePayment()==='installment'){ alert('Скидочная карта не применяется при рассрочке.'); localStorage.removeItem(MOBILE_DISCOUNT_KEY); } else if(v){ localStorage.setItem(MOBILE_DISCOUNT_KEY, v); } else { localStorage.removeItem(MOBILE_DISCOUNT_KEY); } renderCart(); });
-  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); const selected=readMobileCartSelected(); selected.delete(String(b.dataset.remove)); writeMobileCartSelected(selected); await renderCart();});
-  $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart();});
-  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus)); const next=Number(row?.qty||1)-1; if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await renderCart();});
+  $$('[data-remove]').forEach(b=>b.onclick=async()=>{ b.disabled=true; await removeUserCartItem(b.dataset.remove); const selected=readMobileCartSelected(); selected.delete(String(b.dataset.remove)); writeMobileCartSelected(selected); await renderCart({skipReload:true});});
+  $$('[data-plus]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart({skipReload:true});});
+  $$('[data-minus]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus)); const next=Number(row?.qty||1)-1; if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await renderCart({skipReload:true});});
   clearLoader();
 }
 
@@ -908,7 +909,8 @@ window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
   updateCounts();
-  if(page === 'cart') refreshCurrentMobilePage('cart-snapshot');
+  // Корзину не перерисовываем по каждому snapshot: иначе Firestore может на секунду вернуть старое число
+  // и кнопки +/- визуально откатываются назад. Перерисовка идет только после самого нажатия.
 });
 
 window.addEventListener('pageshow', event => {
