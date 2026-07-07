@@ -24,6 +24,22 @@ let lastCartTotal = 0;
 let discountCardApplied = false;
 let discountCardPercent = 0;
 let isCheckoutBusy = false;
+let selectedCartIds = new Set();
+
+function cartRowKey(item, product) {
+  return String(cartItemId(item) || product?.id || product?.productId || product?.code || '');
+}
+
+function syncCartSelection(rows) {
+  const keys = rows.map(({ item, product }) => cartRowKey(item, product)).filter(Boolean);
+  const keySet = new Set(keys);
+  selectedCartIds = new Set([...selectedCartIds].filter(id => keySet.has(id)));
+  if (!selectedCartIds.size && keys.length) selectedCartIds = new Set(keys);
+}
+
+function selectedCartRows(rows) {
+  return rows.filter(({ item, product }) => selectedCartIds.has(cartRowKey(item, product)));
+}
 
 const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
 
@@ -250,19 +266,27 @@ async function render({ persist = false } = {}) {
     return;
   }
 
-  const total = rows.reduce((sum, r) => sum + Number(r.product.price || 0) * (Number(r.item.qty) || 1), 0);
-  const totalQty = rows.reduce((sum, r) => sum + (Number(r.item.qty) || 1), 0);
-  lastCartRows = rows;
+  syncCartSelection(rows);
+  const selectedRows = selectedCartRows(rows);
+  const total = selectedRows.reduce((sum, r) => sum + Number(r.product.price || 0) * (Number(r.item.qty) || 1), 0);
+  const totalQty = selectedRows.reduce((sum, r) => sum + (Number(r.item.qty) || 1), 0);
+  lastCartRows = selectedRows;
   lastCartTotal = total;
 
-  const hasStockProblems = cartHasStockProblems(rows);
+  const hasStockProblems = cartHasStockProblems(selectedRows);
+  const allSelected = rows.length > 0 && selectedCartIds.size === rows.length;
   if (checkoutBtn) {
-    checkoutBtn.disabled = hasStockProblems;
-    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems);
-    checkoutBtn.title = hasStockProblems ? 'Исправьте количество товаров: оно превышает остаток на сайте.' : '';
+    checkoutBtn.disabled = hasStockProblems || !selectedRows.length;
+    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems || !selectedRows.length);
+    checkoutBtn.title = hasStockProblems ? 'Исправьте количество выбранных товаров: оно превышает остаток на сайте.' : (!selectedRows.length ? 'Выберите хотя бы один товар.' : '');
   }
 
-  cartList.innerHTML = rows.map(({ item, product }, index) => {
+  cartList.innerHTML = `
+    <div class="cart-select-all">
+      <label class="cart-check"><input id="cartSelectAll" type="checkbox" ${allSelected ? 'checked' : ''}><span class="cart-box"></span><span>Выбрать все товары</span></label>
+      <small>К заказу: ${selectedRows.length} из ${rows.length}</small>
+    </div>
+  ` + rows.map(({ item, product }, index) => {
     const qty = Number(item.qty) || 1;
     const productTitle = title(product);
     const available = stock(product);
@@ -270,8 +294,11 @@ async function render({ persist = false } = {}) {
     const overStock = limited && qty > available;
     const outOfStock = limited && available <= 0;
     const maxReached = limited && qty >= available;
+    const rowKey = cartRowKey(item, product);
+    const selected = selectedCartIds.has(rowKey);
     return `
-      <article class="cart-row ${overStock || outOfStock ? 'cart-stock-error' : ''}" data-product-id="${product.id}">
+      <article class="cart-row ${overStock || outOfStock ? 'cart-stock-error' : ''} ${selected ? 'cart-row-selected' : 'cart-row-muted'}" data-product-id="${product.id}">
+        <label class="cart-row-check" title="Выбрать товар"><input class="cart-item-check" type="checkbox" data-key="${rowKey}" ${selected ? 'checked' : ''}><span></span></label>
         <button class="cart-product-open" type="button" data-index="${index}" title="Быстрый просмотр">
           <div class="cart-img">${image(product) ? `<img loading="lazy" decoding="async" src="${image(product)}" alt="${productTitle}">` : '<span>Фото</span>'}</div>
         </button>
@@ -299,6 +326,16 @@ async function render({ persist = false } = {}) {
   updatePaymentUI();
   renderCartTotal(total);
   if (countBox) countBox.textContent = String(totalQty);
+
+  document.querySelector('#cartSelectAll')?.addEventListener('change', (e) => {
+    selectedCartIds = e.target.checked ? new Set(rows.map(({ item, product }) => cartRowKey(item, product)).filter(Boolean)) : new Set();
+    render();
+  });
+  document.querySelectorAll('.cart-item-check').forEach(input => input.onchange = () => {
+    if (input.checked) selectedCartIds.add(input.dataset.key);
+    else selectedCartIds.delete(input.dataset.key);
+    render();
+  });
 
   document.querySelectorAll('.plus').forEach(btn => btn.onclick = async () => {
     const i = Number(btn.dataset.index);
@@ -534,9 +571,15 @@ async function createOrderFromCart() {
     try { productMap = await getProductMap(); } catch (err) { console.warn('checkout products load error', err); }
     await loadUserCart(user);
     cart = getCurrentUserCart();
-    const rows = normalizeUserCart(cart).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
-    if (!rows.length) {
+    const allRows = normalizeUserCart(cart).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
+    syncCartSelection(allRows);
+    const rows = selectedCartRows(allRows);
+    if (!allRows.length) {
       alert('Корзина пустая. Добавь товары перед оформлением заказа.');
+      return;
+    }
+    if (!rows.length) {
+      alert('Выберите хотя бы один товар для оформления заказа.');
       return;
     }
 
@@ -614,9 +657,11 @@ async function createOrderFromCart() {
       source: 'site-cart'
     });
 
-    cart = [];
-    await clearUserCart();
-    await render({ persist: true });
+    const orderedKeys = new Set(rows.map(({ item, product }) => cartRowKey(item, product)));
+    cart = normalizeUserCart(cart).filter(item => !orderedKeys.has(cartRowKey(item, productFromCartItem(item, productMap))));
+    selectedCartIds = new Set();
+    await saveUserCart(cart);
+    await render();
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
   } catch (err) {
     console.error('order create error', err);
