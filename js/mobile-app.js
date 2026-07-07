@@ -260,7 +260,8 @@ function setupAdvancedMobileSearch(){
     const cost = document.createElement('em');
     cost.textContent = money(price(p));
 
-    a.append(photo, info, cost);
+    info.appendChild(cost);
+    a.append(photo, info);
     return a;
   }
 
