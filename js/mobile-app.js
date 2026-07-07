@@ -188,18 +188,41 @@ function bind(scope=document){
 }
 function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),150); }
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
-function normalizeMobileSearchButton(){
-  const btn = $('#mSearchBtn');
-  if (!btn) return;
-  btn.setAttribute('aria-label','Найти');
-  btn.setAttribute('data-label','Найти');
-  // Текст рисуется только CSS-псевдоэлементом, чтобы не было дублей: НайтиНайти.
-  btn.textContent = '';
+function setupAdvancedMobileSearch(){
+  const input = $('#mSearch');
+  const form = input?.closest('.m-search');
+  if (!input || !form || form.dataset.advancedSearchReady === '1') return;
+  form.dataset.advancedSearchReady = '1';
+  input.setAttribute('autocomplete','off');
+  form.querySelectorAll('#mSearchBtn, button').forEach(btn => btn.remove());
+  let box = form.querySelector('.m-search-live');
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'm-search-live';
+    form.appendChild(box);
+  }
+  const close = () => { box.classList.remove('active'); box.innerHTML = ''; };
+  const productUrl = p => appUrl(`product.html?id=${encodeURIComponent(p.id)}`);
+  const render = async () => {
+    const q = input.value.trim();
+    if (q.length < 2) { close(); return; }
+    await initData().catch(()=>{});
+    const nq = norm(q);
+    const result = products.filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq)).slice(0, 8);
+    box.innerHTML = result.length
+      ? result.map(p => `<a class="m-search-result" href="${productUrl(p)}"><span>${img(p)?`<img src="${img(p)}" alt="">`:'Фото'}</span><b>${escapeHtml(title(p))}</b><em>${money(price(p))}</em></a>`).join('') + `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Показать все результаты</a>`
+      : `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Товары не найдены — открыть каталог</a>`;
+    box.classList.add('active');
+  };
+  let timer = 0;
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 120); });
+  input.addEventListener('focus', render);
+  input.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); searchGo(); } if(e.key==='Escape') close(); });
+  form.addEventListener('submit', e => { e.preventDefault(); searchGo(); });
+  document.addEventListener('click', e => { if (!form.contains(e.target)) close(); });
 }
 function setupShell(active='home'){
-  normalizeMobileSearchButton();
-  $('#mSearchBtn') && ($('#mSearchBtn').onclick=searchGo);
-  $('#mSearch') && $('#mSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); searchGo(); }});
+  setupAdvancedMobileSearch();
   const nav=$('.m-bottom-inner');
   if(nav) nav.innerHTML = `
     <a class="${active==='home'?'active':''}" href="mobile.html">⌂<span>Главная</span></a>
