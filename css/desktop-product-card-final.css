@@ -169,3 +169,60 @@
 .catalog-grid{align-items:start!important;}
 @media(max-width:1280px){.carousel-products .product-card{flex-basis:calc((100% - 54px)/4)!important;}.catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
 @media(max-width:980px){.carousel-products .product-card{flex-basis:calc((100% - 18px)/2)!important;}.catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}.product-title,.catalog-card h3{font-size:14px!important;}}
+
+/* === AS SMART PRODUCT PHOTO FIT: desktop cards/catalog ===
+   Не режем товар: вписываем фото целиком, вокруг дорисовывается белое поле. */
+.product-img,
+.product-card .product-img,
+.catalog-card-photo,
+.catalog-card .catalog-card-photo,
+.favorite-photo,
+.favorite-card-photo,
+.recent-photo,
+.similar-photo,
+.related-photo,
+.home-photo,
+.quick-product-img,
+.product-media,
+.product-main-image,
+.product-gallery-main,
+.product-photo-main{
+  background:#fff !important;
+  background-color:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  isolation:isolate !important;
+}
+.product-img img,
+.product-card .product-img img,
+.catalog-card-photo img,
+.catalog-card .catalog-card-photo img,
+.favorite-photo img,
+.favorite-card-photo img,
+.recent-photo img,
+.similar-photo img,
+.related-photo img,
+.home-photo img,
+.quick-product-img img,
+.product-media img,
+.product-main-image img,
+.product-gallery-main img,
+.product-photo-main img{
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center center !important;
+  display:block !important;
+  background:#fff !important;
+  mix-blend-mode:multiply;
+}
+.product-img img[src$=".png"],
+.product-img img[src*=".png?"],
+.catalog-card-photo img[src$=".png"],
+.catalog-card-photo img[src*=".png?"]{
+  mix-blend-mode:normal;
+}

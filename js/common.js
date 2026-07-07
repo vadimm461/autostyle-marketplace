@@ -6,40 +6,25 @@ function ensureProductImageFit(){
   const style = document.createElement('style');
   style.id = 'as-product-image-fit-fix';
   style.textContent = `
+    .product-img,
     .product-photo,
     .catalog-photo,
+    .catalog-card-photo,
     .home-photo,
     .favorite-photo,
+    .favorite-card-photo,
     .cart-photo,
+    .cart-img,
     .recent-photo,
     .similar-photo,
+    .related-photo,
+    .quick-product-img,
+    .m-card-img,
+    .m-photo,
+    .m-list-img,
+    .m-search-thumb,
     .product-card .product-photo,
-    .product-card [class$="-photo"]{
-      display:flex !important;
-      align-items:center !important;
-      justify-content:center !important;
-      overflow:hidden !important;
-      background:#fff !important;
-    }
-
-    .product-photo img,
-    .catalog-photo img,
-    .home-photo img,
-    .favorite-photo img,
-    .cart-photo img,
-    .recent-photo img,
-    .similar-photo img,
-    .product-card .product-photo img,
-    .product-card [class$="-photo"] img{
-      width:100% !important;
-      height:100% !important;
-      max-width:100% !important;
-      max-height:100% !important;
-      object-fit:contain !important;
-      object-position:center center !important;
-      display:block !important;
-    }
-
+    .product-card [class$="-photo"],
     .product-main-image,
     .product-image,
     .product-gallery-main,
@@ -51,8 +36,29 @@ function ensureProductImageFit(){
       justify-content:center !important;
       overflow:hidden !important;
       background:#fff !important;
+      background-color:#fff !important;
+      isolation:isolate !important;
     }
 
+    .product-img img,
+    .product-photo img,
+    .catalog-photo img,
+    .catalog-card-photo img,
+    .home-photo img,
+    .favorite-photo img,
+    .favorite-card-photo img,
+    .cart-photo img,
+    .cart-img img,
+    .recent-photo img,
+    .similar-photo img,
+    .related-photo img,
+    .quick-product-img img,
+    .m-card-img img,
+    .m-photo img,
+    .m-list-img img,
+    .m-search-thumb img,
+    .product-card .product-photo img,
+    .product-card [class$="-photo"] img,
     .product-main-image img,
     .product-image img,
     .product-gallery-main img,
@@ -70,11 +76,11 @@ function ensureProductImageFit(){
       object-fit:contain !important;
       object-position:center center !important;
       display:block !important;
+      background:#fff !important;
     }
   `;
   document.head.appendChild(style);
 }
-
 ensureProductImageFit();
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureProductImageFit);
 else ensureProductImageFit();
