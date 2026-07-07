@@ -115,36 +115,17 @@ function renderMobileSection(block, list){
   return `<section id="${id}" class="m-section m-home-block" data-block="${block.key}"><div class="m-section-head"><h2>${block.title || block.name || 'Блок'}</h2><a class="m-see" href="mobile-catalog.html">Все</a></div><div class="m-carousel m-home-products">${list.length ? list.map(card).join('') : '<div class="m-empty">Товары для этого блока пока не выбраны.</div>'}</div></section>`;
 }
 function setupMobileChrome(){
-  let lastY = Math.max(0, window.scrollY || 0);
-  let ticking = false;
+  let lastY = window.scrollY;
   const top = document.querySelector('.m-top');
   const nav = document.querySelector('.m-bottom-nav');
   const apply = () => {
-    const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
-    const delta = y - lastY;
-    const goingDown = delta > 4;
-    const goingUp = delta < -4;
-    if (top) {
-      top.classList.toggle('m-top-compact', y > 18);
-      if (y <= 12) {
-        top.classList.remove('m-top-hidden');
-      } else if (goingDown) {
-        top.classList.add('m-top-hidden');
-      } else if (goingUp) {
-        top.classList.remove('m-top-hidden');
-      }
-    }
+    const y = window.scrollY;
+    if (top) top.classList.toggle('m-top-hidden', y > 24 && y > lastY);
     if (nav) nav.classList.toggle('m-nav-scrolled', y > 12);
-    lastY = y;
-    ticking = false;
+    lastY = Math.max(0, y);
   };
   apply();
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(apply);
-    }
-  }, { passive:true });
+  window.addEventListener('scroll', apply, { passive:true });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href]');
@@ -777,4 +758,42 @@ window.addEventListener('online', () => refreshCurrentMobilePage('online'));
     if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
     if(['about','contacts','installment','certificates','more'].includes(page)) renderInfoShell(page==='more'?'profile':'home');
   }catch(e){ console.error(e); clearLoader(); }
+})();
+
+/* ===== AS FIX 2026-07-07: stable mobile chrome scroll behavior ===== */
+(function(){
+  function initAsMobileChromeFix(){
+    var top = document.querySelector('.m-top');
+    var nav = document.querySelector('.m-bottom-nav');
+    if (!top && !nav) return;
+    var lastY = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
+    var ticking = false;
+    function currentY(){ return Math.max(0, window.scrollY || document.documentElement.scrollTop || 0); }
+    function apply(){
+      var y = currentY();
+      var down = y > lastY + 4;
+      var up = y < lastY - 4;
+      if (top){
+        top.classList.toggle('m-top-compact', y > 18);
+        if (y <= 8) top.classList.remove('m-top-hidden');
+        else if (down) top.classList.add('m-top-hidden');
+        else if (up) top.classList.remove('m-top-hidden');
+      }
+      if (nav) nav.classList.toggle('m-nav-scrolled', y > 8);
+      lastY = y;
+      ticking = false;
+    }
+    function onScroll(){
+      if (!ticking){
+        ticking = true;
+        requestAnimationFrame(apply);
+      }
+    }
+    apply();
+    window.addEventListener('scroll', onScroll, {passive:true});
+    window.addEventListener('resize', onScroll, {passive:true});
+    window.addEventListener('orientationchange', function(){ setTimeout(onScroll, 120); }, {passive:true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAsMobileChromeFix, {once:true});
+  else initAsMobileChromeFix();
 })();
