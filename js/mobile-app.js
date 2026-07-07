@@ -189,44 +189,120 @@ function bind(scope=document){
 function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),150); }
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
 function setupAdvancedMobileSearch(){
-  const input = $('#mSearch');
-  const form = input?.closest('.m-search');
-  if (!input || !form || form.dataset.advancedSearchReady === '1') return;
+  const originalInput = $('#mSearch');
+  const originalForm = originalInput?.closest('.m-search');
+  if (!originalInput || !originalForm) return;
+
+  // Полностью чистим старый живой поиск: так не будет двух фото и двух "Показать все".
+  document.querySelectorAll('.m-search-live').forEach(el => el.remove());
+  originalForm.querySelectorAll('#mSearchBtn, button').forEach(btn => btn.remove());
+
+  // Если эта функция случайно запустится второй раз — старые обработчики убираются через cloneNode.
+  const input = originalInput.cloneNode(true);
+  originalInput.replaceWith(input);
+  const form = input.closest('.m-search');
   form.dataset.advancedSearchReady = '1';
   input.setAttribute('autocomplete','off');
-  form.querySelectorAll('#mSearchBtn, button').forEach(btn => btn.remove());
-  let box = form.querySelector('.m-search-live');
-  if (!box) {
-    box = document.createElement('div');
-    box.className = 'm-search-live';
-    form.appendChild(box);
-  }
-  const close = () => { box.classList.remove('active'); box.innerHTML = ''; };
+  input.setAttribute('enterkeyhint','search');
+
+  const box = document.createElement('div');
+  box.className = 'm-search-live';
+  box.id = 'mSearchLive';
+  form.appendChild(box);
+
+  let timer = 0;
+  let renderToken = 0;
   const productUrl = p => appUrl(`product.html?id=${encodeURIComponent(p.id)}`);
+  const catalogUrl = q => `mobile-catalog.html?search=${encodeURIComponent(q)}`;
+  const close = () => {
+    clearTimeout(timer);
+    renderToken++;
+    box.classList.remove('active');
+    box.replaceChildren();
+  };
+
+  const makeRow = p => {
+    const a = document.createElement('a');
+    a.className = 'm-search-result';
+    a.href = productUrl(p);
+
+    const pic = document.createElement('span');
+    pic.className = 'm-search-thumb';
+    const image = img(p);
+    if (image) {
+      const im = document.createElement('img');
+      im.src = image;
+      im.alt = title(p);
+      im.loading = 'lazy';
+      im.decoding = 'async';
+      pic.appendChild(im);
+    } else {
+      pic.textContent = 'Фото';
+    }
+
+    const name = document.createElement('b');
+    name.textContent = title(p);
+
+    const cost = document.createElement('em');
+    cost.textContent = money(price(p));
+
+    a.append(pic, name, cost);
+    return a;
+  };
+
+  const makeAll = (q, text='Показать все') => {
+    const a = document.createElement('a');
+    a.className = 'm-search-all';
+    a.href = catalogUrl(q);
+    a.textContent = text;
+    return a;
+  };
+
   const render = async () => {
     const q = input.value.trim();
+    const token = ++renderToken;
     if (q.length < 2) { close(); return; }
     await initData().catch(()=>{});
+    if (token !== renderToken) return;
+
     const nq = norm(q);
-    const result = products.filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq)).slice(0, 3);
-    box.innerHTML = result.length
-      ? result.map(p => `<a class="m-search-result" href="${productUrl(p)}"><span>${img(p)?`<img src="${img(p)}" alt="">`:'Фото'}</span><b>${escapeHtml(title(p))}</b><em>${money(price(p))}</em></a>`).join('') + `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Показать все</a>`
-      : `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Товары не найдены — открыть каталог</a>`;
+    const seen = new Set();
+    const result = products
+      .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
+      .filter(p => {
+        const key = String(p.id || title(p)).trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 3);
+
+    box.replaceChildren();
+    if (result.length) {
+      result.forEach(p => box.appendChild(makeRow(p)));
+      box.appendChild(makeAll(q));
+    } else {
+      box.appendChild(makeAll(q, 'Товары не найдены — открыть каталог'));
+    }
     box.classList.add('active');
   };
-  let timer = 0;
-  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 120); });
-  input.addEventListener('focus', render);
-  input.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); searchGo(); } if(e.key==='Escape') close(); });
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(render, 120);
+  });
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) render();
+  });
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter') { e.preventDefault(); searchGo(); }
+    if(e.key === 'Escape') close();
+  });
   form.addEventListener('submit', e => { e.preventDefault(); searchGo(); });
   document.addEventListener('click', e => { if (!form.contains(e.target)) close(); });
-  let lastScrollY = window.scrollY || 0;
-  window.addEventListener('scroll', () => {
-    const now = window.scrollY || 0;
-    if (Math.abs(now - lastScrollY) > 2) close();
-    lastScrollY = now;
-  }, { passive: true });
+  window.addEventListener('scroll', close, { passive:true });
 }
+
 
 function setupShell(active='home'){
   setupAdvancedMobileSearch();
