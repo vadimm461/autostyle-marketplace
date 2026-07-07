@@ -208,9 +208,9 @@ function setupAdvancedMobileSearch(){
     if (q.length < 2) { close(); return; }
     await initData().catch(()=>{});
     const nq = norm(q);
-    const result = products.filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq)).slice(0, 8);
+    const result = products.filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq)).slice(0, 3);
     box.innerHTML = result.length
-      ? result.map(p => `<a class="m-search-result" href="${productUrl(p)}"><span>${img(p)?`<img src="${img(p)}" alt="">`:'Фото'}</span><b>${escapeHtml(title(p))}</b><em>${money(price(p))}</em></a>`).join('') + `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Показать все результаты</a>`
+      ? result.map(p => `<a class="m-search-result" href="${productUrl(p)}"><span>${img(p)?`<img src="${img(p)}" alt="">`:'Фото'}</span><b>${escapeHtml(title(p))}</b><em>${money(price(p))}</em></a>`).join('') + `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Показать все</a>`
       : `<a class="m-search-all" href="mobile-catalog.html?search=${encodeURIComponent(q)}">Товары не найдены — открыть каталог</a>`;
     box.classList.add('active');
   };
@@ -220,7 +220,14 @@ function setupAdvancedMobileSearch(){
   input.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); searchGo(); } if(e.key==='Escape') close(); });
   form.addEventListener('submit', e => { e.preventDefault(); searchGo(); });
   document.addEventListener('click', e => { if (!form.contains(e.target)) close(); });
+  let lastScrollY = window.scrollY || 0;
+  window.addEventListener('scroll', () => {
+    const now = window.scrollY || 0;
+    if (Math.abs(now - lastScrollY) > 2) close();
+    lastScrollY = now;
+  }, { passive: true });
 }
+
 function setupShell(active='home'){
   setupAdvancedMobileSearch();
   const nav=$('.m-bottom-inner');

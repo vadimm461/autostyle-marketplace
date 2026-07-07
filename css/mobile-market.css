@@ -653,3 +653,47 @@ body.mobile-page .m-search-all{
   text-decoration:none;
   font-weight:950;
 }
+
+
+/* mobile advanced search tuning */
+body.mobile-page .m-search{
+  margin-top:10px !important;
+}
+body.mobile-page .m-search input,
+body.mobile-page #mSearch{
+  width:100% !important;
+  height:44px !important;
+  min-height:44px !important;
+  border-radius:17px !important;
+  padding:0 16px !important;
+}
+body.mobile-page .m-search-live{
+  top:calc(100% + 6px) !important;
+  border-radius:18px !important;
+  box-shadow:0 12px 32px rgba(15,23,42,.18) !important;
+}
+body.mobile-page .m-search-result{
+  grid-template-columns:36px 1fr auto !important;
+  gap:8px !important;
+  padding:7px 10px !important;
+  min-height:50px !important;
+}
+body.mobile-page .m-search-result span{
+  width:36px !important;
+  height:36px !important;
+  border-radius:11px !important;
+  font-size:10px !important;
+}
+body.mobile-page .m-search-result b{
+  font-size:13px !important;
+  line-height:1.12 !important;
+  -webkit-line-clamp:1 !important;
+}
+body.mobile-page .m-search-result em{
+  font-size:13px !important;
+}
+body.mobile-page .m-search-all{
+  min-height:42px !important;
+  padding:10px 12px !important;
+  font-size:14px !important;
+}
