@@ -1225,26 +1225,38 @@ body.mobile-page .m-search-all::before{
   line-height:1 !important;
 }
 
-/* ===== AS FIX: search price strictly after title, on the right ===== */
-body.mobile-page .m-search-result{
-  display:flex !important;
-  align-items:center !important;
-  gap:10px !important;
+
+/* ===== Mobile home promo: one landscape card per screen, no vertical promo look ===== */
+.m-promo-row{
+  display:flex!important;
+  gap:12px!important;
+  overflow-x:auto!important;
+  scroll-snap-type:x mandatory!important;
+  scroll-behavior:smooth!important;
+  padding:2px 2px 16px!important;
+  -webkit-overflow-scrolling:touch!important;
 }
-body.mobile-page .m-search-result .m-search-thumb{
-  order:1 !important;
-  flex:0 0 42px !important;
+.m-promo-row::-webkit-scrollbar{display:none!important;}
+.m-promo-card{
+  flex:0 0 calc(100% - 4px)!important;
+  min-width:calc(100% - 4px)!important;
+  width:calc(100% - 4px)!important;
+  height:auto!important;
+  aspect-ratio:16/7!important;
+  max-height:156px!important;
+  border-radius:24px!important;
+  scroll-snap-align:center!important;
 }
-body.mobile-page .m-search-result .m-search-info{
-  order:2 !important;
-  flex:1 1 auto !important;
-  min-width:0 !important;
+.m-promo-card img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
 }
-body.mobile-page .m-search-result em{
-  order:3 !important;
-  flex:0 0 auto !important;
-  margin-left:auto !important;
-  align-self:center !important;
-  padding-top:0 !important;
-  text-align:right !important;
+.m-promo-card.m-promo-image-only{
+  min-height:0!important;
+  height:auto!important;
+  aspect-ratio:16/7!important;
+  background-size:cover!important;
+  background-position:center!important;
 }
