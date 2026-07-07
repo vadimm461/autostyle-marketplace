@@ -24,21 +24,24 @@ let lastCartTotal = 0;
 let discountCardApplied = false;
 let discountCardPercent = 0;
 let isCheckoutBusy = false;
-let selectedCartIds = new Set();
 
-function cartRowKey(item, product) {
-  return String(cartItemId(item) || product?.id || product?.productId || product?.code || '');
+const CART_SELECTED_KEY = 'as_cart_selected_ids';
+function readCartSelected() {
+  try { return new Set(JSON.parse(localStorage.getItem(CART_SELECTED_KEY) || '[]').map(String)); }
+  catch (_) { return new Set(); }
 }
-
+function writeCartSelected(ids) { localStorage.setItem(CART_SELECTED_KEY, JSON.stringify([...new Set([...ids].map(String))])); }
 function syncCartSelection(rows) {
-  const keys = rows.map(({ item, product }) => cartRowKey(item, product)).filter(Boolean);
-  const keySet = new Set(keys);
-  selectedCartIds = new Set([...selectedCartIds].filter(id => keySet.has(id)));
-  if (!selectedCartIds.size && keys.length) selectedCartIds = new Set(keys);
+  const ids = rows.map(({ product }) => String(product.id));
+  let selected = readCartSelected();
+  selected = new Set([...selected].filter(id => ids.includes(id)));
+  if (!selected.size && ids.length) selected = new Set(ids);
+  writeCartSelected(selected);
+  return selected;
 }
-
 function selectedCartRows(rows) {
-  return rows.filter(({ item, product }) => selectedCartIds.has(cartRowKey(item, product)));
+  const selected = syncCartSelection(rows);
+  return rows.filter(({ product }) => selected.has(String(product.id)));
 }
 
 const CART_STORAGE_KEYS = ['cart', 'autostyle_cart', 'as_cart', 'cartItems'];
@@ -266,27 +269,22 @@ async function render({ persist = false } = {}) {
     return;
   }
 
-  syncCartSelection(rows);
-  const selectedRows = selectedCartRows(rows);
+  const selectedIds = syncCartSelection(rows);
+  const selectedRows = rows.filter(r => selectedIds.has(String(r.product.id)));
   const total = selectedRows.reduce((sum, r) => sum + Number(r.product.price || 0) * (Number(r.item.qty) || 1), 0);
   const totalQty = selectedRows.reduce((sum, r) => sum + (Number(r.item.qty) || 1), 0);
   lastCartRows = selectedRows;
   lastCartTotal = total;
 
-  const hasStockProblems = cartHasStockProblems(selectedRows);
-  const allSelected = rows.length > 0 && selectedCartIds.size === rows.length;
+  const hasStockProblems = cartHasStockProblems(rows);
   if (checkoutBtn) {
-    checkoutBtn.disabled = hasStockProblems || !selectedRows.length;
-    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems || !selectedRows.length);
-    checkoutBtn.title = hasStockProblems ? 'Исправьте количество выбранных товаров: оно превышает остаток на сайте.' : (!selectedRows.length ? 'Выберите хотя бы один товар.' : '');
+    checkoutBtn.disabled = hasStockProblems;
+    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems);
+    checkoutBtn.title = hasStockProblems ? 'Исправьте количество товаров: оно превышает остаток на сайте.' : '';
   }
 
-  cartList.innerHTML = `
-    <div class="cart-select-all">
-      <label class="cart-check"><input id="cartSelectAll" type="checkbox" ${allSelected ? 'checked' : ''}><span class="cart-box"></span><span>Выбрать все товары</span></label>
-      <small>К заказу: ${selectedRows.length} из ${rows.length}</small>
-    </div>
-  ` + rows.map(({ item, product }, index) => {
+  const allSelected = rows.length > 0 && selectedRows.length === rows.length;
+  cartList.innerHTML = `<div class="cart-selectbar"><label class="cart-check"><input id="cartSelectAll" type="checkbox" ${allSelected ? 'checked' : ''}><span></span><b>Выбрать все</b></label><small>Выбрано: ${selectedRows.length} из ${rows.length}</small></div>` + rows.map(({ item, product }, index) => {
     const qty = Number(item.qty) || 1;
     const productTitle = title(product);
     const available = stock(product);
@@ -294,11 +292,9 @@ async function render({ persist = false } = {}) {
     const overStock = limited && qty > available;
     const outOfStock = limited && available <= 0;
     const maxReached = limited && qty >= available;
-    const rowKey = cartRowKey(item, product);
-    const selected = selectedCartIds.has(rowKey);
     return `
-      <article class="cart-row ${overStock || outOfStock ? 'cart-stock-error' : ''} ${selected ? 'cart-row-selected' : 'cart-row-muted'}" data-product-id="${product.id}">
-        <label class="cart-row-check" title="Выбрать товар"><input class="cart-item-check" type="checkbox" data-key="${rowKey}" ${selected ? 'checked' : ''}><span></span></label>
+      <article class="cart-row ${selectedIds.has(String(product.id)) ? 'cart-row-selected' : ''} ${overStock || outOfStock ? 'cart-stock-error' : ''}" data-product-id="${product.id}">
+        <label class="cart-row-pick"><input class="cartPick" type="checkbox" data-pick="${product.id}" ${selectedIds.has(String(product.id)) ? 'checked' : ''}><span></span></label>
         <button class="cart-product-open" type="button" data-index="${index}" title="Быстрый просмотр">
           <div class="cart-img">${image(product) ? `<img loading="lazy" decoding="async" src="${image(product)}" alt="${productTitle}">` : '<span>Фото</span>'}</div>
         </button>
@@ -327,15 +323,8 @@ async function render({ persist = false } = {}) {
   renderCartTotal(total);
   if (countBox) countBox.textContent = String(totalQty);
 
-  document.querySelector('#cartSelectAll')?.addEventListener('change', (e) => {
-    selectedCartIds = e.target.checked ? new Set(rows.map(({ item, product }) => cartRowKey(item, product)).filter(Boolean)) : new Set();
-    render();
-  });
-  document.querySelectorAll('.cart-item-check').forEach(input => input.onchange = () => {
-    if (input.checked) selectedCartIds.add(input.dataset.key);
-    else selectedCartIds.delete(input.dataset.key);
-    render();
-  });
+  document.querySelector('#cartSelectAll') && (document.querySelector('#cartSelectAll').onchange = e => { writeCartSelected(new Set(e.target.checked ? rows.map(({product}) => String(product.id)) : [])); render(); });
+  document.querySelectorAll('.cartPick').forEach(input => input.onchange = () => { const selected = readCartSelected(); const id = String(input.dataset.pick || ''); if (input.checked) selected.add(id); else selected.delete(id); writeCartSelected(selected); render(); });
 
   document.querySelectorAll('.plus').forEach(btn => btn.onclick = async () => {
     const i = Number(btn.dataset.index);
@@ -358,6 +347,8 @@ async function render({ persist = false } = {}) {
     btn.onclick = () => openQuickProduct(rows[Number(btn.dataset.index)]?.product);
   });
   document.querySelectorAll('.remove').forEach(btn => btn.onclick = async () => {
+    const row = rows[Number(btn.dataset.index)];
+    if (row?.product?.id) { const selected = readCartSelected(); selected.delete(String(row.product.id)); writeCartSelected(selected); }
     cart.splice(Number(btn.dataset.index), 1);
     await render({ persist: true });
     window.AutoStyleLoader?.hide?.();
@@ -571,15 +562,10 @@ async function createOrderFromCart() {
     try { productMap = await getProductMap(); } catch (err) { console.warn('checkout products load error', err); }
     await loadUserCart(user);
     cart = getCurrentUserCart();
-    const allRows = normalizeUserCart(cart).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
-    syncCartSelection(allRows);
-    const rows = selectedCartRows(allRows);
-    if (!allRows.length) {
-      alert('Корзина пустая. Добавь товары перед оформлением заказа.');
-      return;
-    }
+    let rows = normalizeUserCart(cart).map(item => ({ item, product: productFromCartItem(item, productMap) })).filter(r => r.product);
+    rows = selectedCartRows(rows);
     if (!rows.length) {
-      alert('Выберите хотя бы один товар для оформления заказа.');
+      alert('Выберите товары для оформления заказа.');
       return;
     }
 
@@ -657,10 +643,10 @@ async function createOrderFromCart() {
       source: 'site-cart'
     });
 
-    const orderedKeys = new Set(rows.map(({ item, product }) => cartRowKey(item, product)));
-    cart = normalizeUserCart(cart).filter(item => !orderedKeys.has(cartRowKey(item, productFromCartItem(item, productMap))));
-    selectedCartIds = new Set();
+    const orderedIds = new Set(items.map(i => String(i.productId)));
+    cart = getCurrentUserCart().filter(i => !orderedIds.has(String(i.id || i.productId)));
     await saveUserCart(cart);
+    writeCartSelected(new Set(cart.map(i => String(i.id || i.productId))));
     await render();
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
   } catch (err) {
