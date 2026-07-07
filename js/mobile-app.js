@@ -81,8 +81,8 @@ function productsForHomeBlock(block){
   const availableProducts = products.filter(available);
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
-    const byId = new Map(availableProducts.map(p => [p.id, p]));
-    return ids.map(id => byId.get(id)).filter(Boolean).filter(id => id === 'password' || id === 'phone');
+    const byId = new Map(availableProducts.map(p => [String(p.id), p]));
+    return ids.map(id => byId.get(String(id))).filter(Boolean).slice(0, 20);
   }
   let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
@@ -101,6 +101,19 @@ function promoLink(c){
   if (type === 'brand' && value) return `mobile-catalog.html?brand=${encodeURIComponent(value)}`;
   if (type === 'page' && value) return appUrl(value);
   return appUrl(c.link || c.url || value || 'mobile-catalog.html');
+}
+function isMobileVerticalPromo(c){
+  const raw = [
+    c.orientation, c.direction, c.format, c.layout, c.type,
+    c.cardType, c.viewType, c.bannerType, c.mode, c.displayMode, c.position
+  ].map(v => String(v || '').toLowerCase()).join(' ');
+  return /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar|right|left)([\s_-]|$)/i.test(raw)
+    || c.vertical === true
+    || c.isVertical === true
+    || c.mobileVertical === true;
+}
+function isMobileHorizontalPromo(c){
+  return c.enabled !== false && !isMobileVerticalPromo(c);
 }
 function promoCard(c){
   const image = c.image || c.imageUrl || c.photoUrl || c.photo || '';
@@ -425,7 +438,7 @@ async function renderHome(){
   }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
+  const promoHtml = promoCards.filter(isMobileHorizontalPromo).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
   const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
   $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
   bind(); clearLoader();
@@ -526,11 +539,8 @@ async function renderCart(){
     $('#mCartList').innerHTML = `<div class="m-empty"><b>Подтвердите профиль</b><br>${profileVerificationMessage()}<br><br><a class="m-primary" href="mobile-profile.html#security">Подтвердить профиль</a></div>`;
     $('#mTotal').textContent = money(0); clearLoader(); return;
   }
-  // Берём корзину так же, как на десктопе: из локального состояния AutoStyleUserCart.
-  // waitUserCartReady() нужен только для первого старта, но его Promise после первого resolve
-  // возвращает старый массив. Поэтому после него обязательно читаем getCurrentUserCart().
-  await waitUserCartReady().catch(()=>{});
-  const cartRows = getCurrentUserCart();
+  await loadUserCart(user).catch(()=>{});
+  const cartRows = await waitUserCartReady();
   const byId=new Map(products.map(p=>[String(p.id),p]));
   const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
   const selectedIds = syncMobileSelection(rows);
