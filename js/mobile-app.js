@@ -3,7 +3,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndP
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
-import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, clearUserCart, saveUserCart } from './user-cart-store.js';
+import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, clearUserCart } from './user-cart-store.js';
 import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, fmt } from './notify-service.js';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 
@@ -13,18 +13,6 @@ let products = [], categories = [], banners = [], homeBlocks = [], promoCards = 
 let dataPromise = null;
 const PAGE_SIZE = 24;
 let cart = [];
-let mobileSelectedCartIds = new Set();
-
-function mobileCartKey(item, product){
-  return String(item?.id || item?.productId || product?.id || product?.code || '');
-}
-function syncMobileSelection(rows){
-  const keys = rows.map(({item, product})=>mobileCartKey(item, product)).filter(Boolean);
-  const keySet = new Set(keys);
-  mobileSelectedCartIds = new Set([...mobileSelectedCartIds].filter(id=>keySet.has(id)));
-  if(!mobileSelectedCartIds.size && keys.length) mobileSelectedCartIds = new Set(keys);
-}
-function selectedMobileRows(rows){ return rows.filter(({item, product})=>mobileSelectedCartIds.has(mobileCartKey(item, product))); }
 let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
 const page = document.body.dataset.page;
 const waitAuthUser = () => new Promise(resolve => {
@@ -127,17 +115,36 @@ function renderMobileSection(block, list){
   return `<section id="${id}" class="m-section m-home-block" data-block="${block.key}"><div class="m-section-head"><h2>${block.title || block.name || 'Блок'}</h2><a class="m-see" href="mobile-catalog.html">Все</a></div><div class="m-carousel m-home-products">${list.length ? list.map(card).join('') : '<div class="m-empty">Товары для этого блока пока не выбраны.</div>'}</div></section>`;
 }
 function setupMobileChrome(){
-  let lastY = window.scrollY;
+  let lastY = Math.max(0, window.scrollY || 0);
+  let ticking = false;
   const top = document.querySelector('.m-top');
   const nav = document.querySelector('.m-bottom-nav');
   const apply = () => {
-    const y = window.scrollY;
-    if (top) top.classList.toggle('m-top-hidden', y > 24 && y > lastY);
+    const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
+    const delta = y - lastY;
+    const goingDown = delta > 4;
+    const goingUp = delta < -4;
+    if (top) {
+      top.classList.toggle('m-top-compact', y > 18);
+      if (y <= 12) {
+        top.classList.remove('m-top-hidden');
+      } else if (goingDown) {
+        top.classList.add('m-top-hidden');
+      } else if (goingUp) {
+        top.classList.remove('m-top-hidden');
+      }
+    }
     if (nav) nav.classList.toggle('m-nav-scrolled', y > 12);
-    lastY = Math.max(0, y);
+    lastY = y;
+    ticking = false;
   };
   apply();
-  window.addEventListener('scroll', apply, { passive:true });
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(apply);
+    }
+  }, { passive:true });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href]');
@@ -384,20 +391,14 @@ async function renderCart(){
   const cartRows = await waitUserCartReady();
   const byId=new Map(products.map(p=>[String(p.id),p]));
   const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
-  syncMobileSelection(rows);
-  const selectedRows = selectedMobileRows(rows);
-  const subtotal=selectedRows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
+  const subtotal=rows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
   const discountValue = localStorage.getItem(MOBILE_DISCOUNT_KEY) || '';
   const discountSum = calcMobileDiscount(subtotal, discountValue);
   const total = Math.max(0, subtotal - discountSum);
   const payment = selectedMobilePayment();
-  const allSelected = rows.length > 0 && selectedRows.length === rows.length;
-  $('#mCartList').innerHTML = rows.length ? `<div class="m-cart-select-all"><label><input id="mCartSelectAll" type="checkbox" ${allSelected?'checked':''}> <span>Выбрать все товары</span></label><small>К заказу: ${selectedRows.length} из ${rows.length}</small></div><div class="m-cart-panel">${rows.map(({item,product:p})=>{
+  $('#mCartList').innerHTML = rows.length ? `<div class="m-cart-panel">${rows.map(({item,product:p})=>{
     const qty = Number(item.qty||1)||1;
-    const rowKey = mobileCartKey(item, p);
-    const checked = mobileSelectedCartIds.has(rowKey);
-    return `<article class="m-cart-row ${checked?'selected':'muted'}">
-      <label class="m-cart-check"><input class="m-cart-item-check" type="checkbox" data-key="${rowKey}" ${checked?'checked':''}><span></span></label>
+    return `<article class="m-cart-row">
       <a class="m-list-img" href="mobile-product.html?id=${encodeURIComponent(p.id)}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a>
       <div class="m-cart-info">
         <div class="m-cart-title">${escapeHtml(title(p))}</div>
@@ -426,9 +427,7 @@ async function renderCart(){
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.classList.toggle('active', b.dataset.pay === payment));
   const note = $('#mCheckoutNote');
   if(note) note.textContent = `${mobilePaymentTitle(payment)}${discountSum ? ` · скидка ${money(discountSum)}` : ''}${payment === 'installment' ? ' · скидочная карта на рассрочку не применяется' : ''}`;
-  if($('#mCheckoutBtn')){ $('#mCheckoutBtn').disabled = !selectedRows.length; $('#mCheckoutBtn').onclick = createMobileOrder; }
-  $('#mCartSelectAll') && ($('#mCartSelectAll').onchange=e=>{ mobileSelectedCartIds = e.target.checked ? new Set(rows.map(({item, product})=>mobileCartKey(item, product)).filter(Boolean)) : new Set(); renderCart(); });
-  $$('.m-cart-item-check').forEach(ch=>ch.onchange=()=>{ if(ch.checked) mobileSelectedCartIds.add(ch.dataset.key); else mobileSelectedCartIds.delete(ch.dataset.key); renderCart(); });
+  if($('#mCheckoutBtn')){ $('#mCheckoutBtn').disabled = !rows.length; $('#mCheckoutBtn').onclick = createMobileOrder; }
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.onclick=()=>{ setSelectedMobilePayment(b.dataset.pay); if(b.dataset.pay === 'installment') localStorage.removeItem(MOBILE_DISCOUNT_KEY); renderCart(); });
   $('#mApplyDiscount') && ($('#mApplyDiscount').onclick=()=>{ const v=($('#mDiscountCardInput')?.value||'').trim(); if(selectedMobilePayment()==='installment'){ alert('Скидочная карта не применяется при рассрочке.'); localStorage.removeItem(MOBILE_DISCOUNT_KEY); } else if(v){ localStorage.setItem(MOBILE_DISCOUNT_KEY, v); } else { localStorage.removeItem(MOBILE_DISCOUNT_KEY); } renderCart(); });
   $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); await renderCart();});
@@ -456,11 +455,8 @@ async function createMobileOrder(){
     await loadUserCart(user);
     const cartRows = getCurrentUserCart();
     const byId = new Map(products.map(p=>[String(p.id),p]));
-    const allRows = cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
-    syncMobileSelection(allRows);
-    const rows = selectedMobileRows(allRows);
-    if(!allRows.length){ alert('Корзина пустая.'); return; }
-    if(!rows.length){ alert('Выберите хотя бы один товар для оформления заказа.'); return; }
+    const rows = cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
+    if(!rows.length){ alert('Корзина пустая.'); return; }
     const stockProblem = rows.find(({item, product}) => stock(product) <= 0 || (Number(item.qty||1)||1) > stock(product));
     if(stockProblem){ alert(`Нельзя оформить заказ: «${title(stockProblem.product)}». В корзине больше, чем в наличии.`); await renderCart(); return; }
     const profile = await getUserDoc(user.uid).catch(()=>({data:{}}));
@@ -480,10 +476,7 @@ async function createMobileOrder(){
       paymentMethod, paymentMethodTitle:mobilePaymentTitle(paymentMethod),
       createdAt:serverTimestamp(), createdAtText:new Date().toISOString()
     });
-    const orderedKeys = new Set(rows.map(({item, product})=>mobileCartKey(item, product)));
-    cart = cartRows.filter(item=>!orderedKeys.has(mobileCartKey(item, byId.get(String(item.id || item.productId)))));
-    mobileSelectedCartIds = new Set();
-    await saveUserCart(cart);
+    await clearUserCart();
     localStorage.removeItem(MOBILE_DISCOUNT_KEY);
     alert(`Заказ ${orderNumber} создан и отправлен в админку.`);
     location.href='mobile-orders.html';
