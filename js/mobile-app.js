@@ -246,13 +246,21 @@ function setupAdvancedMobileSearch(){
       photo.textContent = 'Фото';
     }
 
+    const info = document.createElement('span');
+    info.className = 'm-search-info';
+
     const name = document.createElement('b');
     name.textContent = title(p);
+
+    const meta = document.createElement('small');
+    meta.textContent = group(p) || '';
+
+    info.append(name, meta);
 
     const cost = document.createElement('em');
     cost.textContent = money(price(p));
 
-    a.append(photo, name, cost);
+    a.append(photo, info, cost);
     return a;
   }
 
@@ -272,7 +280,7 @@ function setupAdvancedMobileSearch(){
     const nq = norm(q);
     const result = products
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
-      .slice(0, 2);
+      .slice(0, 20);
 
     box.replaceChildren();
     if (result.length) {
