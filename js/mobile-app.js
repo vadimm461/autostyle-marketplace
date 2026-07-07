@@ -109,6 +109,12 @@ function promoCard(c){
   const style = imageOnly && image ? ` style="background-image:url('${String(image).replaceAll("'",'%27')}')"` : '';
   return `<a class="m-promo-card ${imageOnly?'m-promo-image-only':''}" href="${promoLink(c)}"${style}>${(!imageOnly && image) ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}${imageOnly?'':`<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span>`}</a>`;
 }
+function isMobileHorizontalPromo(c){
+  const raw = String(c.orientation || c.format || c.layout || c.size || c.variant || c.type || c.mode || c.viewMode || c.displayMode || c.cardMode || '').toLowerCase();
+  if (/vertical|portrait|story|stories|reel|tall|square|imageonly/.test(raw)) return false;
+  if (c.vertical === true || c.portrait === true || c.story === true || c.imageOnly === true) return false;
+  return true;
+}
 function renderMobileSection(block, list){
   list = (list || []).slice(0, 12);
   const id = `mBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
@@ -280,7 +286,7 @@ function setupAdvancedMobileSearch(){
     const nq = norm(q);
     const result = products
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
-      .slice(0, 20);
+      .slice(0, 2);
 
     box.replaceChildren();
     if (result.length) {
@@ -420,12 +426,13 @@ async function renderHome(){
     : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
   if (slides.length > 1) {
     let i=0; const hero=$('#mHero'); const hs=[...hero.querySelectorAll('[data-m-slide]')], dots=[...hero.querySelectorAll('[data-m-dot]')];
-    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 5500);
+    if (window.__asMobileHeroTimer) clearInterval(window.__asMobileHeroTimer);
+    window.__asMobileHeroTimer = setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 2800);
     dots.forEach((dot,n)=>dot.onclick=e=>{ e.preventDefault(); i=n; hs.forEach((x,k)=>x.classList.toggle('active',k===i)); dots.forEach((x,k)=>x.classList.toggle('active',k===i)); });
   }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
+  const promoHtml = promoCards.filter(c=>c.enabled!==false).filter(isMobileHorizontalPromo).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
   const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
   $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
   bind(); clearLoader();
@@ -529,7 +536,7 @@ async function renderCart(){
   await loadUserCart(user).catch(()=>{});
   const cartRows = await waitUserCartReady();
   const byId=new Map(products.map(p=>[String(p.id),p]));
-  let rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
+  const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
   const selectedIds = syncMobileSelection(rows);
   const selectedRows = rows.filter(x => selectedIds.has(String(x.product.id)));
   const subtotal=selectedRows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
@@ -544,13 +551,13 @@ async function renderCart(){
     </div><div class="m-cart-panel">${rows.map(({item,product:p})=>{
     const qty = Number(item.qty||1)||1;
     const checked = selectedIds.has(String(p.id));
-    return `<article class="m-cart-row ${checked ? 'm-cart-row-selected' : ''}" data-cart-row="${escapeHtml(String(p.id))}">
+    return `<article class="m-cart-row ${checked ? 'm-cart-row-selected' : ''}">
       <label class="m-cart-pick" aria-label="Выбрать товар"><input class="mCartPick" type="checkbox" data-pick="${p.id}" ${checked ? 'checked' : ''}><span></span></label>
       <a class="m-list-img" href="mobile-product.html?id=${encodeURIComponent(p.id)}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a>
       <div class="m-cart-info">
         <div class="m-cart-title">${escapeHtml(title(p))}</div>
         <div class="m-cart-meta">${escapeHtml(group(p))}</div>
-        <div class="m-cart-line"><strong class="m-cart-price">${money(price(p)*qty)}</strong><div class="m-qty-stepper"><button data-minus="${p.id}" type="button">−</button><span data-qty-value="${p.id}">${qty}</span><button data-plus="${p.id}" type="button">+</button></div></div>
+        <div class="m-cart-line"><strong class="m-cart-price">${money(price(p)*qty)}</strong><div class="m-qty-stepper"><button data-minus="${p.id}" type="button">−</button><span>${qty}</span><button data-plus="${p.id}" type="button">+</button></div></div>
         <button class="m-danger" data-remove="${p.id}" type="button">Удалить</button>
       </div>
     </article>`;
@@ -575,58 +582,30 @@ async function renderCart(){
   const note = $('#mCheckoutNote');
   if(note) note.textContent = `${mobilePaymentTitle(payment)} · выбрано ${selectedRows.length} товар${selectedRows.length===1?'':'ов'}${discountSum ? ` · скидка ${money(discountSum)}` : ''}${payment === 'installment' ? ' · скидочная карта на рассрочку не применяется' : ''}`;
   if($('#mCheckoutBtn')){ $('#mCheckoutBtn').disabled = !selectedRows.length; $('#mCheckoutBtn').onclick = createMobileOrder; }
-
-  const repaintCartLive = () => {
-    const selected = syncMobileSelection(rows);
-    const selectedRowsNow = rows.filter(x => selected.has(String(x.product.id)));
-    const subtotalNow = selectedRowsNow.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
-    const discountNow = calcMobileDiscount(subtotalNow, localStorage.getItem(MOBILE_DISCOUNT_KEY) || '');
-    const totalNow = Math.max(0, subtotalNow - discountNow);
-    $('#mTotal') && ($('#mTotal').textContent = money(totalNow));
-    const all = $('#mSelectAllCart');
-    if(all) all.checked = rows.length > 0 && selectedRowsNow.length === rows.length;
-    const selectText = document.querySelector('.m-cart-selectbar small');
-    if(selectText) selectText.textContent = `Выбрано: ${selectedRowsNow.length} из ${rows.length}`;
-    const noteNow = $('#mCheckoutNote');
-    if(noteNow) noteNow.textContent = `${mobilePaymentTitle(selectedMobilePayment())} · выбрано ${selectedRowsNow.length} товар${selectedRowsNow.length===1?'':'ов'}${discountNow ? ` · скидка ${money(discountNow)}` : ''}${selectedMobilePayment() === 'installment' ? ' · скидочная карта на рассрочку не применяется' : ''}`;
-    const btn = $('#mCheckoutBtn');
-    if(btn) btn.disabled = !selectedRowsNow.length;
-    const count = rows.reduce((sum,x)=>sum+(Number(x.item.qty||1)||1),0);
-    $$('#mCartCount').forEach(x=>x.textContent = String(count));
-  };
-
-  const setCartRowQtyLive = (id, qty) => {
-    id = String(id || '');
-    const idx = rows.findIndex(x => String(x.product.id) === id);
-    if(idx < 0) return;
-    if(qty <= 0){
-      rows.splice(idx, 1);
-      const selected = readMobileCartSelected();
-      selected.delete(id);
-      writeMobileCartSelected(selected);
-      document.querySelector(`[data-cart-row="${CSS.escape(id)}"]`)?.remove();
-      if(!rows.length) $('#mCartList').innerHTML = '<div class="m-empty">Корзина пустая</div>';
-      repaintCartLive();
-      return;
-    }
-    rows[idx].item.qty = qty;
-    const rowEl = document.querySelector(`[data-cart-row="${CSS.escape(id)}"]`);
-    if(rowEl){
-      const qtyEl = rowEl.querySelector(`[data-qty-value="${CSS.escape(id)}"]`);
-      if(qtyEl) qtyEl.textContent = String(qty);
-      const priceEl = rowEl.querySelector('.m-cart-price');
-      if(priceEl) priceEl.textContent = money(price(rows[idx].product) * qty);
-    }
-    repaintCartLive();
-  };
-
-  $('#mSelectAllCart') && ($('#mSelectAllCart').onchange=e=>{ const next = new Set(e.target.checked ? rows.map(({product})=>String(product.id)) : []); writeMobileCartSelected(next); $$('.mCartPick').forEach(input=>{ input.checked = next.has(String(input.dataset.pick||'')); input.closest('.m-cart-row')?.classList.toggle('m-cart-row-selected', input.checked); }); repaintCartLive(); });
-  $$('.mCartPick').forEach(input=>input.onchange=()=>{ const selected = readMobileCartSelected(); const id=String(input.dataset.pick||''); if(input.checked) selected.add(id); else selected.delete(id); writeMobileCartSelected(selected); input.closest('.m-cart-row')?.classList.toggle('m-cart-row-selected', input.checked); repaintCartLive(); });
+  $('#mSelectAllCart') && ($('#mSelectAllCart').onchange=e=>{ const next = new Set(e.target.checked ? rows.map(({product})=>String(product.id)) : []); writeMobileCartSelected(next); renderCart(); });
+  $$('.mCartPick').forEach(input=>input.onchange=()=>{ const selected = readMobileCartSelected(); const id=String(input.dataset.pick||''); if(input.checked) selected.add(id); else selected.delete(id); writeMobileCartSelected(selected); renderCart(); });
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.onclick=()=>{ setSelectedMobilePayment(b.dataset.pay); if(b.dataset.pay === 'installment') localStorage.removeItem(MOBILE_DISCOUNT_KEY); renderCart(); });
   $('#mApplyDiscount') && ($('#mApplyDiscount').onclick=()=>{ const v=($('#mDiscountCardInput')?.value||'').trim(); if(selectedMobilePayment()==='installment'){ alert('Скидочная карта не применяется при рассрочке.'); localStorage.removeItem(MOBILE_DISCOUNT_KEY); } else if(v){ localStorage.setItem(MOBILE_DISCOUNT_KEY, v); } else { localStorage.removeItem(MOBILE_DISCOUNT_KEY); } renderCart(); });
-  $$('[data-remove]').forEach(b=>b.onclick=async()=>{ const id=String(b.dataset.remove||''); setCartRowQtyLive(id, 0); try{ await removeUserCartItem(id); }catch(e){ await renderCart(); } });
-  $$('[data-plus]').forEach(b=>b.onclick=async()=>{ const id=String(b.dataset.plus||''); const local=rows.find(x=>String(x.product.id)===id); const next=(Number(local?.item?.qty||1)||1)+1; setCartRowQtyLive(id,next); try{ await setUserCartQty(id,next); }catch(e){ await renderCart(); } });
-  $$('[data-minus]').forEach(b=>b.onclick=async()=>{ const id=String(b.dataset.minus||''); const local=rows.find(x=>String(x.product.id)===id); const next=(Number(local?.item?.qty||1)||1)-1; setCartRowQtyLive(id,next); try{ if(next<=0) await removeUserCartItem(id); else await setUserCartQty(id,next); }catch(e){ await renderCart(); } });
+  $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); const selected=readMobileCartSelected(); selected.delete(String(b.dataset.remove)); writeMobileCartSelected(selected); await renderCart();});
+  $$('[data-plus]').forEach(b=>b.onclick=async()=>{
+    const rowEl = b.closest('.m-cart-row');
+    const qtyEl = b.parentElement?.querySelector('span');
+    const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus));
+    const next = Number(qtyEl?.textContent || row?.qty || 1) + 1;
+    if(qtyEl) qtyEl.textContent = String(next);
+    b.disabled = true;
+    try{ await setUserCartQty(b.dataset.plus,next); await loadUserCart(auth.currentUser).catch(()=>{}); }
+    finally{ b.disabled = false; await renderCart(); }
+  });
+  $$('[data-minus]').forEach(b=>b.onclick=async()=>{
+    const qtyEl = b.parentElement?.querySelector('span');
+    const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus));
+    const next=Number(qtyEl?.textContent || row?.qty || 1)-1;
+    if(qtyEl) qtyEl.textContent = String(Math.max(next,0));
+    b.disabled = true;
+    try{ if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await loadUserCart(auth.currentUser).catch(()=>{}); }
+    finally{ b.disabled = false; await renderCart(); }
+  });
   clearLoader();
 }
 
@@ -932,41 +911,24 @@ async function renderProfile(){
 let mobileRefreshBusy = false;
 let mobileRefreshTimer = 0;
 async function refreshCurrentMobilePage(reason='refresh'){
+  // Без перерендеринга всей страницы: раньше это вызывало тряску сайта и сбивало корзину.
   clearTimeout(mobileRefreshTimer);
   mobileRefreshTimer = setTimeout(async()=>{
-    if (mobileRefreshBusy) return;
-    mobileRefreshBusy = true;
     try{
       if (auth.currentUser) await loadUserCart(auth.currentUser).catch(()=>{});
       updateCounts();
-      if(page==='cart') await renderCart();
-      else if(page==='favorites') await renderFavorites();
-      else if(page==='catalog') await renderCatalog();
-      else if(page==='home') await renderHome();
-      else if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
-    }catch(e){ console.warn('mobile refresh error', reason, e); }
-    finally{ mobileRefreshBusy = false; }
-  }, 80);
+    }catch(e){ console.warn('mobile soft refresh error', reason, e); }
+  }, 120);
 }
 
 window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
   updateCounts();
-  // На странице корзины не перерисовываем весь список после каждого клика.
-  // Количество, суммы и галочки обновляются локально сразу, Firestore сохраняется в фоне.
-  if(page !== 'cart') refreshCurrentMobilePage('cart-snapshot');
 });
 
-window.addEventListener('pageshow', event => {
-  // iPhone/Safari often restores pages from BFCache without running DOMContentLoaded again.
-  refreshCurrentMobilePage(event.persisted ? 'safari-bfcache' : 'pageshow');
-});
-window.addEventListener('focus', () => refreshCurrentMobilePage('focus'));
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) refreshCurrentMobilePage('visible');
-});
-window.addEventListener('online', () => refreshCurrentMobilePage('online'));
+window.addEventListener('pageshow', () => refreshCurrentMobilePage('pageshow-counts-only'));
+window.addEventListener('online', () => refreshCurrentMobilePage('online-counts-only'));
 
 (async()=>{
   try{
