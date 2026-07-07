@@ -1275,48 +1275,29 @@ body.mobile-page .m-promo-row .m-promo-card + .m-promo-card{margin-left:12px!imp
 .m-cart-pick input:disabled+span{background:#eef1f5!important;border-color:#d5dbe5!important;color:#98a2b3!important;}
 .m-qty-stepper button:disabled{opacity:.42;pointer-events:none;}
 
-/* === AS SMART PRODUCT PHOTO FIT: mobile ===
-   Фото товара всегда вписывается целиком в карточку/каталог/поиск.
-   Пустое место вокруг изображения заполняется белым, без обрезки товара. */
+/* === AS SMART PRODUCT PHOTO FIT: mobile safe, without cart === */
 body.mobile-page .m-card-img,
 body.mobile-page .m-photo,
-body.mobile-page .m-list-img,
 body.mobile-page .m-search-thumb,
-body.mobile-page .m-search-result .m-search-thumb,
-body.mobile-page .m-recent-img,
-body.mobile-page .m-related .m-card-img,
 body.mobile-page [class*="product"] [class*="photo"],
 body.mobile-page [class*="product"] [class*="image"]{
-  background:#fff !important;
-  background-color:#fff !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  overflow:hidden !important;
-  isolation:isolate !important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  background:#fff!important;
 }
 body.mobile-page .m-card-img img,
 body.mobile-page .m-photo img,
-body.mobile-page .m-list-img img,
 body.mobile-page .m-search-thumb img,
-body.mobile-page .m-search-result .m-search-thumb img,
-body.mobile-page .m-recent-img img,
-body.mobile-page .m-related .m-card-img img,
 body.mobile-page [class*="product"] [class*="photo"] img,
 body.mobile-page [class*="product"] [class*="image"] img{
-  width:100% !important;
-  height:100% !important;
-  max-width:100% !important;
-  max-height:100% !important;
-  object-fit:contain !important;
-  object-position:center center !important;
-  display:block !important;
-  background:#fff !important;
-  mix-blend-mode:multiply;
-}
-body.mobile-page .m-card-img img[src$=".png"],
-body.mobile-page .m-card-img img[src*=".png?"],
-body.mobile-page .m-photo img[src$=".png"],
-body.mobile-page .m-photo img[src*=".png?"]{
-  mix-blend-mode:normal;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  display:block!important;
+  background:#fff!important;
 }
