@@ -115,17 +115,42 @@ function renderMobileSection(block, list){
   return `<section id="${id}" class="m-section m-home-block" data-block="${block.key}"><div class="m-section-head"><h2>${block.title || block.name || 'Блок'}</h2><a class="m-see" href="mobile-catalog.html">Все</a></div><div class="m-carousel m-home-products">${list.length ? list.map(card).join('') : '<div class="m-empty">Товары для этого блока пока не выбраны.</div>'}</div></section>`;
 }
 function setupMobileChrome(){
-  let lastY = window.scrollY;
+  let lastY = window.scrollY || 0;
+  let ticking = false;
   const top = document.querySelector('.m-top');
   const nav = document.querySelector('.m-bottom-nav');
+
   const apply = () => {
-    const y = window.scrollY;
-    if (top) top.classList.toggle('m-top-hidden', y > 24 && y > lastY);
+    const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
+    const delta = y - lastY;
+
+    document.body.classList.toggle('m-is-scrolled', y > 10);
+    if (top) {
+      top.classList.toggle('m-top-compact', y > 34);
+
+      // При скролле вниз шапка уходит. Обратно появляется только когда пользователь явно скроллит вверх.
+      if (y <= 8) top.classList.remove('m-top-hidden', 'm-top-visible-up');
+      else if (delta > 4 && y > 64) {
+        top.classList.add('m-top-hidden');
+        top.classList.remove('m-top-visible-up');
+      } else if (delta < -6) {
+        top.classList.remove('m-top-hidden');
+        top.classList.add('m-top-visible-up');
+      }
+    }
     if (nav) nav.classList.toggle('m-nav-scrolled', y > 12);
-    lastY = Math.max(0, y);
+    lastY = y;
+    ticking = false;
+  };
+
+  const onScroll = () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(apply);
+    }
   };
   apply();
-  window.addEventListener('scroll', apply, { passive:true });
+  window.addEventListener('scroll', onScroll, { passive:true });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href]');
@@ -175,7 +200,7 @@ function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),1
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
 function normalizeMobileSearchButton(){
   const btn = $('#mSearchBtn');
-  if (btn) { btn.textContent = 'Найти'; btn.setAttribute('aria-label','Найти'); }
+  if (btn) { btn.textContent = ''; btn.setAttribute('aria-label','Найти'); btn.dataset.label = 'Найти'; }
 }
 function setupShell(active='home'){
   normalizeMobileSearchButton();
