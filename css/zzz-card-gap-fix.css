@@ -909,3 +909,44 @@ body.catalog-open .page-dim {
 header.topbar {
   z-index: 9000 !important;
 }
+
+/* === AS CATALOG DESKTOP PHOTO FIT ONLY ===
+   Только catalog.html на большой версии: фото как на главной, без влияния на корзину и мобильную. */
+@media (min-width: 981px){
+  .catalog-page #catalogGrid.catalog-grid .catalog-card .catalog-card-photo{
+    width: 100% !important;
+    height: 170px !important;
+    min-height: 170px !important;
+    max-height: 170px !important;
+    flex: 0 0 170px !important;
+    aspect-ratio: auto !important;
+    margin: 0 0 12px !important;
+    padding: 0 !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .catalog-page #catalogGrid.catalog-grid .catalog-card .catalog-card-photo img{
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    padding: 4px !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    background: #fff !important;
+    transform: none !important;
+    mix-blend-mode: normal !important;
+  }
+
+  .catalog-page #catalogGrid.catalog-grid .catalog-card .catalog-card-photo span{
+    background: #f4f6f8 !important;
+    color: #667085 !important;
+  }
+}
