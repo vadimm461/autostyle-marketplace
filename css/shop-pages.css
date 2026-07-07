@@ -1768,3 +1768,24 @@
   display:block!important;
   background:#fff!important;
 }
+
+
+/* === Smart desktop catalog image fit === */
+.catalog .product-card .product-image,
+.catalog-grid .product-card .product-image,
+.products-grid .product-card .product-image{
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.catalog .product-card .product-image img,
+.catalog-grid .product-card .product-image img,
+.products-grid .product-card .product-image img{
+  width:100%;
+  height:100%;
+  object-fit:contain !important;
+  object-position:center;
+  background:#fff;
+}
