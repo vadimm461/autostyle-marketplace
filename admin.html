@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="css/minimal-file-icons-fix.css">
 <link rel="stylesheet" href="css/admin-users.css">
 <link rel="stylesheet" href="css/feedback-admin-user.css?v=20260616-1">
-<link rel="stylesheet" href="css/admin-analytics.css?v=20260707-1">
+<link rel="stylesheet" href="css/admin-analytics.css?v=20260707-fixed2">
 </head>
 <body class="admin-locked"><script src="js/page-loader.js"></script>
 
@@ -606,58 +606,6 @@
       </div>
     </section>
 
-
-    <section id="analytics" class="admin-section">
-      <div class="admin-card" id="analyticsRoot">
-        <div class="analytics-head">
-          <div>
-            <h2>Аналитика сайта</h2>
-            <p class="muted" data-analytics-status>Откройте раздел, чтобы загрузить статистику.</p>
-          </div>
-          <button type="button" class="analytics-refresh" data-refresh-analytics>Обновить аналитику</button>
-        </div>
-
-        <div class="analytics-metrics">
-          <div class="analytics-metric" id="analyticsVisits"><strong>0</strong><span>посещений</span></div>
-          <div class="analytics-metric" id="analyticsUsers"><strong>0</strong><span>пользователей</span></div>
-          <div class="analytics-metric" id="analyticsProfiles"><strong>0</strong><span>активаций профиля</span></div>
-          <div class="analytics-metric" id="analyticsCards"><strong>0</strong><span>скидочных карт</span></div>
-          <div class="analytics-metric" id="analyticsOrders"><strong>0</strong><span>заказов</span></div>
-          <div class="analytics-metric" id="analyticsFeedback"><strong>0</strong><span>обращений</span></div>
-        </div>
-
-        <div class="analytics-grid">
-          <div class="analytics-panel analytics-panel-wide">
-            <h3>Посещения сайта</h3>
-            <div id="analyticsVisitsChart"></div>
-          </div>
-          <div class="analytics-panel">
-            <h3>Регистрации</h3>
-            <div id="analyticsRegistrationsChart"></div>
-          </div>
-          <div class="analytics-panel">
-            <h3>Скидочные карты</h3>
-            <div id="analyticsCardsChart"></div>
-          </div>
-          <div class="analytics-panel">
-            <h3>Популярные страницы и разделы</h3>
-            <div id="analyticsPagesChart"></div>
-          </div>
-          <div class="analytics-panel">
-            <h3>Действия пользователей</h3>
-            <div id="analyticsEventsChart"></div>
-          </div>
-          <div class="analytics-panel analytics-panel-wide">
-            <h3>Последние 7 дней</h3>
-            <table class="analytics-table">
-              <thead><tr><th>Дата</th><th>Посещения</th><th>Регистрации</th><th>Профили</th><th>Карты</th><th>Заказы</th></tr></thead>
-              <tbody id="analyticsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section id="pages" class="admin-section">
       <div class="admin-card">
         <h2>Страницы сайта</h2>
@@ -694,6 +642,48 @@
 
           <button class="primary">Сохранить настройки</button>
         </form>
+      </div>
+    </section>
+
+
+
+    <section id="analytics" class="admin-section">
+      <div class="admin-card">
+        <div class="admin-analytics-head">
+          <div>
+            <h2>Аналитика сайта</h2>
+            <p class="muted">Полная статистика посещений, пользователей, заказов, товаров и действий на сайте.</p>
+            <p id="analyticsStatus" class="analytics-status"></p>
+          </div>
+          <div class="analytics-actions">
+            <button id="refreshAnalytics" type="button">Обновить аналитику</button>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="analytics-kpi"><b data-analytics-kpi="visits">0</b><span>посещений</span><small>все открытия страниц</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="visitors">0</b><span>посетителей</span><small>уникальные браузеры</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="users">0</b><span>регистраций</span><small>пользователи сайта</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="profiles">0</b><span>активаций профиля</span><small>заполненные профили</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="cards">0</b><span>скидочных карт</span><small>активированные карты</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="online">0</b><span>онлайн сейчас</span><small>за последние 2 минуты</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="cartAdds">0</b><span>добавили в корзину</span><small>клики по корзине</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="favAdds">0</b><span>добавили в избранное</span><small>клики по избранному</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="orders">0</b><span>заказов</span><small>из базы заказов</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="conversion">0%</b><span>конверсия</span><small>посетитель → заказ</small></div>
+          <div class="analytics-kpi"><b data-analytics-kpi="avgTime">0 сек</b><span>среднее время</span><small>по открытым страницам</small></div>
+        </div>
+
+        <div class="analytics-panels">
+          <div class="analytics-panel analytics-panel-wide"><h3>📈 Посещения по дням</h3><div id="analyticsVisitsChart" class="analytics-bars"></div></div>
+          <div class="analytics-panel analytics-panel-wide"><h3>🕒 Посещения по часам</h3><div id="analyticsHoursChart" class="analytics-bars"></div></div>
+          <div class="analytics-panel"><h3>📄 Популярные страницы</h3><div id="analyticsPagesList" class="analytics-list"></div></div>
+          <div class="analytics-panel"><h3>🌍 Откуда пришли</h3><div id="analyticsSourcesList" class="analytics-list"></div></div>
+          <div class="analytics-panel"><h3>🔍 Что ищут чаще всего</h3><div id="analyticsSearchesList" class="analytics-list"></div></div>
+          <div class="analytics-panel"><h3>🚗 Какие товары смотрят</h3><div id="analyticsProductsList" class="analytics-list"></div></div>
+          <div class="analytics-panel"><h3>📱 Мобильные / ПК</h3><div id="analyticsDevicesList" class="analytics-list"></div></div>
+          <div class="analytics-panel"><h3>💰 Воронка посетитель → регистрация → заказ</h3><div id="analyticsConversionChart" class="analytics-bars"></div></div>
+        </div>
       </div>
     </section>
 
@@ -749,7 +739,7 @@
 <script src="js/admin-dashboard-home.js"></script>
 <script type="module" src="js/admin-notifications.js"></script>
 <script type="module" src="js/admin-users.js"></script>
-<script type="module" src="js/admin-analytics.js?v=20260707-1"></script>
+<script type="module" src="js/admin-analytics.js?v=20260707-fixed2"></script>
 <script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 <script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
   <script src="js/as-file-icons.js"></script>
