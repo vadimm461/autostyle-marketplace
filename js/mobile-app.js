@@ -189,8 +189,11 @@ function bind(scope=document){
 function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),150); }
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
 function normalizeMobileSearchButton(){
-  const btn = $('#mSearchBtn');
-  if (btn) { btn.textContent = 'Найти'; btn.setAttribute('aria-label','Найти'); }
+  $$('#mSearchBtn, .m-search button').forEach((btn) => {
+    btn.replaceChildren(document.createTextNode('Найти'));
+    btn.setAttribute('aria-label', 'Найти');
+    btn.removeAttribute('data-label');
+  });
 }
 function setupShell(active='home'){
   normalizeMobileSearchButton();

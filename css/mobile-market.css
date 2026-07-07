@@ -74,8 +74,8 @@
 .m-head-spacer{flex:1 1 auto;min-width:0}
 .m-top .m-icon,.m-row .m-icon{display:none!important}
 .m-logo-img{display:block;max-width:210px!important;width:52vw!important;height:auto!important;object-fit:contain!important}
-.m-search button,#mSearchBtn{font-size:0!important;white-space:nowrap!important;min-width:112px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
-.m-search button::before,#mSearchBtn::before{content:'Найти';font-size:15px;font-weight:950;line-height:1;color:#031003}
+.m-search button,#mSearchBtn{white-space:nowrap!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+.m-search button::before,#mSearchBtn::before{content:none!important;display:none!important}
 .m-cat-grid .m-cat{min-height:58px;font-size:15px;line-height:1.12;letter-spacing:-.01em;word-break:normal;overflow-wrap:anywhere;text-transform:none}
 .m-cat-grid .m-cat.active{border-color:rgba(40,225,26,.75);background:#ecfbea;box-shadow:0 10px 28px rgba(40,225,26,.12)}
 @media(max-width:380px){.m-logo-img{max-width:185px!important}.m-search button,#mSearchBtn{min-width:96px!important}.m-cat-grid .m-cat{font-size:14px;padding:10px}}
@@ -545,3 +545,55 @@ body.mobile-page .m-bottom-inner b{display:inline-grid!important;place-items:cen
 }
 .m-cart-selectbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid rgba(229,231,235,.95);border-radius:20px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
 .m-cart-selectbar small{color:#667085;font-weight:850;white-space:nowrap}.m-check,.m-cart-pick{display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none}.m-check input,.m-cart-pick input{position:absolute;opacity:0;pointer-events:none}.m-check span,.m-cart-pick span{width:24px;height:24px;border-radius:8px;border:2px solid #c9d1dc;background:#fff;display:inline-grid;place-items:center;flex:0 0 auto}.m-check input:checked+span,.m-cart-pick input:checked+span{background:#28e11a;border-color:#28e11a}.m-check input:checked+span::after,.m-cart-pick input:checked+span::after{content:'✓';font-weight:950;color:#031003;font-size:16px;line-height:1}.m-check b{font-size:15px;font-weight:950;color:#10141b}.m-cart-row{position:relative;grid-template-columns:32px 82px 1fr!important;align-items:center!important}.m-cart-row .m-cart-pick{align-self:center;justify-self:center}.m-cart-row-selected{outline:2px solid rgba(40,225,26,.55);outline-offset:-2px}.m-checkout{width:100%;margin-top:10px}.m-checkout:disabled{opacity:.55;filter:grayscale(.4)}
+
+
+/* ===== AS FIX 2026-07-07: one real text inside mobile search button ===== */
+body.mobile-page .m-search{
+  grid-template-columns:minmax(0,1fr) 96px!important;
+}
+body.mobile-page .m-search button,
+body.mobile-page #mSearchBtn{
+  position:relative!important;
+  width:96px!important;
+  min-width:96px!important;
+  max-width:96px!important;
+  height:48px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:19px!important;
+  background:#28e11a!important;
+  color:#031003!important;
+  font-size:16px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+  text-indent:0!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+}
+body.mobile-page .m-search button::before,
+body.mobile-page .m-search button::after,
+body.mobile-page #mSearchBtn::before,
+body.mobile-page #mSearchBtn::after{
+  content:none!important;
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  font-size:0!important;
+}
+body.mobile-page .m-top.m-top-compact .m-search button,
+body.mobile-page .m-top.m-top-compact #mSearchBtn{
+  height:42px!important;
+  font-size:15px!important;
+}
+@media(max-width:380px){
+  body.mobile-page .m-search{grid-template-columns:minmax(0,1fr) 86px!important;}
+  body.mobile-page .m-search button,body.mobile-page #mSearchBtn{width:86px!important;min-width:86px!important;max-width:86px!important;font-size:15px!important;}
+}
