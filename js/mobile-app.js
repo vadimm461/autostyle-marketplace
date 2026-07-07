@@ -58,7 +58,7 @@ const safeLoadCollections = async names => {
 function defaultHomeBlocks(){
   return [
     {id:'new', key:'new', title:'Новинки', order:1, builtin:true},
-    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:2, builtin:true, recent:true},
+    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:9999, builtin:true, recent:true},
     {id:'bestsellers', key:'bestsellers', title:'Лидеры продаж', order:3, builtin:true},
     {id:'hot', key:'hot', title:'Горячие предложения', order:4, builtin:true}
   ];
@@ -72,17 +72,28 @@ function mergeHomeBlocks(custom){
     const base = byKey.get(key) || {};
     byKey.set(key, { ...base, id:b.id || base.id, key, title:b.title || b.name || base.title || key, order:Number(b.order ?? base.order ?? 999), enabled:b.enabled !== false, builtin:base.builtin === true });
   });
-  return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  return [...byKey.values()]
+    .filter(b => b.enabled !== false)
+    .sort((a,b)=>{
+      const ar = (bKey(a) === 'recentlyviewed') ? 9999 : Number(a.order ?? 999);
+      const br = (bKey(b) === 'recentlyviewed') ? 9999 : Number(b.order ?? 999);
+      return ar - br;
+    });
 }
 function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
 function productSection(p){ return String(p.homeSection || p.homeBlock || p.tag || '').toLowerCase(); }
+function bKey(block){ return norm(block && (block.key || block.slug || block.id)); }
 function productsForHomeBlock(block){
   const key = norm(block.key);
   const availableProducts = products.filter(available);
   if (block.recent || key === 'recentlyviewed') {
-    const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
-    const byId = new Map(availableProducts.map(p => [p.id, p]));
-    return ids.map(id => byId.get(id)).filter(Boolean).filter(id => id === 'password' || id === 'phone');
+    const rawIds = [
+      ...JSON.parse(localStorage.getItem('viewedProducts') || '[]'),
+      ...JSON.parse(localStorage.getItem('recentlyViewedProducts') || '[]')
+    ];
+    const ids = [...new Set(rawIds.map(String).filter(Boolean))];
+    const byId = new Map(availableProducts.map(p => [String(p.id), p]));
+    return ids.map(id => byId.get(id)).filter(Boolean).slice(0, 12);
   }
   let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
