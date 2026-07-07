@@ -58,7 +58,7 @@ const safeLoadCollections = async names => {
 function defaultHomeBlocks(){
   return [
     {id:'new', key:'new', title:'Новинки', order:1, builtin:true},
-    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:9999, builtin:true, recent:true},
+    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:2, builtin:true, recent:true},
     {id:'bestsellers', key:'bestsellers', title:'Лидеры продаж', order:3, builtin:true},
     {id:'hot', key:'hot', title:'Горячие предложения', order:4, builtin:true}
   ];
@@ -72,28 +72,17 @@ function mergeHomeBlocks(custom){
     const base = byKey.get(key) || {};
     byKey.set(key, { ...base, id:b.id || base.id, key, title:b.title || b.name || base.title || key, order:Number(b.order ?? base.order ?? 999), enabled:b.enabled !== false, builtin:base.builtin === true });
   });
-  return [...byKey.values()]
-    .filter(b => b.enabled !== false)
-    .sort((a,b)=>{
-      const ar = (bKey(a) === 'recentlyviewed') ? 9999 : Number(a.order ?? 999);
-      const br = (bKey(b) === 'recentlyviewed') ? 9999 : Number(b.order ?? 999);
-      return ar - br;
-    });
+  return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
 }
 function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
 function productSection(p){ return String(p.homeSection || p.homeBlock || p.tag || '').toLowerCase(); }
-function bKey(block){ return norm(block && (block.key || block.slug || block.id)); }
 function productsForHomeBlock(block){
   const key = norm(block.key);
   const availableProducts = products.filter(available);
   if (block.recent || key === 'recentlyviewed') {
-    const rawIds = [
-      ...JSON.parse(localStorage.getItem('viewedProducts') || '[]'),
-      ...JSON.parse(localStorage.getItem('recentlyViewedProducts') || '[]')
-    ];
-    const ids = [...new Set(rawIds.map(String).filter(Boolean))];
-    const byId = new Map(availableProducts.map(p => [String(p.id), p]));
-    return ids.map(id => byId.get(id)).filter(Boolean).slice(0, 12);
+    const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    const byId = new Map(availableProducts.map(p => [p.id, p]));
+    return ids.map(id => byId.get(id)).filter(Boolean).filter(id => id === 'password' || id === 'phone');
   }
   let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
@@ -119,12 +108,6 @@ function promoCard(c){
   const imageOnly = c.imageOnly === true || c.mode === 'image' || c.viewMode === 'image' || c.displayMode === 'image' || c.cardMode === 'imageOnly';
   const style = imageOnly && image ? ` style="background-image:url('${String(image).replaceAll("'",'%27')}')"` : '';
   return `<a class="m-promo-card ${imageOnly?'m-promo-image-only':''}" href="${promoLink(c)}"${style}>${(!imageOnly && image) ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}${imageOnly?'':`<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span>`}</a>`;
-}
-function isMobileHorizontalPromo(c){
-  const raw = String(c.orientation || c.format || c.layout || c.size || c.variant || c.type || c.mode || c.viewMode || c.displayMode || c.cardMode || '').toLowerCase();
-  if (/vertical|portrait|story|stories|reel|tall|square|imageonly/.test(raw)) return false;
-  if (c.vertical === true || c.portrait === true || c.story === true || c.imageOnly === true) return false;
-  return true;
 }
 function renderMobileSection(block, list){
   list = (list || []).slice(0, 12);
@@ -297,7 +280,7 @@ function setupAdvancedMobileSearch(){
     const nq = norm(q);
     const result = products
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
-      .slice(0, 2);
+      .slice(0, 30);
 
     box.replaceChildren();
     if (result.length) {
@@ -437,13 +420,12 @@ async function renderHome(){
     : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
   if (slides.length > 1) {
     let i=0; const hero=$('#mHero'); const hs=[...hero.querySelectorAll('[data-m-slide]')], dots=[...hero.querySelectorAll('[data-m-dot]')];
-    if (window.__asMobileHeroTimer) clearInterval(window.__asMobileHeroTimer);
-    window.__asMobileHeroTimer = setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 2800);
+    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 5500);
     dots.forEach((dot,n)=>dot.onclick=e=>{ e.preventDefault(); i=n; hs.forEach((x,k)=>x.classList.toggle('active',k===i)); dots.forEach((x,k)=>x.classList.toggle('active',k===i)); });
   }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(c=>c.enabled!==false).filter(isMobileHorizontalPromo).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
+  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
   const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
   $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
   bind(); clearLoader();
@@ -598,25 +580,8 @@ async function renderCart(){
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.onclick=()=>{ setSelectedMobilePayment(b.dataset.pay); if(b.dataset.pay === 'installment') localStorage.removeItem(MOBILE_DISCOUNT_KEY); renderCart(); });
   $('#mApplyDiscount') && ($('#mApplyDiscount').onclick=()=>{ const v=($('#mDiscountCardInput')?.value||'').trim(); if(selectedMobilePayment()==='installment'){ alert('Скидочная карта не применяется при рассрочке.'); localStorage.removeItem(MOBILE_DISCOUNT_KEY); } else if(v){ localStorage.setItem(MOBILE_DISCOUNT_KEY, v); } else { localStorage.removeItem(MOBILE_DISCOUNT_KEY); } renderCart(); });
   $$('[data-remove]').forEach(b=>b.onclick=async()=>{await removeUserCartItem(b.dataset.remove); const selected=readMobileCartSelected(); selected.delete(String(b.dataset.remove)); writeMobileCartSelected(selected); await renderCart();});
-  $$('[data-plus]').forEach(b=>b.onclick=async()=>{
-    const rowEl = b.closest('.m-cart-row');
-    const qtyEl = b.parentElement?.querySelector('span');
-    const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus));
-    const next = Number(qtyEl?.textContent || row?.qty || 1) + 1;
-    if(qtyEl) qtyEl.textContent = String(next);
-    b.disabled = true;
-    try{ await setUserCartQty(b.dataset.plus,next); await loadUserCart(auth.currentUser).catch(()=>{}); }
-    finally{ b.disabled = false; await renderCart(); }
-  });
-  $$('[data-minus]').forEach(b=>b.onclick=async()=>{
-    const qtyEl = b.parentElement?.querySelector('span');
-    const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus));
-    const next=Number(qtyEl?.textContent || row?.qty || 1)-1;
-    if(qtyEl) qtyEl.textContent = String(Math.max(next,0));
-    b.disabled = true;
-    try{ if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await loadUserCart(auth.currentUser).catch(()=>{}); }
-    finally{ b.disabled = false; await renderCart(); }
-  });
+  $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart();});
+  $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus)); const next=Number(row?.qty||1)-1; if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await renderCart();});
   clearLoader();
 }
 
@@ -922,24 +887,39 @@ async function renderProfile(){
 let mobileRefreshBusy = false;
 let mobileRefreshTimer = 0;
 async function refreshCurrentMobilePage(reason='refresh'){
-  // Без перерендеринга всей страницы: раньше это вызывало тряску сайта и сбивало корзину.
   clearTimeout(mobileRefreshTimer);
   mobileRefreshTimer = setTimeout(async()=>{
+    if (mobileRefreshBusy) return;
+    mobileRefreshBusy = true;
     try{
       if (auth.currentUser) await loadUserCart(auth.currentUser).catch(()=>{});
       updateCounts();
-    }catch(e){ console.warn('mobile soft refresh error', reason, e); }
-  }, 120);
+      if(page==='cart') await renderCart();
+      else if(page==='favorites') await renderFavorites();
+      else if(page==='catalog') await renderCatalog();
+      else if(page==='home') await renderHome();
+      else if(['profile','profile-data','discount-card','orders','feedback','notifications'].includes(page)) await renderProfile();
+    }catch(e){ console.warn('mobile refresh error', reason, e); }
+    finally{ mobileRefreshBusy = false; }
+  }, 80);
 }
 
 window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
   updateCounts();
+  if(page === 'cart') refreshCurrentMobilePage('cart-snapshot');
 });
 
-window.addEventListener('pageshow', () => refreshCurrentMobilePage('pageshow-counts-only'));
-window.addEventListener('online', () => refreshCurrentMobilePage('online-counts-only'));
+window.addEventListener('pageshow', event => {
+  // iPhone/Safari often restores pages from BFCache without running DOMContentLoaded again.
+  refreshCurrentMobilePage(event.persisted ? 'safari-bfcache' : 'pageshow');
+});
+window.addEventListener('focus', () => refreshCurrentMobilePage('focus'));
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshCurrentMobilePage('visible');
+});
+window.addEventListener('online', () => refreshCurrentMobilePage('online'));
 
 (async()=>{
   try{
