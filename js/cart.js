@@ -16,6 +16,18 @@ const quickModal = document.querySelector('#quickProductModal');
 const quickProductContent = document.querySelector('#quickProductContent');
 const installmentBox = document.querySelector('#installmentBox') || document.querySelector('.installment-box');
 const paymentInputs = [...document.querySelectorAll('input[name="paymentMethod"]')];
+const cartSummary = document.querySelector('.cart-summary');
+if (cartSummary) cartSummary.classList.add('cart-order-module');
+function ensureDesktopOrderNote(){
+  let note = document.querySelector('#cartCheckoutNote');
+  if (!note && checkoutBtn) {
+    note = document.createElement('p');
+    note.id = 'cartCheckoutNote';
+    note.className = 'cart-checkout-note';
+    checkoutBtn.parentElement?.insertBefore(note, checkoutBtn);
+  }
+  return note;
+}
 
 let productsCache = null;
 let cart = [];
@@ -276,10 +288,19 @@ async function render({ persist = false } = {}) {
   lastCartRows = selectedRows;
   lastCartTotal = total;
 
-  const hasStockProblems = cartHasStockProblems(rows);
+  const hasStockProblems = cartHasStockProblems(selectedRows);
+  const unavailableCount = rows.filter(({item, product}) => {
+    const available = stock(product);
+    return available !== null && (available <= 0 || (Number(item.qty) || 1) > available);
+  }).length;
+  const note = ensureDesktopOrderNote();
+  if (note) {
+    note.textContent = `${paymentTitle(getPaymentMethod())} · выбрано ${selectedRows.length} товар${selectedRows.length === 1 ? '' : 'ов'}${unavailableCount ? ` · недоступно: ${unavailableCount}` : ''}${discountCardApplied ? ` · скидка ${discountCardPercent}%` : ''}`;
+  }
   if (checkoutBtn) {
-    checkoutBtn.disabled = hasStockProblems;
-    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems);
+    checkoutBtn.textContent = 'Оформить выбранное';
+    checkoutBtn.disabled = hasStockProblems || !selectedRows.length;
+    checkoutBtn.classList.toggle('cart-checkout-disabled', hasStockProblems || !selectedRows.length);
     checkoutBtn.title = hasStockProblems ? 'Исправьте количество товаров: оно превышает остаток на сайте.' : '';
   }
 
@@ -294,7 +315,7 @@ async function render({ persist = false } = {}) {
     const maxReached = limited && qty >= available;
     return `
       <article class="cart-row ${selectedIds.has(String(product.id)) ? 'cart-row-selected' : ''} ${overStock || outOfStock ? 'cart-stock-error' : ''}" data-product-id="${product.id}">
-        <label class="cart-row-pick"><input class="cartPick" type="checkbox" data-pick="${product.id}" ${selectedIds.has(String(product.id)) ? 'checked' : ''}><span></span></label>
+        <label class="cart-row-pick"><input class="cartPick" type="checkbox" data-pick="${product.id}" ${selectedIds.has(String(product.id)) && !(overStock || outOfStock) ? 'checked' : ''} ${overStock || outOfStock ? 'disabled' : ''}><span></span></label>
         <button class="cart-product-open" type="button" data-index="${index}" title="Быстрый просмотр">
           <div class="cart-img">${image(product) ? `<img loading="lazy" decoding="async" src="${image(product)}" alt="${productTitle}">` : '<span>Фото</span>'}</div>
         </button>
@@ -323,7 +344,7 @@ async function render({ persist = false } = {}) {
   renderCartTotal(total);
   if (countBox) countBox.textContent = String(totalQty);
 
-  document.querySelector('#cartSelectAll') && (document.querySelector('#cartSelectAll').onchange = e => { writeCartSelected(new Set(e.target.checked ? rows.map(({product}) => String(product.id)) : [])); render(); });
+  document.querySelector('#cartSelectAll') && (document.querySelector('#cartSelectAll').onchange = e => { const orderableRows = rows.filter(({item, product}) => { const available = stock(product); return available === null || (available > 0 && (Number(item.qty) || 1) <= available); }); writeCartSelected(new Set(e.target.checked ? orderableRows.map(({product}) => String(product.id)) : [])); render(); });
   document.querySelectorAll('.cartPick').forEach(input => input.onchange = () => { const selected = readCartSelected(); const id = String(input.dataset.pick || ''); if (input.checked) selected.add(id); else selected.delete(id); writeCartSelected(selected); render(); });
 
   document.querySelectorAll('.plus').forEach(btn => btn.onclick = async () => {

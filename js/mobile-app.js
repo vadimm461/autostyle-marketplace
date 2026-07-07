@@ -82,7 +82,7 @@ function productsForHomeBlock(block){
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
     const byId = new Map(availableProducts.map(p => [p.id, p]));
-    return ids.map(id => byId.get(id)).filter(Boolean).filter(id => id === 'password' || id === 'phone');
+    return ids.map(id => byId.get(id)).filter(Boolean);
   }
   let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
@@ -101,6 +101,46 @@ function promoLink(c){
   if (type === 'brand' && value) return `mobile-catalog.html?brand=${encodeURIComponent(value)}`;
   if (type === 'page' && value) return appUrl(value);
   return appUrl(c.link || c.url || value || 'mobile-catalog.html');
+}
+function promoNumber(c, keys){
+  for (const k of keys) {
+    const n = Number(c?.[k]);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 0;
+}
+function isVerticalPromo(c){
+  const marker = String(c.orientation || c.format || c.layout || c.position || c.type || c.view || '').toLowerCase();
+  if (/(vertical|portrait|story|stories|sidebar|side|mobile-vertical)/.test(marker)) return true;
+  if (/(horizontal|landscape|banner|wide)/.test(marker)) return false;
+  const w = promoNumber(c, ['width','w','imageWidth','imgWidth']);
+  const h = promoNumber(c, ['height','h','imageHeight','imgHeight']);
+  return !!(w && h && h > w * 1.08);
+}
+function mobilePromoCards(){
+  return promoCards
+    .filter(c => c.enabled !== false)
+    .filter(c => !isVerticalPromo(c))
+    .sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+}
+function setupPromoAutoScroll(){
+  const row = document.querySelector('.m-promo-row');
+  if (window.__asMobilePromoTimer) { clearInterval(window.__asMobilePromoTimer); window.__asMobilePromoTimer = null; }
+  if (!row) return;
+  const cards = Array.from(row.querySelectorAll('.m-promo-card'));
+  if (cards.length < 2) return;
+  let locked = false;
+  const activeIndex = () => {
+    const w = Math.max(1, row.clientWidth);
+    return Math.round(row.scrollLeft / w) % cards.length;
+  };
+  const goNext = () => {
+    if (locked || document.hidden) return;
+    const next = (activeIndex() + 1) % cards.length;
+    row.scrollTo({ left: next * row.clientWidth, behavior: 'smooth' });
+  };
+  ['touchstart','pointerdown','wheel'].forEach(evt => row.addEventListener(evt, () => { locked = true; clearTimeout(row.__promoLockTimer); row.__promoLockTimer = setTimeout(() => { locked = false; }, 3500); }, { passive:true }));
+  window.__asMobilePromoTimer = setInterval(goNext, 2800);
 }
 function promoCard(c){
   const image = c.image || c.imageUrl || c.photoUrl || c.photo || '';
@@ -163,7 +203,27 @@ const img = p => {
   return '';
 };
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
-const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
+function getStockValue(p){
+  const raw = p?.stock ?? p?.quantity ?? p?.count ?? p?.qty ?? p?.balance ?? p?.availableQty ?? p?.available ?? null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
+}
+const stock = p => {
+  const n = getStockValue(p);
+  return n === null ? 0 : n;
+};
+const cartStock = p => getStockValue(p);
+function mobileStockProblem(item, product){
+  const available = cartStock(product);
+  const qty = Number(item?.qty || 1) || 1;
+  return available !== null && (available <= 0 || qty > available);
+}
+function mobileStockText(product){
+  const available = cartStock(product);
+  if (available === null) return 'Остаток уточняется';
+  return available > 0 ? `В наличии: ${available}` : 'Нет в наличии';
+}
 const price = p => Number(p.price || 0);
 const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0);
 const oldPrice = p => rawOldPrice(p) > price(p) ? rawOldPrice(p) : 0;
@@ -420,14 +480,15 @@ async function renderHome(){
     : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
   if (slides.length > 1) {
     let i=0; const hero=$('#mHero'); const hs=[...hero.querySelectorAll('[data-m-slide]')], dots=[...hero.querySelectorAll('[data-m-dot]')];
-    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 5500);
+    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 3200);
     dots.forEach((dot,n)=>dot.onclick=e=>{ e.preventDefault(); i=n; hs.forEach((x,k)=>x.classList.toggle('active',k===i)); dots.forEach((x,k)=>x.classList.toggle('active',k===i)); });
   }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
+  const promoHtml = mobilePromoCards().map(promoCard).join('');
   const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
   $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
+  setupPromoAutoScroll();
   bind(); clearLoader();
 }
 async function renderCatalog(){
@@ -495,7 +556,7 @@ function writeMobileCartSelected(ids){
   localStorage.setItem(MOBILE_CART_SELECTED_KEY, JSON.stringify([...new Set([...ids].map(String))]));
 }
 function syncMobileSelection(rows){
-  const ids = rows.map(({product}) => String(product.id));
+  const ids = rows.filter(({item, product}) => !mobileStockProblem(item, product)).map(({product}) => String(product.id));
   let selected = readMobileCartSelected();
   selected = new Set([...selected].filter(id => ids.includes(id)));
   if (!selected.size && ids.length) selected = new Set(ids);
@@ -514,8 +575,7 @@ function calcMobileDiscount(total, value){
   if(!code) return 0;
   return Math.min(Math.round(total * 0.03), total); // карта даёт 3%, точный процент можно поменять в одном месте
 }
-async function renderCart(options = {}){
-  const skipReload = Boolean(options && options.skipReload);
+async function renderCart({ skipReload = false } = {}){
   setupShell('cart'); await initData();
   const user = await waitAuthUser();
   if(!user){
@@ -532,26 +592,36 @@ async function renderCart(options = {}){
   const byId=new Map(products.map(p=>[String(p.id),p]));
   const rows=cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
   const selectedIds = syncMobileSelection(rows);
-  const selectedRows = rows.filter(x => selectedIds.has(String(x.product.id)));
+  const orderableRows = rows.filter(({item, product}) => !mobileStockProblem(item, product));
+  const selectedRows = rows.filter(x => selectedIds.has(String(x.product.id)) && !mobileStockProblem(x.item, x.product));
+  const unavailableCount = rows.length - orderableRows.length;
   const subtotal=selectedRows.reduce((s,x)=>s+price(x.product)*(Number(x.item.qty||1)||1),0);
   const discountValue = localStorage.getItem(MOBILE_DISCOUNT_KEY) || '';
   const discountSum = calcMobileDiscount(subtotal, discountValue);
   const total = Math.max(0, subtotal - discountSum);
   const payment = selectedMobilePayment();
-  const allSelected = rows.length > 0 && selectedRows.length === rows.length;
+  const allSelected = orderableRows.length > 0 && selectedRows.length === orderableRows.length;
   $('#mCartList').innerHTML = rows.length ? `<div class="m-cart-selectbar">
       <label class="m-check"><input id="mSelectAllCart" type="checkbox" ${allSelected ? 'checked' : ''}><span></span><b>Выбрать все</b></label>
       <small>Выбрано: ${selectedRows.length} из ${rows.length}</small>
     </div><div class="m-cart-panel">${rows.map(({item,product:p})=>{
     const qty = Number(item.qty||1)||1;
-    const checked = selectedIds.has(String(p.id));
-    return `<article class="m-cart-row ${checked ? 'm-cart-row-selected' : ''}">
-      <label class="m-cart-pick" aria-label="Выбрать товар"><input class="mCartPick" type="checkbox" data-pick="${p.id}" ${checked ? 'checked' : ''}><span></span></label>
+    const available = cartStock(p);
+    const outOfStock = available !== null && available <= 0;
+    const overStock = available !== null && qty > available;
+    const maxReached = available !== null && qty >= available;
+    const disabled = outOfStock || overStock;
+    const checked = !disabled && selectedIds.has(String(p.id));
+    return `<article class="m-cart-row ${checked ? 'm-cart-row-selected' : ''} ${disabled ? 'm-cart-stock-error' : ''}">
+      <label class="m-cart-pick" aria-label="Выбрать товар"><input class="mCartPick" type="checkbox" data-pick="${p.id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span></span></label>
       <a class="m-list-img" href="mobile-product.html?id=${encodeURIComponent(p.id)}">${img(p)?`<img loading="lazy" decoding="async" src="${img(p)}" alt="${escapeHtml(title(p))}">`:'Фото'}</a>
       <div class="m-cart-info">
         <div class="m-cart-title">${escapeHtml(title(p))}</div>
         <div class="m-cart-meta">${escapeHtml(group(p))}</div>
-        <div class="m-cart-line"><strong class="m-cart-price">${money(price(p)*qty)}</strong><div class="m-qty-stepper"><button data-minus="${p.id}" type="button">−</button><span>${qty}</span><button data-plus="${p.id}" type="button">+</button></div></div>
+        <div class="m-cart-stock ${disabled ? 'bad' : ''}">${mobileStockText(p)}</div>
+        ${overStock ? `<div class="m-cart-warning">В корзине ${qty}, доступно только ${available}. Уменьши количество.</div>` : ''}
+        ${outOfStock ? `<div class="m-cart-warning">Этот товар нельзя оформить — его нет в наличии.</div>` : ''}
+        <div class="m-cart-line"><strong class="m-cart-price">${money(price(p)*qty)}</strong><div class="m-qty-stepper"><button data-minus="${p.id}" type="button">−</button><span>${qty}</span><button data-plus="${p.id}" type="button" ${maxReached || outOfStock ? 'disabled' : ''}>+</button></div></div>
         <button class="m-danger" data-remove="${p.id}" type="button">Удалить</button>
       </div>
     </article>`;
@@ -574,14 +644,14 @@ async function renderCart(options = {}){
   $('#mDiscountCardInput') && ($('#mDiscountCardInput').value = discountValue);
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.classList.toggle('active', b.dataset.pay === payment));
   const note = $('#mCheckoutNote');
-  if(note) note.textContent = `${mobilePaymentTitle(payment)} · выбрано ${selectedRows.length} товар${selectedRows.length===1?'':'ов'}${discountSum ? ` · скидка ${money(discountSum)}` : ''}${payment === 'installment' ? ' · скидочная карта на рассрочку не применяется' : ''}`;
+  if(note) note.textContent = `${mobilePaymentTitle(payment)} · выбрано ${selectedRows.length} товар${selectedRows.length===1?'':'ов'}${unavailableCount ? ` · недоступно: ${unavailableCount}` : ''}${discountSum ? ` · скидка ${money(discountSum)}` : ''}${payment === 'installment' ? ' · скидочная карта на рассрочку не применяется' : ''}`;
   if($('#mCheckoutBtn')){ $('#mCheckoutBtn').disabled = !selectedRows.length; $('#mCheckoutBtn').onclick = createMobileOrder; }
-  $('#mSelectAllCart') && ($('#mSelectAllCart').onchange=e=>{ const next = new Set(e.target.checked ? rows.map(({product})=>String(product.id)) : []); writeMobileCartSelected(next); renderCart({skipReload:true}); });
+  $('#mSelectAllCart') && ($('#mSelectAllCart').onchange=e=>{ const next = new Set(e.target.checked ? orderableRows.map(({product})=>String(product.id)) : []); writeMobileCartSelected(next); renderCart({skipReload:true}); });
   $$('.mCartPick').forEach(input=>input.onchange=()=>{ const selected = readMobileCartSelected(); const id=String(input.dataset.pick||''); if(input.checked) selected.add(id); else selected.delete(id); writeMobileCartSelected(selected); renderCart({skipReload:true}); });
   $$('#mCheckoutBox [data-pay]').forEach(b=>b.onclick=()=>{ setSelectedMobilePayment(b.dataset.pay); if(b.dataset.pay === 'installment') localStorage.removeItem(MOBILE_DISCOUNT_KEY); renderCart(); });
   $('#mApplyDiscount') && ($('#mApplyDiscount').onclick=()=>{ const v=($('#mDiscountCardInput')?.value||'').trim(); if(selectedMobilePayment()==='installment'){ alert('Скидочная карта не применяется при рассрочке.'); localStorage.removeItem(MOBILE_DISCOUNT_KEY); } else if(v){ localStorage.setItem(MOBILE_DISCOUNT_KEY, v); } else { localStorage.removeItem(MOBILE_DISCOUNT_KEY); } renderCart(); });
   $$('[data-remove]').forEach(b=>b.onclick=async()=>{ b.disabled=true; await removeUserCartItem(b.dataset.remove); const selected=readMobileCartSelected(); selected.delete(String(b.dataset.remove)); writeMobileCartSelected(selected); await renderCart({skipReload:true});});
-  $$('[data-plus]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart({skipReload:true});});
+  $$('[data-plus]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const id=String(b.dataset.plus); const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===id); const current=Number(row?.qty||1)||1; const product=products.find(p=>String(p.id)===id); const available=product ? cartStock(product) : null; if(available !== null && current >= available){ alert(`Больше добавить нельзя. В наличии только ${available}.`); await renderCart({skipReload:true}); return; } await setUserCartQty(id,current+1); await renderCart({skipReload:true});});
   $$('[data-minus]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus)); const next=Number(row?.qty||1)-1; if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await renderCart({skipReload:true});});
   clearLoader();
 }
@@ -608,8 +678,13 @@ async function createMobileOrder(){
     let rows = cartRows.map(item=>({ item, product:byId.get(String(item.id || item.productId)) })).filter(x=>x.product);
     rows = selectedMobileCartRows(rows);
     if(!rows.length){ alert('Выберите товары для оформления.'); await renderCart(); return; }
-    const stockProblem = rows.find(({item, product}) => stock(product) <= 0 || (Number(item.qty||1)||1) > stock(product));
-    if(stockProblem){ alert(`Нельзя оформить заказ: «${title(stockProblem.product)}». В корзине больше, чем в наличии.`); await renderCart(); return; }
+    const stockProblem = rows.find(({item, product}) => mobileStockProblem(item, product));
+    if(stockProblem){
+      const available = cartStock(stockProblem.product);
+      alert(`Нельзя оформить заказ: «${title(stockProblem.product)}». В корзине ${Number(stockProblem.item.qty||1)||1}, а в наличии ${available === null ? 'неизвестно' : available}.`);
+      await renderCart({skipReload:true});
+      return;
+    }
     const profile = await getUserDoc(user.uid).catch(()=>({data:{}}));
     const d = profile.data || {};
     const items = rows.map(({item, product:p})=>{ const qty=Number(item.qty||1)||1; const pr=price(p); return { productId:String(p.id), title:title(p), group:group(p), image:img(p), price:pr, qty, lineTotal:pr*qty }; });
@@ -909,8 +984,7 @@ window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
   updateCounts();
-  // Корзину не перерисовываем по каждому snapshot: иначе Firestore может на секунду вернуть старое число
-  // и кнопки +/- визуально откатываются назад. Перерисовка идет только после самого нажатия.
+  if(page === 'cart') refreshCurrentMobilePage('cart-snapshot');
 });
 
 window.addEventListener('pageshow', event => {
