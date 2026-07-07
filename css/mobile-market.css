@@ -698,49 +698,46 @@ body.mobile-page .m-search-all{
   font-size:14px !important;
 }
 
-/* FINAL: clean mobile live search, no duplicate rows/buttons */
+/* ===== AS FINAL: clean scrollable mobile search dropdown ===== */
 body.mobile-page .m-search{
   position:relative !important;
   display:block !important;
   width:100% !important;
-  margin-top:9px !important;
+  margin-top:10px !important;
 }
 body.mobile-page .m-search button,
-body.mobile-page #mSearchBtn{
-  display:none !important;
-  content:none !important;
-}
-body.mobile-page .m-search button::before,
-body.mobile-page #mSearchBtn::before{
-  content:none !important;
-  display:none !important;
-}
+body.mobile-page #mSearchBtn{display:none !important;}
+body.mobile-page .m-search input#mSearch,
 body.mobile-page #mSearch{
   width:100% !important;
   height:44px !important;
   min-height:44px !important;
   border-radius:18px !important;
-  padding:0 17px !important;
-  font-size:15px !important;
+  padding:0 16px 0 52px !important;
+  font-size:17px !important;
+  line-height:44px !important;
 }
 body.mobile-page .m-search-live{
   display:none !important;
   position:absolute !important;
   left:0 !important;
   right:0 !important;
-  top:calc(100% + 7px) !important;
-  z-index:120 !important;
-  max-height:none !important;
+  top:calc(100% + 6px) !important;
+  z-index:90 !important;
+  max-height:232px !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
   background:rgba(255,255,255,.94) !important;
   -webkit-backdrop-filter:blur(18px) !important;
   backdrop-filter:blur(18px) !important;
-  border:1px solid rgba(229,231,235,.85) !important;
+  border:1px solid rgba(229,231,235,.88) !important;
   border-radius:18px !important;
-  box-shadow:0 14px 34px rgba(15,23,42,.20) !important;
-  overflow:hidden !important;
+  box-shadow:0 14px 36px rgba(15,23,42,.20) !important;
 }
 body.mobile-page .m-search-live.active{display:block !important;}
-body.mobile-page .m-search-live > .m-search-result{
+body.mobile-page .m-search-live::-webkit-scrollbar{width:0;height:0;display:none;}
+body.mobile-page .m-search-result{
   display:grid !important;
   grid-template-columns:38px minmax(0,1fr) auto !important;
   align-items:center !important;
@@ -750,52 +747,67 @@ body.mobile-page .m-search-live > .m-search-result{
   color:#111827 !important;
   text-decoration:none !important;
   border-bottom:1px solid rgba(229,231,235,.72) !important;
+  overflow:hidden !important;
 }
-body.mobile-page .m-search-live > .m-search-result > .m-search-thumb,
-body.mobile-page .m-search-live > .m-search-result > span{
+body.mobile-page .m-search-result .m-search-thumb,
+body.mobile-page .m-search-result > span:first-child{
   width:38px !important;
   height:38px !important;
+  min-width:38px !important;
+  max-width:38px !important;
   border-radius:11px !important;
   background:#f1f4f8 !important;
-  display:grid !important;
-  place-items:center !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
   overflow:hidden !important;
   color:#667085 !important;
   font-size:10px !important;
+  line-height:1 !important;
   font-weight:900 !important;
+  white-space:nowrap !important;
 }
-body.mobile-page .m-search-live > .m-search-result img{
+body.mobile-page .m-search-result img{
   width:100% !important;
   height:100% !important;
   object-fit:contain !important;
   display:block !important;
+  font-size:0 !important;
+  color:transparent !important;
 }
-body.mobile-page .m-search-live > .m-search-result > b{
+body.mobile-page .m-search-result b{
   min-width:0 !important;
   font-size:13px !important;
   line-height:1.12 !important;
   font-weight:950 !important;
-  white-space:nowrap !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:1 !important;
+  -webkit-box-orient:vertical !important;
   overflow:hidden !important;
-  text-overflow:ellipsis !important;
-  display:block !important;
 }
-body.mobile-page .m-search-live > .m-search-result > em{
+body.mobile-page .m-search-result em{
   font-style:normal !important;
   font-size:13px !important;
   font-weight:950 !important;
   color:#0b7f16 !important;
   white-space:nowrap !important;
 }
-body.mobile-page .m-search-live > .m-search-all{
+body.mobile-page .m-search-all{
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
   min-height:42px !important;
   padding:10px 12px !important;
+  background:rgba(40,225,26,.16) !important;
   color:#061006 !important;
-  background:rgba(40,225,26,.14) !important;
   text-decoration:none !important;
-  font-size:14px !important;
+  font-size:0 !important;
+  line-height:1 !important;
   font-weight:950 !important;
+  overflow:hidden !important;
+}
+body.mobile-page .m-search-all::before{
+  content:'Показать все';
+  font-size:14px;
+  line-height:1;
 }

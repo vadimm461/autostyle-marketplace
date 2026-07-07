@@ -189,55 +189,49 @@ function bind(scope=document){
 function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),150); }
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
 function setupAdvancedMobileSearch(){
-  const originalInput = $('#mSearch');
-  const originalForm = originalInput?.closest('.m-search');
-  if (!originalInput || !originalForm) return;
-
-  // Полностью чистим старый живой поиск: так не будет двух фото и двух "Показать все".
-  document.querySelectorAll('.m-search-live').forEach(el => el.remove());
-  originalForm.querySelectorAll('#mSearchBtn, button').forEach(btn => btn.remove());
-
-  // Если эта функция случайно запустится второй раз — старые обработчики убираются через cloneNode.
-  const input = originalInput.cloneNode(true);
-  originalInput.replaceWith(input);
-  const form = input.closest('.m-search');
+  const input = document.getElementById('mSearch');
+  const form = input?.closest('.m-search');
+  if (!input || !form || form.dataset.advancedSearchReady === '1') return;
   form.dataset.advancedSearchReady = '1';
   input.setAttribute('autocomplete','off');
   input.setAttribute('enterkeyhint','search');
 
+  // Полностью убираем старые кнопки и старые выпадающие списки, чтобы не было дублей.
+  form.querySelectorAll('#mSearchBtn, button, .m-search-live').forEach(el => el.remove());
+
   const box = document.createElement('div');
   box.className = 'm-search-live';
-  box.id = 'mSearchLive';
   form.appendChild(box);
 
-  let timer = 0;
-  let renderToken = 0;
   const productUrl = p => appUrl(`product.html?id=${encodeURIComponent(p.id)}`);
   const catalogUrl = q => `mobile-catalog.html?search=${encodeURIComponent(q)}`;
   const close = () => {
-    clearTimeout(timer);
-    renderToken++;
     box.classList.remove('active');
     box.replaceChildren();
   };
+  const go = () => {
+    const q = input.value.trim();
+    location.href = q ? catalogUrl(q) : 'mobile-catalog.html';
+  };
 
-  const makeRow = p => {
+  function makeResult(p){
     const a = document.createElement('a');
     a.className = 'm-search-result';
     a.href = productUrl(p);
 
-    const pic = document.createElement('span');
-    pic.className = 'm-search-thumb';
-    const image = img(p);
-    if (image) {
-      const im = document.createElement('img');
-      im.src = image;
-      im.alt = title(p);
-      im.loading = 'lazy';
-      im.decoding = 'async';
-      pic.appendChild(im);
+    const photo = document.createElement('span');
+    photo.className = 'm-search-thumb';
+    const src = img(p);
+    if (src) {
+      const image = document.createElement('img');
+      image.src = src;
+      image.alt = ''; // важно: если фото не загрузилось, браузер не рисует второй текст товара
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.onerror = () => { image.remove(); photo.textContent = 'Фото'; };
+      photo.appendChild(image);
     } else {
-      pic.textContent = 'Фото';
+      photo.textContent = 'Фото';
     }
 
     const name = document.createElement('b');
@@ -246,61 +240,58 @@ function setupAdvancedMobileSearch(){
     const cost = document.createElement('em');
     cost.textContent = money(price(p));
 
-    a.append(pic, name, cost);
+    a.append(photo, name, cost);
     return a;
-  };
+  }
 
-  const makeAll = (q, text='Показать все') => {
+  function makeAll(q, empty=false){
     const a = document.createElement('a');
     a.className = 'm-search-all';
     a.href = catalogUrl(q);
-    a.textContent = text;
+    a.textContent = empty ? 'Открыть каталог' : 'Показать все';
     return a;
-  };
+  }
 
+  let timer = 0;
   const render = async () => {
     const q = input.value.trim();
-    const token = ++renderToken;
     if (q.length < 2) { close(); return; }
     await initData().catch(()=>{});
-    if (token !== renderToken) return;
-
     const nq = norm(q);
-    const seen = new Set();
     const result = products
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
-      .filter(p => {
-        const key = String(p.id || title(p)).trim();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
       .slice(0, 3);
 
     box.replaceChildren();
     if (result.length) {
-      result.forEach(p => box.appendChild(makeRow(p)));
+      result.forEach(p => box.appendChild(makeResult(p)));
       box.appendChild(makeAll(q));
     } else {
-      box.appendChild(makeAll(q, 'Товары не найдены — открыть каталог'));
+      box.appendChild(makeAll(q, true));
     }
     box.classList.add('active');
+    box.scrollTop = 0;
   };
 
   input.addEventListener('input', () => {
     clearTimeout(timer);
-    timer = setTimeout(render, 120);
+    timer = setTimeout(render, 100);
   });
-  input.addEventListener('focus', () => {
-    if (input.value.trim().length >= 2) render();
-  });
+  input.addEventListener('focus', render);
   input.addEventListener('keydown', e => {
-    if(e.key === 'Enter') { e.preventDefault(); searchGo(); }
+    if(e.key === 'Enter') { e.preventDefault(); go(); }
     if(e.key === 'Escape') close();
   });
-  form.addEventListener('submit', e => { e.preventDefault(); searchGo(); });
+  form.addEventListener('submit', e => { e.preventDefault(); go(); });
   document.addEventListener('click', e => { if (!form.contains(e.target)) close(); });
-  window.addEventListener('scroll', close, { passive:true });
+
+  // Список можно скроллить пальцем, но при скролле самой страницы он сразу закрывается.
+  ['touchstart','touchmove','wheel'].forEach(ev => {
+    box.addEventListener(ev, e => e.stopPropagation(), { passive:true });
+  });
+  window.addEventListener('scroll', () => {
+    if (box.classList.contains('active')) close();
+  }, { passive:true });
 }
 
 
