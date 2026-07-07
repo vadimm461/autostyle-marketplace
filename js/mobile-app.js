@@ -260,8 +260,7 @@ function setupAdvancedMobileSearch(){
     const cost = document.createElement('em');
     cost.textContent = money(price(p));
 
-    info.appendChild(cost);
-    a.append(photo, info);
+    a.append(photo, info, cost);
     return a;
   }
 
@@ -515,7 +514,11 @@ function calcMobileDiscount(total, value){
   if(!code) return 0;
   return Math.min(Math.round(total * 0.03), total); // карта даёт 3%, точный процент можно поменять в одном месте
 }
+let mobileCartRenderBusy = false;
 async function renderCart(){
+  if (mobileCartRenderBusy) return;
+  mobileCartRenderBusy = true;
+  try {
   setupShell('cart'); await initData();
   const user = await waitAuthUser();
   if(!user){
@@ -584,6 +587,7 @@ async function renderCart(){
   $$('[data-plus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.plus)); await setUserCartQty(b.dataset.plus,(Number(row?.qty||1)+1)); await renderCart();});
   $$('[data-minus]').forEach(b=>b.onclick=async()=>{const row=getCurrentUserCart().find(i=>String(i.id||i.productId)===String(b.dataset.minus)); const next=Number(row?.qty||1)-1; if(next<=0) await removeUserCartItem(b.dataset.minus); else await setUserCartQty(b.dataset.minus,next); await renderCart();});
   clearLoader();
+  } finally { mobileCartRenderBusy = false; }
 }
 
 async function renderFavorites(){
@@ -895,7 +899,7 @@ async function refreshCurrentMobilePage(reason='refresh'){
     try{
       if (auth.currentUser) await loadUserCart(auth.currentUser).catch(()=>{});
       updateCounts();
-      if(page==='cart') await renderCart();
+      if(page==='cart') { updateCounts(); }
       else if(page==='favorites') await renderFavorites();
       else if(page==='catalog') await renderCatalog();
       else if(page==='home') await renderHome();
@@ -908,8 +912,9 @@ async function refreshCurrentMobilePage(reason='refresh'){
 window.autostyleMobileRefresh = refreshCurrentMobilePage;
 
 window.addEventListener('autostyle-cart-updated', () => {
+  // Не перерисовываем корзину по каждому snapshot Firebase: это давало бесконечное автообновление.
+  // На странице корзины плюс/минус/галочки сами вызывают renderCart() после действия.
   updateCounts();
-  if(page === 'cart') refreshCurrentMobilePage('cart-snapshot');
 });
 
 window.addEventListener('pageshow', event => {
