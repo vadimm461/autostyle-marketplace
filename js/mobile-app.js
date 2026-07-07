@@ -151,7 +151,17 @@ function setupMobileChrome(){
 }
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 const title = p => p.title || p.name || 'Без названия';
-const img = p => p.image || p.imageUrl || p.photo || p.photoUrl || '';
+
+const img = p => {
+  const raw = p.image || p.imageUrl || p.photo || p.photoUrl || '';
+  const v = String(raw || '').trim();
+  // В 1С иногда в поле фото попадает текст вроде "Фото7908..." — это не картинка.
+  // Такой мусор и давал второй текст/дубль возле товара в живом поиске.
+  if (!v || /^фото\S*/i.test(v) || /\s{2,}|[а-яё]{3,}/i.test(v)) return '';
+  if (/^(https?:|data:image\/|\.\/|\/|assets\/|images\/|img\/|uploads\/)/i.test(v)) return v;
+  if (/\.(png|jpe?g|webp|gif|svg)(\?|#|$)/i.test(v)) return v;
+  return '';
+};
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
 const price = p => Number(p.price || 0);
@@ -197,6 +207,7 @@ function setupAdvancedMobileSearch(){
   input.setAttribute('enterkeyhint','search');
 
   // Полностью убираем старые кнопки и старые выпадающие списки, чтобы не было дублей.
+  document.querySelectorAll('.m-search-live').forEach(el => el.remove());
   form.querySelectorAll('#mSearchBtn, button, .m-search-live').forEach(el => el.remove());
 
   const box = document.createElement('div');
@@ -208,6 +219,7 @@ function setupAdvancedMobileSearch(){
   const close = () => {
     box.classList.remove('active');
     box.replaceChildren();
+    document.body.classList.remove('m-search-open');
   };
   const go = () => {
     const q = input.value.trim();
@@ -260,7 +272,7 @@ function setupAdvancedMobileSearch(){
     const nq = norm(q);
     const result = products
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
-      .slice(0, 3);
+      .slice(0, 2);
 
     box.replaceChildren();
     if (result.length) {
@@ -269,7 +281,9 @@ function setupAdvancedMobileSearch(){
     } else {
       box.appendChild(makeAll(q, true));
     }
+    document.querySelectorAll('.m-search-live').forEach(el => { if (el !== box) el.remove(); });
     box.classList.add('active');
+    document.body.classList.add('m-search-open');
     box.scrollTop = 0;
   };
 
