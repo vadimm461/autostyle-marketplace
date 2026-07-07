@@ -1298,3 +1298,46 @@ body.mobile-page .m-bottom-inner b{
   body.mobile-page .m-bottom-inner{padding:6px!important;gap:4px!important;border-radius:27px!important;}
   body.mobile-page .m-bottom-inner a{height:54px!important;border-radius:20px!important;font-size:10px!important;}
 }
+
+
+/* ===== Mobile home promo/recent fix ===== */
+.mobile-page[data-page="home"] .m-promo-section{
+  overflow:hidden;
+}
+.mobile-page[data-page="home"] .m-promo-row{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:12px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding:2px 2px 14px!important;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.mobile-page[data-page="home"] .m-promo-row::-webkit-scrollbar{display:none!important;}
+.mobile-page[data-page="home"] .m-promo-card{
+  flex:0 0 calc(100% - 4px)!important;
+  min-width:calc(100% - 4px)!important;
+  max-width:calc(100% - 4px)!important;
+  width:calc(100% - 4px)!important;
+  height:148px!important;
+  min-height:148px!important;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  border-radius:24px;
+  background-size:cover!important;
+  background-position:center!important;
+}
+.mobile-page[data-page="home"] .m-promo-card img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+.mobile-page[data-page="home"] .m-promo-card.m-promo-image-only{
+  padding:0!important;
+  display:block!important;
+}
+.mobile-page[data-page="home"] .m-promo-card.m-promo-image-only::before{
+  display:none!important;
+}

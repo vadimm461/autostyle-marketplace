@@ -58,7 +58,7 @@ const safeLoadCollections = async names => {
 function defaultHomeBlocks(){
   return [
     {id:'new', key:'new', title:'Новинки', order:1, builtin:true},
-    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:2, builtin:true, recent:true},
+    {id:'recentlyViewed', key:'recentlyViewed', title:'Недавно просмотренные', order:9999, builtin:true, recent:true},
     {id:'bestsellers', key:'bestsellers', title:'Лидеры продаж', order:3, builtin:true},
     {id:'hot', key:'hot', title:'Горячие предложения', order:4, builtin:true}
   ];
@@ -82,7 +82,7 @@ function productsForHomeBlock(block){
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
     const byId = new Map(availableProducts.map(p => [p.id, p]));
-    return ids.map(id => byId.get(id)).filter(Boolean).filter(id => id === 'password' || id === 'phone');
+    return ids.map(id => byId.get(id)).filter(Boolean).slice(0, 20);
   }
   let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
@@ -425,9 +425,18 @@ async function renderHome(){
   }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(c=>c.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
-  const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
-  $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
+  const promoHtml = promoCards
+    .filter(c=>c.enabled!==false)
+    .sort((a,b)=>Number(a.order??999)-Number(b.order??999))
+    .map(promoCard)
+    .join('');
+  const homeRows = homeBlocks
+    .map(block => ({ block, list:productsForHomeBlock(block) }))
+    .filter(x => !(x.block.recent && !x.list.length));
+  const regularRows = homeRows.filter(x => !(x.block.recent || norm(x.block.key) === 'recentlyviewed'));
+  const recentRows = homeRows.filter(x => x.block.recent || norm(x.block.key) === 'recentlyviewed');
+  const blocksHtml = regularRows.concat(recentRows).map(x => renderMobileSection(x.block, x.list)).join('');
+  $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section m-promo-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
   bind(); clearLoader();
 }
 async function renderCatalog(){
