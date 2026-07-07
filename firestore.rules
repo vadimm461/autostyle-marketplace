@@ -149,15 +149,22 @@ service cloud.firestore {
 
 
 
-    /* Аналитика сайта */
-    match /autostyle_analytics_daily/{dayId} {
-      allow create, update: if true;
-      allow read, delete: if isAdmin();
+    /* Полная аналитика сайта */
+    match /autostyle_page_views/{document=**} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
-    match /autostyle_analytics_events/{eventId} {
+    match /autostyle_events/{document=**} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /autostyle_online_sessions/{sessionId} {
+      allow create, update: if true;
+      allow read, delete: if isAdmin();
     }
 
     /* Старые коллекции */
