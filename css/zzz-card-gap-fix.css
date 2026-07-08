@@ -950,3 +950,54 @@ header.topbar {
     color: #667085 !important;
   }
 }
+
+/* === FIX 2026-07-08: вернуть цену в десктопном каталоге, ничего кроме каталога не трогаем === */
+@media (min-width: 921px) {
+  .catalog-page #catalogGrid.catalog-grid,
+  .catalog-page #catalogGrid {
+    grid-auto-rows: 360px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card {
+    height: 360px !important;
+    min-height: 360px !important;
+    max-height: 360px !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-link,
+  .catalog-page #catalogGrid .catalog-card-body {
+    overflow: visible !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-price-area {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 auto !important;
+    min-height: 34px !important;
+    max-height: none !important;
+    height: auto !important;
+    margin-top: 8px !important;
+    gap: 0 !important;
+  }
+
+  .catalog-page #catalogGrid .price-row-card {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 28px !important;
+    height: 28px !important;
+    align-items: center !important;
+  }
+
+  .catalog-page #catalogGrid .catalog-card-price {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #070a10 !important;
+    font-size: 22px !important;
+    line-height: 1 !important;
+    font-weight: 1000 !important;
+    white-space: nowrap !important;
+  }
+}
