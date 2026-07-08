@@ -1302,25 +1302,23 @@ body.mobile-page [class*="product"] [class*="image"] img{
   background:#fff!important;
 }
 
-/* Mobile cart desktop-logic checkout fix */
-.m-checkout-title{margin:0;font-size:20px;line-height:1.1;font-weight:950;color:#10141b}
-.m-pay-tabs-three{grid-template-columns:repeat(3,1fr)!important;gap:7px!important}
-.m-pay-tabs-three button{font-size:13px;padding:0 6px}
-.m-discount-card-btn{width:100%;height:48px;border:1px solid #d9e2ec;border-radius:16px;background:#fff;color:#10141b;font-weight:950;box-shadow:0 8px 22px rgba(15,23,42,.06)}
-.m-discount-card-btn.active{background:#ecfbea;border-color:#28e11a;color:#0b7f16}
-.m-discount-card-btn:disabled{opacity:.58;filter:grayscale(.35);background:#f2f4f7;color:#667085}
-.m-total strong{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;justify-content:flex-end;text-align:right}
-.m-total-old{font-size:13px;color:#98a2b3;text-decoration:line-through;font-weight:900}
-.m-total small{font-size:12px;background:#ecfbea;color:#0b7f16;border-radius:999px;padding:3px 7px;font-weight:950}
-.m-installment-results{display:flex;flex-direction:column;gap:10px}
-.m-installment-empty{background:#f8fafc;border:1px dashed #d0d5dd;border-radius:16px;padding:12px;color:#667085;font-weight:850;text-align:center}
-.m-installment-bank{border:1px solid #e5e7eb;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 8px 22px rgba(15,23,42,.05)}
-.m-installment-bank.selected{border-color:#28e11a;box-shadow:0 10px 26px rgba(40,225,26,.13)}
-.m-bank-head{width:100%;height:56px;border:0;background:#f8fafc;display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px;padding:8px 10px;text-align:left}
-.m-bank-head img{width:40px;height:40px;border-radius:12px;object-fit:cover;background:#fff;border:1px solid #eef1f5}
-.m-bank-head b{font-size:14px;font-weight:950;color:#10141b}.m-bank-head i{font-style:normal;font-size:12px;font-weight:950;color:#0b7f16}
-.m-bank-months{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px}
-.m-bank-month{height:54px;border:1px solid #e5e7eb;background:#fff;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:950;color:#10141b}
-.m-bank-month em{font-style:normal;font-size:12px;color:#667085}.m-bank-month strong{font-size:13px}.m-bank-month.selected{background:#10141b;border-color:#10141b;color:#28e11a}.m-bank-month.selected em{color:#d6fdd2}
-.m-qty-stepper button:disabled{opacity:.42;filter:grayscale(.4)}
-@media(max-width:380px){.m-pay-tabs-three button{font-size:12px}.m-bank-months{grid-template-columns:1fr}.m-bank-head{grid-template-columns:38px 1fr auto}.m-bank-head img{width:36px;height:36px}}
+/* Mobile cart: desktop-like checkout logic, no blinking auto refresh */
+.m-pay-tabs.m-pay-tabs-three{grid-template-columns:repeat(3,minmax(0,1fr));}
+.m-pay-tabs.m-pay-tabs-three button{font-size:12px;padding:0 6px;}
+.m-discount-btn{height:48px;border:1px solid #e5e7eb;border-radius:16px;background:#f8fafc;color:#101828;font-weight:950;display:flex;align-items:center;justify-content:center;}
+.m-discount-btn.applied{background:#ecfbea;border-color:#28e11a;color:#087313;}
+.m-discount-btn:disabled{opacity:.62;filter:grayscale(.25);}
+.m-installment-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:18px;padding:12px;display:grid;gap:10px;}
+.m-installment-box[hidden]{display:none!important;}
+.m-installment-title{font-size:15px;color:#101828;}
+.m-installment-bank{background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;}
+.m-installment-bank.selected{border-color:#28e11a;box-shadow:0 0 0 2px rgba(40,225,26,.14);}
+.m-installment-head{width:100%;height:54px;border:0;background:#fff;display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;text-align:left;padding:8px 10px;font-weight:950;color:#101828;}
+.m-installment-head img{width:52px;height:34px;border-radius:9px;object-fit:contain;background:#f3f5f7;}
+.m-installment-head i{font-style:normal;font-size:11px;color:#667085;}
+.m-installment-bank.selected .m-installment-head i{color:#087313;}
+.m-installment-months{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 10px 10px;}
+.m-installment-month{border:1px solid #e5e7eb;background:#f8fafc;border-radius:13px;padding:8px;display:flex;flex-direction:column;gap:3px;text-align:left;}
+.m-installment-month.selected{background:#10141b;border-color:#10141b;color:#28e11a;}
+.m-installment-month em{font-style:normal;font-size:11px;font-weight:900;color:inherit;opacity:.8;}
+.m-installment-month strong{font-size:13px;font-weight:950;color:inherit;}
