@@ -167,6 +167,24 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
     }
 
+
+    /* Товарная аналитика и снимки товаров */
+    match /autostyle_product_snapshots/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_product_changes/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_lost_products/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_purchase_recommendations/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
     /* Старые коллекции */
     match /site/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /products/{document=**} { allow read: if true; allow write: if isAdmin(); }
