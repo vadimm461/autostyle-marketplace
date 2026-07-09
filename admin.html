@@ -696,7 +696,7 @@
         <div class="pa-head">
           <div>
             <h2>Товарная аналитика / закупки</h2>
-            <p class="muted">Отдельно считает продажи сайта по выполненным заказам и уход товара по 1С через изменения остатков.</p>
+            <p class="muted">Продажи сайта считаются только по выполненным заказам. Продажи 1С считаются отдельно по уменьшению остатков после автоматической выгрузки.</p>
             <p id="productAnalyticsStatus" class="pa-status"></p>
           </div>
           <div class="pa-actions">
@@ -707,58 +707,50 @@
               <option value="365">Год</option>
             </select>
             <button id="paRefresh" type="button">Обновить</button>
-            <button id="paCreateSnapshot" class="pa-green" type="button">Сделать снимок склада</button>
           </div>
-        </div>
-
-        <div class="pa-alert">
-          <b>Важно:</b> блок “Продажи сайта” считает только заказы со статусом <b>Выдан / Выполнен</b>. Новые, отменённые и отклонённые заказы не попадают в продажи.
         </div>
 
         <div class="pa-kpis">
           <div class="pa-kpi"><b data-pa-kpi="products">0</b><span>товаров на сайте</span><small>текущий Firebase</small></div>
           <div class="pa-kpi"><b data-pa-kpi="stockValue">0 ₽</b><span>стоимость склада</span><small>цена × остаток</small></div>
-          <div class="pa-kpi pa-site"><b data-pa-kpi="siteSoldQty">0</b><span>сайт продал</span><small>только выполненные</small></div>
-          <div class="pa-kpi pa-site"><b data-pa-kpi="siteRevenue">0 ₽</b><span>выручка сайта</span><small>по выполненным заказам</small></div>
-          <div class="pa-kpi pa-onec"><b data-pa-kpi="oneCSoldQty">0</b><span>ушло по 1С</span><small>по снижению остатков</small></div>
-          <div class="pa-kpi pa-onec"><b data-pa-kpi="oneCRevenue">0 ₽</b><span>сумма 1С</span><small>остаток × цена</small></div>
+          <div class="pa-kpi"><b data-pa-kpi="siteSoldQty">0</b><span>сайт продал</span><small>только выполненные</small></div>
+          <div class="pa-kpi"><b data-pa-kpi="siteRevenue">0 ₽</b><span>выручка сайта</span><small>по выполненным заказам</small></div>
+          <div class="pa-kpi"><b data-pa-kpi="oneCSoldQty">0</b><span>ушло по 1С</span><small>по снижению остатков</small></div>
+          <div class="pa-kpi"><b data-pa-kpi="oneCRevenue">0 ₽</b><span>сумма 1С</span><small>остаток × цена</small></div>
           <div class="pa-kpi"><b data-pa-kpi="completedOrders">0</b><span>выполненных заказов</span><small>за период</small></div>
-          <div class="pa-kpi"><b data-pa-kpi="notCountedOrders">0</b><span>не учитываем</span><small>новые/отменённые</small></div>
+          <div class="pa-kpi"><b data-pa-kpi="ignoredOrders">0</b><span>не учитываем</span><small>новые/отменённые</small></div>
           <div class="pa-kpi"><b data-pa-kpi="low">0</b><span>заканчиваются</span><small>остаток 1–3 шт.</small></div>
           <div class="pa-kpi"><b data-pa-kpi="zero">0</b><span>нет в наличии</span><small>нулевой остаток</small></div>
-          <div class="pa-kpi"><b data-pa-kpi="needOrder">0</b><span>к заказу</span><small>сайт + 1С</small></div>
+          <div class="pa-kpi"><b data-pa-kpi="needOrder">0</b><span>к заказу</span><small>по прогнозу продаж</small></div>
         </div>
 
         <div class="pa-grid">
-          <div class="pa-panel pa-wide pa-block-site">
+          <div class="pa-panel pa-wide">
             <h3>🛒 Продажи с сайта</h3>
-            <p class="pa-mini">Считаются только выполненные/выданные заказы. Новые и отклонённые не считаются.</p>
-            <div id="paSiteSales"></div>
+            <p class="pa-note">Считаются только заказы со статусом Выполнен / Выдан. Новые, отменённые и отклонённые не попадают в продажи.</p>
+            <div id="paTopSales"></div>
           </div>
-
-          <div class="pa-panel pa-wide pa-block-onec">
-            <h3>📦 Продажи / уход товара по 1С</h3>
-            <p class="pa-mini">Считается по разнице остатков между последним снимком склада и текущей выгрузкой Firebase.</p>
+          <div class="pa-panel pa-wide">
+            <h3>🏪 Продажи / уход товара по 1С</h3>
+            <p class="pa-note">Считается отдельно по уменьшению остатков между автоматическими выгрузками Firebase.</p>
             <div id="paOneCSales"></div>
           </div>
-
           <div class="pa-panel">
             <h3>💰 Предложение по заказу</h3>
-            <p class="pa-mini">Рекомендация строится по продажам сайта + уходу товара по 1С.</p>
             <div id="paRecommendations"></div>
           </div>
           <div class="pa-panel">
-            <h3>🏷️ Продажи сайта по брендам</h3>
+            <h3>🏷️ Продажи по брендам</h3>
             <div id="paBrands"></div>
           </div>
           <div class="pa-panel pa-wide">
-            <h3>🔄 Изменения после выгрузки 1С</h3>
+            <h3>📦 Изменения после выгрузки 1С</h3>
             <div id="paLastSnapshot" class="pa-mini"></div>
             <div id="paChanges"></div>
-            <p class="pa-note">Как пользоваться: сделай снимок склада до выгрузки из 1С, после выгрузки обнови раздел. Модуль покажет новые, изменённые, пропавшие товары и уменьшение остатков.</p>
+            <p class="pa-note">Снимки создаются автоматически в sync.js после каждой выгрузки. В админке ничего вручную нажимать не нужно.</p>
           </div>
           <div class="pa-panel pa-wide">
-            <h3>🐢 Товары без продаж на сайте за выбранный период</h3>
+            <h3>🐢 Товары без продаж за выбранный период</h3>
             <div id="paSlowProducts"></div>
           </div>
         </div>

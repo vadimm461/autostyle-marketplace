@@ -185,6 +185,18 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /autostyle_product_sync_runs/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_inventory_history/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_top_products/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
     /* Старые коллекции */
     match /site/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /products/{document=**} { allow read: if true; allow write: if isAdmin(); }
