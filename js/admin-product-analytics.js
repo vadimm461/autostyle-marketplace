@@ -7,6 +7,16 @@ const $ = (s, r=document) => r.querySelector(s);
 const fmt = n => new Intl.NumberFormat('ru-RU').format(Number(n || 0));
 const money = n => `${fmt(Math.round(Number(n || 0)))} ₽`;
 const dayMs = 86400000;
+function toNum(v){
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  const cleaned = String(v)
+    .replace(/\s+/g, '')
+    .replace(',', '.')
+    .replace(/[^0-9.-]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
 const state = { products: [], orders: [], changes: [], runs: [], selectedDays: 30 };
 
 function nowFrom(){ return Date.now() - state.selectedDays * dayMs; }
@@ -21,8 +31,8 @@ function productTitle(p){ return String(p.title || p.name || p.productName || p.
 function productCode(p){ return String(p.code || p.article || p.sku || p.vendorCode || p.barcode || p.id || '').trim(); }
 function productBrand(p){ return String(p.brand || p.brandName || p.manufacturer || p.vendor || '').trim() || 'Без бренда'; }
 function productGroup(p){ return String(p.group || p.category || p.categoryName || p.parentName || '').trim() || 'Без группы'; }
-function productPrice(p){ return Number(p.price || p.salePrice || p.retailPrice || p.cost || 0); }
-function productStock(p){ return Number(p.stock ?? p.qty ?? p.quantity ?? p.count ?? p.balance ?? p.amount ?? p.rest ?? 0); }
+function productPrice(p){ return toNum(p.price ?? p.salePrice ?? p.retailPrice ?? p.cost ?? 0); }
+function productStock(p){ return toNum(p.stock ?? p.qty ?? p.quantity ?? p.count ?? p.balance ?? p.amount ?? p.rest ?? p.remainder ?? p.quantityInStock ?? 0); }
 function productKey(p){ return String(p.id || p.productId || productCode(p) || productTitle(p)).trim(); }
 function normProduct(p){ return { id: productKey(p), title: productTitle(p), code: productCode(p), brand: productBrand(p), group: productGroup(p), price: productPrice(p), stock: productStock(p), image: p.image || p.imageUrl || p.photo || '', rawId: p.id || '' }; }
 function setStatus(text, bad=false){ const el=$('#productAnalyticsStatus'); if(el){ el.textContent=text||''; el.className = bad ? 'pa-status pa-status-bad' : 'pa-status'; } }
@@ -84,7 +94,7 @@ function renderKpis(){
   const oneCRevenue = [...onec.values()].reduce((s,x)=>s+x.revenue,0);
   const low = products.filter(p=>p.stock > 0 && p.stock <= 3).length;
   const zero = products.filter(p=>p.stock <= 0).length;
-  const stockValue = products.reduce((s,p)=>s + p.price * Math.max(0,p.stock), 0);
+  const stockValue = products.filter(p => toNum(p.stock) > 0).reduce((s,p)=>s + toNum(p.price) * toNum(p.stock), 0);
   const data = { products: products.length, stockValue: money(stockValue), siteSoldQty: fmt(siteSoldQty), siteRevenue: money(siteRevenue), oneCSoldQty: fmt(oneCSoldQty), oneCRevenue: money(oneCRevenue), completedOrders: fmt(completedOrders().length), ignoredOrders: fmt(filteredOrders().filter(isIgnoredOrder).length), low: fmt(low), zero: fmt(zero), needOrder: fmt(recommendations().length) };
   Object.entries(data).forEach(([k,v]) => { const el = $(`[data-pa-kpi="${k}"]`); if(el) el.textContent = v; });
 }
