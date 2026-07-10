@@ -21,7 +21,7 @@ const state = { products: [], orders: [], changes: [], runs: [], selectedDays: 3
 
 function nowFrom(){ return Date.now() - state.selectedDays * dayMs; }
 function getTime(row){
-  const v = row.createdAt || row.date || row.timestamp || row.createdAtText || row.createdAtTs || row.time;
+  const v = row.createdAt || row.detectedAt || row.updatedAt || row.date || row.timestamp || row.createdAtText || row.createdAtTs || row.updatedAtTs || row.time;
   if (v?.toDate) return v.toDate().getTime();
   if (typeof v === 'number') return v;
   const t = Date.parse(v || '');
@@ -86,15 +86,20 @@ function oneCSalesMap(){
   const from = nowFrom();
   const map = new Map();
   state.changes.filter(c => (getTime(c) || 0) >= from).forEach(c => {
-    const oldStock = Number(c.oldStock ?? c.beforeStock ?? c.prevStock ?? 0);
-    const newStock = Number(c.newStock ?? c.afterStock ?? c.stock ?? 0);
-    let qty = Number(c.sold1c ?? c.soldQty ?? c.decreasedBy ?? 0);
-    if(!qty && oldStock > newStock) qty = oldStock - newStock;
-    if(qty <= 0) return;
-    const id = String(c.productId || c.id || c.code || c.sku || c.title || '').trim(); if(!id) return;
-    const price = Number(c.price || c.newPrice || c.oldPrice || 0);
+    const type = String(c.type || '').toLowerCase();
+    const oldStock = toNum(c.oldStock ?? c.beforeStock ?? c.prevStock ?? c.stockBefore ?? 0);
+    const newStock = toNum(c.newStock ?? c.afterStock ?? c.stockAfter ?? c.stock ?? 0);
+    let qty = toNum(c.quantity ?? c.sold1c ?? c.soldQty ?? c.decreasedBy ?? 0);
+    if (!qty && oldStock > newStock) qty = oldStock - newStock;
+    const isSale = type === 'sale' || type === 'stock_down' || oldStock > newStock;
+    if (!isSale || qty <= 0) return;
+    const id = String(c.productId || c.externalId || c.id || c.code || c.sku || c.title || '').trim();
+    if(!id) return;
+    const price = toNum(c.price ?? c.newPrice ?? c.oldPrice ?? 0);
     const prev = map.get(id) || { id, title: c.title || c.name || id, qty:0, revenue:0, changes:0 };
-    prev.qty += qty; prev.revenue += qty * price; prev.changes += 1;
+    prev.qty += qty;
+    prev.revenue += toNum(c.amount) || qty * price;
+    prev.changes += 1;
     map.set(id, prev);
   });
   return map;
@@ -103,14 +108,23 @@ function renderKpis(){
   const products = state.products.map(normProduct);
   const site = salesMapFromSite();
   const onec = oneCSalesMap();
-  const siteSoldQty = [...site.values()].reduce((s,x)=>s+x.qty,0);
-  const siteRevenue = [...site.values()].reduce((s,x)=>s+x.revenue,0);
-  const oneCSoldQty = [...onec.values()].reduce((s,x)=>s+x.qty,0);
-  const oneCRevenue = [...onec.values()].reduce((s,x)=>s+x.revenue,0);
+  const latestRun = state.runs[0] || {};
+  const siteSoldQty = [...site.values()].reduce((sum,x)=>sum+x.qty,0);
+  const siteRevenue = [...site.values()].reduce((sum,x)=>sum+x.revenue,0);
+  const oneCSoldQty = [...onec.values()].reduce((sum,x)=>sum+x.qty,0);
+  const oneCRevenue = [...onec.values()].reduce((sum,x)=>sum+x.revenue,0);
+  const totalUnits = products.reduce((sum,p)=>sum + Math.max(0, p.stock), 0);
+  const inStockPositions = products.filter(p=>p.stock > 0).length;
+  const newPositions = toNum(latestRun.newPositions);
   const low = products.filter(p=>p.stock > 0 && p.stock <= 3).length;
   const zero = products.filter(p=>p.stock <= 0).length;
-  const stockValue = products.filter(p => p.stock > 0).reduce((s,p)=>s + p.price * p.stock, 0);
-  const data = { products: products.length, stockValue: money(stockValue), siteSoldQty: fmt(siteSoldQty), siteRevenue: money(siteRevenue), oneCSoldQty: fmt(oneCSoldQty), oneCRevenue: money(oneCRevenue), completedOrders: fmt(completedOrders().length), ignoredOrders: fmt(filteredOrders().filter(isIgnoredOrder).length), low: fmt(low), zero: fmt(zero), needOrder: fmt(recommendations().length) };
+  const stockValue = products.filter(p=>p.stock > 0).reduce((sum,p)=>sum + p.price * p.stock, 0);
+  const data = {
+    products: fmt(products.length), inStockPositions: fmt(inStockPositions), totalUnits: fmt(totalUnits), newPositions: fmt(newPositions),
+    stockValue: money(stockValue), siteSoldQty: fmt(siteSoldQty), siteRevenue: money(siteRevenue),
+    oneCSoldQty: fmt(oneCSoldQty), oneCRevenue: money(oneCRevenue), completedOrders: fmt(completedOrders().length),
+    ignoredOrders: fmt(filteredOrders().filter(isIgnoredOrder).length), low: fmt(low), zero: fmt(zero), needOrder: fmt(recommendations().length)
+  };
   Object.entries(data).forEach(([k,v]) => { const el = $(`[data-pa-kpi="${k}"]`); if(el) el.textContent = v; });
 }
 function rowProgress(value, max){ return `<i style="width:${Math.max(3, Math.round(Number(value||0)/Math.max(1,max)*100))}%"></i>`; }
@@ -123,7 +137,7 @@ function renderSalesBox(boxId, rows, empty){
   box.innerHTML = rows.map((r,i)=>{ const p=products.get(r.id)||{}; return `<div class="pa-table-row"><b>${i+1}. ${escapeHtml(r.title)}</b><span>${fmt(r.qty)} шт</span><span>${money(r.revenue)}</span><span>${fmt(p.stock || 0)} ост.</span><em>${rowProgress(r.qty,max)}</em></div>`; }).join('');
 }
 function renderTopSales(){ renderSalesBox('#paTopSales', salesMapFromSite(), 'Выполненных продаж сайта за выбранный период пока нет.'); }
-function renderOneCSales(){ renderSalesBox('#paOneCSales', oneCSalesMap(), 'Данных по уходу товара через 1С пока нет. Для этого нужен отдельный analytics-sync.js или записи autostyle_product_changes после выгрузки 1С.'); }
+function renderOneCSales(){ renderSalesBox('#paOneCSales', oneCSalesMap(), 'За выбранный период уменьшений остатков после выгрузки 1С пока нет.'); }
 function combinedSales(){
   const m = new Map();
   [salesMapFromSite(), oneCSalesMap()].forEach(src => src.forEach(s => {
@@ -154,11 +168,11 @@ function renderRecommendations(){
 function renderChanges(){
   const box = $('#paChanges'); if(!box) return;
   const latest = state.runs[0];
-  $('#paLastSnapshot').textContent = latest ? `Последняя автоматическая выгрузка: ${latest.createdAtText || new Date(latest.createdAtTs || Date.now()).toLocaleString('ru-RU')} · товаров: ${fmt(latest.count || 0)} · изменений: ${fmt(latest.changesCount || 0)}` : 'Автоматических снимков пока нет. Они создаются sync.js после выгрузки 1С.';
+  $('#paLastSnapshot').textContent = latest ? `Последняя выгрузка: ${latest.createdAtText || new Date(latest.createdAtTs || Date.now()).toLocaleString('ru-RU')} · позиций: ${fmt(latest.totalPositions ?? latest.count ?? 0)} · единиц: ${fmt(latest.totalUnits ?? 0)} · новых: ${fmt(latest.newPositions ?? 0)} · продано: ${fmt(latest.soldUnits ?? 0)} · поступило: ${fmt(latest.receivedUnits ?? 0)}` : 'Автоматических снимков пока нет. Они создаются sync.js после выгрузки 1С.';
   const rows = state.changes.slice(0,160);
   if(!rows.length){ box.innerHTML = '<div class="pa-empty">Изменений после выгрузок пока нет.</div>'; return; }
   box.innerHTML = rows.map(c=>{
-    const type = c.type === 'removed' ? '❌ Пропал' : c.type === 'added' ? '➕ Новый' : c.type === 'stock_down' ? '⬇ Остаток уменьшился' : c.type === 'stock_up' ? '⬆ Остаток увеличился' : c.type === 'price' ? '💰 Цена' : '🔄 Изменён';
+    const type = c.type === 'removed' ? '❌ Пропал' : c.type === 'added' ? '➕ Новый' : (c.type === 'stock_down' || c.type === 'sale') ? '🛒 Продажа 1С' : (c.type === 'stock_up' || c.type === 'receipt') ? '📥 Поступление'  : c.type === 'price' ? '💰 Цена' : '🔄 Изменён';
     const meta = c.note || [c.oldStock != null || c.newStock != null ? `остаток ${fmt(c.oldStock)} → ${fmt(c.newStock)}` : '', c.oldPrice != null || c.newPrice != null ? `цена ${money(c.oldPrice)} → ${money(c.newPrice)}` : ''].filter(Boolean).join(' • ');
     return `<div class="pa-change"><span>${type}</span><b>${escapeHtml(c.title || c.productId || 'Товар')}</b><small>${escapeHtml(meta)}</small></div>`;
   }).join('');
@@ -187,9 +201,10 @@ export async function loadProductAnalytics(force=false){
   const [products, orders, changes, runs] = await Promise.all([
     getCol(COLLECTIONS.products || 'autostyle_products', 10000),
     getCol(COLLECTIONS.orders || 'autostyle_orders', 8000),
-    getCol('autostyle_product_changes', 2000, true),
-    getCol('autostyle_product_sync_runs', 20, true)
+    getCol('autostyle_product_changes', 10000),
+    getCol('autostyle_product_sync_runs', 100)
   ]);
+  changes.sort((a,b)=>getTime(b)-getTime(a)); runs.sort((a,b)=>getTime(b)-getTime(a));
   Object.assign(state, { products, orders, changes, runs });
   renderAll();
   const doneCount = completedOrders().length;

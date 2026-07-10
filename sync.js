@@ -1,18 +1,8 @@
 /**
- * AutoStyle sync.js — автоматическая товарная аналитика после выгрузки 1С.
- *
- * Назначение:
- * 1) после каждой выгрузки товаров в Firebase делает снимок склада;
- * 2) сравнивает новый остаток/цену/наличие с предыдущим снимком;
- * 3) отдельно пишет изменения 1С в autostyle_product_changes;
- * 4) админка читает эти данные без ручной кнопки “Сделать снимок”.
- *
- * Запуск вручную:
- *   node sync.js
- *
- * Подключение к существующей выгрузке:
+ * AutoStyle товарная аналитика после успешной выгрузки 1С.
+ * Этот файл НЕ импортирует товары. Его вызывает основной синхронизатор после записи товаров:
  *   const { runProductAnalyticsSnapshot } = require('./sync');
- *   await runProductAnalyticsSnapshot(admin.firestore());
+ *   await runProductAnalyticsSnapshot(db);
  */
 
 let admin = null;
@@ -22,29 +12,41 @@ const PRODUCT_COLLECTION = process.env.AS_PRODUCTS_COLLECTION || 'autostyle_prod
 const RUNS_COLLECTION = 'autostyle_product_sync_runs';
 const CHANGES_COLLECTION = 'autostyle_product_changes';
 const RECOMMENDATIONS_COLLECTION = 'autostyle_purchase_recommendations';
-const MAX_BATCH = 450;
+const MAX_BATCH = 400;
 
-function toNumber(v){ const n = Number(v ?? 0); return Number.isFinite(n) ? n : 0; }
+function toNumber(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = Number(String(v).replace(',', '.').replace(/\s+/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
 function titleOf(p){ return String(p.title || p.name || p.productName || p.description || p.id || 'Товар').trim(); }
 function codeOf(p){ return String(p.code || p.article || p.sku || p.vendorCode || p.barcode || p.id || '').trim(); }
 function brandOf(p){ return String(p.brand || p.brandName || p.manufacturer || p.vendor || '').trim(); }
 function groupOf(p){ return String(p.group || p.category || p.categoryName || p.parentName || '').trim(); }
-function priceOf(p){ return toNumber(p.price || p.salePrice || p.retailPrice || p.cost); }
-function stockOf(p){ return toNumber(p.stock ?? p.qty ?? p.quantity ?? p.count ?? p.balance ?? p.amount ?? p.rest); }
-function keyOf(id, p){ return String(p.id || p.productId || codeOf(p) || id || titleOf(p)).trim(); }
-function safeDocId(id){ return String(id || Math.random()).replace(/[\/#\[\]?]/g,'_').slice(0,150); }
+function priceOf(p){ return toNumber(p.price ?? p.salePrice ?? p.retailPrice ?? p.cost ?? 0); }
+function stockOf(p){
+  const candidates = [p.stock, p.quantity, p.qty, p.count, p.balance, p.rest, p.remainder];
+  for (const value of candidates) {
+    if (value !== undefined && value !== null && value !== '') return Math.max(0, toNumber(value));
+  }
+  return 0;
+}
+function keyOf(id, p){ return String(p.externalId || p.productId || p.id || id || codeOf(p) || titleOf(p)).trim(); }
+function safeDocId(id){ return String(id || Math.random()).replace(/[\/#\[\]?]/g, '_').slice(0, 150); }
 function norm(id, p){
   return {
     id: keyOf(id, p),
     sourceDocId: id,
+    externalId: String(p.externalId || ''),
     title: titleOf(p),
     code: codeOf(p),
+    article: String(p.article || ''),
     brand: brandOf(p),
     group: groupOf(p),
+    categoryId: String(p.categoryId || ''),
     price: priceOf(p),
     stock: stockOf(p),
-    image: p.image || p.imageUrl || p.photo || '',
-    updatedAtText: new Date().toLocaleString('ru-RU')
+    image: p.image || p.imageUrl || p.photo || ''
   };
 }
 async function getAllProducts(db){
@@ -52,117 +54,180 @@ async function getAllProducts(db){
   return snap.docs.map(d => norm(d.id, d.data() || {}));
 }
 async function getLastRun(db){
-  const snap = await db.collection(RUNS_COLLECTION).orderBy('createdAtTs','desc').limit(1).get();
+  const snap = await db.collection(RUNS_COLLECTION).orderBy('createdAtTs', 'desc').limit(1).get();
   return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
 async function getRunItems(db, runId){
-  if(!runId) return [];
+  if (!runId) return [];
   const snap = await db.collection(RUNS_COLLECTION).doc(runId).collection('items').get();
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 function compareProducts(previous, current){
-  const oldMap = new Map(previous.map(p => [p.id, p]));
-  const newMap = new Map(current.map(p => [p.id, p]));
+  const oldMap = new Map(previous.map(p => [String(p.id), p]));
+  const newMap = new Map(current.map(p => [String(p.id), p]));
   const changes = [];
-  newMap.forEach((p, id) => {
-    const old = oldMap.get(id);
-    if(!old){
-      changes.push({ type:'added', productId:id, title:p.title, code:p.code, brand:p.brand, group:p.group, newStock:p.stock, newPrice:p.price, note:`новый товар, остаток ${p.stock}` });
-      return;
+
+  for (const p of current) {
+    const old = oldMap.get(String(p.id));
+    if (!old) {
+      changes.push({
+        type: 'added', productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+        oldStock: 0, newStock: p.stock, quantity: p.stock, newPrice: p.price,
+        note: `новая позиция, остаток ${p.stock} шт.`
+      });
+      continue;
     }
-    if(toNumber(old.price) !== toNumber(p.price)){
-      changes.push({ type:'price', productId:id, title:p.title, code:p.code, brand:p.brand, group:p.group, oldPrice:old.price, newPrice:p.price, oldStock:old.stock, newStock:p.stock, priceDelta: p.price - old.price, note:`цена ${old.price} → ${p.price}` });
+    const oldStock = toNumber(old.stock);
+    const newStock = toNumber(p.stock);
+    const oldPrice = toNumber(old.price);
+    const newPrice = toNumber(p.price);
+
+    if (newStock < oldStock) {
+      const quantity = oldStock - newStock;
+      changes.push({
+        type: 'sale', productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+        oldStock, newStock, stockBefore: oldStock, stockAfter: newStock,
+        quantity, soldQty: quantity, price: newPrice, amount: quantity * newPrice,
+        note: `продано ${quantity} шт.: ${oldStock} → ${newStock}`
+      });
+    } else if (newStock > oldStock) {
+      const quantity = newStock - oldStock;
+      changes.push({
+        type: 'receipt', productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+        oldStock, newStock, stockBefore: oldStock, stockAfter: newStock,
+        quantity, receivedQty: quantity, price: newPrice, amount: quantity * newPrice,
+        note: `поступило ${quantity} шт.: ${oldStock} → ${newStock}`
+      });
     }
-    if(toNumber(old.stock) !== toNumber(p.stock)){
-      const oldStock = toNumber(old.stock), newStock = toNumber(p.stock);
-      const diff = newStock - oldStock;
-      changes.push({ type: diff < 0 ? 'stock_down' : 'stock_up', productId:id, title:p.title, code:p.code, brand:p.brand, group:p.group, oldStock, newStock, stockDelta:diff, sold1c: diff < 0 ? Math.abs(diff) : 0, oldPrice:old.price, newPrice:p.price, price:p.price, note:`остаток ${oldStock} → ${newStock}` });
+    if (oldPrice !== newPrice) {
+      changes.push({
+        type: 'price', productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+        oldPrice, newPrice, oldStock, newStock,
+        note: `цена ${oldPrice} → ${newPrice}`
+      });
     }
-    if(String(old.image || '') !== String(p.image || '')){
-      changes.push({ type:'image', productId:id, title:p.title, code:p.code, brand:p.brand, group:p.group, oldStock:old.stock, newStock:p.stock, note:'изменилось фото' });
+  }
+
+  for (const p of previous) {
+    if (!newMap.has(String(p.id))) {
+      changes.push({
+        type: 'removed', productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+        oldStock: toNumber(p.stock), newStock: 0, oldPrice: toNumber(p.price),
+        note: 'позиция отсутствует в текущей выгрузке'
+      });
     }
-  });
-  oldMap.forEach((p, id) => {
-    if(!newMap.has(id)) changes.push({ type:'removed', productId:id, title:p.title, code:p.code, brand:p.brand, group:p.group, oldStock:p.stock, oldPrice:p.price, note:`товар пропал, был остаток ${p.stock}` });
-  });
+  }
   return changes;
 }
-async function commitChunks(db, writer){
-  let batch = db.batch();
-  let count = 0;
-  async function set(ref, data){
-    batch.set(ref, data, { merge:true });
-    count++;
-    if(count >= MAX_BATCH){ await batch.commit(); batch = db.batch(); count = 0; }
+async function commitOps(db, ops){
+  for (let i = 0; i < ops.length; i += MAX_BATCH) {
+    const batch = db.batch();
+    for (const op of ops.slice(i, i + MAX_BATCH)) batch.set(op.ref, op.data, op.options || {});
+    await batch.commit();
   }
-  await writer(set);
-  if(count) await batch.commit();
 }
 async function saveRun(db, products, changes){
-  const now = Date.now();
-  const ref = db.collection(RUNS_COLLECTION).doc(String(now));
-  const down = changes.filter(c=>c.type==='stock_down').reduce((s,c)=>s+toNumber(c.sold1c),0);
-  await ref.set({
-    createdAtTs: now,
-    createdAtText: new Date(now).toLocaleString('ru-RU'),
-    source: 'sync-js-auto',
+  const now = admin ? admin.firestore.Timestamp.now() : new Date();
+  const createdAtTs = Date.now();
+  const runRef = db.collection(RUNS_COLLECTION).doc();
+  const totalUnits = products.reduce((s,p) => s + Math.max(0, toNumber(p.stock)), 0);
+  const inStockPositions = products.filter(p => toNumber(p.stock) > 0).length;
+  const stockValue = products.reduce((s,p) => s + Math.max(0, toNumber(p.stock)) * toNumber(p.price), 0);
+  const newPositions = changes.filter(c => c.type === 'added').length;
+  const soldUnits = changes.filter(c => c.type === 'sale').reduce((s,c) => s + toNumber(c.quantity), 0);
+  const receivedUnits = changes.filter(c => c.type === 'receipt').reduce((s,c) => s + toNumber(c.quantity), 0);
+
+  await runRef.set({
+    createdAt: now,
+    createdAtTs,
+    createdAtText: new Date(createdAtTs).toLocaleString('ru-RU'),
     count: products.length,
+    totalPositions: products.length,
+    inStockPositions,
+    totalUnits,
+    stockValue,
+    newPositions,
+    soldUnits,
+    receivedUnits,
     changesCount: changes.length,
-    oneCSoldQty: down,
-    addedCount: changes.filter(c=>c.type==='added').length,
-    removedCount: changes.filter(c=>c.type==='removed').length,
-    priceChangedCount: changes.filter(c=>c.type==='price').length,
-    stockChangedCount: changes.filter(c=>c.type==='stock_down' || c.type==='stock_up').length
+    source: '1c',
+    status: 'success'
   });
-  await commitChunks(db, async set => {
-    for(const p of products) await set(ref.collection('items').doc(safeDocId(p.id)), p);
-  });
-  await commitChunks(db, async set => {
-    let i = 0;
-    for(const c of changes){
-      await set(db.collection(CHANGES_COLLECTION).doc(`${now}_${String(i++).padStart(5,'0')}_${safeDocId(c.productId)}`), { ...c, runId: ref.id, createdAtTs: now, createdAtText: new Date(now).toLocaleString('ru-RU') });
-    }
-  });
-  return ref.id;
+
+  const itemOps = products.map(p => ({
+    ref: runRef.collection('items').doc(safeDocId(p.id)),
+    data: { ...p, runId: runRef.id }
+  }));
+  await commitOps(db, itemOps);
+
+  const changeOps = changes.map(c => ({
+    ref: db.collection(CHANGES_COLLECTION).doc(),
+    data: { ...c, runId: runRef.id, source: '1c', createdAt: now, createdAtTs, detectedAt: now }
+  }));
+  await commitOps(db, changeOps);
+  return runRef.id;
 }
-async function buildRecommendations(db, products, changes){
-  const soldMap = new Map();
-  changes.filter(c=>c.type==='stock_down' && toNumber(c.sold1c)>0).forEach(c=>{
-    const v = soldMap.get(c.productId) || { productId:c.productId, title:c.title, qty:0 };
-    v.qty += toNumber(c.sold1c); soldMap.set(c.productId, v);
+async function buildRecommendations(db, products){
+  const since = Date.now() - 30 * 86400000;
+  const snap = await db.collection(CHANGES_COLLECTION).where('createdAtTs', '>=', since).get();
+  const sales = new Map();
+  snap.forEach(doc => {
+    const c = doc.data() || {};
+    if (c.type !== 'sale') return;
+    const id = String(c.productId || '');
+    if (!id) return;
+    sales.set(id, (sales.get(id) || 0) + toNumber(c.quantity || c.soldQty));
   });
-  const productMap = new Map(products.map(p=>[p.id,p]));
-  const rows = [];
-  soldMap.forEach(s=>{
-    const p = productMap.get(s.productId) || {};
-    const stock = toNumber(p.stock);
-    const need = Math.max(0, Math.ceil(s.qty * 1.25) - stock);
-    if(need > 0 || stock <= 3) rows.push({ productId:s.productId, title:p.title || s.title, code:p.code || '', brand:p.brand || '', group:p.group || '', sold1c:s.qty, stock, price:p.price || 0, need: Math.max(need, stock <= 0 ? s.qty : 0), reason: stock <= 0 ? 'закончился после выгрузки 1С' : 'уходит через 1С, остаток низкий', updatedAtTs:Date.now(), updatedAtText:new Date().toLocaleString('ru-RU') });
-  });
-  await commitChunks(db, async set => {
-    for(const r of rows.slice(0,200)) await set(db.collection(RECOMMENDATIONS_COLLECTION).doc(safeDocId(r.productId)), r);
-  });
-  return rows.length;
+
+  const ops = [];
+  const activeIds = new Set();
+  for (const p of products) {
+    const sold30 = sales.get(String(p.id)) || 0;
+    const avgDay = sold30 / 30;
+    const targetDays = 30;
+    const safetyStock = Math.ceil(avgDay * 7);
+    const targetStock = Math.ceil(avgDay * targetDays) + safetyStock;
+    const recommendedQty = Math.max(0, targetStock - toNumber(p.stock));
+    if (recommendedQty <= 0 && p.stock > 3) continue;
+    const id = safeDocId(p.id);
+    activeIds.add(id);
+    ops.push({
+      ref: db.collection(RECOMMENDATIONS_COLLECTION).doc(id),
+      data: {
+        productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+        currentStock: p.stock, sold30, avgDay, targetDays, safetyStock,
+        recommendedQty: Math.max(recommendedQty, p.stock <= 0 && sold30 > 0 ? Math.ceil(sold30) : 0),
+        reason: p.stock <= 0 ? 'товар закончился' : p.stock <= 3 ? 'низкий остаток' : 'прогноз продаж',
+        updatedAtTs: Date.now(), active: true
+      },
+      options: { merge: true }
+    });
+  }
+  await commitOps(db, ops);
+  return ops.length;
 }
 async function runProductAnalyticsSnapshot(db){
+  if (!db) throw new Error('Firestore db не передан');
+  if (!admin) throw new Error('firebase-admin не установлен');
   const products = await getAllProducts(db);
   const lastRun = await getLastRun(db);
   const previous = lastRun ? await getRunItems(db, lastRun.id) : [];
-  const changes = previous.length ? compareProducts(previous, products) : products.map(p => ({ type:'added', productId:p.id, title:p.title, code:p.code, brand:p.brand, group:p.group, newStock:p.stock, newPrice:p.price, note:'первый автоматический снимок' }));
+  const changes = previous.length ? compareProducts(previous, products) : products.map(p => ({
+    type: 'added', productId: p.id, title: p.title, code: p.code, brand: p.brand, group: p.group,
+    oldStock: 0, newStock: p.stock, quantity: p.stock, newPrice: p.price,
+    note: `первая база: ${p.stock} шт.`
+  }));
   const runId = await saveRun(db, products, changes);
-  const recCount = await buildRecommendations(db, products, changes);
-  console.log(`[AutoStyle analytics] run ${runId}: products=${products.length}, changes=${changes.length}, recommendations=${recCount}`);
-  return { runId, products: products.length, changes: changes.length, recommendations: recCount };
+  const recommendations = await buildRecommendations(db, products);
+  const totalUnits = products.reduce((s,p) => s + Math.max(0, toNumber(p.stock)), 0);
+  console.log(`[AutoStyle analytics] run=${runId}; позиций=${products.length}; единиц=${totalUnits}; изменений=${changes.length}; рекомендаций=${recommendations}`);
+  return { runId, positions: products.length, totalUnits, changes: changes.length, recommendations };
 }
 module.exports = { runProductAnalyticsSnapshot };
 
 if (require.main === module) {
   (async () => {
-    if(!admin) throw new Error('Установи firebase-admin: npm i firebase-admin');
-    if(!admin.apps.length) {
-      // Использует GOOGLE_APPLICATION_CREDENTIALS или стандартные права окружения.
-      admin.initializeApp({ credential: admin.credential.applicationDefault() });
-    }
+    if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.applicationDefault() });
     await runProductAnalyticsSnapshot(admin.firestore());
     process.exit(0);
   })().catch(err => { console.error(err); process.exit(1); });
