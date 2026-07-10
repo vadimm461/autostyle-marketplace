@@ -31,8 +31,15 @@ function productTitle(p){ return String(p.title || p.name || p.productName || p.
 function productCode(p){ return String(p.code || p.article || p.sku || p.vendorCode || p.barcode || p.id || '').trim(); }
 function productBrand(p){ return String(p.brand || p.brandName || p.manufacturer || p.vendor || '').trim() || 'Без бренда'; }
 function productGroup(p){ return String(p.group || p.category || p.categoryName || p.parentName || '').trim() || 'Без группы'; }
-function productPrice(p){ return toNum(p.price ?? p.salePrice ?? p.retailPrice ?? p.cost ?? 0); }
-function productStock(p){ return toNum(p.stock ?? p.qty ?? p.quantity ?? p.count ?? p.balance ?? p.amount ?? p.rest ?? p.remainder ?? p.quantityInStock ?? 0); }
+function productPrice(p){ return toNum(p.price ?? p.salePrice ?? p.retailPrice ?? p.retail ?? p.cost ?? 0); }
+function productStock(p){
+  // В 1С/Firestore остаток в разных версиях мог лежать в stock или quantity.
+  // Для склада берём только фактический положительный остаток, нулевые товары не считают стоимость.
+  const values = [p.stock, p.quantity, p.qty, p.count, p.balance, p.amount, p.rest, p.remainder, p.quantityInStock]
+    .map(toNum)
+    .filter(n => n > 0);
+  return values.length ? Math.max(...values) : 0;
+}
 function productKey(p){ return String(p.id || p.productId || productCode(p) || productTitle(p)).trim(); }
 function normProduct(p){ return { id: productKey(p), title: productTitle(p), code: productCode(p), brand: productBrand(p), group: productGroup(p), price: productPrice(p), stock: productStock(p), image: p.image || p.imageUrl || p.photo || '', rawId: p.id || '' }; }
 function setStatus(text, bad=false){ const el=$('#productAnalyticsStatus'); if(el){ el.textContent=text||''; el.className = bad ? 'pa-status pa-status-bad' : 'pa-status'; } }
@@ -43,15 +50,23 @@ async function getCol(name, max=8000, sorted=false){
     return snap.docs.map(d=>({id:d.id, ...d.data()}));
   } catch(e){ console.warn('product analytics read skipped', name, e); return []; }
 }
-function orderItems(order){ return Array.isArray(order.items) ? order.items : Array.isArray(order.products) ? order.products : []; }
-function itemId(i){ return String(i.productId || i.id || i.product_id || i.code || i.sku || i.title || i.name || '').trim(); }
-function itemTitle(i){ return String(i.title || i.name || i.productName || itemId(i) || 'Товар').trim(); }
-function itemQty(i){ return Number(i.qty || i.quantity || i.count || 1) || 1; }
-function itemPrice(i){ return Number(i.price || i.linePrice || i.sum || i.lineTotal || 0) || 0; }
-function orderStatus(o){ return String(o.status || o.orderStatus || o.state || '').toLowerCase().trim(); }
+function orderItems(order){
+  return Array.isArray(order.items) ? order.items :
+    Array.isArray(order.products) ? order.products :
+    Array.isArray(order.cart) ? order.cart :
+    Array.isArray(order.cartItems) ? order.cartItems :
+    Array.isArray(order.orderItems) ? order.orderItems :
+    Array.isArray(order.goods) ? order.goods : [];
+}
+function itemId(i){ return String(i.productId || i.productID || i.product_id || i.externalId || i.id || i.code || i.article || i.sku || i.title || i.name || '').trim(); }
+function itemTitle(i){ return String(i.title || i.name || i.productName || i.productTitle || itemId(i) || 'Товар').trim(); }
+function itemQty(i){ return toNum(i.qty ?? i.quantity ?? i.count ?? i.amount ?? i.stock ?? 1) || 1; }
+function itemPrice(i){ return toNum(i.price ?? i.salePrice ?? i.linePrice ?? i.unitPrice ?? i.sum ?? i.lineTotal ?? i.total ?? 0); }
+function orderStatus(o){ return String(o.status || o.orderStatus || o.state || o.orderState || o.deliveryStatus || '').toLowerCase().trim(); }
 function isDoneOrder(o){
   const s = orderStatus(o);
-  return ['done','complete','completed','fulfilled','issued','выдан','выдано','выполнен','выполнено','завершен','завершён','доставлен'].some(x => s.includes(x));
+  // Считаем только реально выполненные / выданные. Новые, отменённые, отклонённые не попадут.
+  return ['done','complete','completed','fulfilled','issued','delivered','closed','success','выдан','выдано','выполнен','выполнено','завершен','завершён','доставлен','доставлено'].some(x => s.includes(x));
 }
 function isIgnoredOrder(o){ return !isDoneOrder(o); }
 function filteredOrders(){ const from = nowFrom(); return state.orders.filter(o => (getTime(o) || 0) >= from); }
@@ -94,7 +109,7 @@ function renderKpis(){
   const oneCRevenue = [...onec.values()].reduce((s,x)=>s+x.revenue,0);
   const low = products.filter(p=>p.stock > 0 && p.stock <= 3).length;
   const zero = products.filter(p=>p.stock <= 0).length;
-  const stockValue = products.filter(p => toNum(p.stock) > 0).reduce((s,p)=>s + toNum(p.price) * toNum(p.stock), 0);
+  const stockValue = products.filter(p => p.stock > 0).reduce((s,p)=>s + p.price * p.stock, 0);
   const data = { products: products.length, stockValue: money(stockValue), siteSoldQty: fmt(siteSoldQty), siteRevenue: money(siteRevenue), oneCSoldQty: fmt(oneCSoldQty), oneCRevenue: money(oneCRevenue), completedOrders: fmt(completedOrders().length), ignoredOrders: fmt(filteredOrders().filter(isIgnoredOrder).length), low: fmt(low), zero: fmt(zero), needOrder: fmt(recommendations().length) };
   Object.entries(data).forEach(([k,v]) => { const el = $(`[data-pa-kpi="${k}"]`); if(el) el.textContent = v; });
 }
@@ -108,7 +123,7 @@ function renderSalesBox(boxId, rows, empty){
   box.innerHTML = rows.map((r,i)=>{ const p=products.get(r.id)||{}; return `<div class="pa-table-row"><b>${i+1}. ${escapeHtml(r.title)}</b><span>${fmt(r.qty)} шт</span><span>${money(r.revenue)}</span><span>${fmt(p.stock || 0)} ост.</span><em>${rowProgress(r.qty,max)}</em></div>`; }).join('');
 }
 function renderTopSales(){ renderSalesBox('#paTopSales', salesMapFromSite(), 'Выполненных продаж сайта за выбранный период пока нет.'); }
-function renderOneCSales(){ renderSalesBox('#paOneCSales', oneCSalesMap(), 'Данных по уходу товара через 1С пока нет. Они появятся после автоматического анализа выгрузки sync.js.'); }
+function renderOneCSales(){ renderSalesBox('#paOneCSales', oneCSalesMap(), 'Данных по уходу товара через 1С пока нет. Для этого нужен отдельный analytics-sync.js или записи autostyle_product_changes после выгрузки 1С.'); }
 function combinedSales(){
   const m = new Map();
   [salesMapFromSite(), oneCSalesMap()].forEach(src => src.forEach(s => {
@@ -177,7 +192,9 @@ export async function loadProductAnalytics(force=false){
   ]);
   Object.assign(state, { products, orders, changes, runs });
   renderAll();
-  setStatus(`Обновлено: ${new Date().toLocaleString('ru-RU')}`);
+  const doneCount = completedOrders().length;
+  const changesCount = state.changes.length;
+  setStatus(`Обновлено: ${new Date().toLocaleString('ru-RU')} · выполненных заказов: ${doneCount} · изменений 1С: ${changesCount}`);
 }
 function init(){
   const period = $('#paPeriod'); if(period) period.addEventListener('change', e=>{ state.selectedDays=Number(e.target.value||30); renderAll(); });
