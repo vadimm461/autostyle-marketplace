@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Редактор премии</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+body{
+font-family:Inter,sans-serif;
+background:#f4f7fb;
+padding:20px;
+color:#111827;
+}
+
+h1{
+font-size:34px;
+font-weight:900;
+margin-bottom:20px;
+}
+
+/* FORM */
+
+.form{
+background:white;
+padding:20px;
+border-radius:24px;
+
+display:grid;
+grid-template-columns:repeat(7,1fr);
+
+gap:12px;
+margin-bottom:24px;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.05);
+}
+
+input,
+select{
+padding:14px;
+border-radius:14px;
+border:1px solid #dbe2ea;
+font-size:14px;
+outline:none;
+}
+
+input:focus,
+select:focus{
+border-color:#22c55e;
+box-shadow:0 0 0 4px rgba(34,197,94,.1);
+}
+
+button{
+border:none;
+padding:14px;
+border-radius:14px;
+font-weight:800;
+cursor:pointer;
+transition:.2s;
+}
+
+button:hover{
+transform:translateY(-1px);
+}
+
+.add{
+background:
+linear-gradient(
+135deg,
+#16a34a,
+#15803d
+);
+
+color:white;
+}
+
+/* GROUP */
+
+.group-block{
+margin-bottom:26px;
+}
+
+.group-header{
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+margin-bottom:16px;
+
+padding:18px 22px;
+
+background:white;
+border-radius:24px;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.05);
+}
+
+.group-title{
+font-size:28px;
+font-weight:900;
+}
+
+.group-count{
+font-size:14px;
+color:#64748b;
+}
+
+/* CARD */
+
+.card{
+background:white;
+padding:22px;
+border-radius:24px;
+
+margin-bottom:14px;
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+box-shadow:
+0 10px 25px rgba(0,0,0,.05);
+
+border:1px solid #eef2f7;
+}
+
+.card-left{
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.product-name{
+font-size:22px;
+font-weight:900;
+}
+
+.product-code{
+display:inline-block;
+
+padding:8px 14px;
+
+background:
+linear-gradient(
+135deg,
+#eff6ff,
+#dbeafe
+);
+
+color:#1d4ed8;
+
+border-radius:14px;
+
+font-size:13px;
+font-weight:800;
+
+width:max-content;
+}
+
+.product-info{
+font-size:15px;
+color:#475569;
+line-height:1.5;
+}
+
+.actions{
+display:flex;
+gap:10px;
+}
+
+.edit{
+background:#3b82f6;
+color:white;
+}
+
+.delete{
+background:#ef4444;
+color:white;
+}
+
+/* MOBILE */
+
+@media(max-width:1100px){
+
+.form{
+grid-template-columns:repeat(2,1fr);
+}
+
+}
+
+@media(max-width:700px){
+
+.form{
+grid-template-columns:1fr;
+}
+
+.card{
+flex-direction:column;
+align-items:flex-start;
+gap:18px;
+}
+
+.actions{
+width:100%;
+display:grid;
+grid-template-columns:1fr 1fr;
+}
+
+.group-title{
+font-size:24px;
+}
+
+}
+
+</style>
+<script type="module" src="access-guard.js"></script></head>
+
+<body>
+
+<h1>Редактор премии</h1>
+
+<div class="form">
+
+<select id="group">
+
+<option>Ароматизаторы</option>
+<option>Автохимия</option>
+<option>Неликвид</option>
+<option>Масла</option>
+
+</select>
+
+<input
+type="text"
+id="code"
+placeholder="Код товара">
+
+<input
+type="text"
+id="name"
+placeholder="Название товара">
+
+<input
+type="number"
+id="plan"
+placeholder="План">
+
+<input
+type="number"
+id="sold"
+placeholder="Продано">
+
+<input
+type="number"
+id="bonus"
+placeholder="Бонус">
+
+<button
+class="add"
+onclick="saveProduct()">
+
+Сохранить
+
+</button>
+
+</div>
+
+<div id="list"></div>
+
+<script type="module">
+
+import { initializeApp }
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc,
+updateDoc
+
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { firebaseConfig }
+
+from "./firebase-config.js";
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+
+let editId = null;
+
+const groups = [
+
+'Ароматизаторы',
+'Автохимия',
+'Неликвид',
+'Масла'
+
+];
+
+async function loadProducts(){
+
+const querySnapshot =
+await getDocs(
+collection(db,"products")
+);
+
+const products = [];
+
+querySnapshot.forEach((docSnap)=>{
+
+products.push({
+
+id:docSnap.id,
+...docSnap.data()
+
+});
+
+});
+
+renderProducts(products);
+
+}
+
+function renderProducts(products){
+
+const list =
+document.getElementById('list');
+
+list.innerHTML = '';
+
+groups.forEach(group=>{
+
+const groupProducts =
+products.filter(
+p => p.group === group
+);
+
+if(groupProducts.length === 0){
+return;
+}
+
+const block =
+document.createElement('div');
+
+block.className =
+'group-block';
+
+block.innerHTML = `
+
+<div class="group-header">
+
+<div class="group-title">
+${group}
+</div>
+
+<div class="group-count">
+Товаров: ${groupProducts.length}
+</div>
+
+</div>
+
+`;
+
+groupProducts.forEach((p)=>{
+
+const card =
+document.createElement('div');
+
+card.className =
+'card';
+
+card.innerHTML = `
+
+<div class="card-left">
+
+<div class="product-name">
+${p.name}
+</div>
+
+<div class="product-code">
+Код: ${p.code || '-'}
+</div>
+
+<div class="product-info">
+
+План:
+<b>${p.plan}</b>
+<br>
+
+Продано:
+<b>${p.sold}</b>
+<br>
+
+Бонус:
+<b>${p.bonus} ₽</b>
+
+</div>
+
+</div>
+
+<div class="actions">
+
+<button
+class="edit"
+onclick="window.editProduct('${p.id}')">
+
+Изменить
+
+</button>
+
+<button
+class="delete"
+onclick="window.deleteProduct('${p.id}')">
+
+Удалить
+
+</button>
+
+</div>
+
+`;
+
+block.appendChild(card);
+
+});
+
+list.appendChild(block);
+
+});
+
+}
+
+window.saveProduct = async function(){
+
+const product = {
+
+group:
+document.getElementById('group').value,
+
+code:
+document.getElementById('code').value,
+
+name:
+document.getElementById('name').value,
+
+plan:Number(
+document.getElementById('plan').value
+),
+
+sold:Number(
+document.getElementById('sold').value
+),
+
+bonus:Number(
+document.getElementById('bonus').value
+)
+
+};
+
+if(editId){
+
+await updateDoc(
+doc(db,"products",editId),
+product
+);
+
+editId = null;
+
+}else{
+
+await addDoc(
+collection(db,"products"),
+product
+);
+
+}
+
+clearForm();
+
+loadProducts();
+
+}
+
+window.deleteProduct = async function(id){
+
+if(confirm('Удалить товар?')){
+
+await deleteDoc(
+doc(db,"products",id)
+);
+
+loadProducts();
+
+}
+
+}
+
+window.editProduct = async function(id){
+
+const querySnapshot =
+await getDocs(
+collection(db,"products")
+);
+
+querySnapshot.forEach((docSnap)=>{
+
+if(docSnap.id === id){
+
+const p =
+docSnap.data();
+
+document.getElementById('group').value =
+p.group;
+
+document.getElementById('code').value =
+p.code || '';
+
+document.getElementById('name').value =
+p.name;
+
+document.getElementById('plan').value =
+p.plan;
+
+document.getElementById('sold').value =
+p.sold;
+
+document.getElementById('bonus').value =
+p.bonus;
+
+editId = id;
+
+window.scrollTo({
+
+top:0,
+behavior:'smooth'
+
+});
+
+}
+
+});
+
+}
+
+function clearForm(){
+
+document.getElementById('code').value = '';
+document.getElementById('name').value = '';
+document.getElementById('plan').value = '';
+document.getElementById('sold').value = '';
+document.getElementById('bonus').value = '';
+
+}
+
+loadProducts();
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
