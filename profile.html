@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/image-fit-contain-final.css?v=20260609-2">  <link rel="stylesheet" href="css/as-file-icons.css">
   <link rel="stylesheet" href="css/feedback-admin-user.css?v=20260616-1">
 
+  <link rel="stylesheet" href="css/profile-access-control.css?v=20260720-1">
 </head>
 <body>
 <script src="js/page-loader.js"></script>
@@ -74,6 +75,8 @@
         <button data-profile-tab="orders" type="button"><span class="profile-nav-ico"><img src="assets/icons/file.svg" alt=""></span> Мои заказы</button>
         <button data-profile-tab="favorites" type="button"><span class="profile-nav-ico"><img src="assets/icons/heart.svg" alt=""></span> Избранное</button>
         <button data-profile-tab="password" type="button"><span class="profile-nav-ico"><img src="assets/icons/card.svg" alt=""></span> Изменить пароль</button>
+        <button id="staffWorkspaceTab" data-profile-tab="staff-workspace" type="button" hidden><span class="profile-nav-ico"><img src="assets/icons/settings.svg" alt=""></span> Рабочие разделы</button>
+        <button id="accessManagerTab" data-profile-tab="access-manager" type="button" hidden><span class="profile-nav-ico"><img src="assets/icons/user.svg" alt=""></span> Доступы пользователей</button>
       </nav>
     </aside>
 
@@ -232,6 +235,22 @@
       <section class="profile-card profile-pane" data-pane="favorites">
         <div class="profile-card-head"><div><h2>Избранное</h2><p class="muted">Товары, которые ты добавил в избранное.</p></div><a class="profile-small-link" href="favorites.html">Открыть страницу</a></div>
         <div id="profileFavorites" class="profile-favorites"><div class="profile-empty">Избранное пока пустое.</div></div>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="staff-workspace">
+        <div class="profile-card-head"><div><h2>Рабочие разделы AutoStyle</h2><p class="muted">Здесь отображаются только разделы, которые разрешил администратор.</p></div></div>
+        <div id="staffWorkspaceGrid" class="staff-workspace-grid"></div>
+        <div id="staffWorkspaceEmpty" class="profile-empty" hidden>Администратор пока не выдал доступ к рабочим разделам.</div>
+      </section>
+
+      <section class="profile-card profile-pane" data-pane="access-manager">
+        <div class="profile-card-head"><div><h2>Роли и доступы пользователей</h2><p class="muted">Выберите роль и отметьте галочками разделы старого сайта, доступные конкретному пользователю.</p></div></div>
+        <div class="access-manager-toolbar">
+          <input id="accessUserSearch" type="search" placeholder="Поиск по имени или email">
+          <button id="reloadAccessUsers" class="profile-small-link" type="button">Обновить</button>
+        </div>
+        <div id="accessUsersList" class="access-users-list"></div>
+        <div id="accessManagerMsg" class="profile-msg"></div>
       </section>
     </div>
   </section>

@@ -37,6 +37,15 @@ service cloud.firestore {
       );
     }
 
+    function hasPermission(permission) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin"
+          || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.permissions[permission] == true
+        );
+    }
+
     /* Товары и контент */
     match /autostyle_products/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
@@ -198,18 +207,18 @@ service cloud.firestore {
     }
 
     /* Старые коллекции */
-    match /site/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /products/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /promoCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /homeCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /site/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /products/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /categories/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /banners/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /promoCards/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /homeCards/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
 
     match /users/{userId} {
       allow read, update: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn() && request.auth.uid == userId;
     }
 
-    match /salary/{document=**} { allow read, write: if isAdmin(); }
+    match /salary/{document=**} { allow read, write: if isAdmin() || hasPermission("staffSalary") || hasPermission("legacyAdmin"); }
   }
 }
