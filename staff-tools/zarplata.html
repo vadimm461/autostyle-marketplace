@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Заработная плата — AUTO-STYLE</title>
+<link rel="icon" type="image/png" href="favicon.png">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#f8fafc,#eef3f9);color:#111827;min-height:100vh}
+.header{height:82px;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:#111827}.logo img{width:44px;height:44px;border-radius:12px}.logo-title{font-size:28px;font-weight:900}.green{color:#22c55e}.subtitle{font-size:11px;letter-spacing:2px;color:#94a3b8}.back{border:none;background:linear-gradient(135deg,#34c759,#15803d);color:white;padding:12px 20px;border-radius:16px;cursor:pointer;font-weight:900}
+.content{padding:22px;max-width:1500px;margin:0 auto}.hero{background:linear-gradient(135deg,#111827,#0f172a,#052e16);border-radius:34px;padding:30px;color:white;box-shadow:0 24px 55px rgba(15,23,42,.18);margin-bottom:22px;display:grid;grid-template-columns:1.4fr .8fr;gap:20px;align-items:center}.hero h1{font-size:42px;line-height:1;font-weight:950;margin-bottom:12px}.hero p{color:#cbd5e1;font-size:16px}.salary-total{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:24px}.salary-label{color:#bbf7d0;font-size:14px;font-weight:800;margin-bottom:8px}.salary-value{font-size:54px;font-weight:950;line-height:1}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}.stat-card{background:white;border-radius:26px;padding:22px;box-shadow:0 12px 28px rgba(15,23,42,.06);border:1px solid #eef2f7}.stat-title{font-size:13px;color:#64748b;font-weight:800;margin-bottom:8px}.stat-value{font-size:30px;font-weight:950}.charts{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:22px}.chart-card{background:white;border-radius:28px;padding:22px;box-shadow:0 12px 28px rgba(15,23,42,.06);border:1px solid #eef2f7;min-height:360px}.chart-card h2,.table-card h2{font-size:24px;margin-bottom:16px}.table-card{background:white;border-radius:28px;padding:22px;box-shadow:0 12px 28px rgba(15,23,42,.06);border:1px solid #eef2f7;overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th{text-align:left;background:#f1f5f9;padding:14px;color:#334155;font-size:13px}td{padding:14px;border-bottom:1px solid #eef2f7;font-weight:700}tr:hover td{background:#f8fafc}.money{color:#15803d;font-weight:950}.hint{color:#64748b;font-size:14px;margin-top:10px}.empty{background:white;border-radius:28px;padding:36px;text-align:center;color:#64748b;font-weight:800}
+@media(max-width:1100px){.hero,.charts{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.content{padding:12px}.hero{padding:22px;border-radius:26px}.hero h1{font-size:32px}.salary-value{font-size:38px}.cards{grid-template-columns:1fr}.chart-card{min-height:300px}}
+</style>
+<script type="module" src="access-guard.js"></script></head>
+<body>
+<header class="header">
+<a href="index.html" class="logo"><img src="favicon.png"><div><div class="logo-title"><span class="green">A</span>uto-<span class="green">S</span>tyle</div><div class="subtitle">ЗАРАБОТНАЯ ПЛАТА</div></div></a>
+<button class="back" onclick="history.back()">← Назад</button>
+</header>
+
+<main class="content">
+<section class="hero">
+<div><h1>Заработная плата</h1><p id="periodText">Данные загружаются из Firebase…</p></div>
+<div class="salary-total"><div class="salary-label">ИТОГО ЗП ПО ОТЧЁТУ</div><div class="salary-value" id="salaryTotal">0 ₽</div></div>
+</section>
+
+<section class="cards">
+<div class="stat-card"><div class="stat-title">Общая сумма продаж</div><div class="stat-value" id="salesTotal">0 ₽</div></div>
+<div class="stat-card"><div class="stat-title">Количество товаров</div><div class="stat-value" id="qtyTotal">0</div></div>
+<div class="stat-card"><div class="stat-title">Ценовых групп</div><div class="stat-value" id="groupsTotal">0</div></div>
+<div class="stat-card"><div class="stat-title">Средний процент ЗП</div><div class="stat-value" id="avgRate">0%</div></div>
+</section>
+
+<section class="charts">
+<div class="chart-card"><h2>Продажи по ценовым группам</h2><canvas id="salesChart"></canvas></div>
+<div class="chart-card"><h2>Зарплата по группам</h2><canvas id="salaryChart"></canvas></div>
+</section>
+
+<section class="table-card">
+<h2>Детализация</h2>
+<div id="tableBox"></div>
+<p class="hint">Проценты задаются в админке для каждой ценовой группы.</p>
+</section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const fmtMoney = n => Number(n || 0).toLocaleString('ru-RU',{maximumFractionDigits:2}) + ' ₽';
+const fmtNum = n => Number(n || 0).toLocaleString('ru-RU',{maximumFractionDigits:2});
+let salesChart = null;
+let salaryChart = null;
+
+function normalizeRows(rows){
+    return (rows || []).map(r => ({
+        group: String(r.group || r.priceGroup || r['Ценовая группа'] || 'Без группы').trim() || 'Без группы',
+        qty: Number(r.qty || r.quantity || r['Количество'] || 0) || 0,
+        sum: Number(r.sum || r.amount || r['Сумма'] || 0) || 0
+    }));
+}
+
+function render(data){
+    const rows = normalizeRows(data.rows || []);
+    const rates = data.rates || {};
+    const period = data.period || 'Период не указан';
+
+    document.getElementById('periodText').textContent = period;
+
+    if(!rows.length){
+        document.getElementById('tableBox').innerHTML = '<div class="empty">Нет данных. Загрузите .xls в админ-панели.</div>';
+        return;
+    }
+
+    const grouped = {};
+    rows.forEach(r => {
+        if(!grouped[r.group]) grouped[r.group] = {group:r.group, qty:0, sum:0, rate:Number(rates[r.group] || 0), salary:0};
+        grouped[r.group].qty += r.qty;
+        grouped[r.group].sum += r.sum;
+    });
+
+    const result = Object.values(grouped).sort((a,b)=>b.sum-a.sum).map(g=>{
+        g.rate = Number(rates[g.group] || 0);
+        g.salary = g.sum * g.rate / 100;
+        return g;
+    });
+
+    const totalSales = result.reduce((s,g)=>s+g.sum,0);
+    const totalQty = result.reduce((s,g)=>s+g.qty,0);
+    const totalSalary = result.reduce((s,g)=>s+g.salary,0);
+    const avgRate = totalSales ? (totalSalary / totalSales * 100) : 0;
+
+    document.getElementById('salesTotal').textContent = fmtMoney(totalSales);
+    document.getElementById('qtyTotal').textContent = fmtNum(totalQty);
+    document.getElementById('groupsTotal').textContent = result.length;
+    document.getElementById('avgRate').textContent = avgRate.toFixed(2) + '%';
+    document.getElementById('salaryTotal').textContent = fmtMoney(totalSalary);
+
+    document.getElementById('tableBox').innerHTML = `<table><thead><tr><th>Ценовая группа</th><th>Количество</th><th>Сумма продаж</th><th>% ЗП</th><th>Зарплата</th></tr></thead><tbody>${result.map(g=>`<tr><td>${g.group}</td><td>${fmtNum(g.qty)}</td><td>${fmtMoney(g.sum)}</td><td>${g.rate}%</td><td class="money">${fmtMoney(g.salary)}</td></tr>`).join('')}</tbody></table>`;
+
+    const labels = result.map(g=>g.group);
+    const sales = result.map(g=>g.sum);
+    const salary = result.map(g=>g.salary);
+
+    if(salesChart) salesChart.destroy();
+    salesChart = new Chart(document.getElementById('salesChart'), {type:'bar',data:{labels,datasets:[{label:'Сумма продаж',data:sales,borderRadius:12}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,maxRotation:45,minRotation:0}},y:{beginAtZero:true}}}});
+
+    if(salaryChart) salaryChart.destroy();
+    salaryChart = new Chart(document.getElementById('salaryChart'), {type:'doughnut',data:{labels,datasets:[{data:salary}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+}
+
+onSnapshot(doc(db,'salary','current'), snap => {
+    render(snap.exists() ? snap.data() : {rows:[],rates:{},period:''});
+});
+</script>
+</body>
+</html>

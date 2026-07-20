@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Auto-Style</title>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --green: #2e7d32;
+    --green-dark: #1b5e20;
+    --blue: #1976d2;
+    --bg: #f4f6f9;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    overflow-x: hidden;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: white;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  .logo .green { color: var(--green); }
+  .logo .black { color: #000; }
+
+  /* ===== MENU ===== */
+  .menu-toggle {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    cursor: pointer;
+    z-index: 3000;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+  }
+
+  .side-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100%;
+    padding: 80px 20px;
+    background: rgba(20,20,20,.75);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-right: 1px solid rgba(255,255,255,.1);
+    transform: translateX(-100%);
+    transition: transform .35s cubic-bezier(.77,0,.18,1);
+    z-index: 2999;
+  }
+
+  .side-menu.active { transform: translateX(0); }
+
+  .side-menu button {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255,255,255,.08);
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: .25s;
+  }
+
+  .side-menu button:hover {
+    background: var(--green);
+    transform: translateX(5px);
+  }
+
+  /* ===== OVERLAY ===== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: .3s;
+    z-index: 2000;
+  }
+
+  .overlay.active { opacity: 1; pointer-events: auto; }
+
+  /* ===== BUTTONS LIST ===== */
+  .buttons-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: auto;
+  }
+
+  .button-item {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    color: var(--blue);
+    transition: transform .3s, background .3s, color .3s;
+  }
+
+  .button-item:hover {
+    transform: scale(1.05);
+    background: var(--green);
+    color: white;
+  }
+
+  .button-item a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  @media(max-width:768px){
+    .buttons-wrapper { grid-template-columns: 1fr; padding: 15px; }
+  }
+
+</style>
+<script type="module" src="access-guard.js"></script></head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<!-- MENU -->
+<div class="menu-toggle" onclick="openMenu()">☰</div>
+<div id="sideMenu" class="side-menu">
+  <div id="currentUser" style="color:white;margin-bottom:20px;font-weight:bold;">Меню</div>
+  <button onclick="location.href='#'">ОФОРМИТЬ БЕЗНАЛ</button>
+  <button onclick="location.href='#'">ЗАКРЫТИЕ СМЕНЫ</button>
+  <button onclick="location.href='#'">СКИДОЧНАЯ КАРТА</button>
+  <button onclick="location.href='#'">ПАРОЛИ</button>
+  <button onclick="logout()">ВЫЙТИ</button>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <span class="green">A</span><span class="black">uto-</span>
+    <span class="green">S</span><span class="black">tyle</span>
+    <span class="green">П</span><span class="black">анель-</span>
+    <span class="green">М</span><span class="black">енеджера</span>
+  </div>
+</div>
+
+<!-- BUTTONS LIST -->
+<div class="buttons-wrapper">
+  <div class="button-item"><a href="#" target="_blank">Подбор масла</a></div>
+  <div class="button-item"><a href="#" target="_blank">Подбор фильтров</a></div>
+  <div class="button-item"><a href="#" target="_blank">Подбор лампочек</a></div>
+  <div class="button-item"><a href="#" target="_blank">Подбор дворников</a></div>
+  <div class="button-item"><a href="#" target="_blank">Подбор Аккумуляторов</a></div>
+</div>
+
+<script>
+  // Меню
+  const sideMenu = document.getElementById("sideMenu");
+  const overlay = document.getElementById("overlay");
+
+  function openMenu() {
+    sideMenu.classList.add("active");
+    overlay.classList.add("active");
+  }
+  function closeMenu() {
+    sideMenu.classList.remove("active");
+    overlay.classList.remove("active");
+  }
+  overlay.onclick = closeMenu;
+
+  // SWIPE для открытия/закрытия меню
+  let startX = 0;
+  document.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
+  document.addEventListener("touchend", e => {
+    let endX = e.changedTouches[0].clientX;
+    if (startX < 40 && endX > 120) openMenu();
+    if (startX > 150 && endX < 80) closeMenu();
+  });
+
+  function logout() { alert('Выход'); }
+</script>
+
+</body>
+</html>
+

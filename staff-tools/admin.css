@@ -1,0 +1,38 @@
+.admin-layout{min-height:100vh;display:grid;grid-template-columns:290px 1fr;background:#f4f7fb}.admin-sidebar{position:sticky;top:0;height:100vh;padding:24px;background:#0f172a;color:white}.admin-logo{margin-bottom:32px}.admin-tab,.admin-link{width:100%;display:block;text-align:left;border:none;border-radius:16px;padding:15px 16px;margin-bottom:10px;background:rgba(255,255,255,.08);color:white;font-weight:800;text-decoration:none;cursor:pointer;transition:.2s}.admin-tab:hover,.admin-link:hover,.admin-tab.active{background:#34c759;color:white}.admin-link{margin-top:28px}.admin-main{padding:34px;max-width:1160px;width:100%}.admin-top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}.admin-top h1{font-size:34px;letter-spacing:-1.5px}.admin-top p{margin-top:8px;color:#64748b;font-weight:700}.admin-actions{display:flex;gap:12px}.btn.secondary{background:#0f172a;box-shadow:none}.admin-panel{display:none;background:white;border:1px solid #e2e8f0;border-radius:28px;padding:26px;box-shadow:0 18px 40px rgba(15,23,42,.06)}.admin-panel.active{display:block}.admin-panel h2{font-size:24px;margin-bottom:20px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.panel-head h2{margin:0}label{display:block;margin:16px 0 8px;color:#334155;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.4px}textarea{width:100%;border:1px solid #e5e7eb;background:#f8fafc;border-radius:20px;padding:16px;font-family:Inter,sans-serif;font-size:15px;outline:none;resize:vertical}textarea:focus{border-color:#34c759;background:white;box-shadow:0 0 0 4px rgba(52,199,89,.12)}.small-btn{border:none;border-radius:16px;padding:12px 16px;background:#34c759;color:white;font-weight:900;cursor:pointer}.danger-btn{border:none;border-radius:14px;padding:10px 12px;background:#ef4444;color:white;font-weight:900;cursor:pointer}.editor-card{border:1px solid #e2e8f0;border-radius:22px;padding:18px;margin-bottom:16px;background:#f8fafc}.editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.editor-grid.three{grid-template-columns:1fr 1fr 1fr}.row-list{margin-top:14px}.row-item{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;margin-bottom:10px}.menu-item{display:grid;grid-template-columns:80px 1fr 1fr;gap:12px}.checkbox-line{display:flex;align-items:center;gap:10px;margin-top:14px;font-weight:800}.checkbox-line input{width:auto;margin:0}.card-title-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.card-title-line strong{font-size:17px}.warning-box{padding:14px 16px;border-radius:18px;background:#fff7ed;color:#9a3412;font-weight:700;margin-bottom:18px}.hint{color:#64748b;margin-bottom:14px;line-height:1.6}.status-ok{color:#16a34a!important}.status-error{color:#ef4444!important}@media(max-width:860px){.admin-layout{grid-template-columns:1fr}.admin-sidebar{position:relative;height:auto}.admin-main{padding:18px}.admin-top{flex-direction:column;align-items:flex-start}.admin-actions{width:100%;flex-direction:column}.editor-grid,.editor-grid.three,.menu-item,.row-item{grid-template-columns:1fr}.admin-panel{padding:18px}}
+.products-toolbar{display:flex;gap:12px;align-items:center;margin:14px 0}
+.product-group-block{margin-bottom:18px}
+.product-group-head{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px 16px;border-radius:16px;margin-bottom:8px}
+.product-group-head span{color:#64748b;margin-left:8px}
+.product-card-compact{padding:10px!important;margin-bottom:8px!important;border-radius:14px!important}
+.product-row-main{display:grid;grid-template-columns:100px 1.8fr 1fr 90px 90px 90px 90px;gap:8px;align-items:center}
+.product-row-main input,.product-row-main select{padding:9px!important;border-radius:10px!important}
+.compact-delete{padding:9px!important}
+
+/* Firebase Authentication gate */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8, 17, 35, 0.94);
+  backdrop-filter: blur(10px);
+}
+.auth-gate.hidden { display: none; }
+.auth-card {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.35);
+}
+.auth-card h2 { margin: 0 0 8px; }
+.auth-card p { margin: 0 0 20px; color: #667085; line-height: 1.45; }
+.auth-card label { display: block; margin: 12px 0 6px; font-weight: 700; }
+.auth-card input { width: 100%; box-sizing: border-box; }
+.auth-card .btn { width: 100%; margin-top: 18px; }
+.auth-error { min-height: 22px; margin-top: 12px; color: #e53935; font-weight: 700; }
+.admin-session { display: flex; align-items: center; gap: 10px; margin-top: 8px; color: #667085; font-size: 13px; }
+.admin-session button { border: 0; background: none; color: #e53935; font-weight: 700; cursor: pointer; padding: 0; }

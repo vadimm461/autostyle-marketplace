@@ -1,0 +1,755 @@
+<!DOCTYPE html> 
+<html lang="ru">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AUTO-STYLE | Бонусный проект</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:#f3f6fb;
+    color:#111827;
+    min-height:100vh;
+    padding:20px;
+}
+
+/* ================= CONTAINER ================= */
+
+.container{
+    width:100%;
+    max-width:1000px;
+    margin:0 auto;
+}
+
+/* ================= TOPBAR ================= */
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+}
+
+.title{
+    font-size:34px;
+    font-weight:800;
+    letter-spacing:-1px;
+}
+
+.back-btn{
+    border:none;
+    background:#111827;
+    color:white;
+    padding:14px 18px;
+    border-radius:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.back-btn:hover{
+    transform:translateY(-2px);
+}
+
+/* ================= CARD ================= */
+
+.card{
+    background:white;
+    border-radius:30px;
+    padding:32px;
+    border:1px solid #eef2f7;
+    box-shadow:0 10px 30px rgba(0,0,0,0.04);
+}
+
+/* ================= CONDITIONS ================= */
+
+.conditions{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    margin-bottom:28px;
+}
+
+.condition-box{
+    display:flex;
+    gap:18px;
+    align-items:flex-start;
+    padding:18px;
+    border:1px solid #edf2f7;
+    border-radius:20px;
+    background:#f9fafb;
+}
+
+.condition-number{
+    min-width:44px;
+    height:44px;
+    border-radius:14px;
+    background:#111827;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    font-weight:800;
+}
+
+.condition-text{
+    font-size:15px;
+    line-height:1.7;
+    color:#374151;
+}
+
+/* ================= BUTTONS ================= */
+
+.btn{
+    border:none;
+    border-radius:16px;
+    padding:16px 20px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.connect-btn{
+    width:100%;
+    background:#111827;
+    color:white;
+}
+
+.save-btn{
+    background:#111827;
+    color:white;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+/* ================= FORM ================= */
+
+.form-wrapper{
+    display:none;
+    margin-top:30px;
+    padding-top:30px;
+    border-top:1px solid #edf2f7;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+}
+
+.full{
+    grid-column:1/-1;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.field label{
+    font-size:13px;
+    color:#6b7280;
+    font-weight:700;
+}
+
+.field input{
+    width:100%;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    border-radius:16px;
+    padding:15px 16px;
+    font-size:15px;
+    outline:none;
+}
+
+.field input:focus{
+    border-color:#111827;
+    background:white;
+}
+
+.actions{
+    margin-top:26px;
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:768px){
+
+    body{
+        padding:14px;
+    }
+
+    .card{
+        padding:22px;
+        border-radius:22px;
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .title{
+        font-size:26px;
+    }
+
+    .actions{
+        flex-direction:column;
+    }
+
+    .btn{
+        width:100%;
+    }
+
+    .back-btn{
+        width:100%;
+    }
+
+    .condition-box{
+        flex-direction:column;
+    }
+
+}
+
+/* ================= PRINT ================= */
+
+.print-document{
+    display:none;
+}
+
+@media print{
+
+    @page{
+        size:A4;
+        margin:16mm;
+    }
+
+    body{
+        background:white;
+        padding:0;
+    }
+
+    .container{
+        display:none;
+    }
+
+    .print-document{
+        display:block;
+    }
+
+    .second-page{
+        page-break-before:always;
+    }
+
+    .doc-top{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        margin-bottom:32px;
+    }
+
+    .brand-title{
+        font-size:28px;
+        font-weight:800;
+    }
+
+    .meta{
+        text-align:right;
+        font-size:12px;
+        color:#6b7280;
+        line-height:1.6;
+    }
+
+    .doc-title{
+        font-size:20px;
+        font-weight:800;
+        margin-bottom:18px;
+    }
+
+    .row{
+        display:grid;
+        grid-template-columns:230px 1fr;
+        border-bottom:1px solid #edf2f7;
+        padding:12px 0;
+    }
+
+    .row-label{
+        font-size:12px;
+        color:#6b7280;
+        font-weight:600;
+    }
+
+    .row-value{
+        font-size:14px;
+        font-weight:700;
+    }
+
+    .text{
+        margin-top:26px;
+        font-size:13px;
+        line-height:1.8;
+        color:#374151;
+    }
+
+    .condition{
+        display:flex;
+        gap:14px;
+        padding:14px 0;
+        border-bottom:1px solid #f3f4f6;
+    }
+
+    .condition-number-print{
+        min-width:32px;
+        height:32px;
+        border-radius:50%;
+        background:#111827;
+        color:white;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:12px;
+        font-weight:700;
+    }
+
+    .condition-text-print{
+        font-size:13px;
+        line-height:1.6;
+        color:#374151;
+    }
+
+    .warning{
+        margin-top:26px;
+        padding:18px;
+        border:1px solid #e5e7eb;
+        border-radius:18px;
+        background:#f9fafb;
+    }
+
+    .warning-title{
+        font-size:11px;
+        font-weight:800;
+        text-transform:uppercase;
+        margin-bottom:8px;
+    }
+
+    .warning-text{
+        font-size:12px;
+        line-height:1.7;
+        color:#4b5563;
+    }
+
+    .signature{
+        margin-top:70px;
+    }
+
+    .line{
+        border-bottom:1px solid #111827;
+        height:32px;
+    }
+
+    .sign-text{
+        font-size:11px;
+        color:#6b7280;
+        margin-top:8px;
+    }
+
+    .footer{
+        margin-top:50px;
+        display:flex;
+        justify-content:space-between;
+        font-size:10px;
+        color:#9ca3af;
+        border-top:1px solid #f1f5f9;
+        padding-top:12px;
+    }
+
+}
+
+</style>
+<script type="module" src="access-guard.js"></script></head>
+
+<body>
+
+<div class="container">
+
+    <div class="topbar">
+
+        <button class="back-btn" onclick="history.back()">
+            ← Назад
+        </button>
+
+        <div class="title">
+            Бонусный проект
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <!-- УСЛОВИЯ -->
+
+        <div class="conditions">
+
+            <div class="condition-box">
+                <div class="condition-number">01</div>
+                <div class="condition-text">
+                    При регистрации анкеты в магазине, покупатель дает согласие на обработку персональных данных, оформление занимает до 3 рабочих дней
+                </div>
+            </div>
+
+            <div class="condition-box">
+                <div class="condition-number">02</div>
+                <div class="condition-text">
+                    Для подключения к бонусному проекту клиент должен совершить покупку на сумму минимум 1000р, это может быть как разовая покупка так и несколько покупок (при предъявлении чека)
+                </div>
+            </div>
+
+            <div class="condition-box">
+                <div class="condition-number">03</div>
+                <div class="condition-text">
+                    Стартовая скидка проекта до 5%<br>
+                    Скидка до 7% при превышении порога покупок на сумму 1500р<br>
+                    Скидка до 10% при превышении порога покупок на сумму 3000р<br>
+                    Скидка до 15% при превышении порога покупок на сумму 5000р<br>
+                    Скидка до 20% при превышении порога покупок на сумму 10000р
+                </div>
+            </div>
+
+            <div class="condition-box">
+                <div class="condition-number">04</div>
+                <div class="condition-text">
+                    При каждой последующей покупке клиент обязуется называть одно из условий его скидки (ФИО либо номер телефона) для сложения суммы скидки.
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BUTTON -->
+
+        <button
+            class="btn connect-btn"
+            onclick="openForm()">
+
+            Подключить к бонусному проекту
+
+        </button>
+
+        <!-- FORM -->
+
+        <div class="form-wrapper" id="formWrapper">
+
+            <form id="discountForm">
+
+                <div class="grid">
+
+                    <div class="field full">
+                        <label>ФИО клиента</label>
+                        <input id="fullname" type="text">
+                    </div>
+
+                    <div class="field">
+                        <label>Дата рождения</label>
+                        <input id="birthdate" type="date">
+                    </div>
+
+                    <div class="field">
+                        <label>Контактный телефон</label>
+                        <input id="phone" type="tel">
+                    </div>
+
+                    <div class="field full">
+                        <label>Электронная почта</label>
+                        <input id="email" type="email">
+                    </div>
+
+                    <div class="field">
+                        <label>Марка автомобиля</label>
+                        <input id="car_brand" type="text">
+                    </div>
+
+                    <div class="field">
+                        <label>Модель авто и год</label>
+                        <input id="car_model" type="text">
+                    </div>
+
+                </div>
+
+                <div class="actions">
+
+                    <button type="submit" class="btn save-btn">
+                        Сохранить и печать
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= PRINT PAGE 1 ================= -->
+
+<div class="print-document">
+
+    <div class="doc-top">
+
+        <div class="brand-title">
+            AUTO-STYLE
+        </div>
+
+        <div class="meta">
+            BONUS-2026<br>
+            <span id="date"></span>
+        </div>
+
+    </div>
+
+    <div class="doc-title">
+        АНКЕТА УЧАСТНИКА БОНУСНОГО ПРОЕКТА
+    </div>
+
+    <div class="row">
+        <div class="row-label">ФИО клиента</div>
+        <div class="row-value" id="print_fullname"></div>
+    </div>
+
+    <div class="row">
+        <div class="row-label">Дата рождения</div>
+        <div class="row-value" id="print_birthdate"></div>
+    </div>
+
+    <div class="row">
+        <div class="row-label">Контактный телефон</div>
+        <div class="row-value" id="print_phone"></div>
+    </div>
+
+    <div class="row">
+        <div class="row-label">Электронная почта</div>
+        <div class="row-value" id="print_email"></div>
+    </div>
+
+    <div class="row">
+        <div class="row-label">Марка автомобиля</div>
+        <div class="row-value" id="print_car_brand"></div>
+    </div>
+
+    <div class="row">
+        <div class="row-label">Модель и год</div>
+        <div class="row-value" id="print_car_model"></div>
+    </div>
+
+    <div class="text">
+
+        Настоящая анкета предоставляется клиентом
+        для подключения к бонусному проекту AUTO-STYLE.
+
+        <br><br>
+
+        Подписывая данный документ, клиент подтверждает
+        согласие на обработку персональных данных.
+
+        <br><br>
+
+        Предоставленные персональные данные используются исключительно внутри магазина AUTO-STYLE и не передаются третьим лицам.
+
+    </div>
+
+    <div class="signature">
+
+        <div style="display:flex; gap:40px;">
+
+            <div style="flex:1;">
+
+                <div class="line"></div>
+
+                <div class="sign-text">
+                    Подпись клиента
+                </div>
+
+            </div>
+
+            <div style="flex:1;">
+
+                <div class="line"></div>
+
+                <div class="sign-text">
+                    Расшифровка подписи
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+
+        <span>AUTO-STYLE</span>
+
+        <span>01</span>
+
+    </div>
+
+</div>
+
+<!-- ================= PRINT PAGE 2 ================= -->
+
+<div class="print-document second-page">
+
+    <div class="doc-title">
+        Условия бонусного проекта
+    </div>
+
+    <div class="condition">
+        <div class="condition-number-print">01</div>
+        <div class="condition-text-print">
+            Активация анкеты занимает до 3 рабочих дней
+        </div>
+    </div>
+
+    <div class="condition">
+        <div class="condition-number-print">02</div>
+        <div class="condition-text-print">
+            Стартовая скидка до 5%
+        </div>
+    </div>
+
+    <div class="condition">
+        <div class="condition-number-print">03</div>
+        <div class="condition-text-print">
+            Скидка до 7% при сумме покупок выше 1500р
+        </div>
+    </div>
+
+    <div class="condition">
+        <div class="condition-number-print">04</div>
+        <div class="condition-text-print">
+            Скидка до 10% при сумме покупок выше 3000р
+        </div>
+    </div>
+
+    <div class="condition">
+        <div class="condition-number-print">05</div>
+        <div class="condition-text-print">
+            Скидка до 15% при сумме покупок выше 5000р
+        </div>
+    </div>
+
+    <div class="condition">
+        <div class="condition-number-print">06</div>
+        <div class="condition-text-print">
+            Скидка до 20% при сумме покупок выше 10000р
+        </div>
+    </div>
+
+    <div class="warning">
+
+        <div class="warning-title">
+            ВАЖНО
+        </div>
+
+        <div class="warning-text">
+
+            Магазин AUTO-STYLE оставляет за собой право
+            изменять условия бонусного проекта без предварительного уведомления.
+
+        </div>
+
+    </div>
+
+    <div class="signature">
+
+        <div class="line"></div>
+
+        <div class="sign-text">
+            Подпись клиента / дата
+        </div>
+
+    </div>
+
+    <div class="footer">
+
+        <span>AUTO-STYLE</span>
+
+        <span>02</span>
+
+    </div>
+
+</div>
+
+<script>
+
+function openForm(){
+
+    document.getElementById("formWrapper").style.display = "block";
+
+    document.getElementById("formWrapper").scrollIntoView({
+        behavior:"smooth"
+    });
+
+}
+
+document.getElementById("discountForm").addEventListener("submit", function(e){
+
+    e.preventDefault();
+
+    document.getElementById("print_fullname").innerText =
+        document.getElementById("fullname").value;
+
+    document.getElementById("print_birthdate").innerText =
+        document.getElementById("birthdate").value;
+
+    document.getElementById("print_phone").innerText =
+        document.getElementById("phone").value;
+
+    document.getElementById("print_email").innerText =
+        document.getElementById("email").value;
+
+    document.getElementById("print_car_brand").innerText =
+        document.getElementById("car_brand").value;
+
+    document.getElementById("print_car_model").innerText =
+        document.getElementById("car_model").value;
+
+    setTimeout(function(){
+
+        window.print();
+
+    },200);
+
+});
+
+document.getElementById("date").innerText =
+    new Date().toLocaleDateString("ru-RU");
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Счет</title>
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#f2f4f8;
+  padding:20px;
+  margin:0;
+}
+.back-button{
+  position:fixed;
+  top:15px;
+  left:15px;
+  z-index:9999;
+  background:#000;
+  color:#fff;
+  border:none;
+  padding:8px 14px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:13px;
+}
+#history-btn{
+  position:fixed;
+  top:15px;
+  left:90px;
+  z-index:9999;
+  background:#555;
+  color:#fff;
+  border:none;
+  padding:8px 14px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:13px;
+}
+.container{
+  max-width:900px;
+  width:100%;
+  margin:auto;
+  background:white;
+  padding:40px;
+  box-shadow:0 4px 20px rgba(0,0,0,.1);
+  box-sizing:border-box;
+  margin-bottom:40px;
+}
+.header{
+  text-align:center;
+  margin-bottom:25px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  table-layout:fixed;
+  page-break-inside:auto;
+}
+tr{
+  page-break-inside:avoid;
+  page-break-after:auto;
+}
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  font-size:14px;
+  vertical-align:top;
+  word-wrap:break-word;
+  white-space:normal;
+}
+th{
+  background:#1976d2;
+  color:white;
+}
+input{
+  width:100%;
+  border:none;
+  outline:none;
+  font-size:14px;
+  background:transparent;
+}
+.total{
+  text-align:right;
+  font-weight:bold;
+  font-size:16px;
+}
+.buttons{
+  margin-top:20px;
+}
+.buttons button{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:6px;
+  background:#2e7d32;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+.delete-btn{
+  background:#d32f2f;
+  color:white;
+  border:none;
+  padding:6px 10px;
+  border-radius:4px;
+  cursor:pointer;
+}
+.invoice-page{
+  page-break-before:always;
+  break-before:page;
+}
+.signatures{
+  margin-top:40px;
+  display:flex;
+  justify-content:space-between;
+}
+.sign{
+  width:40%;
+  text-align:center;
+}
+.sum-text{
+  margin-top:15px;
+  font-weight:bold;
+  line-height:1.6;
+}
+.doc-fields{
+  margin-top:15px;
+}
+@media (max-width:768px){
+  body{padding:10px;}
+  .container{padding:15px;}
+  th,td{font-size:12px; padding:6px;}
+  .buttons button{font-size:14px; padding:10px;}
+}
+@media print{
+  .buttons,
+  .back-button,
+  #history-btn,
+  .delete-btn{display:none;}
+  .container{box-shadow:none;padding:0;margin:0;}
+}
+/* Модальное окно истории */
+#history-modal{
+  display:none;
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.5);
+  z-index:99999;
+  overflow:auto;
+}
+#history-content{
+  background:#fff;
+  margin:50px auto;
+  max-width:800px;
+  padding:20px;
+  border-radius:6px;
+}
+.history-item{
+  border-bottom:1px solid #ccc;
+  padding:8px 0;
+  cursor:pointer;
+}
+.history-item:hover{
+  background:#f0f0f0;
+}
+#history-close{
+  float:right;
+  cursor:pointer;
+  font-weight:bold;
+}
+</style>
+<script type="module" src="access-guard.js"></script></head>
+<body>
+
+<button class="back-button" onclick="history.back()">← Назад</button>
+<button id="history-btn">История</button>
+
+<!-- СЧЕТ -->
+<div class="container">
+<div class="header">
+<h2>СЧЕТ ФАКТУРА № <span id="invoice-number"></span></h2>
+<div>Дата: <span id="date"></span></div>
+</div>
+
+<div>
+<b>Плательщик:</b>
+<input id="payer" placeholder="Введите организацию">
+</div>
+
+<br>
+
+<table>
+<tr><td>Поставщик</td><td>ИП Дворян Вадим Витальевич</td></tr>
+<tr><td>Патент</td><td>УСН № 1440001838</td></tr>
+<tr><td>Расчетный счет</td><td>2214050000024165</td></tr>
+<tr><td>Банк получателя</td><td>ЗАО "Агропромбанк"</td></tr>
+</table>
+
+<br>
+
+<table>
+<colgroup>
+<col style="width:5%">
+<col style="width:55%">
+<col style="width:10%">
+<col style="width:15%">
+<col style="width:15%">
+<col>
+</colgroup>
+<thead>
+<tr>
+<th>№</th>
+<th>Наименование</th>
+<th>Кол-во</th>
+<th>Цена</th>
+<th>Сумма</th>
+<th></th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+<tfoot>
+<tr>
+<td colspan="4" class="total">Итого:</td>
+<td id="total">0 руб.</td>
+<td></td>
+</tr>
+</tfoot>
+</table>
+
+<div class="sum-text" id="sum-text">
+Итого к оплате: 0 руб.<br>
+Сумма прописью: ноль руб. 00 коп.
+</div>
+
+<div class="signatures">
+<div class="sign">
+Поставщик __________________<br>М.П.
+</div>
+<div class="sign">
+__________________<br>М.П.
+</div>
+</div>
+
+<div class="buttons">
+<button onclick="addRow()">Добавить строку</button>
+<button onclick="printPDF()">Скачать PDF</button>
+</div>
+</div>
+
+<!-- НАКЛАДНАЯ -->
+<div class="container invoice-page">
+<div class="header">
+<h2>ТОВАРНАЯ НАКЛАДНАЯ № <span id="invoice-number2"></span></h2>
+<div>Дата: <span id="date2"></span></div>
+</div>
+
+<div>
+<b>Поставщик:</b> ИП Дворян Вадим Витальевич
+</div>
+
+<br>
+
+<div>
+<b>Получатель:</b>
+<input id="receiver" placeholder="Введите организацию">
+</div>
+
+<div class="doc-fields">
+Доверенность № ____________ от ____________ <br><br>
+Через кого отпущено ____________________________________
+</div>
+
+<br>
+
+<table>
+<colgroup>
+<col style="width:5%">
+<col style="width:55%">
+<col style="width:10%">
+<col style="width:15%">
+<col style="width:15%">
+</colgroup>
+<thead>
+<tr>
+<th>№</th>
+<th>Наименование</th>
+<th>Кол-во</th>
+<th>Цена</th>
+<th>Сумма</th>
+</tr>
+</thead>
+<tbody id="nakladnaya-body"></tbody>
+<tfoot>
+<tr>
+<td colspan="3"></td>
+<td class="total">Итого:</td>
+<td id="nakladnaya-total">0 руб.</td>
+</tr>
+</tfoot>
+</table>
+
+<div class="sum-text" id="sum-text2">
+Итого к оплате: 0 руб.<br>
+Сумма прописью: ноль руб. 00 коп.
+</div>
+
+<div class="signatures">
+<div class="sign">
+Поставщик __________________<br>М.П.
+</div>
+<div class="sign">
+__________________<br>М.П.
+</div>
+</div>
+</div>
+
+<!-- Модальное окно истории -->
+<div id="history-modal">
+  <div id="history-content">
+    <span id="history-close">✕</span>
+    <h3>История счетов</h3>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<script>
+let today = new Date().toLocaleDateString("ru-RU");
+document.getElementById("date").innerText = today;
+document.getElementById("date2").innerText = today;
+let number = Math.floor(Math.random()*1000);
+document.getElementById("invoice-number").innerText = number;
+document.getElementById("invoice-number2").innerText = number;
+
+/* число прописью до миллионов */
+function numToText(n) {
+    n = Math.floor(n);
+    if (isNaN(n)) return "ноль руб. 00 коп.";
+    const ones = ["","один","два","три","четыре","пять","шесть","семь","восемь","девять"];
+    const onesFemale = ["","одна","две","три","четыре","пять","шесть","семь","восемь","девять"];
+    const teens = ["десять","одиннадцать","двенадцать","тринадцать","четырнадцать","пятнадцать","шестнадцать","семнадцать","восемнадцать","девятнадцать"];
+    const tens = ["","","двадцать","тридцать","сорок","пятьдесят","шестьдесят","семьдесят","восемьдесят","девяносто"];
+    const hundreds = ["","сто","двести","триста","четыреста","пятьсот","шестьсот","семьсот","восемьсот","девятьсот"];
+    function convert_hundreds(num,female=false){
+        let str='';
+        if(num>=100){str+=hundreds[Math.floor(num/100)]+' '; num%=100;}
+        if(num>=20){str+=tens[Math.floor(num/10)]+' '; num%=10;}
+        else if(num>=10){str+=teens[num-10]+' '; num=0;}
+        if(num>0){str+=(female?onesFemale[num]:ones[num])+' ';}
+        return str.trim();
+    }
+    let result='';
+    let millions=Math.floor(n/1_000_000);
+    let thousands=Math.floor((n%1_000_000)/1000);
+    let rest=n%1000;
+    if(millions>0) result+=convert_hundreds(millions)+' миллион'+(millions>1?'ов ':' ');
+    if(thousands>0) result+=convert_hundreds(thousands,true)+' тысяч ';
+    if(rest>0) result+=convert_hundreds(rest)+' ';
+    return result.trim()+' руб. 00 коп.';
+}
+
+/* добавить строку */
+function addRow(){
+let tbody=document.getElementById("tbody");
+let row=document.createElement("tr");
+row.innerHTML=`
+<td></td>
+<td><input class="name"></td>
+<td><input type="number" class="qty" value="0"></td>
+<td><input type="number" class="price" value="0"></td>
+<td class="sum">0</td>
+<td><button class="delete-btn">✕</button></td>`;
+tbody.appendChild(row);
+updateNumbers();
+row.querySelector(".delete-btn").onclick=()=>{row.remove();calc();fillNakladnaya();updateNumbers();};
+row.querySelectorAll("input").forEach(input=>{input.addEventListener("input",()=>{calc();fillNakladnaya();});});
+}
+
+/* обновить номера */
+function updateNumbers(){document.querySelectorAll("#tbody tr").forEach((row,i)=>{row.children[0].innerText=i+1;});}
+
+/* расчет */
+function calc(){
+let total=0;
+document.querySelectorAll("#tbody tr").forEach(row=>{
+let q=Number(row.querySelector(".qty").value||0);
+let p=Number(row.querySelector(".price").value||0);
+let sum=q*p;
+row.querySelector(".sum").innerText=sum;
+total+=sum;
+});
+document.getElementById("total").innerText=total+" руб.";
+document.getElementById("sum-text").innerText="Итого к оплате: "+total+" руб.\nСумма прописью: "+numToText(total);
+}
+
+/* накладная */
+function fillNakladnaya(){
+let body=document.getElementById("nakladnaya-body"); body.innerHTML="";
+let total=0; let i=1;
+document.querySelectorAll("#tbody tr").forEach(row=>{
+let name=row.querySelector(".name").value;
+let q=Number(row.querySelector(".qty").value||0);
+let p=Number(row.querySelector(".price").value||0);
+if(name && q>0){
+let sum=q*p; total+=sum;
+let tr=document.createElement("tr");
+tr.innerHTML=`<td>${i++}</td><td>${name}</td><td>${q}</td><td>${p}</td><td>${sum}</td>`;
+body.appendChild(tr);
+}
+});
+document.getElementById("nakladnaya-total").innerText=total+" руб.";
+document.getElementById("sum-text2").innerText="Итого к оплате: "+total+" руб.\nСумма прописью: "+numToText(total);
+}
+
+/* автозаполнение получателя */
+let payer=document.getElementById("payer");
+let receiver=document.getElementById("receiver");
+payer.addEventListener("input",()=>{ receiver.value=payer.value; });
+
+/* ---- История ---- */
+const HISTORY_KEY="invoiceHistory";
+const HISTORY_DAYS=30;
+function saveHistory(){
+  let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
+  let now=new Date();
+  let cutoff=new Date(now.getTime()-HISTORY_DAYS*24*60*60*1000);
+  history=history.filter(item=>new Date(item.date)>cutoff);
+  const items=[];
+  document.querySelectorAll("#tbody tr").forEach(row=>{
+    items.push({name:row.querySelector(".name").value,qty:row.querySelector(".qty").value,price:row.querySelector(".price").value});
+  });
+  history.push({date:now.toISOString(),invoiceNumber:document.getElementById("invoice-number").innerText,payer:document.getElementById("payer").value,items});
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
+}
+
+/* печать и сохранение истории */
+function printPDF(){ 
+  calc(); 
+  fillNakladnaya(); 
+  saveHistory();
+  window.print(); 
+}
+
+addRow();
+
+/* История модальное окно */
+const modal=document.getElementById("history-modal");
+const list=document.getElementById("history-list");
+document.getElementById("history-btn").onclick=()=>{
+  let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
+  if(history.length===0){alert("История пуста"); return;}
+  list.innerHTML="";
+  history.slice().reverse().forEach((item)=>{
+    const div=document.createElement("div");
+    div.className="history-item";
+    div.innerText=`№${item.invoiceNumber} | ${new Date(item.date).toLocaleString()}`;
+    div.onclick=()=>{
+      document.getElementById("payer").value=item.payer;
+      const tbody=document.getElementById("tbody"); tbody.innerHTML="";
+      item.items.forEach(it=>{
+        addRow();
+        const lastRow=tbody.lastElementChild;
+        lastRow.querySelector(".name").value=it.name;
+        lastRow.querySelector(".qty").value=it.qty;
+        lastRow.querySelector(".price").value=it.price;
+      });
+      calc(); fillNakladnaya();
+      modal.style.display="none";
+    };
+    list.appendChild(div);
+  });
+  modal.style.display="block";
+};
+document.getElementById("history-close").onclick=()=>{modal.style.display="none";};
+window.onclick=(e)=>{if(e.target===modal) modal.style.display="none";};
+
+</script>
+</body>
+</html>
