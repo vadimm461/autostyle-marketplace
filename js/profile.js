@@ -594,27 +594,51 @@ let currentAccessProfile = null;
 
 function isMainAdmin(profile={}){ return profile.role === 'admin'; }
 function hasStaffPermission(profile={}, key){ return isMainAdmin(profile) || profile.permissions?.[key] === true; }
+function setAdminSectionVisibility(profile={}){
+  const admin = isMainAdmin(profile);
+  const staffTab = $('#staffWorkspaceTab');
+  const accessTab = $('#accessManagerTab');
+  const staffPane = document.querySelector('[data-pane="staff-workspace"]');
+  const accessPane = document.querySelector('[data-pane="access-manager"]');
+
+  [staffTab, accessTab].forEach(el => {
+    if(!el) return;
+    el.hidden = !admin;
+    el.disabled = !admin;
+    el.style.setProperty('display', admin ? '' : 'none', admin ? '' : 'important');
+  });
+
+  [staffPane, accessPane].forEach(el => {
+    if(!el) return;
+    el.hidden = !admin;
+    if(!admin){
+      el.classList.remove('active');
+      el.style.setProperty('display', 'none', 'important');
+    }else{
+      el.style.removeProperty('display');
+    }
+  });
+
+  if(!admin && ['staff-workspace','access-manager'].includes((location.hash || '').replace('#',''))){
+    history.replaceState(null, '', location.pathname + location.search + '#home');
+    activateProfileTab('home');
+  }
+  return admin;
+}
+
 function renderStaffWorkspace(profile={}){
   currentAccessProfile = profile;
-  const admin = isMainAdmin(profile);
-  const tab = $('#staffWorkspaceTab');
-  const pane = document.querySelector('[data-pane="staff-workspace"]');
-
-  // Рабочие разделы видит только главный администратор.
-  if(tab) tab.hidden = !admin;
-  if(pane) pane.hidden = !admin;
-
+  const admin = setAdminSectionVisibility(profile);
   const grid = $('#staffWorkspaceGrid');
   const empty = $('#staffWorkspaceEmpty');
   if(!grid) return;
-
   if(!admin){
     grid.innerHTML = '';
     if(empty) empty.hidden = true;
     return;
   }
-
-  grid.innerHTML = STAFF_PERMISSION_DEFS.map(item => `<a class="staff-tool-card" href="${item.href}"><b>${item.title}</b><small>${item.desc}</small><em>Открыть раздел →</em></a>`).join('');
+  const allowed = STAFF_PERMISSION_DEFS;
+  grid.innerHTML = allowed.map(item => `<a class="staff-tool-card" href="${item.href}"><b>${item.title}</b><small>${item.desc}</small><em>Открыть раздел →</em></a>`).join('');
   if(empty) empty.hidden = true;
 }
 
@@ -646,11 +670,7 @@ function renderAccessUsers(users){
   }));
 }
 function setupAccessManager(profile={}){
-  const admin = isMainAdmin(profile);
-  const tab=$('#accessManagerTab');
-  const pane=document.querySelector('[data-pane="access-manager"]');
-  if(tab) tab.hidden=!admin;
-  if(pane) pane.hidden=!admin;
+  const admin = setAdminSectionVisibility(profile);
   if(!admin) return;
   $('#reloadAccessUsers')?.addEventListener('click',loadAccessUsers);
   $('#accessUserSearch')?.addEventListener('input',()=>renderAccessUsers(window.__accessUsers||[]));

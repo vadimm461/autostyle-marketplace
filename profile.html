@@ -75,8 +75,8 @@
         <button data-profile-tab="orders" type="button"><span class="profile-nav-ico"><img src="assets/icons/file.svg" alt=""></span> Мои заказы</button>
         <button data-profile-tab="favorites" type="button"><span class="profile-nav-ico"><img src="assets/icons/heart.svg" alt=""></span> Избранное</button>
         <button data-profile-tab="password" type="button"><span class="profile-nav-ico"><img src="assets/icons/card.svg" alt=""></span> Изменить пароль</button>
-        <button id="staffWorkspaceTab" data-profile-tab="staff-workspace" type="button" hidden><span class="profile-nav-ico"><img src="assets/icons/settings.svg" alt=""></span> Рабочие разделы</button>
-        <button id="accessManagerTab" data-profile-tab="access-manager" type="button" hidden><span class="profile-nav-ico"><img src="assets/icons/user.svg" alt=""></span> Доступы пользователей</button>
+        <button id="staffWorkspaceTab" data-profile-tab="staff-workspace" type="button" hidden disabled style="display:none!important"><span class="profile-nav-ico"><img src="assets/icons/settings.svg" alt=""></span> Рабочие разделы</button>
+        <button id="accessManagerTab" data-profile-tab="access-manager" type="button" hidden disabled style="display:none!important"><span class="profile-nav-ico"><img src="assets/icons/user.svg" alt=""></span> Доступы пользователей</button>
       </nav>
     </aside>
 
@@ -237,13 +237,13 @@
         <div id="profileFavorites" class="profile-favorites"><div class="profile-empty">Избранное пока пустое.</div></div>
       </section>
 
-      <section class="profile-card profile-pane" data-pane="staff-workspace">
+      <section class="profile-card profile-pane" data-pane="staff-workspace" hidden style="display:none!important">
         <div class="profile-card-head"><div><h2>Рабочие разделы AutoStyle</h2><p class="muted">Здесь отображаются только разделы, которые разрешил администратор.</p></div></div>
         <div id="staffWorkspaceGrid" class="staff-workspace-grid"></div>
         <div id="staffWorkspaceEmpty" class="profile-empty" hidden>Администратор пока не выдал доступ к рабочим разделам.</div>
       </section>
 
-      <section class="profile-card profile-pane" data-pane="access-manager">
+      <section class="profile-card profile-pane" data-pane="access-manager" hidden style="display:none!important">
         <div class="profile-card-head"><div><h2>Роли и доступы пользователей</h2><p class="muted">Выберите роль и отметьте галочками разделы старого сайта, доступные конкретному пользователю.</p></div></div>
         <div class="access-manager-toolbar">
           <input id="accessUserSearch" type="search" placeholder="Поиск по имени или email">
