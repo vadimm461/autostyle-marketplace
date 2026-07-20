@@ -596,14 +596,26 @@ function isMainAdmin(profile={}){ return profile.role === 'admin'; }
 function hasStaffPermission(profile={}, key){ return isMainAdmin(profile) || profile.permissions?.[key] === true; }
 function renderStaffWorkspace(profile={}){
   currentAccessProfile = profile;
-  const allowed = STAFF_PERMISSION_DEFS.filter(item => hasStaffPermission(profile, item.key));
+  const admin = isMainAdmin(profile);
   const tab = $('#staffWorkspaceTab');
-  if(tab) tab.hidden = allowed.length === 0;
+  const pane = document.querySelector('[data-pane="staff-workspace"]');
+
+  // Рабочие разделы видит только главный администратор.
+  if(tab) tab.hidden = !admin;
+  if(pane) pane.hidden = !admin;
+
   const grid = $('#staffWorkspaceGrid');
   const empty = $('#staffWorkspaceEmpty');
   if(!grid) return;
-  grid.innerHTML = allowed.map(item => `<a class="staff-tool-card" href="${item.href}"><b>${item.title}</b><small>${item.desc}</small><em>Открыть раздел →</em></a>`).join('');
-  if(empty) empty.hidden = allowed.length > 0;
+
+  if(!admin){
+    grid.innerHTML = '';
+    if(empty) empty.hidden = true;
+    return;
+  }
+
+  grid.innerHTML = STAFF_PERMISSION_DEFS.map(item => `<a class="staff-tool-card" href="${item.href}"><b>${item.title}</b><small>${item.desc}</small><em>Открыть раздел →</em></a>`).join('');
+  if(empty) empty.hidden = true;
 }
 
 async function loadAccessUsers(){
@@ -634,9 +646,12 @@ function renderAccessUsers(users){
   }));
 }
 function setupAccessManager(profile={}){
+  const admin = isMainAdmin(profile);
   const tab=$('#accessManagerTab');
-  if(tab) tab.hidden=!isMainAdmin(profile);
-  if(!isMainAdmin(profile)) return;
+  const pane=document.querySelector('[data-pane="access-manager"]');
+  if(tab) tab.hidden=!admin;
+  if(pane) pane.hidden=!admin;
+  if(!admin) return;
   $('#reloadAccessUsers')?.addEventListener('click',loadAccessUsers);
   $('#accessUserSearch')?.addEventListener('input',()=>renderAccessUsers(window.__accessUsers||[]));
   loadAccessUsers().catch(e=>message($('#accessManagerMsg'),'Ошибка загрузки пользователей: '+(e.message||e),false));
