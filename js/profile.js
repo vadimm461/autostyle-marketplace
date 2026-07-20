@@ -588,6 +588,60 @@ bindTabs();
 setupSearch();
 updateCartCount();
 
+
+const STAFF_PERMISSION_DEFS = [{"key": "staffBeznal", "title": "Безнал", "href": "staff-tools/beznal.html", "desc": "Безналичная оплата и документы"}, {"key": "staffShift", "title": "Закрытие смены", "href": "staff-tools/smena.html", "desc": "Оформление и завершение смены"}, {"key": "staffDiscount", "title": "Скидочная карта", "href": "staff-tools/discount.html", "desc": "Анкета и скидочная карта"}, {"key": "staffKnowledge", "title": "База знаний", "href": "staff-tools/baza.html", "desc": "Инструкции и техническая информация"}, {"key": "staffCloseShift", "title": "Отчёт закрытия смен", "href": "staff-tools/close-shift.html", "desc": "Управленческий отчёт"}, {"key": "staffCashDiff", "title": "Расхождение по кассе", "href": "staff-tools/cash-diff.html", "desc": "Контроль расхождений"}, {"key": "staffSalary", "title": "Заработная плата", "href": "staff-tools/zarplata.html", "desc": "Расчёт заработной платы"}, {"key": "legacyAdmin", "title": "Админка старого сайта", "href": "staff-tools/admin.html", "desc": "Новости, калькуляторы, меню и товары"}];
+let currentAccessProfile = null;
+
+function isMainAdmin(profile={}){ return profile.role === 'admin'; }
+function hasStaffPermission(profile={}, key){ return isMainAdmin(profile) || profile.permissions?.[key] === true; }
+function renderStaffWorkspace(profile={}){
+  currentAccessProfile = profile;
+  const allowed = STAFF_PERMISSION_DEFS.filter(item => hasStaffPermission(profile, item.key));
+  const tab = $('#staffWorkspaceTab');
+  if(tab) tab.hidden = allowed.length === 0;
+  const grid = $('#staffWorkspaceGrid');
+  const empty = $('#staffWorkspaceEmpty');
+  if(!grid) return;
+  grid.innerHTML = allowed.map(item => `<a class="staff-tool-card" href="${item.href}"><b>${item.title}</b><small>${item.desc}</small><em>Открыть раздел →</em></a>`).join('');
+  if(empty) empty.hidden = allowed.length > 0;
+}
+
+async function loadAccessUsers(){
+  const list = $('#accessUsersList');
+  if(!list) return;
+  list.innerHTML = '<div class="profile-empty">Загрузка пользователей…</div>';
+  const snap = await getDocs(collection(db, usersCollection));
+  const users = snap.docs.map(d => ({uid:d.id,...d.data()})).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||''),'ru'));
+  window.__accessUsers = users;
+  renderAccessUsers(users);
+}
+function renderAccessUsers(users){
+  const list = $('#accessUsersList'); if(!list) return;
+  const q = String($('#accessUserSearch')?.value||'').trim().toLowerCase();
+  const filtered = users.filter(u => !q || `${u.name||''} ${u.email||''}`.toLowerCase().includes(q));
+  list.innerHTML = filtered.map(u => {
+    const checks = STAFF_PERMISSION_DEFS.map(p => `<label class="access-permission"><input type="checkbox" data-permission="${p.key}" ${u.permissions?.[p.key]===true?'checked':''}><span><b>${p.title}</b><br>${p.desc}</span></label>`).join('');
+    return `<article class="access-user-card" data-uid="${u.uid}"><div class="access-user-head"><div class="access-user-identity"><b>${u.name||'Пользователь'}</b><small>${u.email||u.uid}</small></div><select class="access-role-select"><option value="user" ${u.role!=='admin'?'selected':''}>Пользователь</option><option value="admin" ${u.role==='admin'?'selected':''}>Главный администратор</option></select></div><div class="access-permissions">${checks}</div><div class="access-user-actions"><button class="access-save-btn" type="button">Сохранить доступ</button></div></article>`;
+  }).join('') || '<div class="profile-empty">Пользователи не найдены.</div>';
+  list.querySelectorAll('.access-save-btn').forEach(btn => btn.addEventListener('click', async()=>{
+    const card=btn.closest('.access-user-card'); const uid=card.dataset.uid;
+    const permissions={}; card.querySelectorAll('[data-permission]').forEach(ch=>permissions[ch.dataset.permission]=ch.checked);
+    const role=card.querySelector('.access-role-select').value;
+    btn.disabled=true; btn.textContent='Сохранение…';
+    try{ await setDoc(doc(db, usersCollection, uid), {role,permissions,permissionsUpdatedAt:serverTimestamp()}, {merge:true}); message($('#accessManagerMsg'),'Доступ пользователя сохранён.',true); btn.textContent='Сохранено'; }
+    catch(e){ message($('#accessManagerMsg'),'Ошибка: '+(e.message||e),false); btn.textContent='Повторить'; }
+    finally{ setTimeout(()=>{btn.disabled=false;btn.textContent='Сохранить доступ';},900); }
+  }));
+}
+function setupAccessManager(profile={}){
+  const tab=$('#accessManagerTab');
+  if(tab) tab.hidden=!isMainAdmin(profile);
+  if(!isMainAdmin(profile)) return;
+  $('#reloadAccessUsers')?.addEventListener('click',loadAccessUsers);
+  $('#accessUserSearch')?.addEventListener('input',()=>renderAccessUsers(window.__accessUsers||[]));
+  loadAccessUsers().catch(e=>message($('#accessManagerMsg'),'Ошибка загрузки пользователей: '+(e.message||e),false));
+}
+
 onAuthStateChanged(auth, async user => {
   try{
     renderHeaderAccount(user);
@@ -599,6 +653,8 @@ onAuthStateChanged(auth, async user => {
     $('#profileLogout').onclick = async () => { clearCartAndFavorites(); await signOut(auth); location.href = 'index.html'; };
     const current = await getUserDoc(user.uid);
     fillProfile(user, current.data);
+    renderStaffWorkspace(current.data || {});
+    setupAccessManager(current.data || {});
     renderAuthSecurity(user);
     $('#profileForm').onsubmit = async e => { e.preventDefault(); try{ await saveProfile(user); }catch(err){ message($('#profileMsg'), 'Ошибка: ' + (err.message || err), false); } };
     $('#avatarInput').onchange = async e => { try{ await uploadAvatar(user, e.target.files[0]); }catch(err){ message($('#avatarMsg'), 'Ошибка загрузки: ' + (err.message || err), false); } };
