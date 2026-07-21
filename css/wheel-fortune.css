@@ -1,0 +1,39 @@
+
+.wheel-profile-pane{overflow:hidden}
+.wheel-shell{display:grid;grid-template-columns:minmax(320px,520px) minmax(280px,1fr);gap:28px;align-items:start}
+.wheel-stage{position:relative;display:grid;place-items:center;padding:22px}
+.wheel-pointer{position:absolute;z-index:5;top:5px;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:34px solid #111827;filter:drop-shadow(0 5px 4px rgba(15,23,42,.18))}
+.fortune-wheel{position:relative;width:min(440px,86vw);aspect-ratio:1;border-radius:50%;border:12px solid #101827;box-shadow:0 22px 50px rgba(15,23,42,.18),inset 0 0 0 5px #fff;transition:transform 5.3s cubic-bezier(.12,.72,.08,1);overflow:hidden}
+.fortune-wheel::after{content:"AS";position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:#101827;color:#2be31d;font-size:24px;font-weight:1000;border:6px solid #fff;box-shadow:0 8px 25px rgba(15,23,42,.25)}
+.wheel-label{position:absolute;left:50%;top:50%;width:42%;transform-origin:0 0;text-align:right;padding-right:18px;color:#fff;font-weight:900;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wheel-panel{background:#fff;border:1px solid #e5eaf1;border-radius:24px;padding:24px;box-shadow:0 14px 34px rgba(15,23,42,.08)}
+.wheel-panel h3{margin:0 0 8px;font-size:24px}
+.wheel-status{padding:13px 15px;border-radius:14px;background:#f4f7fb;color:#475569;font-weight:800;margin:14px 0}
+.wheel-spin-btn{width:100%;min-height:52px;border:0;border-radius:16px;background:linear-gradient(135deg,#2be31d,#18a90f);color:#071407;font-weight:1000;font-size:16px;cursor:pointer;box-shadow:0 12px 26px rgba(43,227,29,.25)}
+.wheel-spin-btn:disabled{cursor:not-allowed;opacity:.55;box-shadow:none}
+.wheel-prizes{display:grid;gap:12px;margin-top:20px}
+.wheel-prize-card{display:grid;grid-template-columns:74px 1fr;gap:14px;padding:14px;border-radius:18px;background:#fff;border:1px solid #e4e9ef}
+.wheel-prize-card img{width:74px;height:74px;object-fit:contain;border-radius:12px;background:#fff}
+.wheel-prize-card b{display:block;margin-bottom:4px}
+.wheel-prize-meta{font-size:12px;color:#64748b;line-height:1.5}
+.wheel-barcode{grid-column:1/-1;background:#fff;border:1px dashed #cbd5e1;border-radius:12px;padding:10px;overflow:auto;text-align:center}
+.wheel-barcode svg{max-width:100%;height:72px}
+.wheel-expired{opacity:.58}
+.wheel-admin-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:20px}
+.wheel-admin-card{background:#fff;border:1px solid #e1e7ef;border-radius:22px;padding:20px}
+.wheel-admin-products{display:grid;gap:10px;max-height:520px;overflow:auto}
+.wheel-admin-product{display:grid;grid-template-columns:52px 1fr 90px 38px;gap:10px;align-items:center;padding:10px;border:1px solid #e7ebf1;border-radius:14px}
+.wheel-admin-product img{width:52px;height:52px;object-fit:contain}
+.wheel-admin-product input{width:100%;height:40px;border:1px solid #d9e1eb;border-radius:10px;padding:0 10px}
+.wheel-admin-remove{width:38px;height:38px;border:0;border-radius:10px;background:#fee2e2;color:#b91c1c;font-weight:900;cursor:pointer}
+.wheel-product-picker{position:relative}
+.wheel-picker-results{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 6px);max-height:330px;overflow:auto;background:#fff;border:1px solid #dbe2eb;border-radius:14px;box-shadow:0 20px 45px rgba(15,23,42,.16)}
+.wheel-picker-item{display:grid;grid-template-columns:44px 1fr;gap:10px;width:100%;padding:9px;border:0;border-bottom:1px solid #eef2f6;background:#fff;text-align:left;cursor:pointer}
+.wheel-picker-item:hover{background:#f0fdf4}
+.wheel-picker-item img{width:44px;height:44px;object-fit:contain}
+.wheel-winner-table{width:100%;border-collapse:collapse}
+.wheel-winner-table th,.wheel-winner-table td{padding:10px;border-bottom:1px solid #edf1f5;text-align:left;font-size:13px}
+.wheel-scan-box{width:min(760px,calc(100% - 30px));margin:32px auto;background:#fff;padding:26px;border-radius:24px;box-shadow:0 18px 45px rgba(15,23,42,.1)}
+.wheel-scan-input{width:100%;height:58px;border:2px solid #22c55e;border-radius:16px;padding:0 18px;font-size:20px;font-weight:900}
+.wheel-scan-result{margin-top:18px}
+@media(max-width:900px){.wheel-shell,.wheel-admin-grid{grid-template-columns:1fr}.fortune-wheel{width:min(390px,88vw)}}
