@@ -2,7 +2,7 @@
 import { auth, db } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  doc,getDoc,collection,query,where,getDocs,orderBy,limit,
+  doc,getDoc,collection,query,where,getDocs,
   runTransaction,serverTimestamp,Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -89,22 +89,86 @@ function barcode(){
 }
 async function refreshWheel(){
   if(!currentUser)return;
-  const [cfg,state,prizes]=await Promise.all([
-    getDoc(CONFIG_REF),getDoc(stateRef(currentUser.uid)),
-    getDocs(query(collection(db,'autostyle_wheel_prizes'),where('userId','==',currentUser.uid),orderBy('createdAt','desc'),limit(20)))
-  ]);
-  currentConfig=cfg.exists()?cfg.data():{enabled:false,products:[]};
-  renderWheel(currentConfig);
-  const status=document.getElementById('wheelStatus'),btn=document.getElementById('wheelSpinBtn');
-  const interval=Number(currentConfig.intervalHours||48)*3600000;
-  const last=state.exists()&&state.data().lastSpinAt?.toMillis?state.data().lastSpinAt.toMillis():0;
-  const next=last+interval,now=Date.now();
-  if(!currentConfig.enabled){status.textContent='Колесо временно выключено.';btn.disabled=true}
-  else if(now<next){
-    const ms=next-now,h=Math.floor(ms/3600000),m=Math.ceil((ms%3600000)/60000);
-    status.textContent=`Следующая игра через ${h} ч. ${m} мин.`;btn.disabled=true
-  }else{status.textContent='Колесо готово. Удачи!';btn.disabled=false}
-  renderPrizes(prizes.docs.map(d=>({id:d.id,...d.data()})));
+
+  const status=document.getElementById('wheelStatus');
+  const btn=document.getElementById('wheelSpinBtn');
+
+  if(status)status.textContent='Загрузка...';
+  if(btn)btn.disabled=true;
+
+  try{
+    /*
+      Не используем where + orderBy: такой запрос требует ручного
+      составного индекса Firestore. Получаем только документы пользователя,
+      затем сортируем их локально — работает сразу у всех посетителей.
+    */
+    const [cfgResult,stateResult,prizesResult]=await Promise.allSettled([
+      getDoc(CONFIG_REF),
+      getDoc(stateRef(currentUser.uid)),
+      getDocs(query(
+        collection(db,'autostyle_wheel_prizes'),
+        where('userId','==',currentUser.uid)
+      ))
+    ]);
+
+    const cfg=cfgResult.status==='fulfilled'?cfgResult.value:null;
+    const state=stateResult.status==='fulfilled'?stateResult.value:null;
+    const prizes=prizesResult.status==='fulfilled'?prizesResult.value:null;
+
+    if(cfgResult.status==='rejected'){
+      console.error('Ошибка загрузки настроек колеса:',cfgResult.reason);
+    }
+    if(stateResult.status==='rejected'){
+      console.error('Ошибка загрузки состояния колеса:',stateResult.reason);
+    }
+    if(prizesResult.status==='rejected'){
+      console.error('Ошибка загрузки выигрышей:',prizesResult.reason);
+    }
+
+    currentConfig=cfg?.exists()?cfg.data():{enabled:false,products:[]};
+    renderWheel(currentConfig);
+
+    const interval=Number(currentConfig.intervalHours||48)*3600000;
+    const last=state?.exists()&&state.data().lastSpinAt?.toMillis
+      ? state.data().lastSpinAt.toMillis()
+      : 0;
+    const next=last+interval;
+    const now=Date.now();
+
+    if(!currentConfig.enabled){
+      if(status)status.textContent='Колесо временно выключено.';
+      if(btn)btn.disabled=true;
+    }else if(now<next){
+      const ms=next-now;
+      const h=Math.floor(ms/3600000);
+      const m=Math.ceil((ms%3600000)/60000);
+      if(status)status.textContent=`Следующая игра через ${h} ч. ${m} мин.`;
+      if(btn)btn.disabled=true;
+    }else{
+      if(status)status.textContent='Колесо готово. Удачи!';
+      if(btn)btn.disabled=false;
+    }
+
+    const prizeItems=prizes
+      ? prizes.docs
+          .map(d=>({id:d.id,...d.data()}))
+          .sort((a,b)=>{
+            const aTime=a.createdAt?.toMillis?.()||0;
+            const bTime=b.createdAt?.toMillis?.()||0;
+            return bTime-aTime;
+          })
+          .slice(0,20)
+      : [];
+
+    await renderPrizes(prizeItems);
+  }catch(error){
+    console.error('Ошибка загрузки колеса:',error);
+    currentConfig={enabled:false,products:[]};
+    renderWheel(currentConfig);
+    if(status)status.textContent='Не удалось загрузить колесо. Обнови страницу.';
+    if(btn)btn.disabled=true;
+    await renderPrizes([]);
+  }
 }
 async function renderPrizes(items){
   const list=document.getElementById('wheelPrizeList');if(!list)return;
