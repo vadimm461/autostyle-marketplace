@@ -1,0 +1,162 @@
+
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  doc,getDoc,collection,query,where,getDocs,orderBy,limit,
+  runTransaction,serverTimestamp,Timestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const CONFIG_REF = doc(db,'autostyle_wheel_config','main');
+const stateRef = uid => doc(db,'autostyle_wheel_state',uid);
+let currentUser=null, currentConfig=null, rotation=0, spinning=false;
+
+function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
+function loadJsBarcode(){
+  if(window.JsBarcode) return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
+    s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+  });
+}
+function addTab(){
+  const nav=document.querySelector('.profile-tabs');
+  const content=document.querySelector('.profile-content');
+  if(!nav||!content||document.getElementById('wheelProfileTab')) return;
+  const btn=document.createElement('button');
+  btn.id='wheelProfileTab';btn.type='button';btn.dataset.profileTab='wheel';
+  btn.innerHTML='<span class="profile-nav-ico">🎁</span> Колесо фортуны';
+  nav.insertBefore(btn,document.getElementById('staffWorkspaceTab'));
+  const pane=document.createElement('section');
+  pane.className='profile-card profile-pane wheel-profile-pane';
+  pane.dataset.pane='wheel';
+  pane.innerHTML=`
+    <div class="profile-card-head"><div><h2>Колесо фортуны</h2><p class="muted">Испытай удачу и получи товар AutoStyle.</p></div></div>
+    <div class="wheel-shell">
+      <div class="wheel-stage"><div class="wheel-pointer"></div><div id="fortuneWheel" class="fortune-wheel"></div></div>
+      <div>
+        <div class="wheel-panel">
+          <h3>Твой шанс на подарок</h3>
+          <p class="muted">Играть можно по расписанию, которое установил администратор.</p>
+          <div id="wheelStatus" class="wheel-status">Загрузка...</div>
+          <button id="wheelSpinBtn" class="wheel-spin-btn" type="button" disabled>Крутить колесо</button>
+        </div>
+        <h3 style="margin:22px 0 10px">Мои выигрыши</h3>
+        <div id="wheelPrizeList" class="wheel-prizes"></div>
+      </div>
+    </div>`;
+  content.appendChild(pane);
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-profile-tab]').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('[data-pane]').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');pane.classList.add('active');
+    history.replaceState(null,'',location.pathname+location.search+'#wheel');
+    refreshWheel();
+  });
+  if(location.hash==='#wheel') setTimeout(()=>btn.click(),100);
+  window.addEventListener('hashchange',()=>{if(location.hash==='#wheel')btn.click()});
+  document.getElementById('wheelSpinBtn').addEventListener('click',spin);
+}
+function color(i,total){return `hsl(${Math.round((i/Math.max(total,1))*330)} 72% 48%)`}
+function renderWheel(config){
+  const wheel=document.getElementById('fortuneWheel');if(!wheel)return;
+  const products=(config?.products||[]).filter(x=>x.enabled!==false&&Number(x.chance)>0);
+  const sum=products.reduce((s,x)=>s+Number(x.chance||0),0);
+  const items=[...products];
+  if(sum<100)items.push({name:'Попробуй ещё',chance:100-sum,noPrize:true});
+  if(!items.length)items.push({name:'Скоро призы',chance:100,noPrize:true});
+  let cursor=0, gradients=[];
+  wheel.innerHTML='';
+  items.forEach((item,i)=>{
+    const start=cursor,end=cursor+Number(item.chance||0);cursor=end;
+    gradients.push(`${color(i,items.length)} ${start}% ${end}%`);
+    const mid=(start+end)/2;
+    const label=document.createElement('div');label.className='wheel-label';
+    label.style.transform=`rotate(${mid*3.6}deg) translateY(-50%)`;
+    label.textContent=item.name||'Приз';wheel.appendChild(label);
+  });
+  wheel.style.background=`conic-gradient(${gradients.join(',')})`;
+  wheel.dataset.items=JSON.stringify(items);
+}
+function weightedResult(items){
+  const r=Math.random()*100;let cursor=0;
+  for(const item of items){cursor+=Number(item.chance||0);if(r<cursor)return item}
+  return {name:'Попробуй ещё',noPrize:true};
+}
+function barcode(){
+  const digits=Array.from({length:12},()=>Math.floor(Math.random()*10)).join('');
+  return 'ASW'+digits;
+}
+async function refreshWheel(){
+  if(!currentUser)return;
+  const [cfg,state,prizes]=await Promise.all([
+    getDoc(CONFIG_REF),getDoc(stateRef(currentUser.uid)),
+    getDocs(query(collection(db,'autostyle_wheel_prizes'),where('userId','==',currentUser.uid),orderBy('createdAt','desc'),limit(20)))
+  ]);
+  currentConfig=cfg.exists()?cfg.data():{enabled:false,products:[]};
+  renderWheel(currentConfig);
+  const status=document.getElementById('wheelStatus'),btn=document.getElementById('wheelSpinBtn');
+  const interval=Number(currentConfig.intervalHours||48)*3600000;
+  const last=state.exists()&&state.data().lastSpinAt?.toMillis?state.data().lastSpinAt.toMillis():0;
+  const next=last+interval,now=Date.now();
+  if(!currentConfig.enabled){status.textContent='Колесо временно выключено.';btn.disabled=true}
+  else if(now<next){
+    const ms=next-now,h=Math.floor(ms/3600000),m=Math.ceil((ms%3600000)/60000);
+    status.textContent=`Следующая игра через ${h} ч. ${m} мин.`;btn.disabled=true
+  }else{status.textContent='Колесо готово. Удачи!';btn.disabled=false}
+  renderPrizes(prizes.docs.map(d=>({id:d.id,...d.data()})));
+}
+async function renderPrizes(items){
+  const list=document.getElementById('wheelPrizeList');if(!list)return;
+  await loadJsBarcode().catch(()=>{});
+  if(!items.length){list.innerHTML='<div class="profile-empty">Выигрышей пока нет.</div>';return}
+  list.innerHTML=items.map(p=>{
+    const exp=p.expiresAt?.toDate?.();const expired=exp&&exp<Date.now();const redeemed=p.status==='redeemed';
+    return `<article class="wheel-prize-card ${expired?'wheel-expired':''}">
+      <img src="${esc(p.productImage||'assets/as-logo-192.png')}" alt="">
+      <div><b>${esc(p.productName)}</b><div class="wheel-prize-meta">Статус: ${redeemed?'Получен':expired?'Срок истёк':'Можно забрать'}<br>Забрать до: ${exp?exp.toLocaleString('ru-RU'):'—'}</div></div>
+      <div class="wheel-barcode"><svg data-barcode="${esc(p.barcode)}"></svg><div><b>${esc(p.barcode)}</b></div></div>
+    </article>`;
+  }).join('');
+  if(window.JsBarcode)document.querySelectorAll('[data-barcode]').forEach(svg=>JsBarcode(svg,svg.dataset.barcode,{format:'CODE128',height:52,displayValue:false,margin:3}));
+}
+async function spin(){
+  if(spinning||!currentUser||!currentConfig)return;
+  spinning=true;const btn=document.getElementById('wheelSpinBtn');btn.disabled=true;
+  try{
+    const products=(currentConfig.products||[]).filter(x=>x.enabled!==false&&Number(x.chance)>0);
+    const sum=products.reduce((s,x)=>s+Number(x.chance||0),0);
+    const items=[...products,...(sum<100?[{name:'Попробуй ещё',chance:100-sum,noPrize:true}]:[])];
+    const result=weightedResult(items);
+    const selectedIndex=Math.max(0,items.findIndex(x=>x===result));
+    const segmentCenter=(items.slice(0,selectedIndex).reduce((s,x)=>s+Number(x.chance||0),0)+Number(result.chance||0)/2)*3.6;
+    rotation+=5*360+(360-segmentCenter);
+    document.getElementById('fortuneWheel').style.transform=`rotate(${rotation}deg)`;
+    await new Promise(r=>setTimeout(r,5400));
+    const claimHours=Number(currentConfig.claimHours||48);
+    await runTransaction(db,async tx=>{
+      const sref=stateRef(currentUser.uid),ss=await tx.get(sref),cfg=await tx.get(CONFIG_REF);
+      const live=cfg.exists()?cfg.data():currentConfig;
+      const last=ss.exists()&&ss.data().lastSpinAt?.toMillis?ss.data().lastSpinAt.toMillis():0;
+      const interval=Number(live.intervalHours||48)*3600000;
+      if(Date.now()<last+interval)throw new Error('Играть пока рано.');
+      tx.set(sref,{lastSpinAt:serverTimestamp(),lastResult:result.noPrize?'none':result.productId||'',updatedAt:serverTimestamp()},{merge:true});
+      if(!result.noPrize){
+        const pref=doc(collection(db,'autostyle_wheel_prizes'));
+        tx.set(pref,{
+          userId:currentUser.uid,userEmail:currentUser.email||'',
+          productId:result.productId||'',productCode:result.code||'',
+          productName:result.name||'Приз',productImage:result.image||'',
+          barcode:barcode(),status:'active',
+          createdAt:serverTimestamp(),
+          expiresAt:Timestamp.fromMillis(Date.now()+claimHours*3600000)
+        });
+      }
+    });
+    alert(result.noPrize?'В этот раз без приза. Попробуй снова позже!':`Поздравляем! Ты выиграл: ${result.name}`);
+    await refreshWheel();
+  }catch(e){alert(e.message||e);await refreshWheel()}
+  finally{spinning=false}
+}
+addTab();
+onAuthStateChanged(auth,u=>{currentUser=u;if(u)refreshWheel()});
