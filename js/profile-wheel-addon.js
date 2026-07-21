@@ -59,40 +59,81 @@ function addTab(){
 }
 function color(i,total){return `hsl(${Math.round((i/Math.max(total,1))*330)} 72% 48%)`}
 function renderWheel(config){
-  const wheel=document.getElementById('fortuneWheel');if(!wheel)return;
-  const products=(config?.products||[]).filter(x=>x.enabled!==false&&Number(x.chance)>0);
-  const sum=products.reduce((s,x)=>s+Number(x.chance||0),0);
+  const wheel=document.getElementById('fortuneWheel');
+  if(!wheel)return;
+
+  const products=(config?.products||[])
+    .filter(item=>item.enabled!==false&&Number(item.chance)>0);
+
+  const chanceSum=products.reduce((sum,item)=>sum+Number(item.chance||0),0);
   const items=[...products];
-  if(sum<100)items.push({name:'Попробуй ещё',chance:100-sum,noPrize:true});
-  if(!items.length)items.push({name:'Скоро призы',chance:100,noPrize:true});
 
-  let cursor=0,gradients=[];
+  if(chanceSum<100){
+    items.push({
+      name:'Попробуй ещё',
+      chance:100-chanceSum,
+      noPrize:true
+    });
+  }
+
+  if(!items.length){
+    items.push({
+      name:'Скоро призы',
+      chance:100,
+      noPrize:true
+    });
+  }
+
+  /*
+    Пользователь не видит реальные коэффициенты.
+    Внешне колесо не разбито на вероятностные сектора:
+    все фотографии расположены равномерно по окружности.
+    Реальные chance используются только при определении выигрыша.
+  */
   wheel.innerHTML='';
-  wheel.style.setProperty('--wheel-items',String(items.length));
+  wheel.style.background=`
+    radial-gradient(circle at center,
+      rgba(255,255,255,.98) 0 24%,
+      rgba(255,255,255,.10) 24.5% 25.5%,
+      transparent 26%
+    ),
+    conic-gradient(
+      from 0deg,
+      #151f33,
+      #202d46 25%,
+      #101827 50%,
+      #202d46 75%,
+      #151f33
+    )
+  `;
 
-  items.forEach((item,i)=>{
-    const start=cursor;
-    const end=cursor+Number(item.chance||0);
-    cursor=end;
-    gradients.push(`${color(i,items.length)} ${start}% ${end}%`);
+  const equalStep=360/items.length;
 
-    const mid=(start+end)/2;
+  items.forEach((item,index)=>{
+    const angle=index*equalStep+(equalStep/2);
     const visual=document.createElement('div');
-    visual.className=`wheel-prize-visual${item.noPrize?' wheel-prize-empty':''}`;
-    visual.style.setProperty('--segment-angle',`${mid*3.6}deg`);
-    visual.title=item.name||'Приз';
+    visual.className='wheel-prize-visual';
+    visual.style.setProperty('--segment-angle',`${angle}deg`);
 
     if(item.noPrize){
-      visual.innerHTML='<div class="wheel-empty-icon">↻</div>';
+      visual.innerHTML='<div class="wheel-empty-icon" title="Попробуй ещё">↻</div>';
     }else{
-      const image=esc(item.image||item.imageURL||item.imageUrl||'assets/as-logo-192.png');
-      visual.innerHTML=`<img src="${image}" alt="${esc(item.name||'Приз')}" loading="lazy" decoding="async">`;
+      const image=String(item.image||'assets/as-logo-192.png')
+        .replaceAll('&','&amp;')
+        .replaceAll('"','&quot;');
+
+      visual.innerHTML=`
+        <img src="${image}"
+             alt=""
+             loading="lazy"
+             decoding="async"
+             title="${String(item.name||'Приз').replaceAll('"','&quot;')}">
+      `;
     }
 
     wheel.appendChild(visual);
   });
 
-  wheel.style.background=`conic-gradient(${gradients.join(',')})`;
   wheel.dataset.items=JSON.stringify(items);
 }
 function weightedResult(items){
@@ -210,7 +251,12 @@ async function spin(){
     const items=[...products,...(sum<100?[{name:'Попробуй ещё',chance:100-sum,noPrize:true}]:[])];
     const result=weightedResult(items);
     const selectedIndex=Math.max(0,items.findIndex(x=>x===result));
-    const segmentCenter=(items.slice(0,selectedIndex).reduce((s,x)=>s+Number(x.chance||0),0)+Number(result.chance||0)/2)*3.6;
+    /*
+      Визуальные позиции равные и не раскрывают реальные вероятности.
+      Результат по-прежнему выбран функцией weightedResult по chance.
+    */
+    const equalStep=360/items.length;
+    const segmentCenter=selectedIndex*equalStep+(equalStep/2);
     /*
       Лёгкая и стабильная анимация через Web Animations API.
       Без тяжёлых filter/drop-shadow и анимации каждого фото.

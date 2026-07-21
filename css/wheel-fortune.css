@@ -110,3 +110,33 @@
 @media(prefers-reduced-motion:reduce){
   .fortune-wheel.is-finished{animation:none}
 }
+
+
+/* Ровное современное колесо без отображения коэффициентов и секторов */
+.fortune-wheel{
+  background:#151f33;
+  box-shadow:
+    0 22px 48px rgba(15,23,42,.20),
+    inset 0 0 0 5px rgba(255,255,255,.94),
+    inset 0 0 0 14px rgba(43,227,29,.08);
+}
+
+.fortune-wheel::before{
+  content:"";
+  position:absolute;
+  inset:23%;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.14);
+  pointer-events:none;
+}
+
+.wheel-prize-visual img,
+.wheel-empty-icon{
+  border:0;
+  background:#fff;
+  box-shadow:0 6px 15px rgba(0,0,0,.17);
+}
+
+.wheel-prize-visual img{
+  object-fit:contain;
+}
