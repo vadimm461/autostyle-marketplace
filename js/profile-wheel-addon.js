@@ -211,22 +211,43 @@ async function spin(){
     const result=weightedResult(items);
     const selectedIndex=Math.max(0,items.findIndex(x=>x===result));
     const segmentCenter=(items.slice(0,selectedIndex).reduce((s,x)=>s+Number(x.chance||0),0)+Number(result.chance||0)/2)*3.6;
-    rotation+=7*360+(360-segmentCenter);
+    /*
+      Лёгкая и стабильная анимация через Web Animations API.
+      Без тяжёлых filter/drop-shadow и анимации каждого фото.
+    */
     const wheel=document.getElementById('fortuneWheel');
     const stage=wheel.closest('.wheel-stage');
+
+    const startRotation=rotation;
+    const extraTurns=5*360;
+    const targetRotation=startRotation+extraTurns+(360-segmentCenter);
+    rotation=targetRotation;
+
+    wheel.getAnimations().forEach(animation=>animation.cancel());
     wheel.classList.remove('is-finished');
     wheel.classList.add('is-spinning');
     stage?.classList.add('is-spinning');
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        wheel.style.transform=`rotate(${rotation}deg)`;
-      });
-    });
-    await new Promise(r=>setTimeout(r,6200));
+
+    const animation=wheel.animate(
+      [
+        {transform:`rotate(${startRotation}deg)`},
+        {transform:`rotate(${targetRotation}deg)`}
+      ],
+      {
+        duration:4300,
+        easing:'cubic-bezier(.10,.72,.08,1)',
+        fill:'forwards'
+      }
+    );
+
+    await animation.finished;
+    animation.cancel();
+    wheel.style.transform=`rotate(${targetRotation}deg)`;
+
     wheel.classList.remove('is-spinning');
     wheel.classList.add('is-finished');
     stage?.classList.remove('is-spinning');
-    setTimeout(()=>wheel.classList.remove('is-finished'),900);
+    setTimeout(()=>wheel.classList.remove('is-finished'),450);
     const claimHours=Number(currentConfig.claimHours||48);
     await runTransaction(db,async tx=>{
       const sref=stateRef(currentUser.uid),ss=await tx.get(sref),cfg=await tx.get(CONFIG_REF);
