@@ -623,6 +623,259 @@ a[href*="profile.html"][style*="position:fixed"]{
 }
 </style>
 
+
+<style>
+/* Компактный интерфейс премии */
+
+/* Хедер */
+.topbar .bar{
+  min-height:64px !important;
+  gap:10px !important;
+}
+
+.topbar .as-logo-img{
+  width:180px !important;
+  height:auto !important;
+}
+
+.topbar .catalog-btn{
+  min-height:42px !important;
+  padding:0 18px !important;
+  font-size:14px !important;
+  border-radius:13px !important;
+}
+
+.topbar .search{
+  height:42px !important;
+}
+
+.topbar .search input{
+  font-size:14px !important;
+  padding:0 16px !important;
+}
+
+.topbar .search button{
+  min-width:92px !important;
+  font-size:14px !important;
+  padding:0 18px !important;
+}
+
+.topbar .as-head-icon-btn{
+  width:58px !important;
+  min-width:58px !important;
+  height:48px !important;
+  padding:5px 4px !important;
+  border-radius:12px !important;
+}
+
+.topbar .as-head-icon{
+  width:24px !important;
+  height:24px !important;
+}
+
+.topbar .as-head-icon img{
+  width:18px !important;
+  height:18px !important;
+}
+
+.topbar .as-head-label{
+  font-size:9px !important;
+  line-height:1 !important;
+}
+
+.topbar .as-head-badge,
+.topbar .as-notify-count{
+  min-width:16px !important;
+  height:16px !important;
+  padding:0 4px !important;
+  font-size:9px !important;
+}
+
+/* Общий блок */
+.content{
+  width:min(1320px,calc(100% - 30px)) !important;
+  margin:20px auto 24px !important;
+}
+
+.total{
+  padding:20px 24px !important;
+  margin-bottom:18px !important;
+  border-radius:22px !important;
+}
+
+.total-title{
+  font-size:14px !important;
+  margin-bottom:5px !important;
+}
+
+.total-value{
+  font-size:38px !important;
+}
+
+.total-sub{
+  margin-top:9px !important;
+  font-size:13px !important;
+}
+
+/* Группы */
+.group-block{
+  margin-bottom:14px !important;
+}
+
+.group-header{
+  min-height:62px !important;
+  margin-bottom:10px !important;
+  padding:12px 18px !important;
+  border-radius:17px !important;
+}
+
+.group-title{
+  font-size:22px !important;
+}
+
+.toggle-btn{
+  padding:8px 13px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+
+/* Карточки */
+.products-grid{
+  grid-template-columns:repeat(auto-fill,minmax(185px,220px)) !important;
+  gap:10px !important;
+}
+
+.card{
+  min-height:292px !important;
+  padding:9px !important;
+  border-radius:14px !important;
+}
+
+.product-photo{
+  height:125px !important;
+  flex-basis:125px !important;
+  margin-bottom:7px !important;
+  border-radius:11px !important;
+}
+
+.product-photo img{
+  padding:6px !important;
+}
+
+.product-photo-empty{
+  font-size:11px !important;
+}
+
+.card h2{
+  min-height:44px !important;
+  margin-bottom:7px !important;
+  font-size:13px !important;
+  line-height:1.15 !important;
+  -webkit-line-clamp:3 !important;
+}
+
+.stats{
+  gap:4px !important;
+  margin-bottom:7px !important;
+  font-size:8px !important;
+}
+
+.stats span{
+  padding:4px !important;
+  border-radius:7px !important;
+}
+
+.stats b{
+  margin-top:1px !important;
+  font-size:10px !important;
+}
+
+.bonus-top{
+  margin-bottom:5px !important;
+  font-size:11px !important;
+}
+
+.progress{
+  position:relative;
+  height:8px !important;
+  margin-bottom:6px !important;
+  background:#e5e7eb !important;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.12);
+}
+
+.progress-bar{
+  min-width:0;
+  transition:width .45s ease,background .45s ease !important;
+}
+
+.money{
+  padding:6px 8px !important;
+  border-radius:9px !important;
+}
+
+.money-label{
+  font-size:8px !important;
+}
+
+.money-value{
+  font-size:13px !important;
+}
+
+/* Футер компактнее */
+.footer{
+  padding-top:22px !important;
+}
+
+.footer .footer-group h3{
+  font-size:15px !important;
+}
+
+.footer .footer-group a{
+  font-size:12px !important;
+}
+
+.footer .footer-copy{
+  font-size:12px !important;
+}
+
+@media(max-width:760px){
+  .topbar .bar{
+    min-height:58px !important;
+  }
+
+  .topbar .as-logo-img{
+    width:145px !important;
+  }
+
+  .products-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+
+  .card{
+    min-height:275px !important;
+  }
+
+  .product-photo{
+    height:112px !important;
+    flex-basis:112px !important;
+  }
+
+  .group-title{
+    font-size:18px !important;
+  }
+
+  .total-value{
+    font-size:32px !important;
+  }
+}
+
+@media(max-width:420px){
+  .products-grid{
+    grid-template-columns:1fr !important;
+  }
+}
+</style>
+
 </head>
 
 
@@ -920,37 +1173,22 @@ plan > 0
 total += bonus;
 maxTotal += maxBonus;
 
-let color = `
+/*
+Плавный цвет шкалы:
+0%   — красный
+50%  — жёлтый
+100% — зелёный
+*/
+const hue = Math.round((percent / 100) * 120);
+const hueEnd = Math.min(120, hue + 10);
+
+const color = `
 linear-gradient(
 90deg,
-#ef4444,
-#dc2626
+hsl(${hue} 82% 50%),
+hsl(${hueEnd} 76% 40%)
 )
 `;
-
-if(percent >= 40){
-
-color = `
-linear-gradient(
-90deg,
-#f59e0b,
-#d97706
-)
-`;
-
-}
-
-if(percent >= 70){
-
-color = `
-linear-gradient(
-90deg,
-#22c55e,
-#15803d
-)
-`;
-
-}
 
 const card =
 document.createElement('div');
