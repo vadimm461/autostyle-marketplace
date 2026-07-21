@@ -41,6 +41,8 @@
     }
 
     .premium-total {
+      position:relative;
+      overflow:hidden;
       padding: 22px 26px;
       margin-bottom: 18px;
       border-radius: 22px;
@@ -48,6 +50,18 @@
       color: #fff;
       box-shadow: 0 16px 35px rgba(15, 23, 42, .13);
     }
+
+    
+    .premium-total::before{
+      content:"";
+      position:absolute;inset:0;
+      width:var(--salary-progress,0%);
+      background:linear-gradient(90deg,#ef4444,#f59e0b,#eab308,#22c55e);
+      transition:width .5s ease;
+      opacity:.28;
+      pointer-events:none;
+    }
+    .premium-total>*{position:relative;z-index:1;}
 
     .premium-total-label {
       margin-bottom: 5px;
@@ -305,7 +319,7 @@
       <div class="as-account-popup">
         <b id="asAccountEmail">Аккаунт</b>
         <p class="muted">Меню профиля</p>
-        <a href="../profile.html#home">Личный кабинет</a>
+        <a href="../profile.html">Личный кабинет</a>
         <a href="../favorites.html">Избранное</a>
         <a href="../cart.html">Корзина</a>
         <hr>
@@ -608,6 +622,8 @@ function renderProducts(products) {
   });
 
   totalEl.textContent = `${total} / ${maximumTotal} ₽`;
+  const percent=maximumTotal>0?Math.min(total/maximumTotal*100,100):0;
+  document.querySelector(".premium-total")?.style.setProperty("--salary-progress",percent+"%");
 }
 
 await loadCatalogIndex();
