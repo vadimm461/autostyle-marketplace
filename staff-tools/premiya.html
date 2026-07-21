@@ -1295,5 +1295,29 @@ renderProducts(products);
 <script type="module" src="../js/notifications.js"></script>
 <script src="../js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 
+
+<style>
+/* final header/icon/footer/progress corrections */
+.topbar .bar{width:min(1120px,calc(100% - 28px))!important;max-width:none!important;grid-template-columns:190px 125px minmax(420px,1fr) repeat(4,56px)!important;gap:10px!important}
+.topbar .catalog-btn{width:125px!important;min-width:125px!important;justify-content:center!important}
+.topbar .search{width:100%!important;min-width:420px!important}
+.topbar .as-head-icon{background:transparent!important;border:0!important;box-shadow:none!important}
+.topbar .as-head-icon img{display:none!important}
+.topbar .as-head-icon::before{display:block;font-size:18px;line-height:1;color:#39e639}
+.topbar .as-account-wrap .as-head-icon::before{content:"👤"}
+.topbar .as-notify-btn .as-head-icon::before{content:"🔔"}
+.topbar a[href*="favorites"] .as-head-icon::before{content:"♡";font-size:22px;font-weight:900}
+.topbar a[href*="cart"] .as-head-icon::before{content:"🛒"}
+.footer{width:100%!important;background:#101318!important;margin-top:26px!important}
+.footer .footer-inner{width:min(1080px,calc(100% - 40px))!important;grid-template-columns:repeat(3,1fr)!important;gap:80px!important}
+.progress{position:relative!important;height:10px!important;background:#e5e7eb!important}
+.progress-bar{height:100%!important;border-radius:999px!important;min-width:0!important;transition:width .4s ease,background .4s ease!important}
+body>a[href*="profile.html"]{display:none!important}
+@media(max-width:980px){.topbar .bar{grid-template-columns:165px 110px minmax(260px,1fr) repeat(4,50px)!important}.topbar .search{min-width:260px!important}.topbar .catalog-btn{width:110px!important;min-width:110px!important}}
+</style>
+<script>
+new MutationObserver(()=>{document.querySelectorAll('body>a[href*="profile.html"]').forEach(a=>a.remove())}).observe(document.body,{childList:true,subtree:true});
+</script>
+
 </body>
 </html>
