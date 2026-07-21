@@ -181,6 +181,17 @@ function productPrice(product) {
   return Number.isFinite(value) ? value : 0;
 }
 
+function productStock(product) {
+  const value = Number(
+    product.stock ??
+    product.quantity ??
+    product.qty ??
+    product.count ??
+    0
+  );
+  return Number.isFinite(value) ? value : 0;
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -247,7 +258,7 @@ function renderCatalogResults(filter) {
         <div>
           <div class="catalog-item-name">${escapeHtml(productName(product))}</div>
           <div class="catalog-item-meta">
-            Код: ${escapeHtml(productCode(product) || "—")} ·
+            Количество: ${productStock(product)} ·
             ${escapeHtml(productGroup(product))}
           </div>
         </div>
