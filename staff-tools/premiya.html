@@ -6,6 +6,16 @@
 
 <title>Премия — AUTO-STYLE</title>
 
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/modern-ready.css">
+<link rel="stylesheet" href="../css/shop-pages.css">
+<link rel="stylesheet" href="../css/header-icons-site-colors.css?v=20260608-icons-colors">
+<link rel="stylesheet" href="../css/as-logo-final.css?v=20260608-brand-final">
+<link rel="stylesheet" href="../css/image-fit-contain-final.css?v=20260609-2">
+<link rel="stylesheet" href="../css/notifications.css">
+<link rel="icon" type="image/png" href="../assets/as-logo-192.png">
+
+
 <style>
 
 *{
@@ -21,7 +31,7 @@ overflow-x:hidden;
 color:#111827;
 }
 
-/* HEADER */
+/* LEGACY HEADER (не используется) */
 
 .header{
 height:82px;
@@ -85,7 +95,39 @@ font-weight:800;
 /* CONTENT */
 
 .content{
-padding:18px;
+width:min(1480px,calc(100% - 32px));
+margin:28px auto 40px;
+padding:0;
+}
+
+/* Подгонка фото как в основном каталоге */
+.product-photo{
+position:relative;
+background:#fff !important;
+isolation:isolate;
+}
+
+.product-photo::before{
+content:"";
+position:absolute;
+inset:0;
+background-image:var(--as-product-bg);
+background-size:cover;
+background-position:center;
+filter:blur(22px);
+opacity:.08;
+transform:scale(1.12);
+z-index:-1;
+}
+
+.product-photo img{
+display:block;
+width:100%;
+height:100%;
+object-fit:contain !important;
+object-position:center !important;
+background:#fff;
+padding:10px;
 }
 
 /* TOTAL */
@@ -371,40 +413,65 @@ padding:16px;
 }
 
 </style>
-<script type="module" src="access-guard.js"></script></head>
+<script type="module" src="access-guard.js"></script>
+<style>
+@media (max-width: 900px){
+  .content{width:min(100% - 20px,1480px);margin-top:18px}
+  .total{border-radius:22px;padding:20px}
+  .total-value{font-size:38px}
+  .group-header{padding:15px 17px;border-radius:18px}
+  .group-title{font-size:23px}
+}
+</style>
+
+</head>
+
 
 <body>
+<header class="topbar dark-topbar">
+  <div class="bar">
+    <a class="logo as-logo-link" href="../index.html" aria-label="AutoStyle — главная">
+      <img class="as-logo-img"
+           src="../assets/autostyle-logo-header-clean@3x.png"
+           srcset="../assets/autostyle-logo-header-clean.png 1x, ../assets/autostyle-logo-header-clean@2x.png 2x, ../assets/autostyle-logo-header-clean@3x.png 3x"
+           width="720" height="158" alt="AutoStyle" decoding="async">
+    </a>
 
-<header class="header">
+    <a class="catalog-btn" href="../catalog.html">☰ Каталог</a>
 
-<div class="left">
+    <form class="search" action="../catalog.html">
+      <input id="siteSearch" name="q" placeholder="Я ищу автотовары...">
+      <button type="submit">Найти</button>
+    </form>
 
-<a href="index.html" class="logo">
+    <div class="as-account-wrap">
+      <a class="icon-btn as-head-icon-btn" href="../profile.html">
+        <span class="as-head-icon" aria-hidden="true"><img src="../assets/icons/user.svg" alt=""></span>
+        <span class="as-head-label">Аккаунт</span>
+      </a>
+    </div>
 
-<img src="favicon.png">
+    <a class="icon-btn as-head-icon-btn as-notify-btn" href="../notifications.html">
+      <span class="as-head-icon" aria-hidden="true"><img src="../assets/icons/bell.svg" alt=""></span>
+      <span class="as-head-label">Уведомления</span>
+      <b id="notificationCount" class="as-notify-count as-head-badge" data-count="0"></b>
+    </a>
 
-<div>
+    <a class="icon-btn as-head-icon-btn" href="../favorites.html">
+      <span class="as-head-icon" aria-hidden="true"><img src="../assets/icons/heart.svg" alt=""></span>
+      <span class="as-head-label">Избранное</span>
+    </a>
 
-<div class="logo-title">
-<span class="green">A</span>uto-
-<span class="green">S</span>tyle
-</div>
-
-<div class="subtitle">
-ПАНЕЛЬ МЕНЕДЖЕРА
-</div>
-
-</div>
-
-</a>
-
-</div>
-
-<button class="back" onclick="history.back()">
-← Назад
-</button>
-
+    <a class="icon-btn as-head-icon-btn" href="../cart.html">
+      <span class="as-head-icon" aria-hidden="true"><img src="../assets/icons/cart.svg" alt=""></span>
+      <span class="as-head-label">Корзина</span>
+      <b id="cartCount" class="as-head-badge">0</b>
+    </a>
+  </div>
 </header>
+
+
+
 
 <div class="content">
 
@@ -757,6 +824,39 @@ renderProducts(products);
 );
 
 </script>
+
+
+<footer class="footer">
+  <div class="footer-inner footer-inner-compact">
+    <div class="footer-group">
+      <h3>AutoStyle</h3>
+      <a href="../contacts.html">Контакты</a>
+      <a href="../about.html">Про нас</a>
+      <a href="../contacts.html#addresses">Адреса</a>
+    </div>
+    <div class="footer-group">
+      <h3>Покупателям</h3>
+      <a href="../installment.html">Рассрочка</a>
+      <a href="../certificates.html">Подарочные сертификаты</a>
+      <a href="../profile.html#discount-card">Скидочная карта</a>
+    </div>
+    <div class="footer-group">
+      <h3>Информация</h3>
+      <a href="../profile.html">Профиль</a>
+      <a href="../favorites.html">Избранное</a>
+      <a href="../cart.html">Корзина</a>
+    </div>
+  </div>
+  <div class="footer-copy">
+    <span>© 2026 Все права защищены</span>
+    <span>Dev by <a href="https://www.instagram.com/d.vadim.v/" target="_blank" rel="noopener">d.vadim.v</a></span>
+  </div>
+</footer>
+
+<script src="../js/common.js"></script>
+<script type="module" src="../js/footer-content.js"></script>
+<script type="module" src="../js/notifications.js"></script>
+<script src="../js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 
 </body>
 </html>
