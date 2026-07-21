@@ -65,16 +65,33 @@ function renderWheel(config){
   const items=[...products];
   if(sum<100)items.push({name:'Попробуй ещё',chance:100-sum,noPrize:true});
   if(!items.length)items.push({name:'Скоро призы',chance:100,noPrize:true});
-  let cursor=0, gradients=[];
+
+  let cursor=0,gradients=[];
   wheel.innerHTML='';
+  wheel.style.setProperty('--wheel-items',String(items.length));
+
   items.forEach((item,i)=>{
-    const start=cursor,end=cursor+Number(item.chance||0);cursor=end;
+    const start=cursor;
+    const end=cursor+Number(item.chance||0);
+    cursor=end;
     gradients.push(`${color(i,items.length)} ${start}% ${end}%`);
+
     const mid=(start+end)/2;
-    const label=document.createElement('div');label.className='wheel-label';
-    label.style.transform=`rotate(${mid*3.6}deg) translateY(-50%)`;
-    label.textContent=item.name||'Приз';wheel.appendChild(label);
+    const visual=document.createElement('div');
+    visual.className=`wheel-prize-visual${item.noPrize?' wheel-prize-empty':''}`;
+    visual.style.setProperty('--segment-angle',`${mid*3.6}deg`);
+    visual.title=item.name||'Приз';
+
+    if(item.noPrize){
+      visual.innerHTML='<div class="wheel-empty-icon">↻</div>';
+    }else{
+      const image=esc(item.image||item.imageURL||item.imageUrl||'assets/as-logo-192.png');
+      visual.innerHTML=`<img src="${image}" alt="${esc(item.name||'Приз')}" loading="lazy" decoding="async">`;
+    }
+
+    wheel.appendChild(visual);
   });
+
   wheel.style.background=`conic-gradient(${gradients.join(',')})`;
   wheel.dataset.items=JSON.stringify(items);
 }
@@ -194,9 +211,22 @@ async function spin(){
     const result=weightedResult(items);
     const selectedIndex=Math.max(0,items.findIndex(x=>x===result));
     const segmentCenter=(items.slice(0,selectedIndex).reduce((s,x)=>s+Number(x.chance||0),0)+Number(result.chance||0)/2)*3.6;
-    rotation+=5*360+(360-segmentCenter);
-    document.getElementById('fortuneWheel').style.transform=`rotate(${rotation}deg)`;
-    await new Promise(r=>setTimeout(r,5400));
+    rotation+=7*360+(360-segmentCenter);
+    const wheel=document.getElementById('fortuneWheel');
+    const stage=wheel.closest('.wheel-stage');
+    wheel.classList.remove('is-finished');
+    wheel.classList.add('is-spinning');
+    stage?.classList.add('is-spinning');
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        wheel.style.transform=`rotate(${rotation}deg)`;
+      });
+    });
+    await new Promise(r=>setTimeout(r,6200));
+    wheel.classList.remove('is-spinning');
+    wheel.classList.add('is-finished');
+    stage?.classList.remove('is-spinning');
+    setTimeout(()=>wheel.classList.remove('is-finished'),900);
     const claimHours=Number(currentConfig.claimHours||48);
     await runTransaction(db,async tx=>{
       const sref=stateRef(currentUser.uid),ss=await tx.get(sref),cfg=await tx.get(CONFIG_REF);

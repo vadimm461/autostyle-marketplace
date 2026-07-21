@@ -37,3 +37,70 @@
 .wheel-scan-input{width:100%;height:58px;border:2px solid #22c55e;border-radius:16px;padding:0 18px;font-size:20px;font-weight:900}
 .wheel-scan-result{margin-top:18px}
 @media(max-width:900px){.wheel-shell,.wheel-admin-grid{grid-template-columns:1fr}.fortune-wheel{width:min(390px,88vw)}}
+
+/* Современное колесо: фото товаров вместо длинных названий */
+.fortune-wheel{
+  --wheel-radius:145px;
+  transition:transform 6.1s cubic-bezier(.08,.78,.08,1);
+  will-change:transform,filter;
+}
+.wheel-label{display:none!important}
+.wheel-prize-visual{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:78px;
+  height:78px;
+  z-index:2;
+  display:grid;
+  place-items:center;
+  transform:
+    translate(-50%,-50%)
+    rotate(var(--segment-angle))
+    translateY(calc(var(--wheel-radius) * -1))
+    rotate(calc(var(--segment-angle) * -1));
+  transform-origin:center;
+  pointer-events:none;
+}
+.wheel-prize-visual img,
+.wheel-empty-icon{
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  padding:7px;
+  border-radius:20px;
+  background:rgba(255,255,255,.96);
+  border:3px solid rgba(255,255,255,.9);
+  box-shadow:0 10px 22px rgba(15,23,42,.24),inset 0 0 0 1px rgba(15,23,42,.05);
+}
+.wheel-empty-icon{
+  display:grid;
+  place-items:center;
+  color:#111827;
+  font-size:34px;
+  font-weight:1000;
+}
+.wheel-stage.is-spinning .wheel-pointer{animation:wheelPointerTick .16s ease-in-out infinite alternate}
+.fortune-wheel.is-spinning{
+  filter:saturate(1.16) drop-shadow(0 24px 30px rgba(43,227,29,.20));
+  animation:wheelSpinGlow .7s ease-in-out infinite alternate;
+}
+.fortune-wheel.is-spinning .wheel-prize-visual img,
+.fortune-wheel.is-spinning .wheel-empty-icon{
+  animation:wheelPrizePulse .42s ease-in-out infinite alternate;
+}
+.fortune-wheel.is-finished{animation:wheelFinishPulse .8s ease-out}
+@keyframes wheelPointerTick{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(5px) rotate(2deg)}}
+@keyframes wheelSpinGlow{from{box-shadow:0 22px 50px rgba(15,23,42,.18),inset 0 0 0 5px #fff}to{box-shadow:0 28px 62px rgba(43,227,29,.32),inset 0 0 0 5px #fff}}
+@keyframes wheelPrizePulse{from{transform:scale(.96)}to{transform:scale(1.03)}}
+@keyframes wheelFinishPulse{0%{filter:brightness(1)}45%{filter:brightness(1.25) saturate(1.35)}100%{filter:brightness(1)}}
+@media(max-width:900px){
+  .fortune-wheel{--wheel-radius:125px}
+  .wheel-prize-visual{width:66px;height:66px}
+  .wheel-prize-visual img,.wheel-empty-icon{width:60px;height:60px;border-radius:17px}
+}
+@media(max-width:520px){
+  .fortune-wheel{--wheel-radius:108px}
+  .wheel-prize-visual{width:56px;height:56px}
+  .wheel-prize-visual img,.wheel-empty-icon{width:52px;height:52px;padding:5px;border-radius:14px}
+}
