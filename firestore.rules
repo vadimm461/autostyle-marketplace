@@ -206,6 +206,28 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+
+    /* Колесо фортуны */
+    match /autostyle_wheel_config/{configId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /autostyle_wheel_state/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isAdmin();
+    }
+
+    match /autostyle_wheel_prizes/{prizeId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == "active";
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
     /* Старые коллекции */
     match /site/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
     match /products/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
