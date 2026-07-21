@@ -151,13 +151,21 @@ export function setupSearch(){
 }
 
 
-/* AutoStyle: плавающая иконка колеса фортуны 50×50 */
+/* AutoStyle — плавающая иконка колеса фортуны */
 (function initFloatingFortuneWheel(){
   if (window.__asFloatingWheelLoaded) return;
   window.__asFloatingWheelLoaded = true;
 
-  const start = () => {
-    if (document.getElementById('asFloatingWheel')) return;
+  function start(){
+    if (!document.body || document.getElementById('asFloatingWheel')) return;
+
+    const path = location.pathname.toLowerCase();
+    if (
+      path.includes('/admin') ||
+      path.includes('/staff-tools/')
+    ) {
+      return;
+    }
 
     const style = document.createElement('style');
     style.id = 'as-floating-wheel-style';
@@ -173,17 +181,16 @@ export function setupSearch(){
         place-items:center;
         border:3px solid #111827;
         border-radius:50%;
-        background:
-          conic-gradient(
-            #2be31d 0 12.5%,
-            #2563eb 12.5% 25%,
-            #facc15 25% 37.5%,
-            #ef4444 37.5% 50%,
-            #8b5cf6 50% 62.5%,
-            #14b8a6 62.5% 75%,
-            #f97316 75% 87.5%,
-            #22c55e 87.5% 100%
-          );
+        background:conic-gradient(
+          #2be31d 0 12.5%,
+          #2563eb 12.5% 25%,
+          #facc15 25% 37.5%,
+          #ef4444 37.5% 50%,
+          #8b5cf6 50% 62.5%,
+          #14b8a6 62.5% 75%,
+          #f97316 75% 87.5%,
+          #22c55e 87.5% 100%
+        );
         box-shadow:0 8px 22px rgba(15,23,42,.24);
         text-decoration:none;
         cursor:pointer;
@@ -191,7 +198,7 @@ export function setupSearch(){
         -webkit-tap-highlight-color:transparent;
         will-change:transform;
         transform:translate3d(0,0,0);
-        transition:box-shadow .18s ease,filter .18s ease;
+        transition:filter .18s ease,box-shadow .18s ease;
       }
 
       #asFloatingWheel::before{
@@ -250,11 +257,11 @@ export function setupSearch(){
 
       @media(prefers-reduced-motion:reduce){
         #asFloatingWheel{
-          left:auto !important;
-          right:16px !important;
-          top:auto !important;
-          bottom:82px !important;
-          transform:none !important;
+          left:auto!important;
+          right:16px!important;
+          top:auto!important;
+          bottom:82px!important;
+          transform:none!important;
         }
       }
     `;
@@ -262,11 +269,9 @@ export function setupSearch(){
 
     const link = document.createElement('a');
     link.id = 'asFloatingWheel';
-    link.href = location.pathname.includes('/staff-tools/')
-      ? '../profile.html#wheel'
-      : 'profile.html#wheel';
-    link.setAttribute('aria-label', 'Открыть колесо фортуны');
+    link.href = 'profile.html#wheel';
     link.title = 'Колесо фортуны';
+    link.setAttribute('aria-label', 'Открыть колесо фортуны');
     link.innerHTML = '<span>GO</span>';
     document.body.appendChild(link);
 
@@ -274,21 +279,31 @@ export function setupSearch(){
 
     const size = 50;
     const margin = 14;
-    let x = Math.max(margin, window.innerWidth - size - 90);
-    let y = Math.max(margin + 80, window.innerHeight * 0.62);
-    let vx = -0.018;
-    let vy = 0.014;
+    const topSafe = 82;
+    const bottomSafe = window.innerWidth <= 760 ? 92 : 18;
+
+    let x = Math.max(margin, window.innerWidth - size - 100);
+    let y = Math.max(topSafe, window.innerHeight * 0.55);
+    let vx = -0.017;
+    let vy = 0.013;
     let paused = false;
     let last = performance.now();
 
-    const clamp = () => {
-      const maxX = Math.max(margin, window.innerWidth - size - margin);
-      const maxY = Math.max(margin + 70, window.innerHeight - size - margin);
-      x = Math.min(Math.max(x, margin), maxX);
-      y = Math.min(Math.max(y, margin + 70), maxY);
-    };
+    function bounds(){
+      return {
+        maxX: Math.max(margin, window.innerWidth - size - margin),
+        minY: topSafe,
+        maxY: Math.max(topSafe, window.innerHeight - size - bottomSafe)
+      };
+    }
 
-    const frame = (now) => {
+    function clamp(){
+      const {maxX,minY,maxY} = bounds();
+      x = Math.min(Math.max(x, margin), maxX);
+      y = Math.min(Math.max(y, minY), maxY);
+    }
+
+    function animate(now){
       const dt = Math.min(40, now - last);
       last = now;
 
@@ -296,9 +311,7 @@ export function setupSearch(){
         x += vx * dt;
         y += vy * dt;
 
-        const maxX = Math.max(margin, window.innerWidth - size - margin);
-        const minY = margin + 70;
-        const maxY = Math.max(minY, window.innerHeight - size - margin);
+        const {maxX,minY,maxY} = bounds();
 
         if (x <= margin || x >= maxX) {
           vx *= -1;
@@ -310,34 +323,42 @@ export function setupSearch(){
           y = Math.min(Math.max(y, minY), maxY);
         }
 
-        link.style.transform = `translate3d(${x}px,${y}px,0) rotate(${now / 110}deg)`;
+        link.style.transform =
+          `translate3d(${x}px,${y}px,0) rotate(${now / 120}deg)`;
       }
 
-      requestAnimationFrame(frame);
-    };
+      requestAnimationFrame(animate);
+    }
 
-    link.addEventListener('mouseenter', () => { paused = true; });
+    link.addEventListener('mouseenter', () => {
+      paused = true;
+    });
+
     link.addEventListener('mouseleave', () => {
       paused = false;
       last = performance.now();
     });
-    link.addEventListener('focus', () => { paused = true; });
+
+    link.addEventListener('focus', () => {
+      paused = true;
+    });
+
     link.addEventListener('blur', () => {
       paused = false;
       last = performance.now();
     });
 
-    window.addEventListener('resize', clamp, { passive:true });
+    window.addEventListener('resize', clamp, {passive:true});
     document.addEventListener('visibilitychange', () => {
       last = performance.now();
     });
 
     clamp();
-    requestAnimationFrame(frame);
-  };
+    requestAnimationFrame(animate);
+  }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start, { once:true });
+    document.addEventListener('DOMContentLoaded', start, {once:true});
   } else {
     start();
   }
