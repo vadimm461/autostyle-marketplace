@@ -564,7 +564,7 @@ function renderProducts(products) {
       const code = clean(product.code) || "—";
 
       card.innerHTML = `
-        <div class="premium-photo">
+        <div class="premium-photo product-photo">
           ${image
             ? `<img src="${escapeHtml(image)}"
                     alt="${escapeHtml(name)}"
@@ -627,6 +627,20 @@ onSnapshot(
       '<div class="premium-empty">Не удалось загрузить данные премии.</div>';
   }
 );
+</script>
+
+
+<script type="module" src="../js/common.js"></script>
+<script>
+(function fixNestedHeaderIcons(){
+  const fix = () => {
+    document.querySelectorAll('.topbar img[src^="assets/icons/"], .as-account-popup img[src^="assets/icons/"]').forEach((img) => {
+      img.src = '../' + img.getAttribute('src');
+    });
+  };
+  fix();
+  new MutationObserver(fix).observe(document.documentElement,{childList:true,subtree:true});
+})();
 </script>
 
 <!-- Те же общие скрипты, что на основном сайте -->
