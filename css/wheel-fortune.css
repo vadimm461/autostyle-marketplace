@@ -38,14 +38,11 @@
 .wheel-scan-result{margin-top:18px}
 @media(max-width:900px){.wheel-shell,.wheel-admin-grid{grid-template-columns:1fr}.fortune-wheel{width:min(390px,88vw)}}
 
-/* Современное колесо: фото товаров и лёгкая прокрутка */
+/* Современное колесо: фото товаров вместо длинных названий */
 .fortune-wheel{
   --wheel-radius:145px;
-  transition:none !important;
-  will-change:transform;
-  transform:translateZ(0);
-  backface-visibility:hidden;
-  contain:layout paint;
+  transition:transform 6.1s cubic-bezier(.08,.78,.08,1);
+  will-change:transform,filter;
 }
 .wheel-label{display:none!important}
 .wheel-prize-visual{
@@ -71,72 +68,555 @@
   height:72px;
   object-fit:contain;
   padding:7px;
-  border-radius:18px;
-  background:#fff;
-  border:2px solid rgba(255,255,255,.95);
-  box-shadow:0 5px 12px rgba(15,23,42,.16);
+  border-radius:20px;
+  background:rgba(255,255,255,.96);
+  border:3px solid rgba(255,255,255,.9);
+  box-shadow:0 10px 22px rgba(15,23,42,.24),inset 0 0 0 1px rgba(15,23,42,.05);
 }
 .wheel-empty-icon{
   display:grid;
   place-items:center;
   color:#111827;
-  font-size:32px;
+  font-size:34px;
   font-weight:1000;
 }
-.wheel-stage.is-spinning .wheel-pointer{
-  transform:translateY(3px);
-}
+.wheel-stage.is-spinning .wheel-pointer{animation:wheelPointerTick .16s ease-in-out infinite alternate}
 .fortune-wheel.is-spinning{
-  cursor:progress;
+  filter:saturate(1.16) drop-shadow(0 24px 30px rgba(43,227,29,.20));
+  animation:wheelSpinGlow .7s ease-in-out infinite alternate;
 }
-.fortune-wheel.is-finished{
-  animation:wheelFinishLight .42s ease-out;
+.fortune-wheel.is-spinning .wheel-prize-visual img,
+.fortune-wheel.is-spinning .wheel-empty-icon{
+  animation:wheelPrizePulse .42s ease-in-out infinite alternate;
 }
-@keyframes wheelFinishLight{
-  0%{transform:scale(1)}
-  45%{transform:scale(1.012)}
-  100%{transform:scale(1)}
-}
+.fortune-wheel.is-finished{animation:wheelFinishPulse .8s ease-out}
+@keyframes wheelPointerTick{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(5px) rotate(2deg)}}
+@keyframes wheelSpinGlow{from{box-shadow:0 22px 50px rgba(15,23,42,.18),inset 0 0 0 5px #fff}to{box-shadow:0 28px 62px rgba(43,227,29,.32),inset 0 0 0 5px #fff}}
+@keyframes wheelPrizePulse{from{transform:scale(.96)}to{transform:scale(1.03)}}
+@keyframes wheelFinishPulse{0%{filter:brightness(1)}45%{filter:brightness(1.25) saturate(1.35)}100%{filter:brightness(1)}}
 @media(max-width:900px){
   .fortune-wheel{--wheel-radius:125px}
   .wheel-prize-visual{width:66px;height:66px}
-  .wheel-prize-visual img,.wheel-empty-icon{width:60px;height:60px;border-radius:15px}
+  .wheel-prize-visual img,.wheel-empty-icon{width:60px;height:60px;border-radius:17px}
 }
 @media(max-width:520px){
   .fortune-wheel{--wheel-radius:108px}
   .wheel-prize-visual{width:56px;height:56px}
-  .wheel-prize-visual img,.wheel-empty-icon{width:52px;height:52px;padding:5px;border-radius:13px}
-}
-@media(prefers-reduced-motion:reduce){
-  .fortune-wheel.is-finished{animation:none}
+  .wheel-prize-visual img,.wheel-empty-icon{width:52px;height:52px;padding:5px;border-radius:14px}
 }
 
 
-/* Ровное современное колесо без отображения коэффициентов и секторов */
-.fortune-wheel{
-  background:#151f33;
-  box-shadow:
-    0 22px 48px rgba(15,23,42,.20),
-    inset 0 0 0 5px rgba(255,255,255,.94),
-    inset 0 0 0 14px rgba(43,227,29,.08);
+/* Улучшенный интерфейс настройки колеса в админке */
+#wheel{
+  --wheel-admin-green:#20c941;
+  --wheel-admin-green-dark:#13a732;
+  --wheel-admin-ink:#111827;
+  --wheel-admin-muted:#667085;
+  --wheel-admin-line:#e4e9f0;
+  --wheel-admin-soft:#f6f8fb;
 }
 
-.fortune-wheel::before{
-  content:"";
+.wheel-admin-hero{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:24px 26px;
+  margin-bottom:18px;
+  border-radius:24px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 85% 20%,rgba(43,227,29,.22),transparent 30%),
+    linear-gradient(135deg,#101827,#18253b);
+  box-shadow:0 18px 42px rgba(15,23,42,.16);
+}
+
+.wheel-admin-hero h2{
+  margin:4px 0 7px;
+  font-size:30px;
+  line-height:1;
+}
+
+.wheel-admin-hero p{
+  margin:0;
+  color:#b7c0d1;
+}
+
+.wheel-admin-kicker,
+.wheel-card-eyebrow{
+  display:block;
+  font-size:11px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+.wheel-admin-kicker{color:#4bf153}
+.wheel-card-eyebrow{color:#7a8699;margin-bottom:7px}
+
+.wheel-admin-save{
+  min-width:190px;
+  min-height:48px;
+  padding:0 20px;
+  border:0;
+  border-radius:15px;
+  background:linear-gradient(135deg,#38ec4b,#1fbd36);
+  color:#06150a;
+  font-weight:1000;
+  cursor:pointer;
+  box-shadow:0 12px 26px rgba(32,201,65,.25);
+}
+
+.wheel-admin-save:disabled{opacity:.6;cursor:wait}
+
+.wheel-admin-summary{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:18px;
+}
+
+.wheel-summary-card{
+  padding:15px 17px;
+  border:1px solid var(--wheel-admin-line);
+  border-radius:17px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(15,23,42,.05);
+}
+
+.wheel-summary-card span{
+  display:block;
+  margin-bottom:5px;
+  color:var(--wheel-admin-muted);
+  font-size:12px;
+}
+
+.wheel-summary-card b{
+  color:var(--wheel-admin-ink);
+  font-size:19px;
+}
+
+#wheelSummaryStatus.is-on{color:var(--wheel-admin-green-dark)}
+
+.wheel-admin-grid{
+  grid-template-columns:minmax(330px,.86fr) minmax(480px,1.4fr);
+  gap:18px;
+}
+
+.wheel-admin-card{
+  padding:21px;
+  border:1px solid var(--wheel-admin-line);
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(15,23,42,.055);
+}
+
+.wheel-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+.wheel-card-head h3{
+  margin:0;
+  color:var(--wheel-admin-ink);
+  font-size:20px;
+}
+
+.wheel-switch-row{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:15px;
+  margin-bottom:15px;
+  border:1px solid var(--wheel-admin-line);
+  border-radius:16px;
+  background:var(--wheel-admin-soft);
+  cursor:pointer;
+}
+
+.wheel-switch-row span b{
+  display:block;
+  margin-bottom:4px;
+  color:var(--wheel-admin-ink);
+}
+
+.wheel-switch-row span small{
+  color:var(--wheel-admin-muted);
+  line-height:1.35;
+}
+
+.wheel-switch-row input{
   position:absolute;
-  inset:23%;
-  border-radius:50%;
-  border:1px solid rgba(255,255,255,.14);
+  opacity:0;
   pointer-events:none;
 }
 
-.wheel-prize-visual img,
-.wheel-empty-icon{
-  border:0;
-  background:#fff;
-  box-shadow:0 6px 15px rgba(0,0,0,.17);
+.wheel-switch-row i{
+  position:relative;
+  flex:0 0 52px;
+  width:52px;
+  height:30px;
+  border-radius:999px;
+  background:#cbd3de;
+  transition:.2s ease;
 }
 
-.wheel-prize-visual img{
+.wheel-switch-row i::after{
+  content:"";
+  position:absolute;
+  left:4px;
+  top:4px;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 3px 8px rgba(15,23,42,.2);
+  transition:.2s ease;
+}
+
+.wheel-switch-row input:checked+i{
+  background:var(--wheel-admin-green);
+}
+
+.wheel-switch-row input:checked+i::after{
+  transform:translateX(22px);
+}
+
+.wheel-settings-fields{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.wheel-field{
+  display:block;
+  padding:13px;
+  border:1px solid var(--wheel-admin-line);
+  border-radius:15px;
+}
+
+.wheel-field>span{
+  display:block;
+  margin-bottom:8px;
+  color:var(--wheel-admin-ink);
+  font-size:12px;
+  font-weight:900;
+}
+
+.wheel-field>div{
+  display:flex;
+  align-items:center;
+  border:1px solid #d9e1eb;
+  border-radius:11px;
+  overflow:hidden;
+  background:#fff;
+}
+
+.wheel-field input{
+  width:100%;
+  height:41px;
+  padding:0 11px;
+  border:0!important;
+  outline:0;
+  font-weight:900;
+}
+
+.wheel-field em{
+  padding:0 10px;
+  color:#7a8699;
+  font-size:12px;
+  font-style:normal;
+}
+
+.wheel-field small{
+  display:block;
+  margin-top:7px;
+  color:#7a8699;
+  font-size:10px;
+  line-height:1.3;
+}
+
+.wheel-chance-box{
+  padding:15px;
+  margin-top:12px;
+  border-radius:16px;
+  background:#f7f9fc;
+}
+
+.wheel-chance-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+  font-size:12px;
+  font-weight:900;
+}
+
+.wheel-chance-track{
+  height:10px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#dde4ec;
+}
+
+.wheel-chance-track i{
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#2be31d,#18a90f);
+  transition:width .25s ease,background .25s ease;
+}
+
+.wheel-chance-track i.is-over{
+  width:100%!important;
+  background:linear-gradient(90deg,#ef4444,#c81e1e);
+}
+
+#wheelChanceTotal{
+  margin:8px 0 0;
+  font-size:11px;
+}
+
+.wheel-add-block{
+  margin-top:22px;
+  padding-top:20px;
+  border-top:1px solid var(--wheel-admin-line);
+}
+
+.wheel-product-picker>input{
+  width:100%;
+  height:47px;
+  padding:0 15px;
+  border:1px solid #d8e0e9;
+  border-radius:14px;
+  outline:0;
+  background:#fff;
+  font-size:13px;
+}
+
+.wheel-product-picker>input:focus{
+  border-color:#22c55e;
+  box-shadow:0 0 0 4px rgba(34,197,94,.10);
+}
+
+.wheel-products-note{
+  padding:10px 12px;
+  margin:-3px 0 14px;
+  border-radius:12px;
+  background:#f0fdf4;
+  color:#327142;
+  font-size:11px;
+  line-height:1.4;
+}
+
+.wheel-count-badge{
+  padding:7px 10px;
+  border-radius:999px;
+  background:#eef2f7;
+  color:#536174;
+  font-size:11px;
+  font-weight:900;
+}
+
+.wheel-admin-products{
+  gap:8px;
+  max-height:545px;
+  padding-right:4px;
+}
+
+.wheel-admin-product{
+  grid-template-columns:58px minmax(0,1fr) 98px 38px;
+  gap:11px;
+  padding:10px;
+  border:1px solid var(--wheel-admin-line);
+  border-radius:16px;
+  background:#fff;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+
+.wheel-admin-product:hover{
+  transform:translateY(-1px);
+  border-color:#cbd5e1;
+  box-shadow:0 8px 18px rgba(15,23,42,.07);
+}
+
+.wheel-product-image{
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:12px;
+  background:#f7f9fb;
+}
+
+.wheel-product-image img{
+  width:100%;
+  height:100%;
+  padding:5px;
   object-fit:contain;
+}
+
+.wheel-product-copy{
+  min-width:0;
+}
+
+.wheel-product-copy b{
+  display:-webkit-box;
+  overflow:hidden;
+  color:var(--wheel-admin-ink);
+  font-size:13px;
+  line-height:1.25;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+
+.wheel-product-copy small{
+  display:block;
+  margin-top:5px;
+  color:#7b8798;
+  font-size:10px;
+}
+
+.wheel-chance-input>span{
+  display:block;
+  margin-bottom:5px;
+  color:#7b8798;
+  font-size:9px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+.wheel-chance-input>div{
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  border:1px solid #d7dfe9;
+  border-radius:11px;
+  background:#fff;
+}
+
+.wheel-chance-input input{
+  width:100%;
+  height:38px;
+  padding:0 8px;
+  border:0!important;
+  outline:0;
+  font-weight:900;
+}
+
+.wheel-chance-input em{
+  padding-right:8px;
+  color:#7b8798;
+  font-size:11px;
+  font-style:normal;
+}
+
+.wheel-admin-remove{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+  font-size:18px;
+}
+
+.wheel-products-empty{
+  min-height:230px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:7px;
+  padding:24px;
+  border:1px dashed #ccd5e1;
+  border-radius:16px;
+  color:#7a8699;
+  text-align:center;
+}
+
+.wheel-products-empty div{font-size:34px}
+.wheel-products-empty b{color:#344054}
+.wheel-products-empty span{max-width:280px;font-size:11px;line-height:1.4}
+
+.wheel-picker-results{
+  border-radius:16px;
+}
+
+.wheel-picker-item{
+  padding:10px;
+}
+
+.wheel-winners-card{
+  margin-top:18px;
+}
+
+.wheel-table-wrap{
+  overflow:auto;
+  border:1px solid var(--wheel-admin-line);
+  border-radius:15px;
+}
+
+.wheel-winner-table{
+  min-width:760px;
+}
+
+.wheel-winner-table th{
+  padding:11px 13px;
+  background:#f7f9fc;
+  color:#6b7789;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+
+.wheel-winner-table td{
+  padding:12px 13px;
+  font-size:12px;
+}
+
+.wheel-winner-table code{
+  padding:5px 8px;
+  border-radius:8px;
+  background:#f2f4f7;
+  color:#344054;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:11px;
+  font-weight:900;
+}
+
+.wheel-status-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:900;
+}
+
+.wheel-status-pill.is-active{background:#fff7d6;color:#8a6500}
+.wheel-status-pill.is-done{background:#dcfce7;color:#157b37}
+.wheel-status-pill.is-expired{background:#fee2e2;color:#b42318}
+
+.wheel-table-empty{
+  padding:28px;
+  color:#7b8798;
+  text-align:center;
+}
+
+@media(max-width:1050px){
+  .wheel-admin-summary{grid-template-columns:repeat(2,1fr)}
+  .wheel-admin-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:650px){
+  .wheel-admin-hero{align-items:flex-start;flex-direction:column}
+  .wheel-admin-save{width:100%}
+  .wheel-admin-summary{grid-template-columns:1fr 1fr}
+  .wheel-settings-fields{grid-template-columns:1fr}
+  .wheel-admin-product{grid-template-columns:52px minmax(0,1fr) 84px 36px}
 }
