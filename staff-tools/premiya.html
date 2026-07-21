@@ -536,6 +536,93 @@ a[href*="profile.html#staff-workspace"][style*="position:fixed"]{
 }
 </style>
 
+
+<style>
+/* Финальная правка компоновки */
+html, body{
+  min-height:100%;
+}
+
+body{
+  display:block !important;
+  min-height:100vh;
+}
+
+.content{
+  min-height:0 !important;
+  margin:26px auto 28px !important;
+  padding-bottom:0 !important;
+}
+
+.footer{
+  margin-top:28px !important;
+  padding:24px 0 14px !important;
+}
+
+.footer .footer-inner{
+  width:min(1180px,calc(100% - 48px)) !important;
+  max-width:none !important;
+  margin:0 auto !important;
+  padding:0 !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:28px !important;
+}
+
+.footer .footer-group{
+  gap:7px !important;
+}
+
+.footer .footer-group h3{
+  margin:0 0 6px !important;
+  font-size:16px !important;
+}
+
+.footer .footer-group a{
+  margin:0 !important;
+  font-size:13px !important;
+  line-height:1.35 !important;
+}
+
+.footer .footer-copy{
+  width:min(1180px,calc(100% - 48px)) !important;
+  max-width:none !important;
+  margin:18px auto 0 !important;
+  padding:12px 0 0 !important;
+}
+
+/* убрать любую плавающую кнопку возврата в профиль */
+body > a[style*="position:fixed"],
+a[href*="profile.html"][style*="position:fixed"]{
+  display:none !important;
+}
+
+@media(max-width:800px){
+  .content{
+    width:calc(100% - 20px) !important;
+    margin:18px auto 22px !important;
+  }
+
+  .footer{
+    margin-top:22px !important;
+    padding:22px 0 90px !important;
+  }
+
+  .footer .footer-inner{
+    width:calc(100% - 32px) !important;
+    grid-template-columns:1fr !important;
+    gap:20px !important;
+  }
+
+  .footer .footer-copy{
+    width:calc(100% - 32px) !important;
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:6px !important;
+  }
+}
+</style>
+
 </head>
 
 
