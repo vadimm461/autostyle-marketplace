@@ -424,6 +424,118 @@ padding:16px;
 }
 </style>
 
+
+<style>
+/* Исправление компоновки страницы премии */
+body{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+.topbar{
+  flex:0 0 auto;
+}
+
+.content{
+  flex:1 0 auto;
+  min-height:520px;
+}
+
+.footer{
+  flex:0 0 auto;
+  width:100%;
+  margin-top:24px;
+  padding:42px max(24px,calc((100% - 1180px)/2)) 18px;
+  background:#10151d;
+  color:#fff;
+}
+
+.footer .footer-inner{
+  width:100%;
+  max-width:1180px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(180px,1fr));
+  gap:64px;
+  align-items:start;
+}
+
+.footer .footer-group{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:12px;
+  min-width:0;
+}
+
+.footer .footer-group h3{
+  margin:0 0 8px;
+  font-size:20px;
+  line-height:1.2;
+  color:#fff;
+}
+
+.footer .footer-group a{
+  display:block;
+  color:#c7ced8;
+  text-decoration:none;
+  font-size:14px;
+  line-height:1.35;
+}
+
+.footer .footer-group a:hover{
+  color:#fff;
+}
+
+.footer .footer-copy{
+  width:100%;
+  max-width:1180px;
+  margin:28px auto 0;
+  padding-top:16px;
+  border-top:1px solid rgba(255,255,255,.09);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  color:#aeb7c3;
+  font-size:13px;
+}
+
+.footer .footer-copy a{
+  color:#fff;
+  text-decoration:none;
+  font-weight:800;
+}
+
+/* Убираем старую плавающую кнопку, которую добавляет общий скрипт */
+a[href="../profile.html#staff-sections"][style*="position:fixed"],
+a[href*="profile.html#staff-workspace"][style*="position:fixed"]{
+  display:none !important;
+}
+
+@media (max-width:900px){
+  .content{
+    min-height:420px;
+  }
+
+  .footer{
+    padding:32px 20px 18px;
+  }
+
+  .footer .footer-inner{
+    grid-template-columns:1fr;
+    gap:28px;
+  }
+
+  .footer .footer-copy{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+}
+</style>
+
 </head>
 
 
