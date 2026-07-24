@@ -371,7 +371,8 @@ function ensureSmartAnalyticsUi(){
   const section = $('#productAnalytics');
   if (!section) return;
 
-  const anchor = $('#paRecommendations')?.closest('section, .admin-card, .pa-card, div') || $('#paRecommendations');
+  // Размещаем блок после всей сетки аналитики, а не внутри узкой карточки рекомендаций.
+  const anchor = section.querySelector('.pa-grid');
   const wrap = document.createElement('section');
   wrap.id = 'paSmartProcurement';
   wrap.className = 'pa-smart-panel';
@@ -421,7 +422,7 @@ function ensureSmartAnalyticsUi(){
     </div>`;
 
   if (anchor && anchor.parentNode) {
-    anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+    anchor.insertAdjacentElement('afterend', wrap);
   } else {
     section.appendChild(wrap);
   }
@@ -429,7 +430,7 @@ function ensureSmartAnalyticsUi(){
   const style = document.createElement('style');
   style.id = 'paSmartStyles';
   style.textContent = `
-    .pa-smart-panel{margin:22px 0;padding:22px;border:1px solid #dfe7f1;border-radius:22px;background:#fff;box-shadow:0 14px 40px rgba(20,35,55,.07)}
+    .pa-smart-panel{display:block;width:100%;max-width:none;min-width:0;margin:24px 0 0;padding:22px;border:1px solid #dfe7f1;border-radius:22px;background:#fff;box-shadow:0 14px 40px rgba(20,35,55,.07)}
     .pa-smart-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:16px}
     .pa-smart-head h2{margin:0 0 5px;font-size:24px;color:#10233f}
     .pa-smart-head p{margin:0;color:#65748a}
@@ -440,8 +441,8 @@ function ensureSmartAnalyticsUi(){
     .pa-smart-summary div{padding:13px 15px;border-radius:15px;background:#f5f8fc;border:1px solid #e5ebf3}
     .pa-smart-summary b{display:block;font-size:22px;color:#11243e}
     .pa-smart-summary small{color:#68778c}
-    .pa-smart-table-wrap{overflow:auto;border:1px solid #e5ebf3;border-radius:16px}
-    .pa-smart-table{width:100%;border-collapse:collapse;min-width:1120px}
+    .pa-smart-table-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;border:1px solid #e5ebf3;border-radius:16px}
+    .pa-smart-table{width:100%;min-width:1120px;border-collapse:collapse;table-layout:auto}
     .pa-smart-table th{position:sticky;top:0;z-index:1;background:#f6f9fc;text-align:left;padding:12px 10px;font-size:12px;color:#627086;border-bottom:1px solid #e5ebf3}
     .pa-smart-table td{padding:12px 10px;border-bottom:1px solid #edf1f6;vertical-align:middle;color:#23324a}
     .pa-smart-table tr:last-child td{border-bottom:0}
