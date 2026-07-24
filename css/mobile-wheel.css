@@ -1,3 +1,10 @@
+
+/* Semantic visibility: do not let component display rules override [hidden]. */
+.mw-auth-gate[hidden],
+.mw-result-modal[hidden]{
+  display:none!important;
+}
+
 :root{
   --mw-green:#31ea3d;
   --mw-green-dark:#17ad2b;

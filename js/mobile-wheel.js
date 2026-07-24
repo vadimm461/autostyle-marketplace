@@ -604,18 +604,25 @@ $('#mwResultClose')?.addEventListener('click', closeResultModal);
 $('#mwResultAction')?.addEventListener('click', closeResultModal);
 document.querySelector('.mw-result-backdrop')?.addEventListener('click', closeResultModal);
 
-onAuthStateChanged(auth, user => {
-  currentUser = user;
-  hideLoader();
+onAuthStateChanged(auth, async user => {
+  currentUser = user || null;
+  const authGate = $('#mwAuthGate');
 
-  if (!user) {
+  if (!currentUser) {
     clearAvailabilityTimer();
-    $('#mwAuthGate').hidden = false;
+    if (authGate) authGate.hidden = false;
     setStatus('Войдите в профиль, чтобы играть.');
     setSpinDisabled(true);
+    hideLoader();
     return;
   }
 
-  $('#mwAuthGate').hidden = true;
-  refreshWheel();
+  if (authGate) authGate.hidden = true;
+
+  try {
+    await currentUser.getIdToken();
+    await refreshWheel();
+  } finally {
+    hideLoader();
+  }
 });
