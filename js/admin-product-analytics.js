@@ -20,12 +20,49 @@ function toNum(v){
 const state = { products: [], orders: [], changes: [], runs: [], selectedDays: 30 };
 
 function nowFrom(){ return Date.now() - state.selectedDays * dayMs; }
+function timeValue(v){
+  if (!v) return 0;
+
+  if (typeof v.toDate === 'function') {
+    const d = v.toDate();
+    return d && typeof d.getTime === 'function' ? d.getTime() : 0;
+  }
+
+  if (typeof v === 'object') {
+    const seconds = toNum(v.seconds != null ? v.seconds : v._seconds);
+    const nanos = toNum(v.nanoseconds != null ? v.nanoseconds : v._nanoseconds);
+    if (seconds > 0) return seconds * 1000 + Math.floor(nanos / 1000000);
+  }
+
+  if (typeof v === 'number') {
+    return v > 0 && v < 100000000000 ? v * 1000 : v;
+  }
+
+  const parsed = Date.parse(String(v));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function getTime(row){
-  const v = row.createdAt || row.detectedAt || row.updatedAt || row.date || row.timestamp || row.createdAtText || row.createdAtTs || row.updatedAtTs || row.time;
-  if (v?.toDate) return v.toDate().getTime();
-  if (typeof v === 'number') return v;
-  const t = Date.parse(v || '');
-  return Number.isFinite(t) ? t : 0;
+  const candidates = [
+    row.createdAt,
+    row.createdAtText,
+    row.createdAtTs,
+    row.createdAtMs,
+    row.orderDate,
+    row.orderedAt,
+    row.date,
+    row.timestamp,
+    row.updatedAt,
+    row.updatedAtTs,
+    row.time
+  ];
+
+  for (let i = 0; i < candidates.length; i++) {
+    const value = timeValue(candidates[i]);
+    if (value > 0) return value;
+  }
+
+  return 0;
 }
 function productTitle(p){ return String(p.title || p.name || p.productName || p.description || p.id || 'Товар').trim(); }
 function productCode(p){ return String(p.code || p.article || p.sku || p.vendorCode || p.barcode || p.id || '').trim(); }
@@ -66,10 +103,26 @@ function orderStatus(o){ return String(o.status || o.orderStatus || o.state || o
 function isDoneOrder(o){
   const s = orderStatus(o);
   // Считаем только реально выполненные / выданные. Новые, отменённые, отклонённые не попадут.
-  return ['done','complete','completed','fulfilled','issued','delivered','closed','success','выдан','выдано','выполнен','выполнено','завершен','завершён','доставлен','доставлено'].some(x => s.includes(x));
+  return [
+    'done','complete','completed','fulfilled','issued','delivered','closed','success',
+    'picked_up','picked-up',
+    'выдан','выдано','выполнен','выполнено','завершен','завершён','доставлен','доставлено'
+  ].some(x => s.includes(x));
 }
 function isIgnoredOrder(o){ return !isDoneOrder(o); }
-function filteredOrders(){ const from = nowFrom(); return state.orders.filter(o => (getTime(o) || 0) >= from); }
+function filteredOrders(){
+  const from = nowFrom();
+
+  return state.orders.filter(o => {
+    const time = getTime(o);
+
+    // Старые заказы без даты не выбрасываем полностью:
+    // они остаются видны аналитике и не исчезают из-за различий формата Firestore Timestamp.
+    if (!time) return true;
+
+    return time >= from;
+  });
+}
 function completedOrders(){ return filteredOrders().filter(isDoneOrder); }
 function salesMapFromSite(){
   const map = new Map();
@@ -197,23 +250,56 @@ function renderBrands(){
 }
 function renderAll(){ renderKpis(); renderTopSales(); renderOneCSales(); renderRecommendations(); renderSlowProducts(); renderBrands(); renderChanges(); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+function mergeUniqueRows(){
+  const result = [];
+  const seen = new Set();
+
+  Array.from(arguments).forEach(list => {
+    (list || []).forEach(row => {
+      const key = String(
+        row.id ||
+        row.orderNumber ||
+        row.number ||
+        [row.userId || row.uid || '', row.createdAtText || getTime(row), row.total || ''].join('|')
+      );
+
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(row);
+    });
+  });
+
+  return result;
+}
+
 export async function loadProductAnalytics(force=false){
   const sec = $('#productAnalytics'); if(!sec) return;
   if(!force && sec.dataset.loaded === '1') return;
   sec.dataset.loaded = '1';
   setStatus('Загружаю товарную аналитику...');
-  const [products, orders, changes, runs] = await Promise.all([
+  const primaryOrdersCollection = COLLECTIONS.orders || 'autostyle_orders';
+
+  const [products, primaryOrders, legacyOrders, changes, runs] = await Promise.all([
     getCol(COLLECTIONS.products || 'autostyle_products', 10000),
-    getCol(COLLECTIONS.orders || 'autostyle_orders', 8000),
+    getCol(primaryOrdersCollection, 8000),
+    primaryOrdersCollection === 'orders' ? Promise.resolve([]) : getCol('orders', 8000),
     getCol('autostyle_product_changes', 10000),
     getCol('autostyle_product_sync_runs', 100)
   ]);
-  changes.sort((a,b)=>getTime(b)-getTime(a)); runs.sort((a,b)=>getTime(b)-getTime(a));
+
+  const orders = mergeUniqueRows(primaryOrders, legacyOrders);
+
+  changes.sort((a,b)=>getTime(b)-getTime(a));
+  runs.sort((a,b)=>getTime(b)-getTime(a));
+  orders.sort((a,b)=>getTime(b)-getTime(a));
+
   Object.assign(state, { products, orders, changes, runs });
   renderAll();
   const doneCount = completedOrders().length;
   const changesCount = state.changes.length;
-  setStatus(`Обновлено: ${new Date().toLocaleString('ru-RU')} · выполненных заказов: ${doneCount} · изменений 1С: ${changesCount}`);
+  setStatus(
+    `Обновлено: ${new Date().toLocaleString('ru-RU')} · заказов загружено: ${state.orders.length} · выполненных: ${doneCount} · изменений 1С: ${changesCount}`
+  );
 }
 function init(){
   const period = $('#paPeriod'); if(period) period.addEventListener('change', e=>{ state.selectedDays=Number(e.target.value||30); renderAll(); });
