@@ -31,19 +31,61 @@ function addTab(){
   pane.className='profile-card profile-pane wheel-profile-pane';
   pane.dataset.pane='wheel';
   pane.innerHTML=`
-    <div class="profile-card-head"><div><h2>Колесо фортуны</h2><p class="muted">Испытай удачу и получи товар AutoStyle.</p></div></div>
+    <div class="wheel-mobile-hero">
+      <span class="wheel-mobile-kicker">AUTO STYLE REWARDS</span>
+      <h2>Колесо подарков</h2>
+      <p>Крути колесо и забирай настоящий товар в магазине AutoStyle.</p>
+      <div class="wheel-mobile-trust">
+        <span>✓ Бесплатная попытка</span>
+        <span>✓ Реальные призы</span>
+      </div>
+    </div>
+    <div class="profile-card-head wheel-desktop-heading"><div><h2>Колесо фортуны</h2><p class="muted">Испытай удачу и получи товар AutoStyle.</p></div></div>
     <div class="wheel-shell">
-      <div class="wheel-stage"><div class="wheel-pointer"></div><div id="fortuneWheel" class="fortune-wheel"></div></div>
-      <div>
+      <div class="wheel-game-card">
+        <div class="wheel-stage">
+          <div class="wheel-light-ring" aria-hidden="true"></div>
+          <div class="wheel-pointer"><i></i></div>
+          <div id="fortuneWheel" class="fortune-wheel"></div>
+          <div class="wheel-center-cap"><b>AS</b><small>GO</small></div>
+        </div>
+        <div class="wheel-mobile-status-card">
+          <div><small>СТАТУС ПОПЫТКИ</small><strong id="wheelStatusMobile">Загрузка...</strong></div>
+          <span class="wheel-live-dot"></span>
+        </div>
+        <button id="wheelSpinBtn" class="wheel-spin-btn wheel-spin-main" type="button" disabled>
+          <span class="wheel-spin-icon">↻</span>
+          <span><b>КРУТИТЬ КОЛЕСО</b><small>Нажми и испытай удачу</small></span>
+        </button>
+      </div>
+      <div class="wheel-side">
         <div class="wheel-panel">
-          <h3>Твой шанс на подарок</h3>
+          <span class="wheel-panel-kicker">ТВОЯ ПОПЫТКА</span>
+          <h3>Подарок может быть твоим</h3>
           <p class="muted">Следующая попытка откроется автоматически после завершения таймера. Мы сообщим, когда колесо снова будет готово.</p>
           <div id="wheelStatus" class="wheel-status">Загрузка...</div>
-          <button id="wheelSpinBtn" class="wheel-spin-btn" type="button" disabled>Крутить колесо</button>
+          <button id="wheelSpinBtnDesktop" class="wheel-spin-btn wheel-spin-desktop" type="button" disabled>Крутить колесо</button>
         </div>
-        <h3 style="margin:22px 0 10px">Мои выигрыши</h3>
+        <div class="wheel-prizes-head">
+          <div><span>МОИ ПОДАРКИ</span><h3>Выигрыши</h3></div>
+          <small>Покажи штрихкод сотруднику</small>
+        </div>
         <div id="wheelPrizeList" class="wheel-prizes"></div>
       </div>
+    </div>
+    <div id="wheelResultModal" class="wheel-result-modal" hidden>
+      <div class="wheel-result-backdrop"></div>
+      <div class="wheel-result-sheet" role="dialog" aria-modal="true" aria-labelledby="wheelResultTitle">
+        <button id="wheelResultClose" class="wheel-result-close" type="button" aria-label="Закрыть">×</button>
+        <div id="wheelResultBurst" class="wheel-result-burst">🎉</div>
+        <span id="wheelResultBadge" class="wheel-result-badge">ТВОЙ ПРИЗ</span>
+        <h3 id="wheelResultTitle">Поздравляем!</h3>
+        <img id="wheelResultImage" src="assets/as-logo-192.png" alt="">
+        <strong id="wheelResultName">Подарок AutoStyle</strong>
+        <p id="wheelResultText">Приз сохранён в разделе «Мои выигрыши».</p>
+        <button id="wheelResultAction" class="wheel-result-action" type="button">Отлично!</button>
+      </div>
+      <div id="wheelConfetti" class="wheel-confetti" aria-hidden="true"></div>
     </div>`;
   content.appendChild(pane);
   btn.addEventListener('click',()=>{
@@ -55,8 +97,89 @@ function addTab(){
   });
   if(location.hash==='#wheel') setTimeout(()=>btn.click(),100);
   window.addEventListener('hashchange',()=>{if(location.hash==='#wheel')btn.click()});
-  document.getElementById('wheelSpinBtn').addEventListener('click',spin);
+  document.getElementById('wheelSpinBtn')?.addEventListener('click',spin);
+  document.getElementById('wheelSpinBtnDesktop')?.addEventListener('click',spin);
+  document.getElementById('wheelResultClose')?.addEventListener('click',closeWheelResult);
+  document.getElementById('wheelResultAction')?.addEventListener('click',closeWheelResult);
+  document.querySelector('.wheel-result-backdrop')?.addEventListener('click',closeWheelResult);
 }
+
+function syncWheelButtons(disabled){
+  ['wheelSpinBtn','wheelSpinBtnDesktop'].forEach(id=>{
+    const button=document.getElementById(id);
+    if(button)button.disabled=disabled;
+  });
+}
+function syncWheelStatus(message){
+  const desktop=document.getElementById('wheelStatus');
+  const mobile=document.getElementById('wheelStatusMobile');
+  if(desktop)desktop.textContent=message;
+  if(mobile)mobile.textContent=message;
+}
+function vibrate(pattern){
+  try{if(navigator.vibrate)navigator.vibrate(pattern)}catch(_){}
+}
+function closeWheelResult(){
+  const modal=document.getElementById('wheelResultModal');
+  if(!modal)return;
+  modal.classList.remove('is-open');
+  document.documentElement.classList.remove('wheel-modal-open');
+  setTimeout(()=>{modal.hidden=true},260);
+}
+function createConfetti(){
+  const box=document.getElementById('wheelConfetti');
+  if(!box)return;
+  box.innerHTML='';
+  const symbols=['●','■','◆','★'];
+  for(let i=0;i<46;i++){
+    const piece=document.createElement('i');
+    piece.textContent=symbols[i%symbols.length];
+    piece.style.setProperty('--x',`${Math.random()*100}%`);
+    piece.style.setProperty('--delay',`${Math.random()*.45}s`);
+    piece.style.setProperty('--duration',`${1.7+Math.random()*1.4}s`);
+    piece.style.setProperty('--drift',`${-70+Math.random()*140}px`);
+    piece.style.setProperty('--spin',`${180+Math.random()*720}deg`);
+    box.appendChild(piece);
+  }
+}
+function showWheelResult(result){
+  const modal=document.getElementById('wheelResultModal');
+  if(!modal)return;
+  const noPrize=!!result?.noPrize;
+  const image=document.getElementById('wheelResultImage');
+  const title=document.getElementById('wheelResultTitle');
+  const name=document.getElementById('wheelResultName');
+  const text=document.getElementById('wheelResultText');
+  const badge=document.getElementById('wheelResultBadge');
+  const burst=document.getElementById('wheelResultBurst');
+  const action=document.getElementById('wheelResultAction');
+
+  if(noPrize){
+    modal.classList.add('is-empty-result');
+    badge.textContent='ПОПРОБУЙ ЕЩЁ';
+    title.textContent='Почти получилось!';
+    name.textContent='В этот раз без подарка';
+    text.textContent='Новая попытка появится после завершения таймера.';
+    burst.textContent='↻';
+    image.src='assets/as-logo-192.png';
+    action.textContent='Хорошо';
+  }else{
+    modal.classList.remove('is-empty-result');
+    badge.textContent='ТВОЙ ПРИЗ';
+    title.textContent='Ты выиграл!';
+    name.textContent=result.name||'Подарок AutoStyle';
+    text.textContent='Приз уже сохранён в разделе «Мои выигрыши». Покажи штрихкод сотруднику магазина.';
+    burst.textContent='🎉';
+    image.src=result.image||'assets/as-logo-192.png';
+    action.textContent='Забрать подарок';
+    createConfetti();
+  }
+  modal.hidden=false;
+  requestAnimationFrame(()=>modal.classList.add('is-open'));
+  document.documentElement.classList.add('wheel-modal-open');
+  vibrate(noPrize?[50]:[80,60,120,60,180]);
+}
+
 function color(i,total){return `hsl(${Math.round((i/Math.max(total,1))*330)} 72% 48%)`}
 function renderWheel(config){
   const wheel=document.getElementById('fortuneWheel');
@@ -200,8 +323,8 @@ async function refreshWheel(){
   const status=document.getElementById('wheelStatus');
   const btn=document.getElementById('wheelSpinBtn');
 
-  if(status)status.textContent='Загрузка...';
-  if(btn)btn.disabled=true;
+  syncWheelStatus('Загрузка...');
+  syncWheelButtons(true);
 
   try{
     /*
@@ -242,17 +365,17 @@ async function refreshWheel(){
     const now=Date.now();
 
     if(!currentConfig.enabled){
-      if(status)status.textContent='Колесо временно выключено.';
-      if(btn)btn.disabled=true;
+      syncWheelStatus('Колесо временно выключено.');
+      syncWheelButtons(true);
     }else if(now<next){
       const ms=next-now;
       const h=Math.floor(ms/3600000);
       const m=Math.ceil((ms%3600000)/60000);
       if(status)status.textContent=`Следующая игра через ${h} ч. ${m} мин.`;
-      if(btn)btn.disabled=true;
+      syncWheelButtons(true);
     }else{
       if(status)status.textContent='Колесо готово. Удачи!';
-      if(btn)btn.disabled=false;
+      syncWheelButtons(false);
     }
 
     scheduleReadyNotification(stateData);
@@ -274,7 +397,7 @@ async function refreshWheel(){
     currentConfig={enabled:false,products:[]};
     renderWheel(currentConfig);
     if(status)status.textContent='Не удалось загрузить колесо. Обнови страницу.';
-    if(btn)btn.disabled=true;
+    syncWheelButtons(true);
     await renderPrizes([]);
   }
 }
@@ -304,7 +427,7 @@ async function renderPrizes(items){
 
 async function spin(){
   if(spinning||!currentUser||!currentConfig)return;
-  spinning=true;const btn=document.getElementById('wheelSpinBtn');btn.disabled=true;
+  spinning=true;const btn=document.getElementById('wheelSpinBtn');syncWheelButtons(true);vibrate(35);
   try{
     const products=(currentConfig.products||[]).filter(x=>x.enabled!==false&&Number(x.chance)>0);
     const sum=products.reduce((s,x)=>s+Number(x.chance||0),0);
@@ -333,6 +456,7 @@ async function spin(){
     wheel.classList.remove('is-finished');
     wheel.classList.add('is-spinning');
     stage?.classList.add('is-spinning');
+    document.querySelector('.wheel-game-card')?.classList.add('is-spinning');
 
     const animation=wheel.animate(
       [
@@ -353,6 +477,8 @@ async function spin(){
     wheel.classList.remove('is-spinning');
     wheel.classList.add('is-finished');
     stage?.classList.remove('is-spinning');
+    document.querySelector('.wheel-game-card')?.classList.remove('is-spinning');
+    vibrate([35,35,70]);
     setTimeout(()=>wheel.classList.remove('is-finished'),450);
     const claimHours=Number(currentConfig.claimHours||48);
     const spinAt=Date.now();
@@ -391,9 +517,12 @@ async function spin(){
         });
       }
     });
-    alert(result.noPrize?'В этот раз без приза. Попробуй снова позже!':`Поздравляем! Ты выиграл: ${result.name}`);
+    showWheelResult(result);
     await refreshWheel();
-  }catch(e){alert(e.message||e);await refreshWheel()}
+  }catch(e){
+    showWheelResult({noPrize:true,name:e.message||String(e)});
+    await refreshWheel();
+  }
   finally{spinning=false}
 }
 addTab();
