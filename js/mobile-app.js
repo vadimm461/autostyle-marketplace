@@ -880,18 +880,30 @@ async function renderProfile(){
     if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
     const myOrders = await loadMobileOrders(u).catch(()=>[]);
     const profileTop = `<div class="m-profile-head m-profile-head-dark"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div class="m-profile-user"><h1>${d.name||u.displayName||'Профиль'}</h1><div>${d.email||u.email||''}</div></div><span class="m-profile-ok">Профиль подтверждён</span></div>`;
-    const profileMenu = `<div class="m-profile-main-title"><h1>Главная профиля</h1><p>Все основные разделы в одном месте.</p></div><div class="m-profile-tiles">
-      <a class="m-profile-tile tile-green" href="mobile-profile-data.html"><span class="m-tile-ico"><img src="assets/icons/user.svg" alt=""></span><b>Профиль</b><small>Данные и фото</small></a>
-      <a class="m-profile-tile tile-red" href="mobile-discount-card.html"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Скидочная карта</b><small>Бонусы и скидки</small></a>
-      <a class="m-profile-tile tile-dark" href="mobile-orders.html"><span class="m-tile-ico"><img src="assets/icons/package.svg" alt=""></span><b>Мои заказы</b><small>История покупок</small></a>
+    const profileMenu = `<div class="m-profile-main-title"><h1>Главная профиля</h1><p>Все разделы большого профиля в мобильной версии.</p></div>
+    <div class="m-profile-tiles m-profile-tiles-full">
+      <a class="m-profile-tile tile-green" href="mobile-catalog.html"><span class="m-tile-ico"><img src="assets/icons/package.svg" alt=""></span><b>Каталог товаров</b><small>Все товары AutoStyle</small></a>
       <a class="m-profile-tile" href="mobile-favorites.html"><span class="m-tile-ico"><img src="assets/icons/heart.svg" alt=""></span><b>Избранное</b><small>Сохранённые товары</small></a>
-      <a class="m-profile-tile" href="mobile-cart.html"><span class="m-tile-ico"><img src="assets/icons/cart.svg" alt=""></span><b>Корзина</b><small>Оформление заказа</small></a>
-      <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход</b><small>Почта и телефон</small></a>
-    </div><div class="m-profile-pills">
-      <a href="mobile-discount-card.html">% <span>Скидки</span></a>
-      <a href="mobile-notifications.html">⌕ <span>Уведомления</span></a>
-      <a href="mobile-feedback.html">▢ <span>Быстрый заказ</span></a>
-    </div>`;
+      <a class="m-profile-tile" href="mobile-cart.html"><span class="m-tile-ico"><img src="assets/icons/cart.svg" alt=""></span><b>Корзина</b><small>Товары и оформление</small></a>
+      <a class="m-profile-tile tile-dark" href="mobile-orders.html"><span class="m-tile-ico"><img src="assets/icons/file.svg" alt=""></span><b>Мои заказы</b><small>История и статусы</small></a>
+      <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/user.svg" alt=""></span><b>Профиль</b><small>Личные данные и фото</small></a>
+      <a class="m-profile-tile tile-red" href="mobile-discount-card.html"><span class="m-tile-ico"><img src="assets/icons/percent.svg" alt=""></span><b>Скидочная карта</b><small>Карта и персональная скидка</small></a>
+      <a class="m-profile-tile tile-feedback" href="mobile-feedback.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Предложения и жалобы</b><small>Связь с администрацией</small></a>
+      <a id="mWheelTile" class="m-profile-tile tile-wheel" href="profile.html#wheel"><span class="m-wheel-label">ПОДАРКИ</span><span class="m-tile-ico m-wheel-ico">🎁</span><b>Колесо фортуны</b><small>Испытать удачу</small></a>
+      <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход и привязки</b><small>Почта, телефон и безопасность</small></a>
+      <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Изменить пароль</b><small>Настройки доступа</small></a>
+      <a class="m-profile-tile" href="mobile-notifications.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
+      <a class="m-profile-tile" href="mobile-installment.html"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Рассрочка</b><small>Условия и банки</small></a>
+      <a class="m-profile-tile" href="mobile-certificates.html"><span class="m-tile-ico"><img src="assets/icons/shopping-bag.svg" alt=""></span><b>Сертификаты</b><small>Подарочные сертификаты</small></a>
+      <a class="m-profile-tile" href="mobile-contacts.html"><span class="m-tile-ico"><img src="assets/icons/home.svg" alt=""></span><b>Контакты</b><small>Адреса и связь</small></a>
+    </div>
+    <div class="m-profile-benefits-title"><h2>Ваши преимущества</h2></div>
+    <div class="m-profile-benefit-grid">
+      <div class="m-profile-benefit"><span><img src="assets/icons/percent.svg" alt=""></span><b>Скидочная карта</b><small>Персональные скидки</small></div>
+      <div class="m-profile-benefit"><span><img src="assets/icons/card.svg" alt=""></span><b>Удобная оплата</b><small>Разные способы оплаты</small></div>
+      <div class="m-profile-benefit"><span><img src="assets/icons/shopping-bag.svg" alt=""></span><b>Быстрый заказ</b><small>Данные подставляются автоматически</small></div>
+      <div class="m-profile-benefit"><span><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Статусы и важные сообщения</small></div>
+    </div>`; 
     let body = profileMenu;
     if(page === 'profile-data') body = `<section id="account" class="m-profile-pane"><h2>Личные данные</h2><input id="pName" class="m-input" value="${d.name||u.displayName||''}" placeholder="Имя"><input id="pEmailEdit" class="m-input" value="${d.email||u.email||''}" placeholder="Email"><input id="pPhone" class="m-input" value="${d.phone||u.phoneNumber||''}" placeholder="Телефон"><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Автомобиль"><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Фото URL"><input id="pPassEdit" class="m-input" type="password" placeholder="Новый пароль"><button id="saveProfile" class="m-primary" style="width:100%;margin-top:10px">Сохранить профиль</button></section><section id="security" class="m-profile-pane"><h2>Вход и подтверждение</h2><p class="m-group">Подключено: ${userProviders(u).map(providerTitle).join(', ') || 'не определено'} · Почта ${u.emailVerified?'подтверждена':'не подтверждена'} · Телефон ${u.phoneNumber?'подтверждён':'не привязан'}</p><button id="resendEmailVerify" class="m-btn" style="width:100%;margin-top:10px">Отправить подтверждение почты</button><div class="m-auth-box"><input id="pLinkPhone" class="m-input" value="${u.phoneNumber||d.phone||''}" placeholder="Телефон: +373..."><button id="pLinkSms" class="m-btn" style="width:100%;margin-top:10px">Отправить SMS для привязки</button><input id="pLinkCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmLinkSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить и привязать</button><div id="mRecaptcha"></div></div></section>`;
     if(page === 'discount-card') body = `<section id="discount-card" class="m-profile-pane">${renderDiscountCard(u,d)}</section>`;
@@ -899,6 +911,14 @@ async function renderProfile(){
     if(page === 'feedback') body = `<section id="feedback" class="m-profile-pane m-feedback-pane"><h2>Предложения и жалобы</h2><p class="m-group">Напишите администрации сайта. Можно прикрепить фото.</p><select id="mFeedbackType" class="m-input"><option value="proposal">Предложение</option><option value="complaint">Жалоба</option><option value="question">Вопрос</option></select><input id="mFeedbackSubject" class="m-input" placeholder="Тема обращения"><textarea id="mFeedbackText" class="m-input m-textarea" placeholder="Опишите обращение"></textarea><label class="m-file-input"><input id="mFeedbackPhoto" type="file" accept="image/*">📷 Прикрепить фото</label><button id="mSendFeedback" class="m-primary" style="width:100%;margin-top:10px">Отправить администрации</button></section>`;
     if(page === 'notifications') body = `<section class="m-profile-pane" id="mMobileNotifications"><h2>Уведомления</h2><div class="m-empty">Загружаем...</div></section>`;
     box.innerHTML = `${profileTop}${body}`;
+    const wheelTile = $('#mWheelTile');
+    if(wheelTile){
+      wheelTile.addEventListener('click', function(event){
+        event.preventDefault();
+        sessionStorage.setItem('as_force_desktop','1');
+        location.href='profile.html#wheel';
+      });
+    }
     if(page === 'notifications') startMobileNotifications(u, $('#mMobileNotifications'));
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
     if($('#saveProfile')) $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };

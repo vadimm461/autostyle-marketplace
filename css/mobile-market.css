@@ -1322,3 +1322,102 @@ body.mobile-page [class*="product"] [class*="image"] img{
 .m-installment-month.selected{background:#10141b;border-color:#10141b;color:#28e11a;}
 .m-installment-month em{font-style:normal;font-size:11px;font-weight:900;color:inherit;opacity:.8;}
 .m-installment-month strong{font-size:13px;font-weight:950;color:inherit;}
+
+
+/* AUTO-STYLE: полный мобильный профиль кубиками */
+.m-profile-tiles-full{
+  padding-bottom:18px;
+}
+.m-profile-tiles-full .m-profile-tile{
+  position:relative;
+  aspect-ratio:1/1;
+  min-height:0;
+  padding:15px;
+}
+.m-profile-tiles-full .m-profile-tile b{
+  font-size:17px;
+}
+.m-profile-tiles-full .m-profile-tile small{
+  font-size:12px;
+  line-height:1.25;
+}
+.m-profile-tile.tile-feedback{
+  background:linear-gradient(135deg,#f5f9ff,#ffffff);
+  border-color:#cdddf7;
+}
+.m-profile-tile.tile-wheel{
+  background:linear-gradient(145deg,#111827,#25334d);
+  border-color:#263650;
+  color:#fff;
+  box-shadow:0 15px 34px rgba(15,23,42,.22);
+}
+.m-profile-tile.tile-wheel small{color:rgba(255,255,255,.76)}
+.m-profile-tile .m-wheel-ico{
+  font-size:28px;
+  line-height:1;
+}
+.m-wheel-label{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#24e52f;
+  color:#08120a;
+  font-size:9px;
+  font-weight:1000;
+  letter-spacing:.7px;
+}
+.m-profile-benefits-title{
+  background:#fff;
+  padding:20px 18px 8px;
+}
+.m-profile-benefits-title h2{
+  margin:0;
+  font-size:23px;
+  color:#111827;
+}
+.m-profile-benefit-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  padding:8px 18px 22px;
+  background:#fff;
+  border-radius:0 0 28px 28px;
+}
+.m-profile-benefit{
+  min-height:110px;
+  padding:14px;
+  border:1px solid #e5e7eb;
+  border-radius:19px;
+  background:#f9fafb;
+  display:flex;
+  flex-direction:column;
+}
+.m-profile-benefit span{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  margin-bottom:10px;
+}
+.m-profile-benefit span img{
+  width:24px;
+  height:24px;
+}
+.m-profile-benefit b{
+  font-size:15px;
+  line-height:1.15;
+}
+.m-profile-benefit small{
+  margin-top:6px;
+  color:#667085;
+  font-size:11px;
+  line-height:1.25;
+}
+@media(max-width:370px){
+  .m-profile-tiles-full{gap:8px;padding-left:12px;padding-right:12px}
+  .m-profile-tiles-full .m-profile-tile{padding:12px;border-radius:18px}
+  .m-profile-tiles-full .m-profile-tile b{font-size:15px}
+  .m-profile-tiles-full .m-profile-tile small{font-size:11px}
+}
