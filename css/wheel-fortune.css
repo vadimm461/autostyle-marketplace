@@ -824,3 +824,24 @@
     transition:none;
   }
 }
+
+
+/* winnings collapse */
+.wheel-prize-extra{display:none;}
+.wheel-prizes.is-expanded .wheel-prize-extra,
+#wheelPrizeList.is-expanded .wheel-prize-extra{display:grid;}
+.wheel-prizes-toggle{
+width:100%;
+margin-top:14px;
+padding:12px 16px;
+border:1px solid #d9e1ea;
+background:#fff;
+border-radius:14px;
+font-weight:700;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+}
+.wheel-prizes-toggle:hover{background:#f5f7fa;}
