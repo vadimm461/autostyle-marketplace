@@ -8,7 +8,7 @@ import {
 
 const CONFIG_REF = doc(db,'autostyle_wheel_config','main');
 const stateRef = uid => doc(db,'autostyle_wheel_state',uid);
-let currentUser=null, currentConfig=null, rotation=0, spinning=false;
+let currentUser=null, currentConfig=null, rotation=0, spinning=false, availabilityTimer=null;
 
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
 function loadJsBarcode(){
@@ -37,7 +37,7 @@ function addTab(){
       <div>
         <div class="wheel-panel">
           <h3>Твой шанс на подарок</h3>
-          <p class="muted">Играть можно по расписанию, которое установил администратор.</p>
+          <p class="muted">Следующая попытка откроется автоматически после завершения таймера. Мы сообщим, когда колесо снова будет готово.</p>
           <div id="wheelStatus" class="wheel-status">Загрузка...</div>
           <button id="wheelSpinBtn" class="wheel-spin-btn" type="button" disabled>Крутить колесо</button>
         </div>
@@ -145,6 +145,55 @@ function barcode(){
   const digits=Array.from({length:12},()=>Math.floor(Math.random()*10)).join('');
   return 'ASW'+digits;
 }
+
+function notificationRef(id){
+  return doc(db,'autostyle_notifications',id);
+}
+function safeNotifyId(value){
+  return String(value||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,120);
+}
+function clearAvailabilityTimer(){
+  if(availabilityTimer){clearTimeout(availabilityTimer);availabilityTimer=null;}
+}
+async function createReadyNotificationIfDue(stateData={}){
+  if(!currentUser||!currentConfig?.enabled)return;
+  const nextMs=stateData.nextAvailableAt?.toMillis?.()
+    || ((stateData.lastSpinAt?.toMillis?.()||0)+Number(currentConfig.intervalHours||48)*3600000);
+  const key=safeNotifyId(stateData.readyNotificationKey||nextMs);
+  if(!nextMs||Date.now()<nextMs||stateData.readyNotificationSent===true||!key)return;
+  try{
+    await runTransaction(db,async tx=>{
+      const sref=stateRef(currentUser.uid);
+      const snap=await tx.get(sref);
+      if(!snap.exists())return;
+      const live=snap.data()||{};
+      const liveNext=live.nextAvailableAt?.toMillis?.()
+        || ((live.lastSpinAt?.toMillis?.()||0)+Number(currentConfig.intervalHours||48)*3600000);
+      const liveKey=safeNotifyId(live.readyNotificationKey||liveNext);
+      if(!liveNext||Date.now()<liveNext||live.readyNotificationSent===true||liveKey!==key)return;
+      tx.set(notificationRef(`wheel-ready-${currentUser.uid}-${liveKey}`),{
+        audience:'user',userId:currentUser.uid,uid:currentUser.uid,userEmail:currentUser.email||'',
+        type:'wheel_ready',title:'🎡 Колесо фортуны снова доступно',
+        text:'Новая попытка уже открыта. Испытай удачу — возможно, сегодняшний приз ждёт именно тебя.',
+        html:'<p><b>Новая попытка уже открыта.</b></p><p>Испытай удачу — возможно, сегодняшний приз ждёт именно тебя.</p>',
+        link:'profile.html#wheel',createdAt:serverTimestamp(),createdBy:'wheel-system'
+      });
+      tx.set(sref,{readyNotificationSent:true,readyNotificationSentAt:serverTimestamp()},{merge:true});
+    });
+  }catch(error){console.warn('Не удалось создать уведомление о доступности колеса:',error);}
+}
+function scheduleReadyNotification(stateData={}){
+  clearAvailabilityTimer();
+  const nextMs=stateData.nextAvailableAt?.toMillis?.()
+    || ((stateData.lastSpinAt?.toMillis?.()||0)+Number(currentConfig?.intervalHours||48)*3600000);
+  if(!nextMs)return;
+  const delay=nextMs-Date.now();
+  if(delay<=0){createReadyNotificationIfDue(stateData);return;}
+  availabilityTimer=setTimeout(async()=>{
+    await createReadyNotificationIfDue(stateData);
+    await refreshWheel();
+  },Math.min(delay+800,2147483000));
+}
 async function refreshWheel(){
   if(!currentUser)return;
 
@@ -186,11 +235,10 @@ async function refreshWheel(){
     currentConfig=cfg?.exists()?cfg.data():{enabled:false,products:[]};
     renderWheel(currentConfig);
 
+    const stateData=state?.exists()?state.data():{};
     const interval=Number(currentConfig.intervalHours||48)*3600000;
-    const last=state?.exists()&&state.data().lastSpinAt?.toMillis
-      ? state.data().lastSpinAt.toMillis()
-      : 0;
-    const next=last+interval;
+    const last=stateData.lastSpinAt?.toMillis?stateData.lastSpinAt.toMillis():0;
+    const next=stateData.nextAvailableAt?.toMillis?.()||last+interval;
     const now=Date.now();
 
     if(!currentConfig.enabled){
@@ -206,6 +254,8 @@ async function refreshWheel(){
       if(status)status.textContent='Колесо готово. Удачи!';
       if(btn)btn.disabled=false;
     }
+
+    scheduleReadyNotification(stateData);
 
     const prizeItems=prizes
       ? prizes.docs
@@ -232,16 +282,26 @@ async function renderPrizes(items){
   const list=document.getElementById('wheelPrizeList');if(!list)return;
   await loadJsBarcode().catch(()=>{});
   if(!items.length){list.innerHTML='<div class="profile-empty">Выигрышей пока нет.</div>';return}
-  list.innerHTML=items.map(p=>{
+  const cards=items.map((p,index)=>{
     const exp=p.expiresAt?.toDate?.();const expired=exp&&exp<Date.now();const redeemed=p.status==='redeemed';
-    return `<article class="wheel-prize-card ${expired?'wheel-expired':''}">
+    return `<article class="wheel-prize-card ${expired?'wheel-expired':''} ${index>=3?'wheel-prize-extra':''}">
       <img src="${esc(p.productImage||'assets/as-logo-192.png')}" alt="">
       <div><b>${esc(p.productName)}</b><div class="wheel-prize-meta">Статус: ${redeemed?'Получен':expired?'Срок истёк':'Можно забрать'}<br>Забрать до: ${exp?exp.toLocaleString('ru-RU'):'—'}</div></div>
       <div class="wheel-barcode"><svg data-barcode="${esc(p.barcode)}"></svg><div><b>${esc(p.barcode)}</b></div></div>
     </article>`;
   }).join('');
-  if(window.JsBarcode)document.querySelectorAll('[data-barcode]').forEach(svg=>JsBarcode(svg,svg.dataset.barcode,{format:'CODE128',height:52,displayValue:false,margin:3}));
+  const hiddenCount=Math.max(0,items.length-3);
+  list.innerHTML=`<div class="wheel-prize-items">${cards}</div>${hiddenCount?`<button class="wheel-prizes-toggle" type="button" aria-expanded="false"><span>Показать ещё ${hiddenCount}</span><i>⌄</i></button>`:''}`;
+  const toggle=list.querySelector('.wheel-prizes-toggle');
+  if(toggle)toggle.addEventListener('click',()=>{
+    const expanded=list.classList.toggle('is-expanded');
+    toggle.setAttribute('aria-expanded',String(expanded));
+    toggle.querySelector('span').textContent=expanded?'Свернуть':`Показать ещё ${hiddenCount}`;
+    toggle.querySelector('i').textContent=expanded?'⌃':'⌄';
+  });
+  if(window.JsBarcode)list.querySelectorAll('[data-barcode]').forEach(svg=>JsBarcode(svg,svg.dataset.barcode,{format:'CODE128',height:52,displayValue:false,margin:3}));
 }
+
 async function spin(){
   if(spinning||!currentUser||!currentConfig)return;
   spinning=true;const btn=document.getElementById('wheelSpinBtn');btn.disabled=true;
@@ -295,22 +355,39 @@ async function spin(){
     stage?.classList.remove('is-spinning');
     setTimeout(()=>wheel.classList.remove('is-finished'),450);
     const claimHours=Number(currentConfig.claimHours||48);
+    const spinAt=Date.now();
     await runTransaction(db,async tx=>{
       const sref=stateRef(currentUser.uid),ss=await tx.get(sref),cfg=await tx.get(CONFIG_REF);
       const live=cfg.exists()?cfg.data():currentConfig;
-      const last=ss.exists()&&ss.data().lastSpinAt?.toMillis?ss.data().lastSpinAt.toMillis():0;
+      const lastData=ss.exists()?ss.data():{};
+      const last=lastData.lastSpinAt?.toMillis?lastData.lastSpinAt.toMillis():0;
       const interval=Number(live.intervalHours||48)*3600000;
-      if(Date.now()<last+interval)throw new Error('Играть пока рано.');
-      tx.set(sref,{lastSpinAt:serverTimestamp(),lastResult:result.noPrize?'none':result.productId||'',updatedAt:serverTimestamp()},{merge:true});
+      const liveNext=lastData.nextAvailableAt?.toMillis?.()||last+interval;
+      if(Date.now()<liveNext)throw new Error('Играть пока рано.');
+      const readyKey=String(spinAt);
+      tx.set(sref,{
+        lastSpinAt:serverTimestamp(),lastSpinClientAt:spinAt,
+        nextAvailableAt:Timestamp.fromMillis(spinAt+interval),
+        readyNotificationKey:readyKey,readyNotificationSent:false,
+        lastResult:result.noPrize?'none':result.productId||'',updatedAt:serverTimestamp()
+      },{merge:true});
       if(!result.noPrize){
         const pref=doc(collection(db,'autostyle_wheel_prizes'));
+        const prizeBarcode=barcode();
         tx.set(pref,{
           userId:currentUser.uid,userEmail:currentUser.email||'',
           productId:result.productId||'',productCode:result.code||'',
           productName:result.name||'Приз',productImage:result.image||'',
-          barcode:barcode(),status:'active',
+          barcode:prizeBarcode,status:'active',
           createdAt:serverTimestamp(),
-          expiresAt:Timestamp.fromMillis(Date.now()+claimHours*3600000)
+          expiresAt:Timestamp.fromMillis(spinAt+claimHours*3600000)
+        });
+        tx.set(notificationRef(`wheel-win-${currentUser.uid}-${pref.id}`),{
+          audience:'user',userId:currentUser.uid,uid:currentUser.uid,userEmail:currentUser.email||'',
+          type:'wheel_win',title:'🎉 Поздравляем с выигрышем!',
+          text:`Вы выиграли: ${result.name||'Приз'}. Покажите штрихкод сотруднику AutoStyle, чтобы получить подарок.`,
+          html:`<p>Вы выиграли: <b>${esc(result.name||'Приз')}</b>.</p><p>Покажите штрихкод сотруднику AutoStyle, чтобы получить подарок.</p>`,
+          link:'profile.html#wheel',createdAt:serverTimestamp(),createdBy:'wheel-system',prizeId:pref.id
         });
       }
     });
@@ -320,4 +397,4 @@ async function spin(){
   finally{spinning=false}
 }
 addTab();
-onAuthStateChanged(auth,u=>{currentUser=u;if(u)refreshWheel()});
+onAuthStateChanged(auth,u=>{currentUser=u;if(u)refreshWheel();else clearAvailabilityTimer()});

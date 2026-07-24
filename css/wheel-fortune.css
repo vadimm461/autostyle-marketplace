@@ -620,3 +620,17 @@
   .wheel-settings-fields{grid-template-columns:1fr}
   .wheel-admin-product{grid-template-columns:52px minmax(0,1fr) 84px 36px}
 }
+
+
+/* Сворачиваемая история выигрышей */
+.wheel-prize-items{display:grid;gap:12px}
+.wheel-prize-extra{display:none}
+.wheel-prizes.is-expanded .wheel-prize-extra{display:grid;animation:wheelPrizeReveal .22s ease both}
+.wheel-prizes-toggle{
+  width:100%;min-height:46px;margin-top:4px;border:1px solid #dfe6ee;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:#172033;
+  font-size:14px;font-weight:900;cursor:pointer;transition:.18s ease;
+}
+.wheel-prizes-toggle:hover{border-color:#22c55e;background:#f5fff5}
+.wheel-prizes-toggle i{font-style:normal;color:#19b333;font-size:19px;line-height:1}
+@keyframes wheelPrizeReveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
