@@ -248,7 +248,306 @@ function renderBrands(){
   const rows=[...m.values()].sort((a,b)=>b.qty-a.qty).slice(0,12); const max=Math.max(...rows.map(r=>r.qty),1);
   box.innerHTML = rows.length ? rows.map(r=>`<div><div class="pa-line"><b>${escapeHtml(r.name)}</b><span>${fmt(r.qty)} шт · ${money(r.revenue)}</span></div><div class="pa-progress">${rowProgress(r.qty,max)}</div></div>`).join('') : '<div class="pa-empty">Данных по брендам пока нет.</div>';
 }
-function renderAll(){ renderKpis(); renderTopSales(); renderOneCSales(); renderRecommendations(); renderSlowProducts(); renderBrands(); renderChanges(); }
+
+function salesForDays(days){
+  const from = Date.now() - days * dayMs;
+  const map = new Map();
+
+  state.changes.forEach(c => {
+    const when = getTime(c);
+    if (!when || when < from) return;
+
+    const type = String(c.type || '').toLowerCase();
+    const oldStock = toNum(c.oldStock != null ? c.oldStock : c.beforeStock);
+    const newStock = toNum(c.newStock != null ? c.newStock : c.afterStock);
+    let qty = toNum(c.qty != null ? c.qty : (c.quantity != null ? c.quantity : c.soldQty));
+
+    if (!qty && oldStock > newStock) qty = oldStock - newStock;
+
+    const isSale = type === 'sale' || type === 'stock_down' || oldStock > newStock;
+    if (!isSale || qty <= 0) return;
+
+    const id = String(c.productId || c.externalId || c.code || c.sku || c.id || '').trim();
+    if (!id) return;
+
+    map.set(id, (map.get(id) || 0) + qty);
+  });
+
+  return map;
+}
+
+function stockHistoryForProduct(productId, currentStock, days=30){
+  const points = [];
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const byDay = new Map();
+
+  state.changes.forEach(c => {
+    const id = String(c.productId || c.externalId || c.code || c.sku || c.id || '').trim();
+    if (id !== productId) return;
+
+    const when = getTime(c);
+    if (!when) return;
+
+    const day = new Date(when);
+    day.setHours(0, 0, 0, 0);
+    const key = day.getTime();
+
+    const oldStock = toNum(c.oldStock != null ? c.oldStock : c.beforeStock);
+    const newStock = toNum(c.newStock != null ? c.newStock : c.afterStock);
+
+    if (!byDay.has(key) || getTime(byDay.get(key)) < when) {
+      byDay.set(key, { ...c, oldStock, newStock });
+    }
+  });
+
+  let stock = Math.max(0, toNum(currentStock));
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now.getTime() - i * dayMs);
+    const key = d.getTime();
+    points.push({ time:key, stock });
+
+    const change = byDay.get(key);
+    if (change) stock = Math.max(0, toNum(change.oldStock));
+  }
+
+  return points.reverse();
+}
+
+function miniStockChart(productId, stock){
+  const points = stockHistoryForProduct(productId, stock, 30);
+  const max = Math.max(1, ...points.map(p => p.stock));
+  return `<div class="pa-mini-chart" title="Остаток за последние 30 дней">${
+    points.map(p => `<i style="height:${Math.max(6, Math.round(p.stock / max * 100))}%"></i>`).join('')
+  }</div>`;
+}
+
+function priorityInfo(daysLeft, stock, sold30, need){
+  if (stock <= 0 && sold30 > 0) return { key:'critical', label:'Срочно', rank:4 };
+  if (need > 0 && daysLeft <= 7) return { key:'critical', label:'Срочно', rank:4 };
+  if (need > 0 && daysLeft <= 14) return { key:'high', label:'Высокий', rank:3 };
+  if (need > 0 || daysLeft <= 30) return { key:'medium', label:'Средний', rank:2 };
+  return { key:'normal', label:'Запас есть', rank:1 };
+}
+
+function smartRows(){
+  const sold7 = salesForDays(7);
+  const sold30 = salesForDays(30);
+  const sold90 = salesForDays(90);
+
+  return state.products.map(normProduct).map(p => {
+    const s7 = sold7.get(p.id) || toNum(p.sales7d);
+    const s30 = sold30.get(p.id) || toNum(p.sales30d);
+    const s90 = sold90.get(p.id) || 0;
+
+    const avgDaily = s30 > 0 ? s30 / 30 : (s90 > 0 ? s90 / 90 : 0);
+    const daysLeft = avgDaily > 0 ? Math.floor(p.stock / avgDaily) : null;
+    const safety = Math.ceil(avgDaily * 7);
+    const target = Math.ceil(avgDaily * 30) + safety;
+    const calculatedNeed = Math.max(0, target - p.stock);
+    const need = Math.max(calculatedNeed, toNum(p.recommendedOrderQty));
+    const priority = priorityInfo(daysLeft == null ? 9999 : daysLeft, p.stock, s30, need);
+
+    return {
+      ...p,
+      sold7:s7,
+      sold30:s30,
+      sold90:s90,
+      avgDaily,
+      daysLeft,
+      safety,
+      target,
+      need,
+      priority
+    };
+  });
+}
+
+function ensureSmartAnalyticsUi(){
+  if ($('#paSmartProcurement')) return;
+
+  const section = $('#productAnalytics');
+  if (!section) return;
+
+  const anchor = $('#paRecommendations')?.closest('section, .admin-card, .pa-card, div') || $('#paRecommendations');
+  const wrap = document.createElement('section');
+  wrap.id = 'paSmartProcurement';
+  wrap.className = 'pa-smart-panel';
+  wrap.innerHTML = `
+    <div class="pa-smart-head">
+      <div>
+        <h2>Умная закупка по товарам</h2>
+        <p>Продажи 1С, запас в днях, приоритет и рекомендуемый заказ.</p>
+      </div>
+      <div class="pa-smart-tools">
+        <input id="paSmartSearch" type="search" placeholder="Название или код товара">
+        <select id="paSmartPriority">
+          <option value="all">Все приоритеты</option>
+          <option value="critical">Только срочные</option>
+          <option value="high">Высокий приоритет</option>
+          <option value="medium">Средний приоритет</option>
+          <option value="normal">Запас есть</option>
+        </select>
+        <select id="paSmartSort">
+          <option value="priority">Сначала срочные</option>
+          <option value="need">Больше к заказу</option>
+          <option value="days">Меньше дней запаса</option>
+          <option value="sold30">Больше продаж за 30 дней</option>
+          <option value="stock">Меньше остаток</option>
+        </select>
+      </div>
+    </div>
+    <div class="pa-smart-summary" id="paSmartSummary"></div>
+    <div class="pa-smart-table-wrap">
+      <table class="pa-smart-table">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Остаток</th>
+            <th>7 дней</th>
+            <th>30 дней</th>
+            <th>90 дней</th>
+            <th>В день</th>
+            <th>Хватит</th>
+            <th>Движение остатка</th>
+            <th>Приоритет</th>
+            <th>К заказу</th>
+          </tr>
+        </thead>
+        <tbody id="paSmartRows"></tbody>
+      </table>
+    </div>`;
+
+  if (anchor && anchor.parentNode) {
+    anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+  } else {
+    section.appendChild(wrap);
+  }
+
+  const style = document.createElement('style');
+  style.id = 'paSmartStyles';
+  style.textContent = `
+    .pa-smart-panel{margin:22px 0;padding:22px;border:1px solid #dfe7f1;border-radius:22px;background:#fff;box-shadow:0 14px 40px rgba(20,35,55,.07)}
+    .pa-smart-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:16px}
+    .pa-smart-head h2{margin:0 0 5px;font-size:24px;color:#10233f}
+    .pa-smart-head p{margin:0;color:#65748a}
+    .pa-smart-tools{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+    .pa-smart-tools input,.pa-smart-tools select{height:42px;border:1px solid #dbe4ef;border-radius:12px;padding:0 13px;background:#f9fbfd;color:#17243a;font:inherit}
+    .pa-smart-tools input{min-width:220px}
+    .pa-smart-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 15px}
+    .pa-smart-summary div{padding:13px 15px;border-radius:15px;background:#f5f8fc;border:1px solid #e5ebf3}
+    .pa-smart-summary b{display:block;font-size:22px;color:#11243e}
+    .pa-smart-summary small{color:#68778c}
+    .pa-smart-table-wrap{overflow:auto;border:1px solid #e5ebf3;border-radius:16px}
+    .pa-smart-table{width:100%;border-collapse:collapse;min-width:1120px}
+    .pa-smart-table th{position:sticky;top:0;z-index:1;background:#f6f9fc;text-align:left;padding:12px 10px;font-size:12px;color:#627086;border-bottom:1px solid #e5ebf3}
+    .pa-smart-table td{padding:12px 10px;border-bottom:1px solid #edf1f6;vertical-align:middle;color:#23324a}
+    .pa-smart-table tr:last-child td{border-bottom:0}
+    .pa-smart-title{max-width:300px}
+    .pa-smart-title b{display:block;line-height:1.25}
+    .pa-smart-title small{display:block;margin-top:4px;color:#758297}
+    .pa-priority{display:inline-flex;align-items:center;justify-content:center;min-width:84px;padding:7px 9px;border-radius:999px;font-size:12px;font-weight:800}
+    .pa-priority-critical{background:#ffe8ea;color:#c3152d}
+    .pa-priority-high{background:#fff0dc;color:#a75d00}
+    .pa-priority-medium{background:#fff8d7;color:#796500}
+    .pa-priority-normal{background:#e8f7ed;color:#14763a}
+    .pa-need{font-size:18px;color:#0d2545;white-space:nowrap}
+    .pa-days-critical{color:#c3152d;font-weight:800}
+    .pa-mini-chart{height:42px;width:145px;display:flex;align-items:flex-end;gap:2px}
+    .pa-mini-chart i{display:block;flex:1;min-width:2px;border-radius:2px 2px 0 0;background:linear-gradient(180deg,#10b981,#73d6b2)}
+    .pa-smart-empty{text-align:center;padding:30px;color:#718096}
+    @media(max-width:900px){
+      .pa-smart-head{align-items:stretch;flex-direction:column}
+      .pa-smart-tools{justify-content:flex-start}
+      .pa-smart-tools input,.pa-smart-tools select{width:100%}
+      .pa-smart-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }`;
+  document.head.appendChild(style);
+
+  ['paSmartSearch','paSmartPriority','paSmartSort'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(id === 'paSmartSearch' ? 'input' : 'change', renderSmartProcurement);
+  });
+}
+
+function renderSmartProcurement(){
+  ensureSmartAnalyticsUi();
+
+  const tbody = $('#paSmartRows');
+  const summary = $('#paSmartSummary');
+  if (!tbody || !summary) return;
+
+  const search = String($('#paSmartSearch')?.value || '').toLowerCase().trim();
+  const priority = $('#paSmartPriority')?.value || 'all';
+  const sort = $('#paSmartSort')?.value || 'priority';
+
+  let rows = smartRows();
+
+  if (search) {
+    rows = rows.filter(r =>
+      r.title.toLowerCase().includes(search) ||
+      r.code.toLowerCase().includes(search) ||
+      r.brand.toLowerCase().includes(search)
+    );
+  }
+
+  if (priority !== 'all') {
+    rows = rows.filter(r => r.priority.key === priority);
+  }
+
+  const sorters = {
+    priority: (a,b) => b.priority.rank - a.priority.rank || b.need - a.need || b.sold30 - a.sold30,
+    need: (a,b) => b.need - a.need,
+    days: (a,b) => (a.daysLeft == null ? 99999 : a.daysLeft) - (b.daysLeft == null ? 99999 : b.daysLeft),
+    sold30: (a,b) => b.sold30 - a.sold30,
+    stock: (a,b) => a.stock - b.stock
+  };
+
+  rows.sort(sorters[sort] || sorters.priority);
+
+  const critical = rows.filter(r => r.priority.key === 'critical').length;
+  const needPositions = rows.filter(r => r.need > 0).length;
+  const totalNeed = rows.reduce((s,r) => s + r.need, 0);
+  const purchaseValue = rows.reduce((s,r) => s + r.need * r.price, 0);
+
+  summary.innerHTML = `
+    <div><b>${fmt(critical)}</b><small>срочных позиций</small></div>
+    <div><b>${fmt(needPositions)}</b><small>позиций к заказу</small></div>
+    <div><b>${fmt(totalNeed)}</b><small>единиц заказать</small></div>
+    <div><b>${money(purchaseValue)}</b><small>сумма по розничной цене</small></div>`;
+
+  const visible = rows.slice(0, 250);
+
+  if (!visible.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="pa-smart-empty">По выбранным условиям товаров нет.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = visible.map(r => {
+    const daysText = r.daysLeft == null
+      ? (r.sold30 > 0 ? '—' : 'нет продаж')
+      : `${fmt(r.daysLeft)} дн.`;
+
+    const criticalDays = r.daysLeft != null && r.daysLeft <= 7 ? ' pa-days-critical' : '';
+
+    return `<tr>
+      <td class="pa-smart-title"><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.code || 'без кода')} · ${escapeHtml(r.brand)} · ${escapeHtml(r.group)}</small></td>
+      <td><b>${fmt(r.stock)}</b> шт</td>
+      <td>${fmt(r.sold7)}</td>
+      <td><b>${fmt(r.sold30)}</b></td>
+      <td>${fmt(r.sold90)}</td>
+      <td>${r.avgDaily > 0 ? r.avgDaily.toFixed(2) : '0'}</td>
+      <td class="${criticalDays}">${daysText}</td>
+      <td>${miniStockChart(r.id, r.stock)}</td>
+      <td><span class="pa-priority pa-priority-${r.priority.key}">${r.priority.label}</span></td>
+      <td><strong class="pa-need">${r.need > 0 ? fmt(r.need) + ' шт' : '—'}</strong></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAll(){ renderKpis(); renderTopSales(); renderOneCSales(); renderRecommendations(); renderSlowProducts(); renderBrands(); renderChanges(); renderSmartProcurement(); }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
 function mergeUniqueRows(){
   const result = [];
