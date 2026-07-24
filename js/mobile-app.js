@@ -897,7 +897,7 @@ async function renderProfile(){
       <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/user.svg" alt=""></span><b>Профиль</b><small>Личные данные и фото</small></a>
       <a class="m-profile-tile tile-red" href="mobile-discount-card.html"><span class="m-tile-ico"><img src="assets/icons/percent.svg" alt=""></span><b>Скидочная карта</b><small>Карта и персональная скидка</small></a>
       <a class="m-profile-tile tile-feedback" href="mobile-feedback.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Предложения и жалобы</b><small>Связь с администрацией</small></a>
-      <a id="mWheelTile" class="m-profile-tile tile-wheel" href="profile.html#wheel"><span class="m-wheel-label">ПОДАРКИ</span><span class="m-tile-ico m-wheel-ico">🎁</span><b>Колесо фортуны</b><small>Испытать удачу</small></a>
+      <a id="mWheelTile" class="m-profile-tile tile-wheel" href="mobile-wheel.html"><span class="m-wheel-label">ПОДАРКИ</span><span class="m-tile-ico m-wheel-ico">🎁</span><b>Колесо фортуны</b><small>Испытать удачу</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход и привязки</b><small>Почта, телефон и безопасность</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Изменить пароль</b><small>Настройки доступа</small></a>
       <a class="m-profile-tile" href="mobile-notifications.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
@@ -953,8 +953,7 @@ async function renderProfile(){
     if(wheelTile){
       wheelTile.addEventListener('click', function(event){
         event.preventDefault();
-        sessionStorage.setItem('as_force_desktop','1');
-        location.href='profile.html#wheel';
+        location.href='mobile-wheel.html';
       });
     }
     if(page === 'notifications') startMobileNotifications(u, $('#mMobileNotifications'));

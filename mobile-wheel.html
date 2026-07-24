@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Колесо подарков — AutoStyle</title>
+  <meta name="theme-color" content="#080c12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AutoStyle">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="//www.gstatic.com">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="icon" type="image/png" href="assets/as-logo-192.png">
+  <link rel="stylesheet" href="css/mobile-market.css">
+  <link rel="stylesheet" href="css/mobile-wheel.css?v=20260724-1">
+</head>
+<body class="mobile-page mobile-wheel-page" data-page="wheel">
+  <div id="mLoader" class="m-loader">
+    <div class="m-loader-card"><span>AS</span></div>
+  </div>
+
+  <div class="mw-shell">
+    <header class="mw-topbar">
+      <a class="mw-back" href="mobile-profile.html" aria-label="Назад в профиль">←</a>
+      <a class="mw-brand" href="mobile.html" aria-label="AutoStyle — главная">
+        <img src="assets/autostyle-logo-header-clean@3x.png" alt="AutoStyle">
+      </a>
+      <a class="mw-profile-link" href="mobile-profile.html" aria-label="Профиль">👤</a>
+    </header>
+
+    <main class="mw-main">
+      <section class="mw-hero">
+        <span class="mw-kicker">AUTO STYLE REWARDS</span>
+        <h1>Колесо подарков</h1>
+        <p>Крути колесо и выигрывай настоящий товар AutoStyle.</p>
+        <div class="mw-trust">
+          <span>✓ Бесплатная попытка</span>
+          <span>✓ Настоящие призы</span>
+        </div>
+      </section>
+
+      <section class="mw-game-card">
+        <div class="mw-wheel-stage" id="mwWheelStage">
+          <div class="mw-light-ring" aria-hidden="true"></div>
+          <div class="mw-pointer" aria-hidden="true"><i></i></div>
+          <div id="mwFortuneWheel" class="mw-fortune-wheel" aria-label="Колесо подарков"></div>
+          <div class="mw-center-cap"><b>AS</b><small>GO</small></div>
+        </div>
+
+        <div class="mw-status-card">
+          <div>
+            <small>СТАТУС ПОПЫТКИ</small>
+            <strong id="mwStatus">Загрузка...</strong>
+          </div>
+          <span id="mwStatusDot" class="mw-status-dot"></span>
+        </div>
+
+        <button id="mwSpinButton" class="mw-spin-button" type="button" disabled>
+          <span class="mw-spin-icon">↻</span>
+          <span>
+            <b>КРУТИТЬ КОЛЕСО</b>
+            <small>Нажми и испытай удачу</small>
+          </span>
+        </button>
+      </section>
+
+      <section class="mw-info-strip">
+        <article><span>🎁</span><div><b>Настоящий товар</b><small>Приз можно получить в магазине</small></div></article>
+        <article><span>▥</span><div><b>Штрихкод приза</b><small>Покажи его сотруднику AutoStyle</small></div></article>
+      </section>
+
+      <section class="mw-prizes-section">
+        <div class="mw-section-head">
+          <div><span>МОИ ПОДАРКИ</span><h2>Выигрыши</h2></div>
+          <small>Хранятся до окончания срока получения</small>
+        </div>
+        <div id="mwPrizeList" class="mw-prize-list">
+          <div class="mw-empty">Загружаем выигрыши...</div>
+        </div>
+      </section>
+
+      <section class="mw-how">
+        <div class="mw-section-head">
+          <div><span>КАК ЭТО РАБОТАЕТ</span><h2>Получение приза</h2></div>
+        </div>
+        <div class="mw-how-grid">
+          <article><i>1</i><b>Крути колесо</b><small>Дождись полной остановки.</small></article>
+          <article><i>2</i><b>Сохрани результат</b><small>Приз появится ниже со штрихкодом.</small></article>
+          <article><i>3</i><b>Забери в магазине</b><small>Покажи штрихкод сотруднику.</small></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="m-bottom-nav">
+    <div class="m-bottom-inner">
+      <a href="mobile.html">⌂<span>Главная</span></a>
+      <a href="mobile-catalog.html">▦<span>Каталог</span></a>
+      <a href="mobile-favorites.html">♡<span>Избранное</span></a>
+      <a href="mobile-cart.html">🛒<span>Корзина</span></a>
+      <a class="active" href="mobile-profile.html">👤<span>Профиль</span></a>
+    </div>
+  </nav>
+
+  <div id="mwAuthGate" class="mw-auth-gate" hidden>
+    <div class="mw-auth-card">
+      <span>🎁</span>
+      <h2>Войдите в профиль</h2>
+      <p>Колесо, история выигрышей и штрихкоды доступны после входа.</p>
+      <a href="mobile-profile.html">Перейти в профиль</a>
+    </div>
+  </div>
+
+  <div id="mwResultModal" class="mw-result-modal" hidden>
+    <div class="mw-result-backdrop"></div>
+    <section class="mw-result-sheet" role="dialog" aria-modal="true" aria-labelledby="mwResultTitle">
+      <button id="mwResultClose" class="mw-result-close" type="button" aria-label="Закрыть">×</button>
+      <div id="mwResultBurst" class="mw-result-burst">🎉</div>
+      <span id="mwResultBadge" class="mw-result-badge">ТВОЙ ПРИЗ</span>
+      <h2 id="mwResultTitle">Ты выиграл!</h2>
+      <img id="mwResultImage" src="assets/as-logo-192.png" alt="">
+      <strong id="mwResultName">Подарок AutoStyle</strong>
+      <p id="mwResultText">Приз сохранён в разделе «Мои выигрыши».</p>
+      <button id="mwResultAction" class="mw-result-action" type="button">Забрать подарок</button>
+    </section>
+    <div id="mwConfetti" class="mw-confetti" aria-hidden="true"></div>
+  </div>
+
+  <script src="js/mobile-page-cache.js"></script>
+  <script src="js/mobile-pull-refresh.js"></script>
+  <script type="module" src="js/mobile-wheel.js?v=20260724-1"></script>
+  <script type="module" src="js/site-analytics.js?v=20260707-1"></script>
+</body>
+</html>
