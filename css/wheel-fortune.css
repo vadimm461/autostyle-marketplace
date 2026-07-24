@@ -622,15 +622,205 @@
 }
 
 
-/* Сворачиваемая история выигрышей */
-.wheel-prize-items{display:grid;gap:12px}
-.wheel-prize-extra{display:none}
-.wheel-prizes.is-expanded .wheel-prize-extra{display:grid;animation:wheelPrizeReveal .22s ease both}
-.wheel-prizes-toggle{
-  width:100%;min-height:46px;margin-top:4px;border:1px solid #dfe6ee;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:#172033;
-  font-size:14px;font-weight:900;cursor:pointer;transition:.18s ease;
+/* AutoStyle — лёгкое визуальное улучшение клиентского колеса */
+.wheel-profile-pane{
+  position:relative;
+  border:1px solid #dfe6ee;
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 7% 5%,rgba(43,227,29,.07),transparent 24%),
+    linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
 }
-.wheel-prizes-toggle:hover{border-color:#22c55e;background:#f5fff5}
-.wheel-prizes-toggle i{font-style:normal;color:#19b333;font-size:19px;line-height:1}
-@keyframes wheelPrizeReveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+
+.wheel-profile-pane::before{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:4px;
+  border-radius:28px 28px 0 0;
+  background:linear-gradient(90deg,#22d31b,#7af06c,#22d31b);
+}
+
+.wheel-profile-pane > h2{
+  margin-bottom:8px;
+  letter-spacing:-.02em;
+}
+
+.wheel-profile-pane > p{
+  max-width:620px;
+  margin-top:0;
+  color:#6b778c;
+}
+
+.wheel-shell{
+  gap:34px;
+  padding-top:10px;
+}
+
+.wheel-stage{
+  min-height:520px;
+  padding:30px 24px 34px;
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 50% 48%,rgba(43,227,29,.09),transparent 42%);
+}
+
+.fortune-wheel{
+  border-width:11px;
+  border-color:#121a2a;
+  outline:5px solid rgba(255,255,255,.92);
+  outline-offset:-18px;
+  box-shadow:
+    0 20px 46px rgba(15,23,42,.16),
+    0 0 0 1px rgba(15,23,42,.08);
+}
+
+.fortune-wheel::before{
+  content:"";
+  position:absolute;
+  inset:17px;
+  z-index:1;
+  border:1px solid rgba(255,255,255,.42);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.fortune-wheel::after{
+  width:94px;
+  height:94px;
+  border:7px solid #fff;
+  box-shadow:
+    0 8px 22px rgba(15,23,42,.22),
+    inset 0 0 0 1px rgba(255,255,255,.16);
+  letter-spacing:-.04em;
+}
+
+.wheel-pointer{
+  top:7px;
+  border-left-width:19px;
+  border-right-width:19px;
+  border-top-width:35px;
+  border-top-color:#121a2a;
+  filter:drop-shadow(0 5px 5px rgba(15,23,42,.22));
+}
+
+.wheel-prize-visual img,
+.wheel-empty-icon{
+  border:2px solid rgba(255,255,255,.95);
+  background:#fff;
+  box-shadow:
+    0 7px 16px rgba(15,23,42,.16),
+    inset 0 0 0 1px #e7ebf0;
+}
+
+.wheel-panel{
+  border-color:#dfe6ee;
+  background:linear-gradient(180deg,#ffffff,#fbfdfb);
+  box-shadow:0 14px 34px rgba(15,23,42,.07);
+}
+
+.wheel-panel h3{
+  letter-spacing:-.025em;
+}
+
+.wheel-panel > p{
+  color:#6b778c;
+  line-height:1.45;
+}
+
+.wheel-status{
+  border:1px solid #e5eaf0;
+  background:#f3f6fa;
+}
+
+.wheel-spin-btn{
+  border:1px solid rgba(16,137,12,.18);
+  background:linear-gradient(180deg,#27df20,#18be13);
+  box-shadow:0 10px 22px rgba(36,211,28,.22);
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+
+.wheel-spin-btn:not(:disabled):hover{
+  transform:translateY(-1px);
+  filter:brightness(1.025);
+  box-shadow:0 13px 26px rgba(36,211,28,.27);
+}
+
+.wheel-spin-btn:not(:disabled):active{
+  transform:translateY(0);
+}
+
+.wheel-prizes{
+  gap:10px;
+}
+
+.wheel-prize-card{
+  border-color:#e1e7ee;
+  box-shadow:0 6px 16px rgba(15,23,42,.035);
+}
+
+.wheel-prize-card img{
+  border:1px solid #eef1f5;
+}
+
+.wheel-prize-card b{
+  line-height:1.2;
+}
+
+.wheel-barcode{
+  background:#fff;
+  border-color:#cbd4df;
+}
+
+@media(max-width:900px){
+  .wheel-stage{
+    min-height:auto;
+    padding:24px 12px 30px;
+  }
+
+  .wheel-shell{
+    gap:24px;
+  }
+}
+
+@media(max-width:520px){
+  .wheel-profile-pane{
+    border-radius:22px;
+  }
+
+  .wheel-profile-pane::before{
+    border-radius:22px 22px 0 0;
+  }
+
+  .wheel-stage{
+    padding-left:0;
+    padding-right:0;
+    background:none;
+  }
+
+  .fortune-wheel{
+    border-width:9px;
+    outline-width:4px;
+    outline-offset:-15px;
+  }
+
+  .fortune-wheel::after{
+    width:78px;
+    height:78px;
+    border-width:6px;
+    font-size:21px;
+  }
+
+  .wheel-panel{
+    padding:20px;
+    border-radius:20px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wheel-spin-btn{
+    transition:none;
+  }
+}
