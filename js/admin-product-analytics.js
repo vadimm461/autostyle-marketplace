@@ -149,13 +149,17 @@ function combinedSales(){
 function recommendations(){
   const products = new Map(state.products.map(p=>[productKey(p), normProduct(p)]));
   const rows = [];
-  combinedSales().forEach(s => {
+  // Заказ рассчитывается только по фактическому снижению остатков 1С.
+  // Продажи сайта не прибавляем повторно: после проведения заказа в 1С они уже попадут сюда как уменьшение остатка.
+  oneCSalesMap().forEach(s => {
     const p = products.get(s.id) || { id:s.id, title:s.title, stock:0, price:0 };
     const avgDay = s.qty / Math.max(1, state.selectedDays);
-    const target = Math.ceil(avgDay * 30 * 1.25);
+    const projected30 = avgDay * 30;
+    const safetyStock = Math.ceil(avgDay * 7);
+    const target = Math.ceil(projected30) + safetyStock;
     const need = Math.max(0, target - Number(p.stock || 0));
     const daysLeft = avgDay > 0 ? Math.floor(Number(p.stock || 0) / avgDay) : 999;
-    if (need > 0 || p.stock <= 3) rows.push({ ...p, sold:s.qty, revenue:s.revenue, avgDay, daysLeft, need: Math.max(need, p.stock <= 0 ? Math.ceil(s.qty || 1) : 0), reason: p.stock <= 0 ? 'товар закончился' : daysLeft <= 7 ? 'хватит меньше недели' : 'продажи сайта + 1С' });
+    if (need > 0 || (p.stock <= 3 && s.qty > 0)) rows.push({ ...p, sold:s.qty, revenue:s.revenue, avgDay, daysLeft, need, reason: p.stock <= 0 ? 'товар закончился' : daysLeft <= 7 ? 'остатка меньше чем на неделю' : 'прогноз продаж по 1С' });
   });
   return rows.sort((a,b)=>b.need-a.need).slice(0,50);
 }
@@ -163,7 +167,7 @@ function renderRecommendations(){
   const box = $('#paRecommendations'); if(!box) return;
   const rows = recommendations();
   if(!rows.length){ box.innerHTML = '<div class="pa-empty">Рекомендаций пока нет. Продаж мало или остатков достаточно.</div>'; return; }
-  box.innerHTML = rows.map(r=>`<article class="pa-rec"><div><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.brand)} • ${escapeHtml(r.group)} • ${escapeHtml(r.code)}</small><p>Всего ушло: <b>${fmt(r.sold)}</b> шт · Остаток: <b>${fmt(r.stock)}</b> · В среднем: <b>${r.avgDay.toFixed(1)}</b> шт/день</p></div><strong>Заказать ${fmt(r.need)} шт</strong><em>${escapeHtml(r.reason)}</em></article>`).join('');
+  box.innerHTML = rows.map(r=>`<article class="pa-rec"><div><b>${escapeHtml(r.title)}</b><small>${escapeHtml(r.brand)} • ${escapeHtml(r.group)} • ${escapeHtml(r.code)}</small><p>Продано по 1С: <b>${fmt(r.sold)}</b> шт · Остаток: <b>${fmt(r.stock)}</b> · В среднем: <b>${r.avgDay.toFixed(1)}</b> шт/день</p></div><strong>Заказать ${fmt(r.need)} шт</strong><em>${escapeHtml(r.reason)}</em></article>`).join('');
 }
 function renderChanges(){
   const box = $('#paChanges'); if(!box) return;
