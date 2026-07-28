@@ -1,6 +1,6 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
@@ -851,24 +851,190 @@ async function renderProfile(){
     }
     userNow=u; const box=$('#mProfileBox');
     if(!u){
-      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по Email и паролю или создайте новый аккаунт. Телефон указывается позже в профиле.</p>
-      <div class="m-auth-box"><h2>Вход</h2><input id="pEmail" class="m-input" type="email" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
-      <div class="m-auth-box m-reg-wizard"><div class="m-reg-progress-head"><b id="mRegStepText">Шаг 1 из 6</b><small>Регистрация</small></div><div class="m-reg-progress"><i id="mRegProgressBar"></i></div>
-      <section class="m-reg-step active"><span>👋</span><h2>Как вас зовут?</h2><input id="pRegName" class="m-input" placeholder="Ваше имя" required></section>
-      <section class="m-reg-step"><span>🚗</span><h2>Марка автомобиля</h2><input id="pRegCarBrand" class="m-input" placeholder="Например, Volkswagen" required></section>
-      <section class="m-reg-step"><span>📅</span><h2>Год автомобиля</h2><input id="pRegCarYear" class="m-input" type="number" min="1950" max="2030" placeholder="Например, 2018" required></section>
-      <section class="m-reg-step"><span>🏁</span><h2>Модель автомобиля</h2><input id="pRegCarModel" class="m-input" placeholder="Например, Octavia" required></section>
-      <section class="m-reg-step"><span>🔐</span><h2>Придумайте пароль</h2><input id="pRegPass" class="m-input" type="password" minlength="6" placeholder="Пароль" required><input id="pRegPass2" class="m-input" type="password" minlength="6" placeholder="Повторите пароль" required></section>
-      <section class="m-reg-step"><span>✉️</span><h2>Укажите Email</h2><input id="pRegEmail" class="m-input" type="email" placeholder="name@example.com" required><p>На почту придёт письмо подтверждения.</p></section>
-      <div class="m-reg-actions"><button id="mRegBack" class="m-btn" type="button" hidden>Назад</button><button id="pRegister" class="m-primary" type="button">Продолжить</button></div></div>
-      <a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
-      $('#pLogin').onclick=async()=>{ try{ const res=await signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); await saveAuthProfile(res.user); location.reload(); }catch(e){ alert('Ошибка входа: '+(e.message||e)); } };
+      box.innerHTML=`<section class="m-auth-unified">
+        <div class="m-auth-unified-head">
+          <div>
+            <span class="m-auth-eyebrow">Аккаунт AutoStyle</span>
+            <h1>Добро пожаловать</h1>
+            <p>Войдите в существующий аккаунт или создайте новый.</p>
+          </div>
+        </div>
+
+        <div class="m-auth-switch" role="tablist" aria-label="Вход или регистрация">
+          <button id="mAuthLoginTab" class="active" type="button" role="tab" aria-selected="true">Вход</button>
+          <button id="mAuthRegisterTab" type="button" role="tab" aria-selected="false">Регистрация</button>
+        </div>
+
+        <div id="mAuthLoginPanel" class="m-auth-panel active" role="tabpanel">
+          <div class="m-auth-panel-title">
+            <h2>Войти в аккаунт</h2>
+            <p>Используйте Email и пароль.</p>
+          </div>
+          <label class="m-auth-field">
+            <span>Email</span>
+            <input id="pEmail" class="m-input" type="email" autocomplete="email" placeholder="name@example.com">
+          </label>
+          <label class="m-auth-field">
+            <span>Пароль</span>
+            <div class="m-auth-password-wrap">
+              <input id="pPass" class="m-input" type="password" autocomplete="current-password" placeholder="Введите пароль">
+              <button id="mShowLoginPass" type="button" aria-label="Показать пароль">Показать</button>
+            </div>
+          </label>
+          <button id="pLogin" class="m-primary m-auth-main-button" type="button">Войти</button>
+          <button id="mForgotPassword" class="m-auth-text-button" type="button">Забыли пароль?</button>
+        </div>
+
+        <div id="mAuthRegisterPanel" class="m-auth-panel" role="tabpanel" hidden>
+          <div class="m-reg-progress-head">
+            <b id="mRegStepText">Шаг 1 из 6</b>
+            <small>Регистрация</small>
+          </div>
+          <div class="m-reg-progress"><i id="mRegProgressBar"></i></div>
+
+          <section class="m-reg-step active">
+            <span>👋</span><h2>Как вас зовут?</h2><p>Имя будет отображаться в профиле.</p>
+            <input id="pRegName" class="m-input" placeholder="Ваше имя" minlength="2" required>
+          </section>
+          <section class="m-reg-step">
+            <span>🚗</span><h2>Марка автомобиля</h2><p>Например: Volkswagen, BMW или Toyota.</p>
+            <input id="pRegCarBrand" class="m-input" placeholder="Марка автомобиля" required>
+          </section>
+          <section class="m-reg-step">
+            <span>📅</span><h2>Год автомобиля</h2><p>Укажите год выпуска.</p>
+            <input id="pRegCarYear" class="m-input" type="number" inputmode="numeric" min="1950" max="2030" placeholder="Например, 2018" required>
+          </section>
+          <section class="m-reg-step">
+            <span>🏁</span><h2>Модель автомобиля</h2><p>Например: Octavia, Golf или Camry.</p>
+            <input id="pRegCarModel" class="m-input" placeholder="Модель автомобиля" required>
+          </section>
+          <section class="m-reg-step">
+            <span>🔐</span><h2>Придумайте пароль</h2><p>Минимум 6 символов.</p>
+            <div class="m-auth-password-wrap">
+              <input id="pRegPass" class="m-input" type="password" minlength="6" autocomplete="new-password" placeholder="Пароль" required>
+              <button id="mShowRegPass" type="button">Показать</button>
+            </div>
+            <input id="pRegPass2" class="m-input" type="password" minlength="6" autocomplete="new-password" placeholder="Повторите пароль" required>
+          </section>
+          <section class="m-reg-step">
+            <span>✉️</span><h2>Укажите Email</h2><p>На него придёт письмо подтверждения.</p>
+            <input id="pRegEmail" class="m-input" type="email" autocomplete="email" placeholder="name@example.com" required>
+          </section>
+
+          <div class="m-reg-actions">
+            <button id="mRegBack" class="m-btn" type="button" hidden>Назад</button>
+            <button id="pRegister" class="m-primary" type="button">Продолжить</button>
+          </div>
+        </div>
+      </section>`;
+
+      const loginTab=$('#mAuthLoginTab');
+      const registerTab=$('#mAuthRegisterTab');
+      const loginPanel=$('#mAuthLoginPanel');
+      const registerPanel=$('#mAuthRegisterPanel');
+
+      const setAuthMode=(mode)=>{
+        const isLogin=mode==='login';
+        loginTab.classList.toggle('active',isLogin);
+        registerTab.classList.toggle('active',!isLogin);
+        loginTab.setAttribute('aria-selected',String(isLogin));
+        registerTab.setAttribute('aria-selected',String(!isLogin));
+        loginPanel.classList.toggle('active',isLogin);
+        registerPanel.classList.toggle('active',!isLogin);
+        loginPanel.hidden=!isLogin;
+        registerPanel.hidden=isLogin;
+        if(!isLogin) setTimeout(()=>$('#pRegName')?.focus(),80);
+      };
+
+      loginTab.onclick=()=>setAuthMode('login');
+      registerTab.onclick=()=>setAuthMode('register');
+
+      $('#mShowLoginPass').onclick=()=>{
+        const input=$('#pPass');
+        const show=input.type==='password';
+        input.type=show?'text':'password';
+        $('#mShowLoginPass').textContent=show?'Скрыть':'Показать';
+      };
+
+      $('#mShowRegPass').onclick=()=>{
+        const input=$('#pRegPass');
+        const repeat=$('#pRegPass2');
+        const show=input.type==='password';
+        input.type=repeat.type=show?'text':'password';
+        $('#mShowRegPass').textContent=show?'Скрыть':'Показать';
+      };
+
+      $('#pLogin').onclick=async()=>{
+        const email=$('#pEmail').value.trim();
+        const pass=$('#pPass').value;
+        if(!email){ alert('Введите Email.'); $('#pEmail').focus(); return; }
+        if(!pass){ alert('Введите пароль.'); $('#pPass').focus(); return; }
+        try{
+          $('#pLogin').disabled=true;
+          $('#pLogin').textContent='Входим...';
+          const res=await signInWithEmailAndPassword(auth,email,pass);
+          await saveAuthProfile(res.user);
+          location.reload();
+        }catch(e){
+          $('#pLogin').disabled=false;
+          $('#pLogin').textContent='Войти';
+          alert('Не удалось войти. Проверьте Email и пароль.');
+        }
+      };
+
+      $('#mForgotPassword').onclick=async()=>{
+        const email=$('#pEmail').value.trim();
+        if(!email){ alert('Сначала укажите Email.'); $('#pEmail').focus(); return; }
+        try{
+          await sendPasswordResetEmail(auth,email);
+          alert('Ссылка для восстановления пароля отправлена на почту.');
+        }catch(e){
+          alert('Не удалось отправить письмо. Проверьте Email.');
+        }
+      };
+
       let mRegStep=0;
       const mRegSteps=[...document.querySelectorAll('.m-reg-step')];
-      const drawMReg=()=>{mRegSteps.forEach((el,i)=>el.classList.toggle('active',i===mRegStep));$('#mRegStepText').textContent=`Шаг ${mRegStep+1} из ${mRegSteps.length}`;$('#mRegProgressBar').style.width=`${((mRegStep+1)/mRegSteps.length)*100}%`;$('#mRegBack').hidden=mRegStep===0;$('#pRegister').textContent=mRegStep===mRegSteps.length-1?'Создать аккаунт':'Продолжить';};
-      const validMReg=()=>{for(const input of mRegSteps[mRegStep].querySelectorAll('input[required]')){if(!input.checkValidity()){input.reportValidity();return false;}}if(mRegStep===2){const y=Number($('#pRegCarYear').value),max=new Date().getFullYear()+1;if(y<1950||y>max){alert(`Укажите год от 1950 до ${max}.`);return false;}}if(mRegStep===4&&$('#pRegPass').value!==$('#pRegPass2').value){alert('Пароли не совпадают.');return false;}return true;};
-      $('#pRegister').onclick=async()=>{if(!validMReg())return;if(mRegStep<mRegSteps.length-1){mRegStep++;drawMReg();return;}try{$('#pRegister').disabled=true;await registerByEmail();}catch(e){$('#pRegister').disabled=false;alert('Ошибка регистрации: '+(e.message||e));}};
+      const drawMReg=()=>{
+        mRegSteps.forEach((el,i)=>el.classList.toggle('active',i===mRegStep));
+        $('#mRegStepText').textContent=`Шаг ${mRegStep+1} из ${mRegSteps.length}`;
+        $('#mRegProgressBar').style.width=`${((mRegStep+1)/mRegSteps.length)*100}%`;
+        $('#mRegBack').hidden=mRegStep===0;
+        $('#pRegister').textContent=mRegStep===mRegSteps.length-1?'Создать аккаунт':'Продолжить';
+        setTimeout(()=>mRegSteps[mRegStep]?.querySelector('input')?.focus(),50);
+      };
+      const validMReg=()=>{
+        for(const input of mRegSteps[mRegStep].querySelectorAll('input[required]')){
+          if(!input.checkValidity()){input.reportValidity();return false;}
+        }
+        if(mRegStep===2){
+          const y=Number($('#pRegCarYear').value),max=new Date().getFullYear()+1;
+          if(y<1950||y>max){alert(`Укажите год от 1950 до ${max}.`);return false;}
+        }
+        if(mRegStep===4&&$('#pRegPass').value!==$('#pRegPass2').value){
+          alert('Пароли не совпадают.');return false;
+        }
+        return true;
+      };
+      $('#pRegister').onclick=async()=>{
+        if(!validMReg())return;
+        if(mRegStep<mRegSteps.length-1){mRegStep++;drawMReg();return;}
+        try{
+          $('#pRegister').disabled=true;
+          $('#pRegister').textContent='Создаём...';
+          await registerByEmail();
+        }catch(e){
+          $('#pRegister').disabled=false;
+          $('#pRegister').textContent='Создать аккаунт';
+          alert('Ошибка регистрации: '+(e.message||e));
+        }
+      };
       $('#mRegBack').onclick=()=>{if(mRegStep>0){mRegStep--;drawMReg();}};
+      mRegSteps.forEach(step=>step.querySelectorAll('input').forEach(input=>{
+        input.addEventListener('keydown',event=>{
+          if(event.key==='Enter'){event.preventDefault();$('#pRegister').click();}
+        });
+      }));
       drawMReg();
       clearLoader(); return;
     }
