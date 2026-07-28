@@ -36,8 +36,8 @@ function renderTopCategoryBar(parentOverride){
 import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { loginEmail, registerEmail, sendSmsCode, confirmSmsCode, ensureUserProfile } from './auth-core.js';
-import { getProducts, getCategories } from './data-cache.js?v=20260728-desktop-data-fix';
+import { loginEmail, registerEmail, ensureUserProfile } from './auth-core.js';
+import { getProducts, getCategories } from './data-cache.js?v=20260728-desktop-module-fix';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);const fmt=new Intl.NumberFormat('ru-RU');let items=[],categories=[],cart=[],favs=JSON.parse(localStorage.getItem('favorites')||'[]'),showZero=false;const grid=$('#catalogGrid'),search=$('#search'),topSearch=$('#topSearch'),cat=$('#category'),sort=$('#sort'),count=$('#catalogCount');
 
