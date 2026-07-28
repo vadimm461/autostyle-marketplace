@@ -5,6 +5,7 @@ import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/
 import { loginEmail, registerEmail, ensureUserProfile } from './auth-core.js';
 import { getCollectionCached, getProducts } from './data-cache.js?v=20260728-performance-stage23';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
+import { setupDesktopLiveSearch } from './desktop-live-search.js?v=20260728-live-search';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -511,7 +512,19 @@ function setupExpand(){
     const b=e.target.closest('[data-expand]'); if(!b)return; const sec=document.getElementById(b.dataset.expand); const grid=sec?.querySelector('.carousel-products'); if(!sec||!grid)return; sec.classList.toggle('expanded'); b.textContent=sec.classList.contains('expanded')?'Свернуть':'Смотреть все'; sec.scrollIntoView({behavior:'smooth', block:'start'});
   });
 }
-function setupSearch(){ const input=$('#homeSearch')||$('#siteSearch'), btn=$('#homeSearchBtn')||$('#siteSearchBtn'); const go=()=>{const q=encodeURIComponent((input?.value||'').trim()); location.href=q?`catalog.html?search=${q}`:'catalog.html'}; btn&&(btn.onclick=go); input&&input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}}); }
+function setupSearch(){
+  const input=$('#homeSearch')||$('#siteSearch');
+  const btn=$('#homeSearchBtn')||$('#siteSearchBtn');
+  setupDesktopLiveSearch({
+    input,
+    button:btn,
+    getItems:async()=>{
+      if(allProducts.length) return allProducts;
+      allProducts=await getProducts();
+      return allProducts;
+    }
+  });
+}
 
 function accountInitials(name, email){
   const base = String(name || email || 'AS').trim();
