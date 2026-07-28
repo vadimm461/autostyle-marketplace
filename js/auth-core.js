@@ -21,6 +21,10 @@ export async function ensureUserProfile(user, extra={}){
     name: extra.name || old.name || user.displayName || '',
     email: user.email || extra.email || old.email || '',
     phone: extra.phone || old.phone || '',
+    carBrand: extra.carBrand || old.carBrand || '',
+    carYear: extra.carYear || old.carYear || '',
+    carModel: extra.carModel || old.carModel || '',
+    car: extra.car || old.car || [extra.carBrand || old.carBrand, extra.carModel || old.carModel, extra.carYear || old.carYear].filter(Boolean).join(' '),
     photoURL: user.photoURL || old.photoURL || '',
     authProviders: providers,
     emailVerified: !!user.emailVerified,
@@ -65,10 +69,10 @@ export async function loginEmail(email, pass){
   try { await trackEvent('login'); } catch(e) {}
   return res.user;
 }
-export async function registerEmail(name, email, pass){
+export async function registerEmail(name, email, pass, profile={}){
   const res = await createUserWithEmailAndPassword(auth, email, pass);
   if(name) await updateProfile(res.user, { displayName:name });
-  await ensureUserProfile(res.user, { name, email });
+  await ensureUserProfile(res.user, { name, email, ...profile });
   try { await trackEvent('registration'); } catch(e) {}
   await sendEmailVerification(res.user);
   return res.user;
