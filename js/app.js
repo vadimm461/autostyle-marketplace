@@ -476,24 +476,33 @@ async function renderCatalogMenu(){
   });
 }
 async function renderHome(){
-  allProducts = await getProducts();
-  const customBlocks = await safeLoadCollection(HOME_BLOCKS_COLLECTION);
-  allBlocks = mergeBlocks(customBlocks);
-  let banners = (await safeLoadCollection(COLLECTIONS.banners)).filter(b => b.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  const productsPromise=getProducts();
+  const blocksPromise=safeLoadCollection(HOME_BLOCKS_COLLECTION);
+  const bannersPromise=safeLoadCollection(COLLECTIONS.banners);
+  const verticalPromise=safeLoadCollections(PROMO_CARDS_COLLECTIONS);
+  const horizontalPromise=safeLoadCollections(HORIZONTAL_PROMO_CARDS_COLLECTIONS);
+  const sectionPromise=safeLoadCollections(SECTION_PROMO_CARDS_COLLECTIONS);
+  const [products,customBlocks,bannerRows,verticalRows,horizontalRows,sectionRows]=await Promise.all([
+    productsPromise,blocksPromise,bannersPromise,verticalPromise,horizontalPromise,sectionPromise
+  ]);
+  allProducts=products;
+  allBlocks=mergeBlocks(customBlocks);
+  const banners=bannerRows.filter(b=>b.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
   const hero=$('#hero');
   if(hero){
-    const normalizedBanners = banners.map(b => ({...b, image: b.image || b.imageUrl || b.photoUrl || ''}));
-    hero.innerHTML = renderImageSlides(normalizedBanners, 'hero-image-slider', 'Загрузите главный баннер в админке');
+    const normalizedBanners=banners.map(b=>({...b,image:b.image||b.imageUrl||b.photoUrl||''}));
+    hero.innerHTML=renderImageSlides(normalizedBanners,'hero-image-slider','Загрузите главный баннер в админке');
   }
-  const verticalPromoCards = mergePromoCards(await safeLoadCollections(PROMO_CARDS_COLLECTIONS));
-  const horizontalPromoCards = mergePromoCards(await safeLoadCollections(HORIZONTAL_PROMO_CARDS_COLLECTIONS));
-  const sectionPromoCards = mergePromoCards(await safeLoadCollections(SECTION_PROMO_CARDS_COLLECTIONS));
-  window.__autostyleSectionPromos = sectionPromoCards;
-  const sidePromo = document.getElementById('homePromoBanner');
-  if (sidePromo) sidePromo.innerHTML = renderImageSlides(verticalPromoCards, 'promo-image-slider', 'Загрузите вертикальное промо в админке');
+  const verticalPromoCards=mergePromoCards(verticalRows);
+  const horizontalPromoCards=mergePromoCards(horizontalRows);
+  window.__autostyleSectionPromos=mergePromoCards(sectionRows);
+  const sidePromo=document.getElementById('homePromoBanner');
+  if(sidePromo) sidePromo.innerHTML=renderImageSlides(verticalPromoCards,'promo-image-slider','Загрузите вертикальное промо в админке');
   renderPromoCards(horizontalPromoCards);
   initImageBannerSliders(document);
-  await waitUserCartReady(); cart = getCurrentUserCart(); saveCart(); renderSections(); renderCatalogMenu();
+  renderSections();
+  renderCatalogMenu();
+  waitUserCartReady().then(()=>{cart=getCurrentUserCart();saveCart();renderSections();}).catch(()=>{});
 }
 function setupExpand(){
   document.addEventListener('click', e => {
