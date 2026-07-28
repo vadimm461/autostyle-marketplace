@@ -1,6 +1,6 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, RecaptchaVerifier, signInWithPhoneNumber, linkWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
@@ -789,38 +789,16 @@ async function saveAuthProfile(u, extra={}){
     uid:u.uid,
     name: extra.name || current.data.name || u.displayName || '',
     email: extra.email || current.data.email || u.email || '',
-    phone: extra.phone || current.data.phone || u.phoneNumber || '',
+    phone: extra.phone || current.data.phone || '',
     photoURL: extra.photoURL || current.data.photoURL || u.photoURL || '',
     providers:userProviders(u),
     emailVerified:Boolean(u.emailVerified),
-    phoneVerified:Boolean(u.phoneNumber),
+    phoneVerified:false,
     lastLoginAt:new Date().toISOString(),
     updatedAt:new Date().toISOString(),
     createdAt:current.data.createdAt || new Date().toISOString(),
     role:current.data.role || 'user'
   }, { merge:true });
-}
-function ensureRecaptcha(containerId='mRecaptcha'){
-  let el = document.getElementById(containerId);
-  if(!el){ el = document.createElement('div'); el.id = containerId; document.body.appendChild(el); }
-  if(!window.mRecaptchaVerifier) window.mRecaptchaVerifier = new RecaptchaVerifier(auth, containerId, { size:'invisible' });
-  return window.mRecaptchaVerifier;
-}
-async function startPhoneAuth(phone, link=false){
-  const verifier = ensureRecaptcha();
-  if(link && auth.currentUser){
-    window.mPhoneConfirmation = await linkWithPhoneNumber(auth.currentUser, phone, verifier);
-  } else {
-    window.mPhoneConfirmation = await signInWithPhoneNumber(auth, phone, verifier);
-  }
-  alert('SMS-код отправлен.');
-}
-async function confirmPhoneAuth(code){
-  if(!window.mPhoneConfirmation) throw new Error('Сначала отправьте SMS-код.');
-  const res = await window.mPhoneConfirmation.confirm(code);
-  await saveAuthProfile(auth.currentUser || res.user);
-  alert('Телефон подтверждён.');
-  location.reload();
 }
 async function registerByEmail(){
   const name = $('#pRegName')?.value.trim() || '';
@@ -863,15 +841,13 @@ async function renderProfile(){
   onAuthStateChanged(auth, async u=>{
     userNow=u; const box=$('#mProfileBox');
     if(!u){
-      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по почте, зарегистрируйтесь или используйте SMS. После входа можно подтвердить почту и привязать телефон.</p>
+      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по email и паролю или зарегистрируйтесь. Телефон указывается позже в личных данных профиля.</p>
       <div class="m-auth-box"><h2>Email</h2><input id="pEmail" class="m-input" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
       <div class="m-auth-box"><h2>Регистрация</h2><input id="pRegName" class="m-input" placeholder="Имя"><input id="pRegEmail" class="m-input" type="email" placeholder="Email"><input id="pRegPass" class="m-input" type="password" placeholder="Пароль от 6 символов"><button id="pRegister" class="m-primary" style="width:100%;margin-top:10px">Создать и подтвердить почту</button></div>
-      <div class="m-auth-box"><h2>Вход по SMS</h2><input id="pPhoneLogin" class="m-input" placeholder="Телефон: +373..."><button id="pSendSms" class="m-btn" style="width:100%;margin-top:10px">Получить SMS-код</button><input id="pSmsCode" class="m-input" placeholder="Код из SMS"><button id="pConfirmSms" class="m-primary" style="width:100%;margin-top:10px">Подтвердить SMS</button><div id="mRecaptcha"></div></div>
       <a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
       $('#pLogin').onclick=async()=>{ try{ const res=await signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); await saveAuthProfile(res.user); location.reload(); }catch(e){ alert('Ошибка входа: '+(e.message||e)); } };
       $('#pRegister').onclick=async()=>{ try{ await registerByEmail(); }catch(e){ alert('Ошибка регистрации: '+(e.message||e)); } };
-      $('#pSendSms').onclick=async()=>{ try{ await startPhoneAuth($('#pPhoneLogin').value.trim()); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
-      $('#pConfirmSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pSmsCode').value.trim()); }catch(e){ alert('Ошибка SMS-подтверждения: '+(e.message||e)); } };
+}catch(e){ alert('Ошибка SMS-подтверждения: '+(e.message||e)); } };
       clearLoader(); return;
     }
     const current=await getUserDoc(u.uid);
@@ -898,7 +874,7 @@ async function renderProfile(){
       <a class="m-profile-tile tile-red" href="mobile-discount-card.html"><span class="m-tile-ico"><img src="assets/icons/percent.svg" alt=""></span><b>Скидочная карта</b><small>Карта и персональная скидка</small></a>
       <a class="m-profile-tile tile-feedback" href="mobile-feedback.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Предложения и жалобы</b><small>Связь с администрацией</small></a>
       <a id="mWheelTile" class="m-profile-tile tile-wheel" href="mobile-wheel.html"><span class="m-wheel-label">ПОДАРКИ</span><span class="m-tile-ico m-wheel-ico">🎁</span><b>Колесо фортуны</b><small>Испытать удачу</small></a>
-      <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход и привязки</b><small>Почта, телефон и безопасность</small></a>
+      <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход и безопасность</b><small>Почта и пароль</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Изменить пароль</b><small>Настройки доступа</small></a>
       <a class="m-profile-tile" href="mobile-notifications.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
     </div>`; 
@@ -925,19 +901,12 @@ async function renderProfile(){
         <button id="saveProfile" class="m-primary m-profile-save">Сохранить изменения</button>
       </section>
       <section id="security" class="m-profile-pane m-profile-inner-pane">
-        <div class="m-pane-title"><span><img src="assets/icons/settings.svg" alt=""></span><div><h2>Безопасность</h2><p>Почта, телефон и пароль.</p></div></div>
+        <div class="m-pane-title"><span><img src="assets/icons/settings.svg" alt=""></span><div><h2>Безопасность</h2><p>Почта и пароль.</p></div></div>
         <div class="m-security-status">
           <div><b>Почта</b><span class="${u.emailVerified?'ok':'wait'}">${u.emailVerified?'Подтверждена':'Не подтверждена'}</span></div>
-          <div><b>Телефон</b><span class="${u.phoneNumber?'ok':'wait'}">${u.phoneNumber?'Привязан':'Не привязан'}</span></div>
           <div><b>Способ входа</b><span>${userProviders(u).map(providerTitle).join(', ') || 'Не определён'}</span></div>
         </div>
         <button id="resendEmailVerify" class="m-btn m-full-btn">Подтвердить почту</button>
-        <div class="m-security-box">
-          <label><span>Телефон</span><input id="pLinkPhone" class="m-input" value="${u.phoneNumber||d.phone||''}" placeholder="+373..."></label>
-          <button id="pLinkSms" class="m-btn m-full-btn">Отправить SMS</button>
-          <label><span>Код из SMS</span><input id="pLinkCode" class="m-input" placeholder="Введите код"></label>
-          <button id="pConfirmLinkSms" class="m-primary m-full-btn">Привязать телефон</button>
-          <div id="mRecaptcha"></div>
         </div>
         <div class="m-password-box">
           <label><span>Новый пароль</span><input id="pPassEdit" class="m-input" type="password" placeholder="Минимум 6 символов"></label>

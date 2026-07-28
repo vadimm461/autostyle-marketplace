@@ -31,14 +31,13 @@ function renderAuthModal(){
     <form id="registerForm" class="auth-mode-panel" data-auth-panel="register">
       <div class="auth-form-grid">
         <label class="field">Имя<input id="regName" autocomplete="name" required></label>
-        <label class="field">Телефон<input id="regPhone" autocomplete="tel" placeholder="+373..." required></label>
         <label class="field field-wide">Email<input id="regEmail" type="email" autocomplete="email" required></label>
         <label class="field">Пароль<input id="regPass" type="password" autocomplete="new-password" minlength="6" required></label>
         <label class="field">Повтор пароля<input id="regPass2" type="password" autocomplete="new-password" minlength="6" required></label>
       </div>
       <label class="auth-show-pass"><input id="showRegPass" type="checkbox"> Показать пароль</label>
       <button class="primary" style="width:100%;margin-top:10px">Создать аккаунт</button>
-      <p class="muted" style="margin-top:10px">После регистрации придёт письмо подтверждения. Телефон можно подтвердить SMS в профиле.</p>
+      <p class="muted" style="margin-top:10px">После регистрации придёт письмо подтверждения. Откройте его и активируйте аккаунт.</p>
     </form>
     <p id="authFullMsg" class="auth-msg"></p>
   </div>`;
@@ -52,7 +51,7 @@ function bindAuth(){
   $('#showLoginPass')?.addEventListener('change', e=>{ const p=$('#loginPass'); if(p) p.type=e.target.checked?'text':'password'; });
   $('#showRegPass')?.addEventListener('change', e=>{ ['#regPass','#regPass2'].forEach(sel=>{ const p=$(sel); if(p) p.type=e.target.checked?'text':'password'; }); });
   $('#forgotPassword')?.addEventListener('click', async()=>{ try{ const email=$('#loginEmail')?.value?.trim(); await resetPassword(email); say('Ссылка для восстановления пароля отправлена на почту.'); }catch(err){ say(err?.message || 'Введите почту, чтобы восстановить пароль', false); } });
-  $('#registerForm')?.addEventListener('submit', async e=>{e.preventDefault();try{const p1=$('#regPass').value,p2=$('#regPass2').value;if(p1!==p2){say('Пароли не совпадают.',false);return;}say('Создаём аккаунт...');await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),p1,$('#regPhone').value.trim());say('Аккаунт создан. Проверьте письмо подтверждения. Телефон подтвердите в профиле.');}catch(err){say('Ошибка регистрации: '+(err.message||err),false)}});
+  $('#registerForm')?.addEventListener('submit', async e=>{e.preventDefault();try{const p1=$('#regPass').value,p2=$('#regPass2').value;if(p1!==p2){say('Пароли не совпадают.',false);return;}say('Создаём аккаунт...');await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),p1);say('Аккаунт создан. Проверьте письмо подтверждения и активируйте аккаунт.');}catch(err){say('Ошибка регистрации: '+(err.message||err),false)}});
 }
 bindAuth();
 onAuthStateChanged(auth, async u => {
