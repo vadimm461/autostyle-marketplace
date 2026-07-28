@@ -2,7 +2,7 @@ import { auth, db, storage, COLLECTIONS } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getProducts, getCategories, getCollectionCached } from './data-cache.js';
+import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, saveUserCart, clearUserCart } from './user-cart-store.js';
 import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, fmt } from './notify-service.js';
@@ -10,7 +10,7 @@ import { getProfileVerification, profileVerificationMessage } from './auth-core.
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-let products = [], allProducts = [], categories = [], homeBlocks = [], promoCards = [], userNow = null;
+let products = [], allProducts = [], categories = [], banners = [], homeBlocks = [], promoCards = [], userNow = null;
 let dataPromise = null;
 const PAGE_SIZE = 24;
 let cart = [];
@@ -428,15 +428,17 @@ async function initData(options={}){
     const loadPromise = Promise.all([
       getProducts(MOBILE_CACHE_OPTIONS),
       getCategories(MOBILE_CACHE_OPTIONS),
+      getBanners(MOBILE_CACHE_OPTIONS).catch(()=>[]),
       safeLoadCollection(HOME_BLOCKS_COLLECTION),
       safeLoadCollections(PROMO_CARDS_COLLECTIONS)
-    ]).then(([p,c,h,pc])=>{
+    ]).then(([p,c,b,h,pc])=>{
       allProducts=p||[];
       products=allProducts;
       categories=c||[];
+      banners=(b||[]).filter(x=>x.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
       homeBlocks=mergeHomeBlocks(h||[]);
       promoCards=pc||[];
-      return { products, categories, homeBlocks, promoCards };
+      return { products, categories, banners, homeBlocks, promoCards };
     });
 
     dataPromise = Promise.race([
@@ -444,6 +446,7 @@ async function initData(options={}){
       new Promise(resolve=>setTimeout(()=>resolve({
         products:products||[],
         categories:categories||[],
+        banners:banners||[],
         homeBlocks:homeBlocks.length?homeBlocks:defaultHomeBlocks(),
         promoCards:promoCards||[]
       }),4200))
@@ -453,6 +456,15 @@ async function initData(options={}){
 }
 async function renderHome(){
   setupShell('home'); await initData();
+  const slides=banners.map(b=>({ ...b, image:b.image||b.imageUrl||b.photoUrl||'' })).filter(b=>b.image);
+  $('#mHero').innerHTML = slides.length
+    ? `<div class="m-hero-slider">${slides.map((b,i)=>`<a class="m-hero-image ${i===0?'active':''}" href="${appUrl(b.link||b.url||'mobile-catalog.html')}" data-m-slide="${i}"><img loading="${i?'lazy':'eager'}" decoding="async" src="${b.image}" alt="${b.title||'AutoStyle'}"></a>`).join('')}${slides.length>1?`<div class="m-hero-dots">${slides.map((_,i)=>`<span class="${i===0?'active':''}" data-m-dot="${i}"></span>`).join('')}</div>`:''}</div>`
+    : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
+  if (slides.length > 1) {
+    let i=0; const hero=$('#mHero'); const hs=[...hero.querySelectorAll('[data-m-slide]')], dots=[...hero.querySelectorAll('[data-m-dot]')];
+    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 5500);
+    dots.forEach((dot,n)=>dot.onclick=e=>{ e.preventDefault(); i=n; hs.forEach((x,k)=>x.classList.toggle('active',k===i)); dots.forEach((x,k)=>x.classList.toggle('active',k===i)); });
+  }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
   const promoHtml = promoCards.filter(isMobileHorizontalPromo).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
