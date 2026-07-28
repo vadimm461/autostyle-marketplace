@@ -638,3 +638,23 @@ main.container > .section-promo-block{
     background-position:center;
   }
 }
+
+/* Единое состояние товара без остатка: виден в витрине, корзина недоступна. */
+button.cart:disabled,
+button.cart-btn:disabled,
+button.catalog-cart-btn:disabled,
+button.related-cart:disabled,
+button.buy-btn:disabled,
+button.m-cart:disabled,
+button.m-action.cart:disabled,
+button[data-cart]:disabled{
+  background:#d7dce4 !important;
+  border-color:#d7dce4 !important;
+  color:#8a93a2 !important;
+  box-shadow:none !important;
+  cursor:not-allowed !important;
+  filter:none !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+  transform:none !important;
+}
