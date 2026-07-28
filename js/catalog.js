@@ -39,7 +39,7 @@ import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/
 import { loginEmail, registerEmail, ensureUserProfile } from './auth-core.js';
 import { getProducts, getCategories } from './data-cache.js?v=20260728-desktop-module-fix';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
-const $=s=>document.querySelector(s), $\u0024=s=>document.querySelectorAll(s);const fmt=new Intl.NumberFormat('ru-RU');const CATALOG_PAGE_SIZE=36;let items=[],categories=[],cart=[],favs=JSON.parse(localStorage.getItem('favorites')||'[]'),showZero=false,visibleCount=CATALOG_PAGE_SIZE;const grid=$('#catalogGrid'),search=$('#search'),topSearch=$('#topSearch'),cat=$('#category'),sort=$('#sort'),count=$('#catalogCount');
+const $=s=>document.querySelector(s), $\u0024=s=>document.querySelectorAll(s);const fmt=new Intl.NumberFormat('ru-RU');const CATALOG_PAGE_SIZE=36;let items=[],categories=[],cart=[],favs=JSON.parse(localStorage.getItem('favorites')||'[]'),showZero=false,visibleCount=CATALOG_PAGE_SIZE,loadMoreObserver=null;const grid=$('#catalogGrid'),search=$('#search'),topSearch=$('#topSearch'),cat=$('#category'),sort=$('#sort'),count=$('#catalogCount');
 
 
 async function getAccountMenuUser(user){
@@ -292,6 +292,7 @@ async function load(){
 }
 function card(p){const d=discount(p),op=oldPrice(p),priceNum=Number(p.price||0),installment=(p.installment===true||p.installmentAvailable===true||p.credit===true||priceNum>=199),monthPay=Math.ceil(priceNum/12);return `<article class="catalog-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}"><button class="fav-btn ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button><a class="catalog-card-link" href="product.html?id=${encodeURIComponent(p.id)}"><div class="catalog-card-photo">${d?`<span class="discount-badge">-${d}%</span>`:''}${image(p)?`<img loading="lazy" decoding="async" src="${image(p)}" alt="${title(p)}">`:'<span>Фото</span>'}</div><div class="catalog-card-body"><h3>${title(p)}</h3><div class="catalog-card-category">${group(p)}</div><div class="catalog-card-price-area"><div class="price-row-card"><div class="catalog-card-price">${money(p.price)}</div>${op?`<div class="old-price">${money(op)}</div>`:''}</div>${installment?`<div class="installment-badge catalog-installment-badge">Рассрочка от ${money(monthPay)}/мес</div>`:'<div class="installment-badge catalog-installment-badge"></div>'}<div class="catalog-card-stock">${stock(p)>0?'В наличии: '+stock(p):'Нет в наличии'}</div></div></div></a><button class="catalog-cart-btn" data-cart="${p.id}" type="button">В корзину</button></article>`}
 function render(resetPage=false){
+  if(loadMoreObserver){loadMoreObserver.disconnect();loadMoreObserver=null;}
   if(resetPage) visibleCount=CATALOG_PAGE_SIZE;
   const q=(search?.value||'').toLowerCase(),c=cat?.value||'',pf=Number($('#priceFrom')?.value||0),pt=Number($('#priceTo')?.value||999999999),params=new URLSearchParams(location.search),brandParam=(params.get('brand')||'').toLowerCase();
   let list=items.filter(p=>{const brand=String(p.brand||p.brandName||p.manufacturer||p.vendor||'').toLowerCase();const text=`${title(p)} ${p.description||''} ${group(p)} ${p.code||''} ${brand}`.toLowerCase();const pr=Number(p.price||0);if(c&&!categoryNamesFor(c).includes(group(p)))return false;if(brandParam&&brand!==brandParam&&!text.includes(brandParam))return false;if(q&&!text.includes(q))return false;if(pr<pf||pr>pt)return false;if(!showZero&&stock(p)<=0)return false;return true});
@@ -303,8 +304,16 @@ function render(resetPage=false){
   const visible=list.slice(0,visibleCount);
   grid.innerHTML=visible.length?visible.map(card).join(''):'<div class="notice">Товары не найдены.</div>';
   if(list.length>visible.length){
-    grid.insertAdjacentHTML('beforeend',`<div class="catalog-load-more-wrap" style="grid-column:1/-1;display:flex;justify-content:center;padding:20px 0"><button id="catalogLoadMore" class="primary" type="button">Показать ещё ${Math.min(CATALOG_PAGE_SIZE,list.length-visible.length)} из ${list.length-visible.length}</button></div>`);
-    $('#catalogLoadMore').onclick=()=>{visibleCount+=CATALOG_PAGE_SIZE;render(false)};
+    grid.insertAdjacentHTML('beforeend','<div id="catalogLoadMoreSentinel" aria-hidden="true" style="grid-column:1/-1;height:1px"></div>');
+    const sentinel=$('#catalogLoadMoreSentinel');
+    loadMoreObserver=new IntersectionObserver(entries=>{
+      if(!entries.some(entry=>entry.isIntersecting))return;
+      loadMoreObserver?.disconnect();
+      loadMoreObserver=null;
+      visibleCount+=CATALOG_PAGE_SIZE;
+      render(false);
+    },{root:null,rootMargin:'600px 0px',threshold:0});
+    loadMoreObserver.observe(sentinel);
   }
   bind();
 }
