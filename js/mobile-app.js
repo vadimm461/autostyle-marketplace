@@ -49,7 +49,8 @@ const appUrl = url => {
     .replace(/^orders\.html(.*)$/i, 'mobile-orders.html$1')
     .replace(/^discount-card\.html(.*)$/i, 'mobile-discount-card.html$1');
 };
-const safeLoadCollection = async name => { try { return await getCollectionCached(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
+const MOBILE_CACHE_OPTIONS = { staleWhileRevalidate:true };
+const safeLoadCollection = async name => { try { return await getCollectionCached(name, MOBILE_CACHE_OPTIONS); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
 const safeLoadCollections = async names => {
   const groups = await Promise.all(names.map(async name => {
     const rows = await safeLoadCollection(name);
@@ -447,9 +448,9 @@ function productInCategory(p, selected){
 async function initData(options={}){
   if (!dataPromise || options.force) {
     const loadPromise = Promise.all([
-      getProducts(),
-      getCategories(),
-      getBanners().catch(()=>[]),
+      getProducts(MOBILE_CACHE_OPTIONS),
+      getCategories(MOBILE_CACHE_OPTIONS),
+      getBanners(MOBILE_CACHE_OPTIONS).catch(()=>[]),
       safeLoadCollection(HOME_BLOCKS_COLLECTION),
       safeLoadCollections(PROMO_CARDS_COLLECTIONS)
     ]).then(([p,c,b,h,pc])=>{
