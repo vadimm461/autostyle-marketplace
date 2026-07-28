@@ -1409,6 +1409,47 @@ body.mobile-page [class*="product"] [class*="image"] img{
   color:#fff;
   box-shadow:0 15px 34px rgba(15,23,42,.22);
 }
+.m-profile-tiles-full .m-profile-tile.tile-wheel{
+  grid-column:1/-1;
+  min-height:152px;
+  aspect-ratio:auto;
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr);
+  grid-template-rows:auto auto 1fr;
+  align-content:center;
+  column-gap:16px;
+}
+.m-profile-tiles-full .m-profile-tile.tile-wheel .m-wheel-ico{
+  grid-column:1;
+  grid-row:1/4;
+  width:64px;
+  height:64px;
+  align-self:center;
+  margin:0;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:21px;
+  background:rgba(255,255,255,.09);
+  font-size:36px;
+}
+.m-profile-tiles-full .m-profile-tile.tile-wheel b{
+  grid-column:2;
+  grid-row:2;
+  font-size:23px;
+}
+.m-profile-tiles-full .m-profile-tile.tile-wheel small{
+  grid-column:2;
+  grid-row:3;
+  margin-top:6px;
+}
+.m-profile-tile.tile-wheel.is-locked{
+  background:linear-gradient(145deg,#343b49,#1d2430);
+  border-color:#4b5565;
+  box-shadow:0 12px 28px rgba(15,23,42,.16);
+}
+.m-profile-tile.tile-wheel.is-locked .m-wheel-label{
+  background:#facc15;
+  color:#241b03;
+}
 .m-profile-tile.tile-wheel small{color:rgba(255,255,255,.76)}
 .m-profile-tile .m-wheel-ico{
   font-size:28px;
