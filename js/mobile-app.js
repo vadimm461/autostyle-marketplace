@@ -135,30 +135,8 @@ function renderMobileSection(block, list){
 function setupMobileChrome(){
   const top = document.querySelector('.m-top');
   const nav = document.querySelector('.m-bottom-nav');
-  let lastY = window.scrollY || 0;
-  let ticking = false;
-  const apply = () => {
-    const y = Math.max(0, window.scrollY || 0);
-    const goingDown = y > lastY + 3;
-    const goingUp = y < lastY - 3;
-    if (top) {
-      top.classList.toggle('m-top-compact', y > 28);
-      if (y <= 8) top.classList.remove('m-top-hidden');
-      else if (goingDown) top.classList.add('m-top-hidden');
-      else if (goingUp) top.classList.remove('m-top-hidden');
-    }
-    if (nav) nav.classList.toggle('m-nav-scrolled', y > 10);
-    lastY = y;
-    ticking = false;
-  };
-  const onScroll = () => {
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(apply);
-    }
-  };
-  apply();
-  window.addEventListener('scroll', onScroll, { passive:true });
+  if (top) top.classList.remove('m-top-hidden', 'm-top-compact');
+  if (nav) nav.classList.remove('m-nav-scrolled');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href]');
@@ -511,7 +489,6 @@ async function renderCatalog(){
   let list=products.filter(p=>productInCategory(p,selected));
   if(q) list=list.filter(p=>(title(p)+' '+group(p)).toLowerCase().includes(q.toLowerCase()));
   $('#mCatalogTitle').textContent = selected ? selected : (q ? `Поиск: ${escapeHtml(q)}` : 'Каталог товаров');
-  $('#mCatalogCount').textContent = `${list.length} товаров`;
   renderCatalogBatch(list, 0);
   clearLoader();
 }
