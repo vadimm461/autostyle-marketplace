@@ -1,5 +1,5 @@
 
-import { auth, db } from './firebase.js';
+import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   doc,getDoc,collection,query,where,getDocs,
@@ -8,9 +8,17 @@ import {
 
 const CONFIG_REF = doc(db,'autostyle_wheel_config','main');
 const stateRef = uid => doc(db,'autostyle_wheel_state',uid);
-let currentUser=null, currentConfig=null, rotation=0, spinning=false, availabilityTimer=null;
+const USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
+const profileRef = uid => doc(db,USERS_COLLECTION,uid);
+let currentUser=null, currentConfig=null, currentProfileActivated=false, rotation=0, spinning=false, availabilityTimer=null;
 
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
+function isProfileActivatedData(data={}){
+  return data.profileActivated===true
+    || data.profileActive===true
+    || data.profileCompleted===true
+    || data.isProfileActivated===true;
+}
 function loadJsBarcode(){
   if(window.JsBarcode) return Promise.resolve();
   return new Promise((resolve,reject)=>{
@@ -327,6 +335,18 @@ async function refreshWheel(){
   syncWheelButtons(true);
 
   try{
+    const profileSnapshot=await getDoc(profileRef(currentUser.uid));
+    currentProfileActivated=profileSnapshot.exists()&&isProfileActivatedData(profileSnapshot.data());
+    if(!currentProfileActivated){
+      clearAvailabilityTimer();
+      currentConfig=null;
+      renderWheel({enabled:false,products:[]});
+      syncWheelStatus('Сначала активируйте профиль: заполните имя, телефон, город, адрес и автомобиль.');
+      syncWheelButtons(true);
+      await renderPrizes([]);
+      return;
+    }
+
     /*
       Не используем where + orderBy: такой запрос требует ручного
       составного индекса Firestore. Получаем только документы пользователя,
@@ -426,7 +446,7 @@ async function renderPrizes(items){
 }
 
 async function spin(){
-  if(spinning||!currentUser||!currentConfig)return;
+  if(spinning||!currentUser||!currentConfig||!currentProfileActivated)return;
   spinning=true;const btn=document.getElementById('wheelSpinBtn');syncWheelButtons(true);vibrate(35);
   try{
     const products=(currentConfig.products||[]).filter(x=>x.enabled!==false&&Number(x.chance)>0);
@@ -484,6 +504,10 @@ async function spin(){
     const spinAt=Date.now();
     await runTransaction(db,async tx=>{
       const sref=stateRef(currentUser.uid),ss=await tx.get(sref),cfg=await tx.get(CONFIG_REF);
+      const profileSnapshot=await tx.get(profileRef(currentUser.uid));
+      if(!profileSnapshot.exists()||!isProfileActivatedData(profileSnapshot.data())){
+        throw new Error('Сначала активируйте профиль.');
+      }
       const live=cfg.exists()?cfg.data():currentConfig;
       const lastData=ss.exists()?ss.data():{};
       const last=lastData.lastSpinAt?.toMillis?lastData.lastSpinAt.toMillis():0;
@@ -520,10 +544,17 @@ async function spin(){
     showWheelResult(result);
     await refreshWheel();
   }catch(e){
+    if(String(e?.message||e).includes('активируйте профиль')){
+      currentProfileActivated=false;
+      currentConfig=null;
+      syncWheelStatus('Сначала активируйте профиль: заполните личные данные.');
+      syncWheelButtons(true);
+      return;
+    }
     showWheelResult({noPrize:true,name:e.message||String(e)});
     await refreshWheel();
   }
   finally{spinning=false}
 }
 addTab();
-onAuthStateChanged(auth,u=>{currentUser=u;if(u)refreshWheel();else clearAvailabilityTimer()});
+onAuthStateChanged(auth,u=>{currentUser=u;currentProfileActivated=false;if(u)refreshWheel();else clearAvailabilityTimer()});
