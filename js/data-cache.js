@@ -127,42 +127,42 @@ export function clearDataCache(){
   } catch(e) {}
 }
 
-const refreshInFlight = new Map();
-
-async function refreshCollection(name, cacheKey, cached=null){
-  if (refreshInFlight.has(name)) return refreshInFlight.get(name);
-  const task = (async()=>{
-    const remoteVersion = await withTimeout(getRemoteVersion(), 1800, null);
-    const rows = await withTimeout(fetchCollection(name), 7000, null);
-    if (!rows) return cached && Array.isArray(cached.rows) ? cached.rows : [];
-    const saveVersion = safeString(remoteVersion || '0');
-    writeJson(cacheKey, { rows, savedAt: now(), version: saveVersion });
-    try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
-    window.dispatchEvent(new CustomEvent('autostyle-cache-updated', { detail:{ name, rows } }));
-    return rows;
-  })().catch(e=>{
-    console.warn('Background cache refresh failed', name, e);
-    return cached && Array.isArray(cached.rows) ? cached.rows : [];
-  }).finally(()=>refreshInFlight.delete(name));
-  refreshInFlight.set(name, task);
-  return task;
-}
-
 export async function getCollectionCached(name, options={}){
   const force = options.force === true;
+  const staleWhileRevalidate = options.staleWhileRevalidate === true;
   const cacheKey = key(name);
   const cached = readJson(cacheKey, null);
+  const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
   const hasCachedRows = !!(cached && Array.isArray(cached.rows));
-  const age = hasCachedRows ? now() - Number(cached.savedAt || 0) : Infinity;
 
-  // Всегда рисуем сохранённые данные сразу. Просроченный кэш обновляется в фоне,
-  // поэтому первый экран после долгого простоя больше не ждёт сеть/Firestore.
-  if (!force && hasCachedRows) {
-    if (age >= MAX_CACHE_AGE) refreshCollection(name, cacheKey, cached);
+  // Десктоп сохраняет прежнее поведение. Только мобильный клиент может
+  // сразу показать просроченный снимок и обновить его без блокировки экрана.
+  if (!force && hasCachedRows && (age < MAX_CACHE_AGE || staleWhileRevalidate)) {
+    if (staleWhileRevalidate && age >= MAX_CACHE_AGE) {
+      getCollectionCached(name, { force:true }).catch(e => {
+        console.warn('Mobile background cache refresh failed', name, e);
+      });
+    }
     return cached.rows;
   }
 
-  return await refreshCollection(name, cacheKey, cached);
+  let remoteVersion = null;
+  if (!force) remoteVersion = await withTimeout(getRemoteVersion(), 2500, null);
+
+  try{
+    const rows = await withTimeout(fetchCollection(name), 7000, null);
+    if(!rows){
+      if(hasCachedRows) return cached.rows;
+      return [];
+    }
+    const saveVersion = safeString(remoteVersion || await getRemoteVersion(true) || '0');
+    writeJson(cacheKey, { rows, savedAt: now(), version: saveVersion });
+    try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
+    return rows;
+  }catch(e){
+    if(hasCachedRows) return cached.rows;
+    throw e;
+  }
 }
 
 export function getProducts(options={}){ return getCollectionCached(COLLECTIONS.products, options); }
