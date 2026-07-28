@@ -10,7 +10,7 @@ import { getProfileVerification, profileVerificationMessage } from './auth-core.
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-let products = [], allProducts = [], categories = [], homeBlocks = [], promoCards = [], userNow = null;
+let products = [], allProducts = [], categories = [], homeBlocks = [], userNow = null;
 let dataPromise = null;
 const PAGE_SIZE = 24;
 let cart = [];
@@ -22,7 +22,22 @@ const waitAuthUser = () => new Promise(resolve => {
 });
 
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
-const PROMO_CARDS_COLLECTIONS = ['autostyle_horizontal_promo_cards'];
+const MAIN_BANNERS_COLLECTION = COLLECTIONS.banners || 'autostyle_banners';
+const DEDICATED_HORIZONTAL_PROMO_COLLECTIONS = [
+  'autostyle_horizontal_promo_cards',
+  'autostyle_home_promo_cards',
+  'homePromoCards'
+];
+const PROMO_CARDS_COLLECTIONS = [...new Set([
+  ...DEDICATED_HORIZONTAL_PROMO_COLLECTIONS,
+  COLLECTIONS.promoCards || 'autostyle_promo_cards',
+  'autostyle_promo_cards',
+  'autostyle_promoCards',
+  'promoCards',
+  'autostyle_home_cards',
+  'homeCards'
+].filter(Boolean))];
+const DEDICATED_HORIZONTAL_PROMO_KEYS = new Set(DEDICATED_HORIZONTAL_PROMO_COLLECTIONS.map(name => name.toLowerCase()));
 const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
 const appUrl = url => {
@@ -47,10 +62,10 @@ const appUrl = url => {
     .replace(/^discount-card\.html(.*)$/i, 'mobile-discount-card.html$1');
 };
 const MOBILE_CACHE_OPTIONS = { staleWhileRevalidate:true };
-const safeLoadCollection = async name => { try { return await getCollectionCached(name, MOBILE_CACHE_OPTIONS); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
-const safeLoadCollections = async names => {
+const safeLoadCollection = async (name, options=MOBILE_CACHE_OPTIONS) => { try { return await getCollectionCached(name, options); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
+const safeLoadCollections = async (names, options=MOBILE_CACHE_OPTIONS) => {
   const groups = await Promise.all(names.map(async name => {
-    const rows = await safeLoadCollection(name);
+    const rows = await safeLoadCollection(name, options);
     return rows.map(row => ({ ...row, _collection:name }));
   }));
   const all = groups.flat();
@@ -123,7 +138,7 @@ function isMobileHorizontalPromo(c){
   return c.enabled !== false
     && !isMobileVerticalPromo(c)
     && (
-      source === 'autostyle_horizontal_promo_cards'
+      DEDICATED_HORIZONTAL_PROMO_KEYS.has(source)
       || /(^|[\s_-])(horizontal|landscape|wide)([\s_-]|$)/i.test(raw)
       || c.horizontal === true
       || c.isHorizontal === true
@@ -136,6 +151,85 @@ function promoCard(c){
   const style = imageOnly && image ? ` style="background-image:url('${String(image).replaceAll("'",'%27')}')"` : '';
   return `<a class="m-promo-card ${imageOnly?'m-promo-image-only':''}" href="${promoLink(c)}"${style}>${(!imageOnly && image) ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}${imageOnly?'':`<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span>`}</a>`;
 }
+let mobileHeroTimer = 0;
+function bannerImage(row = {}) {
+  return String(row.image || row.imageUrl || row.imageURL || row.photo || row.photoUrl || row.photoURL || '').trim();
+}
+
+function renderMobileHero(rows = []) {
+  const hero = document.getElementById('mHero');
+  if (!hero) return;
+  window.clearInterval(mobileHeroTimer);
+  mobileHeroTimer = 0;
+
+  const slides = (rows || [])
+    .filter(row => row && row.enabled !== false)
+    .map(row => ({ ...row, image: bannerImage(row) }))
+    .filter(row => row.image)
+    .sort((a, b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+
+  if (!slides.length) {
+    hero.innerHTML = '';
+    hero.hidden = true;
+    return;
+  }
+
+  hero.hidden = false;
+  hero.innerHTML = `<div class="m-hero-slider">${slides.map((banner, index) => {
+    const href = escapeHtml(appUrl(banner.link || banner.linkURL || banner.url || 'mobile-catalog.html'));
+    const image = escapeHtml(banner.image);
+    const title = escapeHtml(banner.title || banner.name || 'AutoStyle');
+    return `<a class="m-hero-image ${index === 0 ? 'active' : ''}" href="${href}" data-m-slide="${index}"><img loading="${index ? 'lazy' : 'eager'}" decoding="async" src="${image}" alt="${title}"></a>`;
+  }).join('')}${slides.length > 1 ? `<div class="m-hero-dots">${slides.map((_, index) => `<span class="${index === 0 ? 'active' : ''}" data-m-dot="${index}" role="button" tabindex="0" aria-label="Баннер ${index + 1}"></span>`).join('')}</div>` : ''}</div>`;
+
+  if (slides.length < 2) return;
+  let activeIndex = 0;
+  const slideNodes = [...hero.querySelectorAll('[data-m-slide]')];
+  const dotNodes = [...hero.querySelectorAll('[data-m-dot]')];
+  const showSlide = index => {
+    activeIndex = index;
+    slideNodes.forEach((node, nodeIndex) => node.classList.toggle('active', nodeIndex === activeIndex));
+    dotNodes.forEach((node, nodeIndex) => node.classList.toggle('active', nodeIndex === activeIndex));
+  };
+  mobileHeroTimer = window.setInterval(() => showSlide((activeIndex + 1) % slideNodes.length), 5500);
+  dotNodes.forEach((dot, index) => {
+    dot.addEventListener('click', event => {
+      event.preventDefault();
+      showSlide(index);
+    });
+  });
+}
+
+function renderMobilePromos(rows = []) {
+  const mount = document.getElementById('mHomePromoMount');
+  if (!mount) return;
+  const promoHtml = (rows || [])
+    .filter(isMobileHorizontalPromo)
+    .sort((a, b) => Number(a.order ?? 999) - Number(b.order ?? 999))
+    .map(promoCard)
+    .join('');
+  mount.innerHTML = promoHtml
+    ? `<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>`
+    : '';
+}
+
+async function loadMobileHomeMedia({ force = false } = {}) {
+  const options = force ? { force: true } : MOBILE_CACHE_OPTIONS;
+  const [mainBanners, horizontalPromos] = await Promise.all([
+    safeLoadCollection(MAIN_BANNERS_COLLECTION, options),
+    safeLoadCollections(PROMO_CARDS_COLLECTIONS, options)
+  ]);
+  return {
+    banners: (mainBanners || []).filter(row => row && row.enabled !== false),
+    promos: horizontalPromos || []
+  };
+}
+
+function renderMobileHomeMedia(media = {}) {
+  renderMobileHero(media.banners || []);
+  renderMobilePromos(media.promos || []);
+}
+
 function renderMobileSection(block, list){
   list = (list || []).slice(0, 12);
   const id = `mBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
@@ -437,15 +531,13 @@ async function initData(options={}){
     const loadPromise = Promise.all([
       getProducts(MOBILE_CACHE_OPTIONS),
       getCategories(MOBILE_CACHE_OPTIONS),
-      safeLoadCollection(HOME_BLOCKS_COLLECTION),
-      safeLoadCollections(PROMO_CARDS_COLLECTIONS)
-    ]).then(([p,c,h,pc])=>{
+      safeLoadCollection(HOME_BLOCKS_COLLECTION)
+    ]).then(([p,c,h])=>{
       allProducts=p||[];
       products=allProducts;
       categories=c||[];
       homeBlocks=mergeHomeBlocks(h||[]);
-      promoCards=pc||[];
-      return { products, categories, homeBlocks, promoCards };
+      return { products, categories, homeBlocks };
     });
 
     dataPromise = Promise.race([
@@ -453,21 +545,50 @@ async function initData(options={}){
       new Promise(resolve=>setTimeout(()=>resolve({
         products:products||[],
         categories:categories||[],
-        homeBlocks:homeBlocks.length?homeBlocks:defaultHomeBlocks(),
-        promoCards:promoCards||[]
+        homeBlocks:homeBlocks.length?homeBlocks:defaultHomeBlocks()
       }),4200))
     ]);
   }
   return dataPromise;
 }
-async function renderHome(){
-  setupShell('home'); await initData();
+async function renderHome() {
+  setupShell('home');
+  const cachedMediaPromise = loadMobileHomeMedia();
+  const freshMediaPromise = loadMobileHomeMedia({ force: true });
+  await initData();
+
   const mCats = $('#mCats');
-  if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
-  const promoHtml = promoCards.filter(isMobileHorizontalPromo).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
-  const blocksHtml = homeBlocks.map(block => ({ block, list:productsForHomeBlock(block) })).filter(x => !(x.block.recent && !x.list.length)).map(x => renderMobileSection(x.block, x.list)).join('');
-  $('#mHomeDynamic').innerHTML = (promoHtml ? `<section class="m-section"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>` : '') + blocksHtml;
-  bind(); clearLoader();
+  if (mCats) mCats.innerHTML = parentsList().map(category => `<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(category))}">${catName(category)}</a>`).join('');
+
+  const blocksHtml = homeBlocks
+    .map(block => ({ block, list: productsForHomeBlock(block) }))
+    .filter(item => !(item.block.recent && !item.list.length))
+    .map(item => renderMobileSection(item.block, item.list))
+    .join('');
+
+  const homeDynamic = $('#mHomeDynamic');
+  if (homeDynamic) homeDynamic.innerHTML = `<div id="mHomePromoMount"></div>${blocksHtml}`;
+  bind();
+
+  const quickMedia = await Promise.race([
+    cachedMediaPromise,
+    new Promise(resolve => window.setTimeout(() => resolve(null), 650))
+  ]);
+  if (quickMedia) renderMobileHomeMedia(quickMedia);
+  clearLoader();
+
+  let freshApplied = false;
+  cachedMediaPromise
+    .then(media => {
+      if (!freshApplied) renderMobileHomeMedia(media);
+    })
+    .catch(error => console.warn('Не удалось загрузить кеш баннеров', error));
+  freshMediaPromise
+    .then(media => {
+      freshApplied = true;
+      renderMobileHomeMedia(media);
+    })
+    .catch(error => console.warn('Не удалось обновить баннеры', error));
 }
 async function renderCatalog(){
   setupShell('catalog'); await initData();
