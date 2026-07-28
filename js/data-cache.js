@@ -86,17 +86,28 @@ async function storageUrl(value){
 async function resolveProductImage(row){
   const raw = firstString(
     row?.image, row?.imageUrl, row?.photo, row?.photoUrl, row?.img, row?.picture, row?.pictureUrl,
-    row?.mainImage, row?.mainImageUrl, row?.thumbnail, row?.thumb, row?.url, row?.downloadURL, row?.downloadUrl,
+    row?.mainImage, row?.mainImageUrl, row?.url, row?.downloadURL, row?.downloadUrl,
     row?.images, row?.photos, row?.pictures, row?.gallery, row?.files, row?.attachments
   );
   return await storageUrl(raw);
 }
 
+async function resolveProductThumbnail(row){
+  const raw = firstString(
+    row?.thumbnail, row?.thumbnailUrl, row?.thumb, row?.thumbUrl, row?.cardImage, row?.cardImageUrl,
+    row?.preview, row?.previewUrl, row?.smallImage, row?.smallImageUrl
+  );
+  return raw ? await storageUrl(raw) : '';
+}
+
 async function normalizeProductRow(row){
   const price = Number(row?.price || 0);
   const old = Number(row?.oldPrice || row?.priceOld || row?.priceBefore || row?.compareAtPrice || 0);
-  const image = await resolveProductImage(row);
-  const normalized = image ? { ...row, image, imageUrl: row?.imageUrl || image, photoUrl: row?.photoUrl || image } : { ...row };
+  const [image, thumbnail] = await Promise.all([resolveProductImage(row), resolveProductThumbnail(row)]);
+  const cardImage = thumbnail || image;
+  const normalized = image || cardImage
+    ? { ...row, image: image || cardImage, imageUrl: row?.imageUrl || image || cardImage, photoUrl: row?.photoUrl || image || cardImage, cardImage, thumbnailUrl: thumbnail || row?.thumbnailUrl || '' }
+    : { ...row };
   if (old && old <= price) {
     return { ...normalized, oldPrice: 0, priceOld: 0, priceBefore: 0, compareAtPrice: 0 };
   }
