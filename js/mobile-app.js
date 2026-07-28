@@ -51,8 +51,11 @@ const appUrl = url => {
 };
 const safeLoadCollection = async name => { try { return await getCollectionCached(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
 const safeLoadCollections = async names => {
-  const all = [];
-  for (const name of names) (await safeLoadCollection(name)).forEach(row => all.push({ ...row, _collection:name }));
+  const groups = await Promise.all(names.map(async name => {
+    const rows = await safeLoadCollection(name);
+    return rows.map(row => ({ ...row, _collection:name }));
+  }));
+  const all = groups.flat();
   const seen = new Set();
   return all.filter(row => { const k = String(row.key || row.slug || row.id || `${row._collection}:${row.title || row.name || Math.random()}`).trim(); if (seen.has(k)) return false; seen.add(k); return true; });
 };
@@ -383,6 +386,8 @@ function setupShell(active='home'){
     }, { passive:false });
   });
   updateCounts();
+  // Показываем оболочку сразу: данные и Firebase продолжают загружаться без белого экрана.
+  requestAnimationFrame(clearLoader);
 }
 function norm(s){return String(s||'').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[\s_-]+/g,' ')}
 function blockedName(n){ const x=norm(n); return x==='тмц'||x==='я мусорка'||x==='ямусорка'||x.includes('мусорка'); }
@@ -464,7 +469,7 @@ async function initData(options={}){
         banners:banners||[],
         homeBlocks:homeBlocks.length?homeBlocks:defaultHomeBlocks(),
         promoCards:promoCards||[]
-      }),7500))
+      }),4200))
     ]);
   }
   return dataPromise;
