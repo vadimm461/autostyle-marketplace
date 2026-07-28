@@ -790,6 +790,10 @@ async function saveAuthProfile(u, extra={}){
     name: extra.name || current.data.name || u.displayName || '',
     email: extra.email || current.data.email || u.email || '',
     phone: extra.phone || current.data.phone || '',
+    carBrand: extra.carBrand || current.data.carBrand || '',
+    carYear: extra.carYear || current.data.carYear || '',
+    carModel: extra.carModel || current.data.carModel || '',
+    car: extra.car || current.data.car || current.data.carText || [extra.carBrand || current.data.carBrand, extra.carModel || current.data.carModel, extra.carYear || current.data.carYear].filter(Boolean).join(' '),
     photoURL: extra.photoURL || current.data.photoURL || u.photoURL || '',
     providers:userProviders(u),
     emailVerified:Boolean(u.emailVerified),
@@ -842,6 +846,9 @@ function startMobileNotifications(user, root){
 async function renderProfile(){
   setupShell('profile');
   onAuthStateChanged(auth, async u=>{
+    if(u){
+      try{ await u.reload(); u = auth.currentUser || u; }catch(e){ console.warn('Не удалось обновить статус Email', e); }
+    }
     userNow=u; const box=$('#mProfileBox');
     if(!u){
       box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по Email и паролю или создайте новый аккаунт. Телефон указывается позже в профиле.</p>
@@ -870,6 +877,11 @@ async function renderProfile(){
     const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
     if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
     const myOrders = await loadMobileOrders(u).catch(()=>[]);
+    const registeredCar = d.car || d.carText || [d.carBrand, d.carModel, d.carYear].filter(Boolean).join(' ');
+    const emailConfirmed = u.emailVerified === true;
+    if(d.emailVerified !== emailConfirmed){
+      setDoc(current.ref,{emailVerified:emailConfirmed,updatedAt:new Date().toISOString()},{merge:true}).catch(()=>{});
+    }
     const isInnerProfilePage = page !== 'profile';
     const profileTop = isInnerProfilePage
       ? `<div class="m-profile-inner-head">
@@ -878,7 +890,7 @@ async function renderProfile(){
           <div class="m-profile-inner-user"><b>${d.name||u.displayName||'Профиль'}</b><small>${d.email||u.email||''}</small></div>
           <button id="pLogout" class="m-profile-mini-logout" type="button">Выйти</button>
         </div>`
-      : `<div class="m-profile-head m-profile-head-dark"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div class="m-profile-user"><h1>${d.name||u.displayName||'Профиль'}</h1><div>${d.email||u.email||''}</div></div><div class="m-profile-head-actions"><span class="m-profile-ok">Профиль подтверждён</span><button id="pLogout" class="m-profile-head-logout" type="button">Выйти</button></div></div>`;
+      : `<div class="m-profile-head m-profile-head-dark"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div class="m-profile-user"><h1>${d.name||u.displayName||'Профиль'}</h1><div>${d.email||u.email||''}</div></div><div class="m-profile-head-actions"><span class="${emailConfirmed?'m-profile-ok':'m-profile-wait'}">${emailConfirmed?'Профиль подтверждён':'Почта не подтверждена'}</span><button id="pLogout" class="m-profile-head-logout" type="button">Выйти</button></div></div>`;
     const profileMenu = `<div class="m-profile-main-title"><h1>Главная профиля</h1><p>Все разделы большого профиля в мобильной версии.</p></div>
     <div class="m-profile-tiles m-profile-tiles-full">
       <a class="m-profile-tile tile-green" href="mobile-catalog.html"><span class="m-tile-ico"><img src="assets/icons/package.svg" alt=""></span><b>Каталог товаров</b><small>Все товары AutoStyle</small></a>
@@ -910,7 +922,7 @@ async function renderProfile(){
           <label><span>Телефон</span><input id="pPhone" class="m-input" value="${d.phone||u.phoneNumber||''}" placeholder="Телефон"></label>
           <label><span>Город</span><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"></label>
           <label class="m-form-wide"><span>Адрес</span><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"></label>
-          <label class="m-form-wide"><span>Автомобиль</span><input id="pCar" class="m-input" value="${d.car||d.carText||''}" placeholder="Марка, модель, год"></label>
+          <label class="m-form-wide"><span>Автомобиль</span><input id="pCar" class="m-input" value="${registeredCar}" placeholder="Марка, модель, год"></label>
           <label class="m-form-wide"><span>Фото профиля</span><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Ссылка на фото"></label>
         </div>
         <button id="saveProfile" class="m-primary m-profile-save">Сохранить изменения</button>
