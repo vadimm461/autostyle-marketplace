@@ -10,15 +10,10 @@ let regStep=0;
 function drawRegStep(){
   const steps=$$('.as-reg-step');
   steps.forEach((el,i)=>el.classList.toggle('active',i===regStep));
-  const bar=$('#asRegProgressBar');
-  if(bar) bar.style.width=`${((regStep+1)/steps.length)*100}%`;
-  const count=$('#asRegStepCount');
-  if(count) count.textContent=`Шаг ${regStep+1} из ${steps.length}`;
-  const back=$('#asRegBack');
-  if(back) back.hidden=regStep===0;
-  const next=$('#asRegNext');
-  if(next) next.textContent=regStep===steps.length-1?'Создать аккаунт':'Продолжить';
-  requestAnimationFrame(()=>steps[regStep]?.querySelector('input')?.focus());
+  $('#asRegProgressBar') && ($('#asRegProgressBar').style.width=`${((regStep+1)/steps.length)*100}%`);
+  $('#asRegStepCount') && ($('#asRegStepCount').textContent=`Шаг ${regStep+1} из ${steps.length}`);
+  $('#asRegBack') && ($('#asRegBack').hidden=regStep===0);
+  $('#asRegNext') && ($('#asRegNext').textContent=regStep===steps.length-1?'Создать аккаунт':'Продолжить');
 }
 function validateRegStep(){
   const step=$$('.as-reg-step')[regStep];
@@ -26,15 +21,11 @@ function validateRegStep(){
     if(!input.checkValidity()){input.reportValidity();return false;}
   }
   if(regStep===2){
-    const year=Number($('#regCarYear').value);
-    const max=new Date().getFullYear()+1;
-    if(year<1950||year>max){say(`Укажите год от 1950 до ${max}`,false);return false;}
+    const y=Number($('#regCarYear').value), max=new Date().getFullYear()+1;
+    if(y<1950||y>max){say(`Укажите год от 1950 до ${max}`,false);return false;}
   }
-  if(regStep===4&&$('#regPass').value!==$('#regPass2').value){
-    say('Пароли не совпадают.',false);return false;
-  }
-  say('');
-  return true;
+  if(regStep===4&&$('#regPass').value!==$('#regPass2').value){say('Пароли не совпадают.',false);return false;}
+  say(''); return true;
 }
 function setMode(mode){
   $$('.auth-choice').forEach(b=>b.classList.toggle('active', b.dataset.authMode===mode));
@@ -61,57 +52,15 @@ function renderAuthModal(){
       <button id="forgotPassword" class="auth-link-btn" type="button">Забыли пароль?</button>
     </form>
     <form id="registerForm" class="auth-mode-panel as-register-wizard" data-auth-panel="register" novalidate>
-      <div class="as-reg-progress-head"><span id="asRegStepCount">Шаг 1 из 6</span><small>Создание профиля</small></div>
+      <div class="as-reg-progress-head"><span id="asRegStepCount">Шаг 1 из 6</span><small>Регистрация</small></div>
       <div class="as-reg-progress"><i id="asRegProgressBar"></i></div>
-
-      <section class="as-reg-step active">
-        <div class="as-reg-icon">👋</div>
-        <h3>Как вас зовут?</h3>
-        <p>Имя будет отображаться в профиле.</p>
-        <input id="regName" class="as-reg-main-input" autocomplete="name" placeholder="Ваше имя" minlength="2" required>
-      </section>
-
-      <section class="as-reg-step">
-        <div class="as-reg-icon">🚗</div>
-        <h3>Марка автомобиля</h3>
-        <p>Например: Volkswagen, BMW или Toyota.</p>
-        <input id="regCarBrand" class="as-reg-main-input" placeholder="Марка автомобиля" required>
-      </section>
-
-      <section class="as-reg-step">
-        <div class="as-reg-icon">📅</div>
-        <h3>Год автомобиля</h3>
-        <p>Укажите год выпуска.</p>
-        <input id="regCarYear" class="as-reg-main-input" type="number" inputmode="numeric" min="1950" max="2030" placeholder="Например, 2018" required>
-      </section>
-
-      <section class="as-reg-step">
-        <div class="as-reg-icon">🏁</div>
-        <h3>Модель автомобиля</h3>
-        <p>Например: Octavia, Golf или Camry.</p>
-        <input id="regCarModel" class="as-reg-main-input" placeholder="Модель автомобиля" required>
-      </section>
-
-      <section class="as-reg-step">
-        <div class="as-reg-icon">🔐</div>
-        <h3>Придумайте пароль</h3>
-        <p>Минимум 6 символов.</p>
-        <input id="regPass" class="as-reg-main-input" type="password" autocomplete="new-password" minlength="6" placeholder="Пароль" required>
-        <input id="regPass2" class="as-reg-main-input" type="password" autocomplete="new-password" minlength="6" placeholder="Повторите пароль" required>
-        <label class="auth-show-pass"><input id="showRegPass" type="checkbox"> Показать пароль</label>
-      </section>
-
-      <section class="as-reg-step">
-        <div class="as-reg-icon">✉️</div>
-        <h3>Последний шаг — Email</h3>
-        <p>На него придёт письмо подтверждения.</p>
-        <input id="regEmail" class="as-reg-main-input" type="email" autocomplete="email" placeholder="name@example.com" required>
-      </section>
-
-      <div class="as-reg-actions">
-        <button id="asRegBack" class="as-reg-back" type="button" hidden>Назад</button>
-        <button id="asRegNext" class="primary as-reg-next" type="button">Продолжить</button>
-      </div>
+      <section class="as-reg-step active"><div class="as-reg-icon">👋</div><h3>Как вас зовут?</h3><input id="regName" class="as-reg-main-input" placeholder="Ваше имя" minlength="2" required></section>
+      <section class="as-reg-step"><div class="as-reg-icon">🚗</div><h3>Марка автомобиля</h3><input id="regCarBrand" class="as-reg-main-input" placeholder="Например, Volkswagen" required></section>
+      <section class="as-reg-step"><div class="as-reg-icon">📅</div><h3>Год автомобиля</h3><input id="regCarYear" class="as-reg-main-input" type="number" min="1950" max="2030" placeholder="Например, 2018" required></section>
+      <section class="as-reg-step"><div class="as-reg-icon">🏁</div><h3>Модель автомобиля</h3><input id="regCarModel" class="as-reg-main-input" placeholder="Например, Octavia" required></section>
+      <section class="as-reg-step"><div class="as-reg-icon">🔐</div><h3>Придумайте пароль</h3><input id="regPass" class="as-reg-main-input" type="password" minlength="6" placeholder="Пароль" required><input id="regPass2" class="as-reg-main-input" type="password" minlength="6" placeholder="Повторите пароль" required><label class="auth-show-pass"><input id="showRegPass" type="checkbox"> Показать пароль</label></section>
+      <section class="as-reg-step"><div class="as-reg-icon">✉️</div><h3>Последний шаг — Email</h3><input id="regEmail" class="as-reg-main-input" type="email" placeholder="name@example.com" required><p class="muted">На почту придёт письмо подтверждения.</p></section>
+      <div class="as-reg-actions"><button id="asRegBack" class="as-reg-back" type="button" hidden>Назад</button><button id="asRegNext" class="primary as-reg-next" type="button">Продолжить</button></div>
     </form>
     <p id="authFullMsg" class="auth-msg"></p>
   </div>`;
@@ -125,31 +74,19 @@ function bindAuth(){
   $('#showLoginPass')?.addEventListener('change', e=>{ const p=$('#loginPass'); if(p) p.type=e.target.checked?'text':'password'; });
   $('#showRegPass')?.addEventListener('change', e=>{ ['#regPass','#regPass2'].forEach(sel=>{ const p=$(sel); if(p) p.type=e.target.checked?'text':'password'; }); });
   $('#forgotPassword')?.addEventListener('click', async()=>{ try{ const email=$('#loginEmail')?.value?.trim(); await resetPassword(email); say('Ссылка для восстановления пароля отправлена на почту.'); }catch(err){ say(err?.message || 'Введите почту, чтобы восстановить пароль', false); } });
-
   $('#asRegNext')?.addEventListener('click',async()=>{
     if(!validateRegStep()) return;
     const steps=$$('.as-reg-step');
     if(regStep<steps.length-1){regStep++;drawRegStep();return;}
     try{
+      const carBrand=$('#regCarBrand').value.trim(), carYear=$('#regCarYear').value.trim(), carModel=$('#regCarModel').value.trim();
+      localStorage.setItem('asPendingCarProfile',JSON.stringify({carBrand,carYear,carModel,car:[carBrand,carModel,carYear].filter(Boolean).join(' ')}));
       say('Создаём аккаунт...');
-      const carBrand=$('#regCarBrand').value.trim();
-      const carYear=$('#regCarYear').value.trim();
-      const carModel=$('#regCarModel').value.trim();
-      await registerEmail(
-        $('#regName').value.trim(),
-        $('#regEmail').value.trim(),
-        $('#regPass').value,
-        {carBrand,carYear,carModel,car:[carBrand,carModel,carYear].filter(Boolean).join(' ')}
-      );
+      await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),$('#regPass').value,'');
       say('Аккаунт создан. Проверьте почту и подтвердите Email.');
-    }catch(err){
-      say('Ошибка регистрации: '+(err.message||err),false);
-    }
+    }catch(err){say('Ошибка регистрации: '+(err.message||err),false);}
   });
   $('#asRegBack')?.addEventListener('click',()=>{if(regStep>0){regStep--;drawRegStep();}});
-  $$('.as-reg-step input').forEach(input=>input.addEventListener('keydown',e=>{
-    if(e.key==='Enter'){e.preventDefault();$('#asRegNext')?.click();}
-  }));
 }
 bindAuth();
-onAuthStateChanged(auth,async u=>{ if(u){await ensureUserProfile(u); const t=$('#authText'); if(t)t.textContent='Профиль'; const ue=$('#userEmail'); if(ue)ue.textContent=u.email||u.displayName||'Пользователь';} });
+onAuthStateChanged(auth,async u=>{ if(u){await ensureUserProfile(u); const t=$('#authText'); if(t)t.textContent='Профиль'; const ue=$('#userEmail'); if(ue)ue.textContent=u.email||u.phoneNumber||u.displayName||'Пользователь';} });
