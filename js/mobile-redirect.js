@@ -22,6 +22,10 @@
     };
     if (!map[file]) return;
     var qs = location.search || '';
+    if (file === 'profile.html' && location.hash === '#wheel') {
+      location.replace('mobile-wheel.html' + qs);
+      return;
+    }
     location.replace(map[file] + qs + location.hash);
   }catch(e){}
 })();
