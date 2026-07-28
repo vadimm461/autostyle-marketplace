@@ -1782,3 +1782,19 @@ body.mobile-page [class*="product"] [class*="image"] img{
   .m-auth-unified-head h1{font-size:27px}
   .m-auth-unified .m-reg-step{min-height:255px}
 }
+
+
+/* First-open recovery: loader can never leave a permanent white screen. */
+#mLoader.m-loader-leave{
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:opacity .18s ease!important;
+}
+html.m-app-visible body{
+  opacity:1!important;
+  visibility:visible!important;
+}
+.m-shell,
+.m-bottom-nav{
+  visibility:visible;
+}

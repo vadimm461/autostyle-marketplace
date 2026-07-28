@@ -210,7 +210,39 @@ function bind(scope=document){
   scope.querySelectorAll('[data-cart]').forEach(b=>b.onclick=e=>{e.preventDefault(); addCart(b.dataset.cart,b);});
   scope.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); toggleFav(b.dataset.fav,b);});
 }
-function clearLoader(){ const l=$('#mLoader'); if(l) setTimeout(()=>l.remove(),150); }
+function clearLoader(){
+  const l=$('#mLoader');
+  if(l){
+    l.classList.add('m-loader-leave');
+    setTimeout(()=>l.remove(),180);
+  }
+  document.documentElement.classList.add('m-app-visible');
+}
+function installMobileBootWatchdog(){
+  // Даже если Firebase или старый Service Worker завис, белого экрана быть не должно.
+  setTimeout(()=>{
+    const loader=$('#mLoader');
+    if(loader){
+      console.warn('Mobile boot watchdog: force opening interface');
+      clearLoader();
+    }
+  },4200);
+
+  // После возвращения из долгого простоя один раз мягко перезапускаем данные.
+  const wake=()=>{
+    if(document.hidden) return;
+    if(window.__asMobileWakeTimer) clearTimeout(window.__asMobileWakeTimer);
+    window.__asMobileWakeTimer=setTimeout(()=>{
+      if(typeof window.autostyleMobileRefresh==='function'){
+        window.autostyleMobileRefresh('wake-after-idle');
+      }
+    },250);
+  };
+  window.addEventListener('pageshow',wake,{passive:true});
+  window.addEventListener('online',wake,{passive:true});
+  document.addEventListener('visibilitychange',wake,{passive:true});
+}
+installMobileBootWatchdog();
 function searchGo(){ const q=($('#mSearch')?.value||'').trim(); location.href = q ? `mobile-catalog.html?search=${encodeURIComponent(q)}` : 'mobile-catalog.html'; }
 function setupAdvancedMobileSearch(){
   const input = document.getElementById('mSearch');
@@ -409,7 +441,7 @@ function productInCategory(p, selected){
 }
 async function initData(options={}){
   if (!dataPromise || options.force) {
-    dataPromise = Promise.all([
+    const loadPromise = Promise.all([
       getProducts(),
       getCategories(),
       getBanners().catch(()=>[]),
@@ -423,6 +455,17 @@ async function initData(options={}){
       promoCards=pc||[];
       return { products, categories, banners, homeBlocks, promoCards };
     });
+
+    dataPromise = Promise.race([
+      loadPromise,
+      new Promise(resolve=>setTimeout(()=>resolve({
+        products:products||[],
+        categories:categories||[],
+        banners:banners||[],
+        homeBlocks:homeBlocks.length?homeBlocks:defaultHomeBlocks(),
+        promoCards:promoCards||[]
+      }),7500))
+    ]);
   }
   return dataPromise;
 }

@@ -14,6 +14,16 @@ const VERSION_CHECK_TTL = 10 * 1000;
 let versionMemo = { value: null, checkedAt: 0 };
 
 function now(){ return Date.now(); }
+
+function withTimeout(promise, ms=4500, fallbackValue=null){
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise).finally(()=>clearTimeout(timer)),
+    new Promise(resolve=>{
+      timer=setTimeout(()=>resolve(fallbackValue),ms);
+    })
+  ]);
+}
 function key(name){ return CACHE_PREFIX + name; }
 
 function readJson(k, fallback=null){
@@ -27,7 +37,8 @@ function safeString(value){ return value === undefined || value === null ? '' : 
 async function getRemoteVersion(force=false){
   if (!force && versionMemo.value !== null && now() - versionMemo.checkedAt < VERSION_CHECK_TTL) return versionMemo.value;
   try{
-    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, VERSION_DOC));
+    const snap = await withTimeout(getDoc(doc(db, SETTINGS_COLLECTION, VERSION_DOC)), 2500, null);
+    if(!snap) return null;
     const data = snap.exists() ? snap.data() : null;
     const value = safeString(data?.value || data?.version || data?.updatedAt || data?.ts || '0');
     versionMemo = { value, checkedAt: now() };
@@ -122,20 +133,21 @@ export async function getCollectionCached(name, options={}){
   const cached = readJson(cacheKey, null);
   const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
 
-  let remoteVersion = null;
-  if (!force) remoteVersion = await getRemoteVersion();
-
-  // Быстрый старт: если версия сайта не изменилась и кэш свежий — сразу отдаём его.
+  // Первый экран не должен ждать Firestore. Свежий локальный кэш отдаём сразу.
   if (!force && cached && Array.isArray(cached.rows) && age < MAX_CACHE_AGE) {
-    const cachedVersion = safeString(cached.version || localStorage.getItem(VERSION_KEY) || '0');
-    if (remoteVersion === null || cachedVersion === safeString(remoteVersion || '0')) {
-      return cached.rows;
-    }
+    return cached.rows;
   }
+
+  let remoteVersion = null;
+  if (!force) remoteVersion = await withTimeout(getRemoteVersion(), 2500, null);
 
   // Если админ нажал принудительное обновление — version поменяется, этот блок загрузит свежие данные.
   try{
-    const rows = await fetchCollection(name);
+    const rows = await withTimeout(fetchCollection(name), 7000, null);
+    if(!rows){
+      if(cached && Array.isArray(cached.rows)) return cached.rows;
+      return [];
+    }
     const saveVersion = safeString(remoteVersion || await getRemoteVersion(true) || '0');
     writeJson(cacheKey, { rows, savedAt: now(), version: saveVersion });
     try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
