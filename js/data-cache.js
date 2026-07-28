@@ -79,7 +79,8 @@ function looksLikeStoragePath(value){
 async function storageUrl(value){
   const v = String(value || '').trim();
   if (!v || !looksLikeStoragePath(v)) return v;
-  try { return await getDownloadURL(ref(storage, v)); } catch(e) { return v; }
+  // Одна медленная ссылка Storage не должна задерживать весь каталог.
+  try { return await withTimeout(getDownloadURL(ref(storage, v)), 1500, v); } catch(e) { return v; }
 }
 
 async function resolveProductImage(row){
@@ -160,8 +161,8 @@ export async function getCollectionCached(name, options={}){
     try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
     return rows;
   }catch(e){
-    if(hasCachedRows) return cached.rows;
-    throw e;
+    console.warn('Collection load failed', name, e);
+    return hasCachedRows ? cached.rows : [];
   }
 }
 
