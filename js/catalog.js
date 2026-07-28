@@ -39,6 +39,7 @@ import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/
 import { loginEmail, registerEmail, ensureUserProfile } from './auth-core.js';
 import { getProducts, getCategories } from './data-cache.js?v=20260728-performance-stage23';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
+import { setupDesktopLiveSearch } from './desktop-live-search.js?v=20260728-live-search';
 const $=s=>document.querySelector(s), $\u0024=s=>document.querySelectorAll(s);const fmt=new Intl.NumberFormat('ru-RU');const CATALOG_PAGE_SIZE=36;let items=[],categories=[],cart=[],favs=JSON.parse(localStorage.getItem('favorites')||'[]'),showZero=false,visibleCount=CATALOG_PAGE_SIZE,loadMoreObserver=null;const grid=$('#catalogGrid'),search=$('#search'),topSearch=$('#topSearch'),cat=$('#category'),sort=$('#sort'),count=$('#catalogCount');
 
 
@@ -318,7 +319,18 @@ function render(resetPage=false){
   bind();
 }
 function bind(){$$('[data-cart]').forEach(b=>b.onclick=async e=>{e.preventDefault();try{await addUserCartItem(b.dataset.cart);cart=getCurrentUserCart();updateCart();b.textContent='Добавлено';setTimeout(()=>b.textContent='В корзину',900)}catch(err){alert(err?.message||'Войдите в аккаунт, чтобы добавить товар в корзину')}});$$('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const id=b.dataset.fav;favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];b.classList.toggle('active',favs.includes(id));saveFav()})}
-function setupSearch(){const btn=$('#topSearchBtn');function go(){const q=encodeURIComponent((topSearch?.value||'').trim());location.href=q?`catalog.html?search=${q}`:'catalog.html'}btn&&(btn.onclick=go);topSearch&&topSearch.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}})}
+function setupSearch(){
+  const btn=$('#topSearchBtn');
+  setupDesktopLiveSearch({
+    input:topSearch,
+    button:btn,
+    getItems:async()=>{
+      if(items.length) return items;
+      items=await getProducts();
+      return items;
+    }
+  });
+}
 
 window.addEventListener('autostyle-cache-updated', e => {
   const name = e.detail?.name;
