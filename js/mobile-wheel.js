@@ -491,7 +491,15 @@ async function spin() {
 
     const startRotation = rotation;
     const extraTurns = 5 * 360;
-    const targetRotation = startRotation + extraTurns + (360 - segmentCenter);
+
+    // Верхняя стрелка соответствует углу 0°.
+    // Сначала определяем текущее положение колеса внутри одного оборота,
+    // затем рассчитываем только необходимый доворот выбранного сектора к стрелке.
+    // Поэтому визуальный сектор и сохранённый выигрыш совпадают на каждом вращении.
+    const currentNormalized = ((startRotation % 360) + 360) % 360;
+    const selectedTarget = ((360 - segmentCenter) % 360 + 360) % 360;
+    const correction = (selectedTarget - currentNormalized + 360) % 360;
+    const targetRotation = startRotation + extraTurns + correction;
     rotation = targetRotation;
 
     wheel.getAnimations().forEach(animation => animation.cancel());
