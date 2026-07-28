@@ -31,14 +31,4 @@
   background:rgba(57,229,31,.10);
 }
 
-.auth-clean{width:min(94vw,520px)!important}
-.as-register-wizard{min-height:410px}
-.as-reg-progress-head{display:flex;justify-content:space-between;margin-bottom:8px;font-weight:850}
-.as-reg-progress{height:7px;background:#e8edf0;border-radius:99px;overflow:hidden;margin-bottom:20px}
-.as-reg-progress i{display:block;width:16.666%;height:100%;background:#20c76a;transition:width .25s}
-.as-reg-step{display:none;text-align:center}.as-reg-step.active{display:block}
-.as-reg-icon{width:58px;height:58px;margin:0 auto 12px;display:grid;place-items:center;border-radius:18px;background:#effbf4;font-size:28px}
-.as-reg-step h3{margin:0 0 16px;font-size:23px}
-.as-reg-main-input{width:100%;height:54px;box-sizing:border-box;border:1px solid #dfe6e2;border-radius:16px;padding:0 16px;background:#f8faf9;font:inherit;font-size:16px;outline:none;margin-bottom:9px}
-.as-reg-main-input:focus{border-color:#20c76a;box-shadow:0 0 0 4px rgba(32,199,106,.12)}
-.as-reg-actions{display:flex;gap:10px;margin-top:20px}.as-reg-back{min-width:105px;border:1px solid #dfe5e2;background:#fff;border-radius:15px}.as-reg-next{flex:1}
+.auth-clean{width:min(94vw,520px)!important}.as-register-wizard{min-height:410px}.as-reg-progress-head{display:flex;justify-content:space-between;margin-bottom:8px;font-weight:850}.as-reg-progress{height:7px;background:#e8edf0;border-radius:99px;overflow:hidden;margin-bottom:20px}.as-reg-progress i{display:block;width:16.666%;height:100%;background:#20c76a;transition:width .25s}.as-reg-step{display:none;text-align:center}.as-reg-step.active{display:block}.as-reg-icon{width:58px;height:58px;margin:0 auto 12px;display:grid;place-items:center;border-radius:18px;background:#effbf4;font-size:28px}.as-reg-step h3{margin:0 0 16px;font-size:23px}.as-reg-main-input{width:100%;height:54px;box-sizing:border-box;border:1px solid #dfe6e2;border-radius:16px;padding:0 16px;background:#f8faf9;font:inherit;font-size:16px;outline:none;margin-bottom:9px}.as-reg-main-input:focus{border-color:#20c76a;box-shadow:0 0 0 4px rgba(32,199,106,.12)}.as-reg-actions{display:flex;gap:10px;margin-top:20px}.as-reg-back{min-width:105px;border:1px solid #dfe5e2;background:#fff;border-radius:15px}.as-reg-next{flex:1}

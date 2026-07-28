@@ -10,20 +10,15 @@ let regStep=0;
 function drawRegStep(){
   const steps=$$('.as-reg-step');
   steps.forEach((el,i)=>el.classList.toggle('active',i===regStep));
-  $('#asRegProgressBar') && ($('#asRegProgressBar').style.width=`${((regStep+1)/steps.length)*100}%`);
-  $('#asRegStepCount') && ($('#asRegStepCount').textContent=`Шаг ${regStep+1} из ${steps.length}`);
-  $('#asRegBack') && ($('#asRegBack').hidden=regStep===0);
-  $('#asRegNext') && ($('#asRegNext').textContent=regStep===steps.length-1?'Создать аккаунт':'Продолжить');
+  if($('#asRegProgressBar')) $('#asRegProgressBar').style.width=`${((regStep+1)/steps.length)*100}%`;
+  if($('#asRegStepCount')) $('#asRegStepCount').textContent=`Шаг ${regStep+1} из ${steps.length}`;
+  if($('#asRegBack')) $('#asRegBack').hidden=regStep===0;
+  if($('#asRegNext')) $('#asRegNext').textContent=regStep===steps.length-1?'Создать аккаунт':'Продолжить';
 }
 function validateRegStep(){
   const step=$$('.as-reg-step')[regStep];
-  for(const input of step?.querySelectorAll('input[required]')||[]){
-    if(!input.checkValidity()){input.reportValidity();return false;}
-  }
-  if(regStep===2){
-    const y=Number($('#regCarYear').value), max=new Date().getFullYear()+1;
-    if(y<1950||y>max){say(`Укажите год от 1950 до ${max}`,false);return false;}
-  }
+  for(const input of step?.querySelectorAll('input[required]')||[]){ if(!input.checkValidity()){input.reportValidity();return false;} }
+  if(regStep===2){ const y=Number($('#regCarYear').value),max=new Date().getFullYear()+1; if(y<1950||y>max){say(`Укажите год от 1950 до ${max}`,false);return false;} }
   if(regStep===4&&$('#regPass').value!==$('#regPass2').value){say('Пароли не совпадают.',false);return false;}
   say(''); return true;
 }
@@ -79,14 +74,13 @@ function bindAuth(){
     const steps=$$('.as-reg-step');
     if(regStep<steps.length-1){regStep++;drawRegStep();return;}
     try{
-      const carBrand=$('#regCarBrand').value.trim(), carYear=$('#regCarYear').value.trim(), carModel=$('#regCarModel').value.trim();
-      localStorage.setItem('asPendingCarProfile',JSON.stringify({carBrand,carYear,carModel,car:[carBrand,carModel,carYear].filter(Boolean).join(' ')}));
+      const carBrand=$('#regCarBrand').value.trim(),carYear=$('#regCarYear').value.trim(),carModel=$('#regCarModel').value.trim();
       say('Создаём аккаунт...');
-      await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),$('#regPass').value,'');
+      await registerEmail($('#regName').value.trim(),$('#regEmail').value.trim(),$('#regPass').value,{carBrand,carYear,carModel,car:[carBrand,carModel,carYear].filter(Boolean).join(' ')});
       say('Аккаунт создан. Проверьте почту и подтвердите Email.');
     }catch(err){say('Ошибка регистрации: '+(err.message||err),false);}
   });
   $('#asRegBack')?.addEventListener('click',()=>{if(regStep>0){regStep--;drawRegStep();}});
 }
 bindAuth();
-onAuthStateChanged(auth,async u=>{ if(u){await ensureUserProfile(u); const t=$('#authText'); if(t)t.textContent='Профиль'; const ue=$('#userEmail'); if(ue)ue.textContent=u.email||u.phoneNumber||u.displayName||'Пользователь';} });
+onAuthStateChanged(auth,async u=>{ if(u){await ensureUserProfile(u); const t=$('#authText'); if(t)t.textContent='Профиль'; const ue=$('#userEmail'); if(ue)ue.textContent=u.email||u.displayName||'Пользователь';} });

@@ -779,9 +779,9 @@ async function sendMobileFeedback(user){
 }
 
 function providerTitle(id){
-  return ({'password':'Email/пароль','phone':'Телефон / SMS'})[id] || id;
+  return ({'password':'Email/пароль'})[id] || id;
 }
-function userProviders(u){ return (u?.providerData || []).map(x => x.providerId).filter(Boolean).filter(id => id === 'password' || id === 'phone'); }
+function userProviders(u){ return (u?.providerData || []).map(x => x.providerId).filter(Boolean).filter(id => id === 'password'); }
 async function saveAuthProfile(u, extra={}){
   if(!u) return;
   const current = await getUserDoc(u.uid);
@@ -801,19 +801,16 @@ async function saveAuthProfile(u, extra={}){
   }, { merge:true });
 }
 async function registerByEmail(){
-  const name = $('#pRegName')?.value.trim() || '';
-  const carBrand = $('#pRegCarBrand')?.value.trim() || '';
-  const carYear = $('#pRegCarYear')?.value.trim() || '';
-  const carModel = $('#pRegCarModel')?.value.trim() || '';
-  const email = $('#pRegEmail')?.value.trim() || '';
-  const pass = $('#pRegPass')?.value || '';
-  const res = await createUserWithEmailAndPassword(auth, email, pass);
-  await updateProfile(res.user, { displayName:name });
+  const name=$('#pRegName')?.value.trim()||'';
+  const carBrand=$('#pRegCarBrand')?.value.trim()||'';
+  const carYear=$('#pRegCarYear')?.value.trim()||'';
+  const carModel=$('#pRegCarModel')?.value.trim()||'';
+  const email=$('#pRegEmail')?.value.trim()||'';
+  const pass=$('#pRegPass')?.value||'';
+  const res=await createUserWithEmailAndPassword(auth,email,pass);
+  await updateProfile(res.user,{displayName:name});
   await sendEmailVerification(res.user);
-  await saveAuthProfile(res.user, {
-    name,email,carBrand,carYear,carModel,
-    car:[carBrand,carModel,carYear].filter(Boolean).join(' ')
-  });
+  await saveAuthProfile(res.user,{name,email,carBrand,carYear,carModel,car:[carBrand,carModel,carYear].filter(Boolean).join(' ')});
   alert('Аккаунт создан. Письмо подтверждения отправлено на почту.');
   location.reload();
 }
@@ -847,57 +844,25 @@ async function renderProfile(){
   onAuthStateChanged(auth, async u=>{
     userNow=u; const box=$('#mProfileBox');
     if(!u){
-      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по email и паролю или зарегистрируйтесь. Телефон указывается позже в личных данных профиля.</p>
-      <div class="m-auth-box"><h2>Email</h2><input id="pEmail" class="m-input" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
-      <div class="m-auth-box m-reg-wizard">
-        <div class="m-reg-progress-head"><b id="mRegStepText">Шаг 1 из 6</b><small>Регистрация</small></div>
-        <div class="m-reg-progress"><i id="mRegProgressBar"></i></div>
-        <div class="m-reg-step active"><span>👋</span><h2>Как вас зовут?</h2><input id="pRegName" class="m-input" placeholder="Ваше имя" minlength="2"></div>
-        <div class="m-reg-step"><span>🚗</span><h2>Марка автомобиля</h2><input id="pRegCarBrand" class="m-input" placeholder="Например, Volkswagen"></div>
-        <div class="m-reg-step"><span>📅</span><h2>Год автомобиля</h2><input id="pRegCarYear" class="m-input" type="number" inputmode="numeric" min="1950" max="2030" placeholder="Например, 2018"></div>
-        <div class="m-reg-step"><span>🏁</span><h2>Модель автомобиля</h2><input id="pRegCarModel" class="m-input" placeholder="Например, Octavia"></div>
-        <div class="m-reg-step"><span>🔐</span><h2>Придумайте пароль</h2><input id="pRegPass" class="m-input" type="password" minlength="6" placeholder="Минимум 6 символов"><input id="pRegPass2" class="m-input" type="password" minlength="6" placeholder="Повторите пароль"></div>
-        <div class="m-reg-step"><span>✉️</span><h2>Укажите Email</h2><input id="pRegEmail" class="m-input" type="email" placeholder="name@example.com"><p>На почту придёт письмо подтверждения.</p></div>
-        <div class="m-reg-actions"><button id="mRegBack" class="m-btn" type="button" hidden>Назад</button><button id="pRegister" class="m-primary" type="button">Продолжить</button></div>
-      </div>
+      box.innerHTML=`<h1>Профиль</h1><p class="m-group">Войдите по Email и паролю или создайте новый аккаунт. Телефон указывается позже в профиле.</p>
+      <div class="m-auth-box"><h2>Вход</h2><input id="pEmail" class="m-input" type="email" placeholder="Email"><input id="pPass" class="m-input" type="password" placeholder="Пароль"><button id="pLogin" class="m-primary" style="width:100%;margin-top:10px">Войти</button></div>
+      <div class="m-auth-box m-reg-wizard"><div class="m-reg-progress-head"><b id="mRegStepText">Шаг 1 из 6</b><small>Регистрация</small></div><div class="m-reg-progress"><i id="mRegProgressBar"></i></div>
+      <section class="m-reg-step active"><span>👋</span><h2>Как вас зовут?</h2><input id="pRegName" class="m-input" placeholder="Ваше имя" required></section>
+      <section class="m-reg-step"><span>🚗</span><h2>Марка автомобиля</h2><input id="pRegCarBrand" class="m-input" placeholder="Например, Volkswagen" required></section>
+      <section class="m-reg-step"><span>📅</span><h2>Год автомобиля</h2><input id="pRegCarYear" class="m-input" type="number" min="1950" max="2030" placeholder="Например, 2018" required></section>
+      <section class="m-reg-step"><span>🏁</span><h2>Модель автомобиля</h2><input id="pRegCarModel" class="m-input" placeholder="Например, Octavia" required></section>
+      <section class="m-reg-step"><span>🔐</span><h2>Придумайте пароль</h2><input id="pRegPass" class="m-input" type="password" minlength="6" placeholder="Пароль" required><input id="pRegPass2" class="m-input" type="password" minlength="6" placeholder="Повторите пароль" required></section>
+      <section class="m-reg-step"><span>✉️</span><h2>Укажите Email</h2><input id="pRegEmail" class="m-input" type="email" placeholder="name@example.com" required><p>На почту придёт письмо подтверждения.</p></section>
+      <div class="m-reg-actions"><button id="mRegBack" class="m-btn" type="button" hidden>Назад</button><button id="pRegister" class="m-primary" type="button">Продолжить</button></div></div>
       <a class="m-btn" style="width:100%;margin-top:10px" href="mobile.html">На главную</a><div class="m-link-grid" style="margin-top:16px"><a href="mobile-contacts.html">Контакты</a><a href="mobile-installment.html">Рассрочка</a><a href="mobile-certificates.html">Сертификаты</a><a href="mobile-about.html">Про нас</a></div>`;
       $('#pLogin').onclick=async()=>{ try{ const res=await signInWithEmailAndPassword(auth,$('#pEmail').value.trim(),$('#pPass').value); await saveAuthProfile(res.user); location.reload(); }catch(e){ alert('Ошибка входа: '+(e.message||e)); } };
       let mRegStep=0;
       const mRegSteps=[...document.querySelectorAll('.m-reg-step')];
-      const drawMReg=()=>{
-        mRegSteps.forEach((el,i)=>el.classList.toggle('active',i===mRegStep));
-        $('#mRegStepText').textContent=`Шаг ${mRegStep+1} из ${mRegSteps.length}`;
-        $('#mRegProgressBar').style.width=`${((mRegStep+1)/mRegSteps.length)*100}%`;
-        $('#mRegBack').hidden=mRegStep===0;
-        $('#pRegister').textContent=mRegStep===mRegSteps.length-1?'Создать аккаунт':'Продолжить';
-        setTimeout(()=>mRegSteps[mRegStep]?.querySelector('input')?.focus(),30);
-      };
-      const validateMReg=()=>{
-        const inputs=[...mRegSteps[mRegStep].querySelectorAll('input')];
-        for(const input of inputs){
-          if(!input.value.trim()){ alert('Заполните поле.'); input.focus(); return false; }
-          if(input.type==='email' && !input.checkValidity()){ alert('Укажите корректный Email.'); input.focus(); return false; }
-        }
-        if(mRegStep===2){
-          const y=Number($('#pRegCarYear').value), max=new Date().getFullYear()+1;
-          if(y<1950||y>max){alert(`Укажите год от 1950 до ${max}.`);return false;}
-        }
-        if(mRegStep===4){
-          if($('#pRegPass').value.length<6){alert('Пароль должен быть не короче 6 символов.');return false;}
-          if($('#pRegPass').value!==$('#pRegPass2').value){alert('Пароли не совпадают.');return false;}
-        }
-        return true;
-      };
-      $('#pRegister').onclick=async()=>{
-        if(!validateMReg()) return;
-        if(mRegStep<mRegSteps.length-1){mRegStep++;drawMReg();return;}
-        try{ $('#pRegister').disabled=true; await registerByEmail(); }
-        catch(e){ $('#pRegister').disabled=false; alert('Ошибка регистрации: '+(e.message||e)); }
-      };
+      const drawMReg=()=>{mRegSteps.forEach((el,i)=>el.classList.toggle('active',i===mRegStep));$('#mRegStepText').textContent=`Шаг ${mRegStep+1} из ${mRegSteps.length}`;$('#mRegProgressBar').style.width=`${((mRegStep+1)/mRegSteps.length)*100}%`;$('#mRegBack').hidden=mRegStep===0;$('#pRegister').textContent=mRegStep===mRegSteps.length-1?'Создать аккаунт':'Продолжить';};
+      const validMReg=()=>{for(const input of mRegSteps[mRegStep].querySelectorAll('input[required]')){if(!input.checkValidity()){input.reportValidity();return false;}}if(mRegStep===2){const y=Number($('#pRegCarYear').value),max=new Date().getFullYear()+1;if(y<1950||y>max){alert(`Укажите год от 1950 до ${max}.`);return false;}}if(mRegStep===4&&$('#pRegPass').value!==$('#pRegPass2').value){alert('Пароли не совпадают.');return false;}return true;};
+      $('#pRegister').onclick=async()=>{if(!validMReg())return;if(mRegStep<mRegSteps.length-1){mRegStep++;drawMReg();return;}try{$('#pRegister').disabled=true;await registerByEmail();}catch(e){$('#pRegister').disabled=false;alert('Ошибка регистрации: '+(e.message||e));}};
       $('#mRegBack').onclick=()=>{if(mRegStep>0){mRegStep--;drawMReg();}};
-      mRegSteps.forEach(step=>step.querySelectorAll('input').forEach(inp=>inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#pRegister').click();}})));
       drawMReg();
-}catch(e){ alert('Ошибка SMS-подтверждения: '+(e.message||e)); } };
       clearLoader(); return;
     }
     const current=await getUserDoc(u.uid);
@@ -980,8 +945,6 @@ async function renderProfile(){
     if($('#saveProfile')) $('#saveProfile').onclick=async()=>{ const data=profileDataFromForm(u,d); await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null}); if($('#pPassEdit').value.trim()){ await updatePassword(u,$('#pPassEdit').value.trim()); try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); } } await setDoc(current.ref,{...data,updatedAt:new Date().toISOString(),createdAt:d.createdAt||new Date().toISOString(),role:d.role||'user'},{merge:true}); alert('Профиль сохранён'); location.reload(); };
     if($('#mGetDiscount')) $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
     if($('#resendEmailVerify')) $('#resendEmailVerify').onclick=async()=>{ try{ await sendEmailVerification(u); alert('Письмо подтверждения отправлено.'); }catch(e){ alert('Не удалось отправить письмо: '+(e.message||e)); } };
-    if($('#pLinkSms')) $('#pLinkSms').onclick=async()=>{ try{ await startPhoneAuth($('#pLinkPhone').value.trim(), true); }catch(e){ alert('Не удалось отправить SMS: '+(e.message||e)); } };
-    if($('#pConfirmLinkSms')) $('#pConfirmLinkSms').onclick=async()=>{ try{ await confirmPhoneAuth($('#pLinkCode').value.trim()); }catch(e){ alert('Ошибка подтверждения телефона: '+(e.message||e)); } };
     if($('#mSendFeedback')) $('#mSendFeedback').onclick=async()=>{ try{ await sendMobileFeedback(u); }catch(e){ alert('Ошибка отправки: '+(e.message||e)); } };
     if($('#pLogout')) $('#pLogout').onclick=async()=>{localStorage.removeItem('favorites');await signOut(auth);location.href='mobile.html'};
     clearLoader();
