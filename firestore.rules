@@ -7,6 +7,35 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isCompleteProfileData(data) {
+      return data.get("name", "") is string
+        && data.get("name", "").size() > 0
+        && data.get("email", "") is string
+        && data.get("email", "").size() > 0
+        && data.get("phone", "") is string
+        && data.get("phone", "").size() > 0
+        && data.get("city", "") is string
+        && data.get("city", "").size() > 0
+        && data.get("address", "") is string
+        && data.get("address", "").size() > 0
+        && data.get("car", "") is string
+        && data.get("car", "").size() > 0;
+    }
+
+    function isProfileActivated() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.get("profileActivated", false) == true
+          || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.get("profileActive", false) == true
+          || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.get("profileCompleted", false) == true
+          || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.get("isProfileActivated", false) == true
+        )
+        && isCompleteProfileData(
+          get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data
+        );
+    }
+
 
     function isProfileVerified() {
       return isSignedIn() && (
@@ -65,7 +94,14 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && (
         isAdmin()
-        || (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+        || (
+          request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+          && (
+            request.resource.data.get("profileActivated", false) != true
+            || isCompleteProfileData(request.resource.data)
+          )
+        )
       );
       allow delete: if isAdmin();
     }
@@ -209,22 +245,23 @@ service cloud.firestore {
 
     /* Колесо фортуны */
     match /autostyle_wheel_config/{configId} {
-      allow read: if isSignedIn();
+      allow read: if isAdmin() || isProfileActivated();
       allow create, update, delete: if isAdmin();
     }
 
     match /autostyle_wheel_state/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isAdmin()
+        || (isProfileActivated() && request.auth.uid == userId);
+      allow create, update: if isProfileActivated() && request.auth.uid == userId;
       allow delete: if isAdmin();
     }
 
     match /autostyle_wheel_prizes/{prizeId} {
-      allow create: if isSignedIn()
+      allow create: if isProfileActivated()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == "active";
       allow read: if isAdmin()
-        || (isSignedIn() && resource.data.userId == request.auth.uid);
+        || (isProfileActivated() && resource.data.userId == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
