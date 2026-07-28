@@ -64,7 +64,7 @@ let allProducts = [];
 let allBlocks = [];
 
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
-const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 1);
+const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
 const title = p => p.title || p.name || 'Без названия';
 const img = p => p.cardImage || p.thumbnailUrl || p.thumbnail || p.thumb || p.image || p.imageUrl || p.photo || p.photoUrl || '';
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
@@ -123,19 +123,19 @@ function mergeBlocks(custom){
 }
 function productsForBlock(block){
   const key = normalizeKey(block.key);
-  const available = allProducts.filter(p => stock(p) > 0);
+  const blockProducts = allProducts;
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
-    const byId = new Map(available.map(p => [p.id, p]));
+    const byId = new Map(blockProducts.map(p => [p.id, p]));
     return ids.map(id => byId.get(id)).filter(Boolean);
   }
-  let selected = available.filter(p => isMarkedForHome(p) && normalizeKey(productSection(p)) === key);
+  let selected = blockProducts.filter(p => isMarkedForHome(p) && normalizeKey(productSection(p)) === key);
   if (selected.length) return selected;
-  selected = available.filter(p => normalizeKey(productSection(p)) === key || normalizeKey(p.tag) === key);
+  selected = blockProducts.filter(p => normalizeKey(productSection(p)) === key || normalizeKey(p.tag) === key);
   if (selected.length) return selected;
-  if (key === 'bestsellers' || key === 'best' || key === 'leaders') return available.filter(p => ['best','bestsellers','leader','leaders'].includes(normalizeKey(p.tag))).concat([]).slice(0, 20);
-  if (key === 'new') return available.filter(p => normalizeKey(p.tag) === 'new').slice(0,20);
-  if (key === 'hot') return available.slice(0, 20);
+  if (key === 'bestsellers' || key === 'best' || key === 'leaders') return blockProducts.filter(p => ['best','bestsellers','leader','leaders'].includes(normalizeKey(p.tag))).slice(0, 20);
+  if (key === 'new') return blockProducts.filter(p => normalizeKey(p.tag) === 'new').slice(0,20);
+  if (key === 'hot') return blockProducts.slice(0, 20);
   return [];
 }
 
@@ -304,7 +304,7 @@ function renderPromoCards(cards){
 
 
 function card(p){
-  const d = discount(p), op = oldPrice(p), im = img(p);
+  const d = discount(p), op = oldPrice(p), im = img(p), unavailable = stock(p) <= 0;
   const priceNum = Number(p.price || 0);
   const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
   const monthPay = Math.ceil(priceNum / 12);
@@ -319,11 +319,11 @@ function card(p){
         <div class="product-badges">${installment ? `<span class="installment-badge">Рассрочка от ${money(monthPay)}/мес</span>` : '<span class="installment-badge"></span>'}</div>
       </div>
     </a>
-    <button class="cart" data-cart="${p.id}" type="button">В корзину</button>
+    <button class="cart${unavailable ? ' is-unavailable' : ''}" data-cart="${p.id}" type="button" ${unavailable ? 'disabled aria-disabled="true"' : ''}>В корзину</button>
   </article>`;
 }
 function bindProductButtons(scope=document){
-  scope.querySelectorAll('[data-cart]').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
+  scope.querySelectorAll('[data-cart]:not(:disabled)').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
   scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
 }
 function makeSection(block, products){
