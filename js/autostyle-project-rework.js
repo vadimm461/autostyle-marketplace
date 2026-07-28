@@ -494,7 +494,9 @@
 
     const link = document.createElement('a');
     link.id = 'asFloatingWheel';
-    link.href = 'profile.html#wheel';
+    const isMobileSurface = document.body.classList.contains('mobile-page')
+      || /^mobile(?:-|\.html)/i.test(location.pathname.split('/').pop() || '');
+    link.href = isMobileSurface ? 'mobile-wheel.html' : 'profile.html#wheel';
     link.title = 'Колесо фортуны';
     link.setAttribute('aria-label', 'Открыть колесо фортуны');
     link.innerHTML = '<span>GO</span>';
