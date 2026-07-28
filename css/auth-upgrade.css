@@ -32,28 +32,22 @@
 }
 
 
-/* ===== AutoStyle step-by-step registration ===== */
-.auth-wizard-card{width:min(94vw,520px)!important;overflow:hidden}
-.as-register-wizard{min-height:430px}
-.as-reg-progress-head{display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;font-weight:850}
+/* Пошаговая регистрация AutoStyle */
+.auth-clean{width:min(94vw,520px)!important}
+.as-register-wizard{min-height:420px}
+.as-reg-progress-head{display:flex;justify-content:space-between;align-items:center;margin:4px 0 8px;font-weight:850}
 .as-reg-progress-head small{color:#84909d;font-weight:700}
-.as-reg-progress{height:7px;background:#e8edf0;border-radius:99px;overflow:hidden;margin-bottom:22px}
-.as-reg-progress i{display:block;height:100%;width:16.666%;background:#20c76a;border-radius:inherit;transition:width .28s ease}
-.as-reg-step{display:none;text-align:center;animation:asRegIn .25s ease}
-.as-reg-step.active{display:block}
-.as-reg-icon{width:62px;height:62px;margin:5px auto 13px;display:grid;place-items:center;border-radius:20px;background:#effbf4;font-size:30px}
-.as-reg-step h3{margin:0 0 7px;font-size:24px;line-height:1.15}
-.as-reg-step p{margin:0 auto 20px;color:#74808c;max-width:360px}
-.as-reg-main-input{width:100%;height:56px;border:1px solid #dfe6e2;border-radius:17px;padding:0 17px;background:#f8faf9;font:inherit;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:10px;transition:.2s}
+.as-reg-progress{height:7px;background:#e8edf0;border-radius:99px;overflow:hidden;margin-bottom:20px}
+.as-reg-progress i{display:block;width:16.666%;height:100%;background:#20c76a;border-radius:inherit;transition:width .25s}
+.as-reg-step{display:none;text-align:center}
+.as-reg-step.active{display:block;animation:asRegIn .22s ease}
+.as-reg-icon{width:60px;height:60px;margin:4px auto 12px;display:grid;place-items:center;border-radius:19px;background:#effbf4;font-size:29px}
+.as-reg-step h3{margin:0 0 7px;font-size:23px}
+.as-reg-step p{margin:0 auto 18px;color:#74808c}
+.as-reg-main-input{width:100%;height:55px;box-sizing:border-box;border:1px solid #dfe6e2;border-radius:16px;padding:0 16px;background:#f8faf9;font:inherit;font-size:16px;outline:none;margin-bottom:9px}
 .as-reg-main-input:focus{border-color:#20c76a;background:#fff;box-shadow:0 0 0 4px rgba(32,199,106,.12)}
-.as-reg-actions{display:flex;gap:10px;margin-top:22px}
-.as-reg-back,.as-reg-next{height:50px;border-radius:15px!important;font-weight:900}
-.as-reg-back{min-width:105px;border:1px solid #dfe5e2;background:#fff;color:#1b2520}
+.as-reg-actions{display:flex;gap:10px;margin-top:20px}
+.as-reg-back,.as-reg-next{height:49px;border-radius:15px!important;font-weight:900}
+.as-reg-back{min-width:105px;border:1px solid #dfe5e2;background:#fff;color:#17211b}
 .as-reg-next{flex:1}
-@keyframes asRegIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
-@media(max-width:600px){
-  .auth-wizard-card{width:calc(100vw - 24px)!important;padding:22px 17px!important}
-  .as-register-wizard{min-height:410px}
-  .as-reg-step h3{font-size:22px}
-  .as-reg-main-input{height:54px}
-}
+@keyframes asRegIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}

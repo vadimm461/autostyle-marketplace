@@ -1627,20 +1627,18 @@ body.mobile-page [class*="product"] [class*="image"] img{
 }
 
 
-/* ===== Mobile step-by-step registration ===== */
+/* Мобильная пошаговая регистрация */
 .m-reg-wizard{overflow:hidden}
 .m-reg-progress-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.m-reg-progress-head b{font-size:13px}
 .m-reg-progress-head small{color:#85919b;font-weight:800}
-.m-reg-progress{height:7px;border-radius:99px;background:#e7ece9;overflow:hidden;margin-bottom:19px}
-.m-reg-progress i{display:block;width:16.666%;height:100%;border-radius:inherit;background:#20c76a;transition:width .25s ease}
-.m-reg-step{display:none;text-align:center;animation:mRegIn .22s ease}
+.m-reg-progress{height:7px;background:#e7ece9;border-radius:99px;overflow:hidden;margin-bottom:18px}
+.m-reg-progress i{display:block;width:16.666%;height:100%;background:#20c76a;border-radius:inherit;transition:width .25s}
+.m-reg-step{display:none;text-align:center}
 .m-reg-step.active{display:block}
 .m-reg-step>span{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 11px;border-radius:19px;background:#effbf4;font-size:28px}
-.m-reg-step h2{margin:0 0 15px;font-size:21px}
-.m-reg-step p{color:#7d8992;font-size:13px;margin:10px 0 0}
-.m-reg-step .m-input{height:54px;margin-bottom:9px;text-align:left;font-size:16px}
+.m-reg-step h2{margin:0 0 14px;font-size:21px}
+.m-reg-step p{color:#7d8992;font-size:13px}
+.m-reg-step .m-input{height:54px;margin-bottom:9px;font-size:16px}
 .m-reg-actions{display:flex;gap:9px;margin-top:16px}
 .m-reg-actions #mRegBack{width:105px;flex:none}
-.m-reg-actions #pRegister{flex:1}
-@keyframes mRegIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.m-reg-actions #mRegNext{flex:1}
