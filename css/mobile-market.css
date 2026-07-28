@@ -1579,3 +1579,49 @@ body.mobile-page [class*="product"] [class*="image"] img{
   .m-form-grid{grid-template-columns:1fr}
   .m-form-wide{grid-column:auto}
 }
+
+
+/* Выход из аккаунта рядом со статусом профиля */
+.m-profile-head-actions{
+  justify-self:end;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.m-profile-head-actions .m-profile-ok{
+  justify-self:auto;
+}
+.m-profile-head-logout{
+  min-height:38px;
+  padding:0 13px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:13px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font:inherit;
+  font-size:12px;
+  font-weight:950;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.m-profile-head-logout:active{
+  transform:scale(.97);
+  background:rgba(255,255,255,.14);
+}
+@media(max-width:420px){
+  .m-profile-head-actions{
+    grid-column:1/-1;
+    justify-self:stretch;
+    justify-content:space-between;
+    margin-top:2px;
+  }
+  .m-profile-head-actions .m-profile-ok{
+    grid-column:auto;
+    margin-top:0;
+  }
+  .m-profile-head-logout{
+    min-height:38px;
+    padding:0 15px;
+  }
+}
