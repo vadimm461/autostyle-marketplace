@@ -1,4 +1,4 @@
-import { auth, db } from './firebase.js';
+import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   doc, getDoc, collection, query, where, getDocs,
@@ -7,9 +7,12 @@ import {
 
 const CONFIG_REF = doc(db, 'autostyle_wheel_config', 'main');
 const stateRef = uid => doc(db, 'autostyle_wheel_state', uid);
+const USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
+const profileRef = uid => doc(db, USERS_COLLECTION, uid);
 
 let currentUser = null;
 let currentConfig = null;
+let currentProfileActivated = false;
 let rotation = 0;
 let spinning = false;
 let availabilityTimer = null;
@@ -21,6 +24,41 @@ const escapeHtml = value => String(value ?? '')
   .replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
+
+function isProfileActivatedData(data = {}) {
+  return data.profileActivated === true
+    || data.profileActive === true
+    || data.profileCompleted === true
+    || data.isProfileActivated === true;
+}
+
+function showAccessGate(mode = 'guest') {
+  const gate = $('#mwAuthGate');
+  if (!gate) return;
+
+  const icon = gate.querySelector('[data-mw-gate-icon]');
+  const title = gate.querySelector('[data-mw-gate-title]');
+  const text = gate.querySelector('[data-mw-gate-text]');
+  const link = gate.querySelector('[data-mw-gate-link]');
+  const profileLocked = mode === 'profile';
+
+  if (icon) icon.textContent = profileLocked ? '🔒' : '🎁';
+  if (title) title.textContent = profileLocked ? 'Активируйте профиль' : 'Войдите в профиль';
+  if (text) text.textContent = profileLocked
+    ? 'Колесо доступно после заполнения имени, телефона, города, адреса и автомобиля.'
+    : 'Колесо, история выигрышей и штрихкоды доступны после входа.';
+  if (link) {
+    link.href = profileLocked ? 'mobile-profile-data.html#account' : 'mobile-profile.html';
+    link.textContent = profileLocked ? 'Заполнить профиль' : 'Перейти в профиль';
+  }
+
+  gate.hidden = false;
+}
+
+function hideAccessGate() {
+  const gate = $('#mwAuthGate');
+  if (gate) gate.hidden = true;
+}
 
 function hideLoader() {
   const loader = $('#mLoader');
@@ -322,6 +360,23 @@ async function refreshWheel() {
   setSpinDisabled(true);
 
   try {
+    const profileSnapshot = await getDoc(profileRef(currentUser.uid));
+    currentProfileActivated = profileSnapshot.exists()
+      && isProfileActivatedData(profileSnapshot.data());
+
+    if (!currentProfileActivated) {
+      clearAvailabilityTimer();
+      currentConfig = null;
+      renderWheel({ enabled: false, products: [] });
+      setStatus('Сначала активируйте профиль.');
+      setSpinDisabled(true);
+      showAccessGate('profile');
+      await renderPrizes([]);
+      return;
+    }
+
+    hideAccessGate();
+
     const [configResult, stateResult, prizesResult] = await Promise.allSettled([
       getDoc(CONFIG_REF),
       getDoc(stateRef(currentUser.uid)),
@@ -458,7 +513,7 @@ function showResultModal(result) {
 }
 
 async function spin() {
-  if (spinning || !currentUser || !currentConfig) return;
+  if (spinning || !currentUser || !currentConfig || !currentProfileActivated) return;
 
   spinning = true;
   setSpinDisabled(true);
@@ -532,6 +587,11 @@ async function spin() {
       const userStateRef = stateRef(currentUser.uid);
       const stateSnapshot = await transaction.get(userStateRef);
       const configSnapshot = await transaction.get(CONFIG_REF);
+      const profileSnapshot = await transaction.get(profileRef(currentUser.uid));
+
+      if (!profileSnapshot.exists() || !isProfileActivatedData(profileSnapshot.data())) {
+        throw new Error('Сначала активируйте профиль.');
+      }
 
       const liveConfig = configSnapshot.exists()
         ? configSnapshot.data()
@@ -597,6 +657,14 @@ async function spin() {
     await refreshWheel();
   } catch (error) {
     console.error('Ошибка вращения колеса:', error);
+    if (String(error?.message || error).includes('активируйте профиль')) {
+      currentProfileActivated = false;
+      currentConfig = null;
+      setStatus('Сначала активируйте профиль.');
+      setSpinDisabled(true);
+      showAccessGate('profile');
+      return;
+    }
     showResultModal({
       noPrize: true,
       name: error?.message || String(error)
@@ -614,18 +682,18 @@ document.querySelector('.mw-result-backdrop')?.addEventListener('click', closeRe
 
 onAuthStateChanged(auth, async user => {
   currentUser = user || null;
-  const authGate = $('#mwAuthGate');
+  currentProfileActivated = false;
 
   if (!currentUser) {
     clearAvailabilityTimer();
-    if (authGate) authGate.hidden = false;
+    showAccessGate('guest');
     setStatus('Войдите в профиль, чтобы играть.');
     setSpinDisabled(true);
     hideLoader();
     return;
   }
 
-  if (authGate) authGate.hidden = true;
+  hideAccessGate();
 
   try {
     await currentUser.getIdToken();
