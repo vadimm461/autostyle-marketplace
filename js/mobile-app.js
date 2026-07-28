@@ -1206,9 +1206,9 @@ async function createMobileOrder(){
   } finally {
     mobileCheckoutBusy = false;
     if(button){
-      button.disabled = false;
       button.textContent = 'Оформить выбранное';
     }
+    updateMobileCartSummary();
   }
 }
 
