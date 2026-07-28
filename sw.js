@@ -1,6 +1,7 @@
-// AutoStyle service worker: не держит старый сайт неделями.
-const CACHE_NAME = 'autostyle-shell-v' + Date.now();
-const RUNTIME_CACHE = 'autostyle-runtime-v' + Date.now();
+// AutoStyle service worker: быстрый стабильный кеш с обновлением в фоне.
+const SHELL_CACHE = 'autostyle-shell-20260728-v2';
+const RUNTIME_CACHE = 'autostyle-runtime-20260728-v2';
+const CACHE_PREFIX = 'autostyle-';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -9,7 +10,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.map(k => caches.delete(k)));
+    await Promise.all(keys
+      .filter(key => key.startsWith(CACHE_PREFIX) && key !== SHELL_CACHE && key !== RUNTIME_CACHE)
+      .map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -18,33 +21,51 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'CLEAR_AUTOSTYLE_CACHE') {
     event.waitUntil((async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
+      await Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX)).map(key => caches.delete(key)));
     })());
   }
 });
 
 self.addEventListener('fetch', event => {
-  const req = event.request;
-  if (req.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET') return;
 
-  const url = new URL(req.url);
-  const isStaticPageOrAsset = /\.(html|js|css)$/i.test(url.pathname) || req.mode === 'navigate';
+  const url = new URL(request.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const isFirebase = /firestore\.googleapis\.com|firebaseio\.com|googleapis\.com/.test(url.hostname);
+  if (isFirebase) return;
 
-  if (isStaticPageOrAsset) {
-    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => caches.match(req)));
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(SHELL_CACHE);
+          cache.put(request, response.clone()).catch(() => {});
+        }
+        return response;
+      } catch {
+        return (await caches.match(request, {ignoreSearch:true})) ||
+          (await caches.match(new URL('index.html', self.registration.scope).href, {ignoreSearch:true})) ||
+          Response.error();
+      }
+    })());
     return;
   }
 
-  event.respondWith((async () => {
-    try {
-      const res = await fetch(req);
-      if (res && res.ok && !url.href.includes('firestore.googleapis.com')) {
-        const cache = await caches.open(RUNTIME_CACHE);
-        cache.put(req, res.clone()).catch(() => {});
+  if (sameOrigin && /\.(?:js|css|png|jpe?g|webp|svg|gif|woff2?)$/i.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(RUNTIME_CACHE);
+      const cached = await cache.match(request);
+      const update = fetch(request).then(response => {
+        if (response.ok) cache.put(request, response.clone()).catch(() => {});
+        return response;
+      }).catch(() => null);
+      if (cached) {
+        event.waitUntil(update);
+        return cached;
       }
-      return res;
-    } catch (e) {
-      return (await caches.match(req)) || Response.error();
-    }
-  })());
+      return (await update) || Response.error();
+    })());
+  }
 });
