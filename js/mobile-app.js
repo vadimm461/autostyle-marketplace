@@ -83,20 +83,20 @@ function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 't
 function productSection(p){ return String(p.homeSection || p.homeBlock || p.tag || '').toLowerCase(); }
 function productsForHomeBlock(block){
   const key = norm(block.key);
-  const availableProducts = products.filter(available);
+  const blockProducts = products;
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
-    const byId = new Map(availableProducts.map(p => [String(p.id), p]));
+    const byId = new Map(blockProducts.map(p => [String(p.id), p]));
     return ids.map(id => byId.get(String(id))).filter(Boolean).slice(0, 20);
   }
-  let selected = availableProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
+  let selected = blockProducts.filter(p => isMarkedForHome(p) && norm(productSection(p)) === key);
   if (selected.length) return selected;
-  selected = availableProducts.filter(p => norm(productSection(p)) === key || norm(p.tag) === key);
+  selected = blockProducts.filter(p => norm(productSection(p)) === key || norm(p.tag) === key);
   if (selected.length) return selected;
-  if (key === 'bestsellers' || key === 'best' || key === 'leaders') return availableProducts.filter(p => ['best','bestsellers','leader','leaders'].includes(norm(p.tag))).slice(0,20);
-  if (key === 'new') return availableProducts.filter(p => norm(p.tag) === 'new').slice(0,20);
-  if (key === 'hot') return availableProducts.filter(isMarkedForHome).concat(availableProducts).filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i).slice(0,20);
-  return availableProducts.filter(p => isMarkedForHome(p)).slice(0,20);
+  if (key === 'bestsellers' || key === 'best' || key === 'leaders') return blockProducts.filter(p => ['best','bestsellers','leader','leaders'].includes(norm(p.tag))).slice(0,20);
+  if (key === 'new') return blockProducts.filter(p => norm(p.tag) === 'new').slice(0,20);
+  if (key === 'hot') return blockProducts.filter(isMarkedForHome).concat(blockProducts).filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i).slice(0,20);
+  return blockProducts.filter(p => isMarkedForHome(p)).slice(0,20);
 }
 function promoLink(c){
   const type = String(c.linkType || c.type || '').toLowerCase();
@@ -191,7 +191,6 @@ const discount = p => {
   if (op > pr && pr > 0) return Math.round((op - pr) / op * 100);
   return 0;
 };
-const available = p => stock(p) > 0;
 const installment = p => price(p) >= 199 || p.installment === true || p.installmentAvailable === true;
 const monthPay = p => Math.ceil(price(p) / 12);
 function save(){ localStorage.setItem('favorites', JSON.stringify(favs)); updateCounts(); }
@@ -199,7 +198,7 @@ function updateCounts(){ $$('#mFavCount').forEach(x=>x.textContent=favs.length);
 async function addCart(id, btn){ try{ await addUserCartItem(id, 1); if(btn){ const t=btn.textContent; btn.textContent='✓ Добавлено'; setTimeout(()=>btn.textContent=t,900); } updateCounts(); }catch(e){ alert(e?.message || profileVerificationMessage()); if(String(e?.message||'').includes('Подтвердите')) location.href='mobile-profile.html#security'; } }
 function toggleFav(id, btn){ favs = favs.includes(id) ? favs.filter(x=>x!==id) : [...favs,id]; save(); if(btn) btn.classList.toggle('active', favs.includes(id)); }
 function card(p){
-  const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p));
+  const d=discount(p), op=oldPrice(p), im=img(p), t=escapeHtml(title(p)), g=escapeHtml(group(p)), unavailable=stock(p)<=0;
   return `<article class="m-card">
     <button class="m-fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}" type="button">♡</button>${d?`<span class="m-discount">-${d}%</span>`:''}
     <a class="m-card-img" href="${appUrl(`product.html?id=${encodeURIComponent(p.id)}`)}">${im?`<img loading="lazy" decoding="async" src="${im}" alt="${t}">`:'<span>Фото</span>'}</a>
@@ -207,11 +206,11 @@ function card(p){
     <div class="m-group">${g}</div>
     ${installment(p)?`<span class="m-installment">от ${money(monthPay(p))}/мес</span>`:''}
     <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
-    <button class="m-cart" data-cart="${p.id}" type="button">В корзину</button>
+    <button class="m-cart${unavailable?' is-unavailable':''}" data-cart="${p.id}" type="button" ${unavailable?'disabled aria-disabled="true"':''}>В корзину</button>
   </article>`;
 }
 function bind(scope=document){
-  scope.querySelectorAll('[data-cart]').forEach(b=>b.onclick=e=>{e.preventDefault(); addCart(b.dataset.cart,b);});
+  scope.querySelectorAll('[data-cart]:not(:disabled)').forEach(b=>b.onclick=e=>{e.preventDefault(); addCart(b.dataset.cart,b);});
   scope.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); toggleFav(b.dataset.fav,b);});
 }
 function clearLoader(){
@@ -456,7 +455,7 @@ async function initData(options={}){
       safeLoadCollections(PROMO_CARDS_COLLECTIONS)
     ]).then(([p,c,b,h,pc])=>{
       allProducts=p||[];
-      products=allProducts.filter(available);
+      products=allProducts;
       categories=c||[];
       banners=(b||[]).filter(x=>x.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
       homeBlocks=mergeHomeBlocks(h||[]);
@@ -539,10 +538,10 @@ async function renderProduct(){
   $('#mProduct').innerHTML=`<a class="m-btn" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">← Вернуться в каталог</a>
     <div class="m-product-layout"><div class="m-photo-box"><div class="m-photo">${im?`<img loading="eager" decoding="async" src="${im}" alt="${escapeHtml(title(p))}">`:'<span>Фото</span>'}</div></div>
     <div class="m-info"><div class="m-breadcrumb"><a href="mobile.html">Главная</a> / <a href="mobile-catalog.html">Каталог</a> / <a href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></div><h1>${escapeHtml(title(p))}</h1><a class="m-tag" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a>${d?` <span class="m-tag" style="background:#ffecec;color:#e3342f">Скидка ${d}%</span>`:''}
-    <div class="m-buybox"><div class="m-price-line"><div class="m-big-price">${money(price(p))}</div>${op?`<span class="m-old">${money(op)}</span>`:''}</div>${installment(p)?`<span class="m-installment">Рассрочка от ${money(monthPay(p))} в мес. на 12 мес.</span>`:''}<span class="m-stock">В наличии: ${stock(p)}</span>
-    <div class="m-buy-actions"><button class="m-action cart" data-cart="${p.id}">В корзину</button><button class="m-action fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}">♡ ${favs.includes(p.id)?'В избранном':'В избранное'}</button></div></div></div></div>
+    <div class="m-buybox"><div class="m-price-line"><div class="m-big-price">${money(price(p))}</div>${op?`<span class="m-old">${money(op)}</span>`:''}</div>${installment(p)?`<span class="m-installment">Рассрочка от ${money(monthPay(p))} в мес. на 12 мес.</span>`:''}
+    <div class="m-buy-actions"><button class="m-action cart${stock(p)<=0?' is-unavailable':''}" data-cart="${p.id}" ${stock(p)<=0?'disabled aria-disabled="true"':''}>В корзину</button><button class="m-action fav ${favs.includes(p.id)?'active':''}" data-fav="${p.id}">♡ ${favs.includes(p.id)?'В избранном':'В избранное'}</button></div></div></div></div>
     <section class="m-desc m-collapsed" id="mProductDesc"><div class="m-desc-head"><h2>Описание</h2><button class="m-desc-toggle" id="mDescToggle" type="button">Показать</button></div><p>${escapeHtml(p.description || 'Описание товара пока не добавлено.')}</p></section>
-    <section class="m-specs"><h2>Характеристики</h2><div class="m-spec-row"><span>Название</span><b>${escapeHtml(title(p))}</b></div><div class="m-spec-row"><span>Группа</span><b><a href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></b></div><div class="m-spec-row"><span>Остаток</span><b>${stock(p)}</b></div><div class="m-spec-row"><span>Цена</span><b>${money(price(p))}</b></div></section>
+    <section class="m-specs"><h2>Характеристики</h2><div class="m-spec-row"><span>Название</span><b>${escapeHtml(title(p))}</b></div><div class="m-spec-row"><span>Группа</span><b><a href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></b></div><div class="m-spec-row"><span>Цена</span><b>${money(price(p))}</b></div></section>
     <section class="m-related"><div class="m-section-head"><h2>Похожие товары</h2><a class="m-see" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">Все</a></div><div class="m-carousel">${products.filter(x=>x.id!==p.id&&group(x)===group(p)).slice(0,12).map(card).join('')||'<div class="m-empty">Похожих товаров пока нет</div>'}</div></section>`;
   bind($('#mProduct'));
   const desc = $('#mProductDesc'), descBtn = $('#mDescToggle');
