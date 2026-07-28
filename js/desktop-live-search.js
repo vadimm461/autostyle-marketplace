@@ -7,7 +7,6 @@ const normalizeSearchText = value => String(value || '')
 const productTitle = product => product.title || product.name || 'Без названия';
 const productGroup = product => product.group || product.category || product.categoryName || '';
 const productPrice = product => Number(product.price || 0);
-const productStock = product => Number(product.stock ?? product.quantity ?? product.count ?? product.qty ?? 1);
 const money = value => Number(value || 0).toLocaleString('ru-RU') + ' ₽';
 
 function productImage(product) {
@@ -135,7 +134,6 @@ export function setupDesktopLiveSearch(options = {}) {
 
     const normalizedQuery = normalizeSearchText(queryText);
     const results = products
-      .filter(product => productStock(product) > 0)
       .filter(product => normalizeSearchText(
         productTitle(product) + ' ' + productGroup(product) + ' '
         + (product.brand || product.brandName || product.manufacturer || '') + ' '
