@@ -1,17 +1,102 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Корзина — AutoStyle</title><meta name="theme-color" content="#10141b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="AutoStyle"><link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="dns-prefetch" href="//www.gstatic.com"><link rel="preload" href="css/mobile-market.css?v=20260728-search-price-grid" as="style"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/icon-192.png"><link rel="stylesheet" href="css/mobile-market.css?v=20260728-search-price-grid"><link rel="stylesheet" href="css/auth-upgrade.css"><link rel="stylesheet" href="css/desktop-product-card-final.css"><link rel="stylesheet" href="css/desktop-final-request-fixes.css?v=20260604-final2"><link rel="stylesheet" href="css/final-user-fixes-20260604.css?v=20260604-4"><link rel="stylesheet" href="css/final-ux-fix5.css?v=20260606">  <link rel="stylesheet" href="css/notifications.css">
-<link rel="stylesheet" href="css/autostyle-project-rework.css?v=20260608-rework2">
-<link rel="stylesheet" href="css/final-request-clean-fix.css?v=20260608-final-request">
-<link rel="icon" type="image/png" href="assets/as-logo-192.png">
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Корзина — AutoStyle</title>
+  <meta name="theme-color" content="#10141b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AutoStyle">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="//www.gstatic.com">
+  <link rel="preload" href="css/mobile-market.css?v=20260728-search-price-grid" as="style">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="css/mobile-market.css?v=20260728-search-price-grid">
+  <link rel="stylesheet" href="css/mobile-cart.css?v=20260728-cart-parity-1">
+  <link rel="stylesheet" href="css/auth-upgrade.css">
+  <link rel="stylesheet" href="css/desktop-product-card-final.css">
+  <link rel="stylesheet" href="css/desktop-final-request-fixes.css?v=20260604-final2">
+  <link rel="stylesheet" href="css/final-user-fixes-20260604.css?v=20260604-4">
+  <link rel="stylesheet" href="css/final-ux-fix5.css?v=20260606">
+  <link rel="stylesheet" href="css/notifications.css">
+  <link rel="stylesheet" href="css/autostyle-project-rework.css?v=20260608-rework2">
+  <link rel="stylesheet" href="css/final-request-clean-fix.css?v=20260608-final-request">
+  <link rel="icon" type="image/png" href="assets/as-logo-192.png">
+  <link rel="stylesheet" href="css/as-logo-final.css?v=20260608-brand-final">
+  <link rel="stylesheet" href="css/zzz-card-gap-fix.css">
+  <link rel="stylesheet" href="css/image-fit-contain-final.css?v=20260609-2">
+  <link rel="stylesheet" href="css/as-file-icons.css">
+  <link rel="stylesheet" href="css/minimal-file-icons-fix.css">
+  <style>html,body{margin:0;min-height:100%;background:#f3f5f7}.m-shell{min-height:100vh}</style>
+  <script src="js/mobile-boot-rescue.js?v=20260728-fast-boot"></script>
+</head>
+<body class="mobile-page" data-page="cart">
+  <div id="mLoader" class="m-loader"><div class="m-loader-card"><span>AS</span></div></div>
+  <div class="m-shell">
+    <header class="m-top">
+      <div class="m-row">
+        <a class="m-logo" href="mobile.html" aria-label="AutoStyle — главная">
+          <img class="m-logo-img" src="assets/autostyle-logo-header-clean@3x.png" srcset="assets/autostyle-logo-header-clean.png 1x, assets/autostyle-logo-header-clean@2x.png 2x, assets/autostyle-logo-header-clean@3x.png 3x" width="720" height="158" alt="AutoStyle" decoding="async">
+        </a>
+        <span class="m-head-spacer"></span>
+      </div>
+      <form class="m-search"><input id="mSearch" placeholder="Я ищу автотовары..." autocomplete="off"></form>
+    </header>
 
-<link rel="stylesheet" href="css/as-logo-final.css?v=20260608-brand-final"><link rel="stylesheet" href="css/zzz-card-gap-fix.css">
-<link rel="stylesheet" href="css/image-fit-contain-final.css?v=20260609-2">  <link rel="stylesheet" href="css/as-file-icons.css">
-<link rel="stylesheet" href="css/minimal-file-icons-fix.css">
-<style>html,body{margin:0;min-height:100%;background:#f3f5f7}.m-shell{min-height:100vh}</style>
-<script src="js/mobile-boot-rescue.js?v=20260728-fast-boot"></script>
-</head><body class="mobile-page" data-page="cart"><div id="mLoader" class="m-loader"><div class="m-loader-card"><span>AS</span></div></div><div class="m-shell"><header class="m-top"><div class="m-row"><a class="m-logo" href="mobile.html" aria-label="AutoStyle — главная"><img class="m-logo-img" src="assets/autostyle-logo-header-clean@3x.png" srcset="assets/autostyle-logo-header-clean.png 1x, assets/autostyle-logo-header-clean@2x.png 2x, assets/autostyle-logo-header-clean@3x.png 3x" width="720" height="158" alt="AutoStyle" decoding="async"></a><span class="m-head-spacer"></span></div><form class="m-search"><input id="mSearch" placeholder="Я ищу автотовары..." autocomplete="off"></form></header><main class="m-content"><section class="m-section"><h1 class="m-title">Корзина</h1><div id="mCartList" style="margin-top:14px"></div><div class="m-total"><b>Итого</b><strong id="mTotal">0 ₽</strong></div></section></main></div><nav class="m-bottom-nav"><div class="m-bottom-inner"></div></nav><script src="js/mobile-page-cache.js"></script><!-- pull-refresh отключён на корзине: он конфликтовал с +/- и вызывал моргание --><script type="module" src="js/mobile-app.js?v=20260728-fast-boot"></script>  <script type="module" src="js/notifications.js"></script>
-<script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
-<script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
+    <main class="m-content">
+      <section class="m-section m-cart-page">
+        <div class="m-cart-head">
+          <div>
+            <h1 class="m-title">Корзина</h1>
+            <p>Проверь товары перед оформлением заказа.</p>
+          </div>
+          <button id="mClearCart" class="m-cart-clear" type="button">Очистить</button>
+        </div>
+        <div id="mCartList"></div>
+
+        <aside id="mCheckoutBox" class="m-checkout-box m-cart-summary" hidden>
+          <h2>Итого</h2>
+          <div class="m-cart-summary-row"><span>Товары</span><b id="mCartItemsCount">0</b></div>
+          <div class="m-cart-summary-row total"><span>Сумма</span><span id="mTotal"><strong>0 ₽</strong></span></div>
+
+          <div class="m-mobile-payment-methods">
+            <h3>Способ оплаты</h3>
+            <div class="m-pay-tabs m-pay-tabs-three">
+              <button type="button" data-pay="cash"><img src="assets/icons/cash.svg" alt=""><span>Наличными</span></button>
+              <button type="button" data-pay="card"><img src="assets/icons/card.svg" alt=""><span>Картой</span></button>
+              <button type="button" data-pay="installment"><img src="assets/icons/percent.svg" alt=""><span>Рассрочка</span></button>
+            </div>
+          </div>
+
+          <details id="mInstallmentBox" class="m-installment-box" hidden open>
+            <summary>Рассчитать рассрочку</summary>
+            <div id="mInstallmentResults" class="m-installment-results"></div>
+          </details>
+
+          <button id="mDiscountCardBtn" class="m-discount-btn" type="button">Применить скидочную карту</button>
+          <p id="mCheckoutNote" class="m-checkout-note"></p>
+          <button id="mCheckoutBtn" class="m-primary m-checkout" type="button">Оформить выбранное</button>
+
+          <div class="m-cart-bottom-actions">
+            <a href="mobile-catalog.html">← Вернуться в каталог</a>
+            <a href="mobile-catalog.html">Продолжить покупки</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <nav class="m-bottom-nav"><div class="m-bottom-inner"></div></nav>
+  <script src="js/mobile-page-cache.js"></script>
+  <!-- Pull-to-refresh отключён на корзине: он конфликтовал с +/- и вызывал моргание. -->
+  <script type="module" src="js/mobile-app.js?v=20260728-cart-parity-1"></script>
+  <script type="module" src="js/notifications.js"></script>
+  <script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
+  <script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
   <script src="js/as-file-icons.js"></script>
-<script src="js/minimal-file-icons-fix.js"></script>
-<script type="module" src="js/site-analytics.js?v=20260707-1"></script>
-</body></html>
+  <script src="js/minimal-file-icons-fix.js"></script>
+  <script type="module" src="js/site-analytics.js?v=20260707-1"></script>
+</body>
+</html>
