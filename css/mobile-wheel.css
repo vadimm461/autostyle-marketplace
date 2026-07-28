@@ -631,3 +631,54 @@ body.mobile-wheel-page{
 @media(prefers-reduced-motion:reduce){
   .mw-light-ring,.mw-status-dot.is-ready,.mw-confetti i{animation:none!important}
 }
+
+
+/* Mobile wheel: separate focused screen without global bottom navigation. */
+body.mobile-wheel-page{
+  padding-bottom:env(safe-area-inset-bottom)!important;
+}
+
+.mobile-wheel-page .m-bottom-nav,
+.mobile-wheel-page nav.m-bottom-nav{
+  display:none!important;
+}
+
+.mw-topbar-exit-only{
+  display:flex!important;
+  justify-content:flex-start;
+  grid-template-columns:none!important;
+  padding:
+    calc(10px + env(safe-area-inset-top))
+    13px
+    10px!important;
+}
+
+.mw-exit-button{
+  min-width:92px;
+  height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:0 15px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:15px;
+  background:#171f2a;
+  color:#fff;
+  text-decoration:none;
+  box-shadow:0 8px 20px rgba(0,0,0,.18);
+}
+
+.mw-exit-button span{
+  font-size:23px;
+  line-height:1;
+}
+
+.mw-exit-button b{
+  font-size:13px;
+  font-weight:900;
+}
+
+.mw-how{
+  margin-bottom:calc(18px + env(safe-area-inset-bottom));
+}
