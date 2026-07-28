@@ -1420,16 +1420,64 @@ body.mobile-page [class*="product"] [class*="image"] img{
   column-gap:16px;
 }
 .m-profile-tiles-full .m-profile-tile.tile-wheel .m-wheel-ico{
+  position:relative;
   grid-column:1;
   grid-row:1/4;
   width:64px;
   height:64px;
   align-self:center;
   margin:0;
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:21px;
-  background:rgba(255,255,255,.09);
-  font-size:36px;
+  display:grid;
+  place-items:center;
+  overflow:visible;
+  border:3px solid #111827;
+  border-radius:50%;
+  background:conic-gradient(
+    #2be31d 0 12.5%,
+    #2563eb 12.5% 25%,
+    #facc15 25% 37.5%,
+    #ef4444 37.5% 50%,
+    #8b5cf6 50% 62.5%,
+    #14b8a6 62.5% 75%,
+    #f97316 75% 87.5%,
+    #22c55e 87.5% 100%
+  );
+  box-shadow:0 9px 22px rgba(15,23,42,.3);
+}
+.m-profile-tiles-full .m-profile-tile.tile-wheel .m-wheel-ico::before{
+  content:"";
+  width:22px;
+  height:22px;
+  border:3px solid #fff;
+  border-radius:50%;
+  background:#111827;
+}
+.m-profile-tiles-full .m-profile-tile.tile-wheel .m-wheel-ico::after{
+  content:"";
+  position:absolute;
+  top:-8px;
+  width:0;
+  height:0;
+  border-left:7px solid transparent;
+  border-right:7px solid transparent;
+  border-top:11px solid #111827;
+}
+.m-profile-tiles-full .m-profile-tile.tile-wheel .m-wheel-ico > span{
+  position:absolute;
+  right:-5px;
+  bottom:-4px;
+  min-width:21px;
+  height:21px;
+  display:grid;
+  place-items:center;
+  padding:0 4px;
+  border:2px solid #fff;
+  border-radius:999px;
+  background:#111827;
+  color:#2be31d;
+  font-size:9px;
+  line-height:1;
+  font-weight:1000;
 }
 .m-profile-tiles-full .m-profile-tile.tile-wheel b{
   grid-column:2;
@@ -1445,6 +1493,10 @@ body.mobile-page [class*="product"] [class*="image"] img{
   background:linear-gradient(145deg,#343b49,#1d2430);
   border-color:#4b5565;
   box-shadow:0 12px 28px rgba(15,23,42,.16);
+}
+.m-profile-tile.tile-wheel.is-locked .m-wheel-ico{
+  filter:grayscale(1);
+  opacity:.72;
 }
 .m-profile-tile.tile-wheel.is-locked .m-wheel-label{
   background:#facc15;

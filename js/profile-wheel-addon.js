@@ -1,5 +1,5 @@
 
-import { auth, db, COLLECTIONS } from './firebase.js';
+import { auth, db } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   doc,getDoc,collection,query,where,getDocs,
@@ -8,16 +8,14 @@ import {
 
 const CONFIG_REF = doc(db,'autostyle_wheel_config','main');
 const stateRef = uid => doc(db,'autostyle_wheel_state',uid);
-const USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
-const profileRef = uid => doc(db,USERS_COLLECTION,uid);
-let currentUser=null, currentConfig=null, currentProfileActivated=false, rotation=0, spinning=false, availabilityTimer=null;
+let currentUser=null, currentConfig=null, currentEmailVerified=false, rotation=0, spinning=false, availabilityTimer=null;
 
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
-function isProfileActivatedData(data={}){
-  return data.profileActivated===true
-    || data.profileActive===true
-    || data.profileCompleted===true
-    || data.isProfileActivated===true;
+async function refreshEmailVerification(){
+  if(!currentUser)return false;
+  try{await currentUser.reload()}catch(_){}
+  currentUser=auth.currentUser||currentUser;
+  return currentUser.emailVerified===true;
 }
 function loadJsBarcode(){
   if(window.JsBarcode) return Promise.resolve();
@@ -335,13 +333,12 @@ async function refreshWheel(){
   syncWheelButtons(true);
 
   try{
-    const profileSnapshot=await getDoc(profileRef(currentUser.uid));
-    currentProfileActivated=profileSnapshot.exists()&&isProfileActivatedData(profileSnapshot.data());
-    if(!currentProfileActivated){
+    currentEmailVerified=await refreshEmailVerification();
+    if(!currentEmailVerified){
       clearAvailabilityTimer();
       currentConfig=null;
       renderWheel({enabled:false,products:[]});
-      syncWheelStatus('Сначала активируйте профиль: заполните имя, телефон, город, адрес и автомобиль.');
+      syncWheelStatus('Сначала подтвердите почту в письме от AutoStyle.');
       syncWheelButtons(true);
       await renderPrizes([]);
       return;
@@ -446,7 +443,14 @@ async function renderPrizes(items){
 }
 
 async function spin(){
-  if(spinning||!currentUser||!currentConfig||!currentProfileActivated)return;
+  if(spinning||!currentUser||!currentConfig||!currentEmailVerified)return;
+  currentEmailVerified=await refreshEmailVerification();
+  if(!currentEmailVerified){
+    currentConfig=null;
+    syncWheelStatus('Сначала подтвердите почту в письме от AutoStyle.');
+    syncWheelButtons(true);
+    return;
+  }
   spinning=true;const btn=document.getElementById('wheelSpinBtn');syncWheelButtons(true);vibrate(35);
   try{
     const products=(currentConfig.products||[]).filter(x=>x.enabled!==false&&Number(x.chance)>0);
@@ -504,9 +508,8 @@ async function spin(){
     const spinAt=Date.now();
     await runTransaction(db,async tx=>{
       const sref=stateRef(currentUser.uid),ss=await tx.get(sref),cfg=await tx.get(CONFIG_REF);
-      const profileSnapshot=await tx.get(profileRef(currentUser.uid));
-      if(!profileSnapshot.exists()||!isProfileActivatedData(profileSnapshot.data())){
-        throw new Error('Сначала активируйте профиль.');
+      if(currentUser.emailVerified!==true){
+        throw new Error('Сначала подтвердите почту.');
       }
       const live=cfg.exists()?cfg.data():currentConfig;
       const lastData=ss.exists()?ss.data():{};
@@ -544,10 +547,10 @@ async function spin(){
     showWheelResult(result);
     await refreshWheel();
   }catch(e){
-    if(String(e?.message||e).includes('активируйте профиль')){
-      currentProfileActivated=false;
+    if(String(e?.message||e).includes('подтвердите почту')){
+      currentEmailVerified=false;
       currentConfig=null;
-      syncWheelStatus('Сначала активируйте профиль: заполните личные данные.');
+      syncWheelStatus('Сначала подтвердите почту в письме от AutoStyle.');
       syncWheelButtons(true);
       return;
     }
@@ -557,4 +560,4 @@ async function spin(){
   finally{spinning=false}
 }
 addTab();
-onAuthStateChanged(auth,u=>{currentUser=u;currentProfileActivated=false;if(u)refreshWheel();else clearAvailabilityTimer()});
+onAuthStateChanged(auth,u=>{currentUser=u;currentEmailVerified=false;if(u)refreshWheel();else clearAvailabilityTimer()});

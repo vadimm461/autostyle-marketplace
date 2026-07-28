@@ -1,4 +1,4 @@
-import { auth, db, COLLECTIONS } from './firebase.js';
+import { auth, db } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   doc, getDoc, collection, query, where, getDocs,
@@ -7,12 +7,10 @@ import {
 
 const CONFIG_REF = doc(db, 'autostyle_wheel_config', 'main');
 const stateRef = uid => doc(db, 'autostyle_wheel_state', uid);
-const USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
-const profileRef = uid => doc(db, USERS_COLLECTION, uid);
 
 let currentUser = null;
 let currentConfig = null;
-let currentProfileActivated = false;
+let currentEmailVerified = false;
 let rotation = 0;
 let spinning = false;
 let availabilityTimer = null;
@@ -25,11 +23,11 @@ const escapeHtml = value => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-function isProfileActivatedData(data = {}) {
-  return data.profileActivated === true
-    || data.profileActive === true
-    || data.profileCompleted === true
-    || data.isProfileActivated === true;
+async function refreshEmailVerification() {
+  if (!currentUser) return false;
+  try { await currentUser.reload(); } catch (_) {}
+  currentUser = auth.currentUser || currentUser;
+  return currentUser.emailVerified === true;
 }
 
 function showAccessGate(mode = 'guest') {
@@ -40,16 +38,16 @@ function showAccessGate(mode = 'guest') {
   const title = gate.querySelector('[data-mw-gate-title]');
   const text = gate.querySelector('[data-mw-gate-text]');
   const link = gate.querySelector('[data-mw-gate-link]');
-  const profileLocked = mode === 'profile';
+  const emailLocked = mode === 'email';
 
-  if (icon) icon.textContent = profileLocked ? '🔒' : '🎁';
-  if (title) title.textContent = profileLocked ? 'Активируйте профиль' : 'Войдите в профиль';
-  if (text) text.textContent = profileLocked
-    ? 'Колесо доступно после заполнения имени, телефона, города, адреса и автомобиля.'
+  if (icon) icon.textContent = emailLocked ? '✉️' : '🎁';
+  if (title) title.textContent = emailLocked ? 'Подтвердите почту' : 'Войдите в профиль';
+  if (text) text.textContent = emailLocked
+    ? 'Колесо доступно после подтверждения Email. Откройте письмо от AutoStyle и перейдите по ссылке.'
     : 'Колесо, история выигрышей и штрихкоды доступны после входа.';
   if (link) {
-    link.href = profileLocked ? 'mobile-profile-data.html#account' : 'mobile-profile.html';
-    link.textContent = profileLocked ? 'Заполнить профиль' : 'Перейти в профиль';
+    link.href = emailLocked ? 'mobile-profile-data.html#security' : 'mobile-profile.html';
+    link.textContent = emailLocked ? 'Подтвердить почту' : 'Перейти в профиль';
   }
 
   gate.hidden = false;
@@ -360,17 +358,15 @@ async function refreshWheel() {
   setSpinDisabled(true);
 
   try {
-    const profileSnapshot = await getDoc(profileRef(currentUser.uid));
-    currentProfileActivated = profileSnapshot.exists()
-      && isProfileActivatedData(profileSnapshot.data());
+    currentEmailVerified = await refreshEmailVerification();
 
-    if (!currentProfileActivated) {
+    if (!currentEmailVerified) {
       clearAvailabilityTimer();
       currentConfig = null;
       renderWheel({ enabled: false, products: [] });
-      setStatus('Сначала активируйте профиль.');
+      setStatus('Сначала подтвердите почту.');
       setSpinDisabled(true);
-      showAccessGate('profile');
+      showAccessGate('email');
       await renderPrizes([]);
       return;
     }
@@ -513,7 +509,16 @@ function showResultModal(result) {
 }
 
 async function spin() {
-  if (spinning || !currentUser || !currentConfig || !currentProfileActivated) return;
+  if (spinning || !currentUser || !currentConfig || !currentEmailVerified) return;
+
+  currentEmailVerified = await refreshEmailVerification();
+  if (!currentEmailVerified) {
+    currentConfig = null;
+    setStatus('Сначала подтвердите почту.');
+    setSpinDisabled(true);
+    showAccessGate('email');
+    return;
+  }
 
   spinning = true;
   setSpinDisabled(true);
@@ -587,10 +592,9 @@ async function spin() {
       const userStateRef = stateRef(currentUser.uid);
       const stateSnapshot = await transaction.get(userStateRef);
       const configSnapshot = await transaction.get(CONFIG_REF);
-      const profileSnapshot = await transaction.get(profileRef(currentUser.uid));
 
-      if (!profileSnapshot.exists() || !isProfileActivatedData(profileSnapshot.data())) {
-        throw new Error('Сначала активируйте профиль.');
+      if (currentUser.emailVerified !== true) {
+        throw new Error('Сначала подтвердите почту.');
       }
 
       const liveConfig = configSnapshot.exists()
@@ -657,12 +661,12 @@ async function spin() {
     await refreshWheel();
   } catch (error) {
     console.error('Ошибка вращения колеса:', error);
-    if (String(error?.message || error).includes('активируйте профиль')) {
-      currentProfileActivated = false;
+    if (String(error?.message || error).includes('подтвердите почту')) {
+      currentEmailVerified = false;
       currentConfig = null;
-      setStatus('Сначала активируйте профиль.');
+      setStatus('Сначала подтвердите почту.');
       setSpinDisabled(true);
-      showAccessGate('profile');
+      showAccessGate('email');
       return;
     }
     showResultModal({
@@ -682,7 +686,7 @@ document.querySelector('.mw-result-backdrop')?.addEventListener('click', closeRe
 
 onAuthStateChanged(auth, async user => {
   currentUser = user || null;
-  currentProfileActivated = false;
+  currentEmailVerified = false;
 
   if (!currentUser) {
     clearAvailabilityTimer();

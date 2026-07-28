@@ -2,7 +2,7 @@ import { auth, db, storage, COLLECTIONS } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getProducts, getCategories, getBanners, getCollectionCached } from './data-cache.js';
+import { getProducts, getCategories, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, saveUserCart, clearUserCart } from './user-cart-store.js';
 import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, fmt } from './notify-service.js';
@@ -10,7 +10,7 @@ import { getProfileVerification, profileVerificationMessage } from './auth-core.
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-let products = [], allProducts = [], categories = [], banners = [], homeBlocks = [], promoCards = [], userNow = null;
+let products = [], allProducts = [], categories = [], homeBlocks = [], promoCards = [], userNow = null;
 let dataPromise = null;
 const PAGE_SIZE = 24;
 let cart = [];
@@ -22,10 +22,7 @@ const waitAuthUser = () => new Promise(resolve => {
 });
 
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
-const PROMO_CARDS_COLLECTIONS = [...new Set([
-  COLLECTIONS.promoCards || 'autostyle_promo_cards',
-  'autostyle_horizontal_promo_cards', 'autostyle_promo_cards', 'autostyle_promoCards', 'autostyle_home_cards', 'promoCards', 'homeCards'
-].filter(Boolean))];
+const PROMO_CARDS_COLLECTIONS = ['autostyle_horizontal_promo_cards'];
 const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
 const appUrl = url => {
@@ -118,7 +115,19 @@ function isMobileVerticalPromo(c){
     || c.mobileVertical === true;
 }
 function isMobileHorizontalPromo(c){
-  return c.enabled !== false && !isMobileVerticalPromo(c);
+  const source = String(c._collection || '').toLowerCase();
+  const raw = [
+    c.orientation, c.direction, c.format, c.layout, c.type,
+    c.cardType, c.viewType, c.bannerType, c.mode, c.displayMode, c.position
+  ].map(v => String(v || '').toLowerCase()).join(' ');
+  return c.enabled !== false
+    && !isMobileVerticalPromo(c)
+    && (
+      source === 'autostyle_horizontal_promo_cards'
+      || /(^|[\s_-])(horizontal|landscape|wide)([\s_-]|$)/i.test(raw)
+      || c.horizontal === true
+      || c.isHorizontal === true
+    );
 }
 function promoCard(c){
   const image = c.image || c.imageUrl || c.photoUrl || c.photo || '';
@@ -428,17 +437,15 @@ async function initData(options={}){
     const loadPromise = Promise.all([
       getProducts(MOBILE_CACHE_OPTIONS),
       getCategories(MOBILE_CACHE_OPTIONS),
-      getBanners(MOBILE_CACHE_OPTIONS).catch(()=>[]),
       safeLoadCollection(HOME_BLOCKS_COLLECTION),
       safeLoadCollections(PROMO_CARDS_COLLECTIONS)
-    ]).then(([p,c,b,h,pc])=>{
+    ]).then(([p,c,h,pc])=>{
       allProducts=p||[];
       products=allProducts;
       categories=c||[];
-      banners=(b||[]).filter(x=>x.enabled!==false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
       homeBlocks=mergeHomeBlocks(h||[]);
       promoCards=pc||[];
-      return { products, categories, banners, homeBlocks, promoCards };
+      return { products, categories, homeBlocks, promoCards };
     });
 
     dataPromise = Promise.race([
@@ -446,7 +453,6 @@ async function initData(options={}){
       new Promise(resolve=>setTimeout(()=>resolve({
         products:products||[],
         categories:categories||[],
-        banners:banners||[],
         homeBlocks:homeBlocks.length?homeBlocks:defaultHomeBlocks(),
         promoCards:promoCards||[]
       }),4200))
@@ -456,15 +462,6 @@ async function initData(options={}){
 }
 async function renderHome(){
   setupShell('home'); await initData();
-  const slides=banners.map(b=>({ ...b, image:b.image||b.imageUrl||b.photoUrl||'' })).filter(b=>b.image);
-  $('#mHero').innerHTML = slides.length
-    ? `<div class="m-hero-slider">${slides.map((b,i)=>`<a class="m-hero-image ${i===0?'active':''}" href="${appUrl(b.link||b.url||'mobile-catalog.html')}" data-m-slide="${i}"><img loading="${i?'lazy':'eager'}" decoding="async" src="${b.image}" alt="${b.title||'AutoStyle'}"></a>`).join('')}${slides.length>1?`<div class="m-hero-dots">${slides.map((_,i)=>`<span class="${i===0?'active':''}" data-m-dot="${i}"></span>`).join('')}</div>`:''}</div>`
-    : `<div><span class="m-label">AUTO STYLE MARKET</span><h1>AutoStyle</h1><p>Добавьте главный баннер в админке.</p></div>`;
-  if (slides.length > 1) {
-    let i=0; const hero=$('#mHero'); const hs=[...hero.querySelectorAll('[data-m-slide]')], dots=[...hero.querySelectorAll('[data-m-dot]')];
-    setInterval(()=>{ i=(i+1)%hs.length; hs.forEach((x,n)=>x.classList.toggle('active',n===i)); dots.forEach((x,n)=>x.classList.toggle('active',n===i)); }, 5500);
-    dots.forEach((dot,n)=>dot.onclick=e=>{ e.preventDefault(); i=n; hs.forEach((x,k)=>x.classList.toggle('active',k===i)); dots.forEach((x,k)=>x.classList.toggle('active',k===i)); });
-  }
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML=parentsList().map(c=>`<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${catName(c)}</a>`).join('');
   const promoHtml = promoCards.filter(isMobileHorizontalPromo).sort((a,b)=>Number(a.order??999)-Number(b.order??999)).map(promoCard).join('');
@@ -1201,12 +1198,6 @@ async function getUserDoc(uid){
 function isProfileCompleteData(d={}){
   return Boolean(String(d.name||'').trim() && String(d.email||'').trim() && String(d.phone||'').trim() && String(d.city||'').trim() && String(d.address||'').trim() && String(d.car||d.carText||'').trim());
 }
-function isProfileActivatedData(d={}){
-  return d.profileActivated === true
-    || d.profileActive === true
-    || d.profileCompleted === true
-    || d.isProfileActivated === true;
-}
 function makeDiscountCardNumber(uid=''){
   const base = String(uid).split('').reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
   let body = ('29' + String(base).padStart(5,'0').slice(-5) + String(Date.now()).slice(-5)).slice(0,12).padEnd(12,'0');
@@ -1566,6 +1557,7 @@ async function renderProfile(){
       drawMReg();
       clearLoader(); return;
     }
+    try{ await u.reload(); }catch(e){ console.warn('Не удалось обновить статус подтверждения почты', e); }
     const current=await getUserDoc(u.uid);
     let d=current.data || {};
     const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
@@ -1573,7 +1565,6 @@ async function renderProfile(){
     const myOrders = await loadMobileOrders(u).catch(()=>[]);
     const registeredCar = d.car || d.carText || [d.carBrand, d.carModel, d.carYear].filter(Boolean).join(' ');
     const emailConfirmed = u.emailVerified === true;
-    const profileActivated = isProfileActivatedData(d);
     if(d.emailVerified !== emailConfirmed){
       setDoc(current.ref,{emailVerified:emailConfirmed,updatedAt:new Date().toISOString()},{merge:true}).catch(()=>{});
     }
@@ -1585,10 +1576,10 @@ async function renderProfile(){
           <div class="m-profile-inner-user"><b>${d.name||u.displayName||'Профиль'}</b><small>${d.email||u.email||''}</small></div>
           <button id="pLogout" class="m-profile-mini-logout" type="button">Выйти</button>
         </div>`
-      : `<div class="m-profile-head m-profile-head-dark"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div class="m-profile-user"><h1>${d.name||u.displayName||'Профиль'}</h1><div>${d.email||u.email||''}</div></div><div class="m-profile-head-actions"><span class="${profileActivated?'m-profile-ok':'m-profile-wait'}">${profileActivated?'Профиль активирован':(emailConfirmed?'Профиль не активирован':'Почта не подтверждена')}</span><button id="pLogout" class="m-profile-head-logout" type="button">Выйти</button></div></div>`;
+      : `<div class="m-profile-head m-profile-head-dark"><div class="m-avatar">${(d.photoURL||u.photoURL)?`<img src="${d.photoURL||u.photoURL}">`:initials({displayName:d.name||u.displayName,email:d.email||u.email})}</div><div class="m-profile-user"><h1>${d.name||u.displayName||'Профиль'}</h1><div>${d.email||u.email||''}</div></div><div class="m-profile-head-actions"><span class="${emailConfirmed?'m-profile-ok':'m-profile-wait'}">${emailConfirmed?'Профиль подтверждён':'Почта не подтверждена'}</span><button id="pLogout" class="m-profile-head-logout" type="button">Выйти</button></div></div>`;
     const profileMenu = `<div class="m-profile-main-title"><h1>Главная профиля</h1><p>Все разделы большого профиля в мобильной версии.</p></div>
     <div class="m-profile-tiles m-profile-tiles-full">
-      <a id="mWheelTile" class="m-profile-tile tile-wheel ${profileActivated?'is-active':'is-locked'}" href="${profileActivated?'mobile-wheel.html':'mobile-profile-data.html#account'}" ${profileActivated?'':'aria-disabled="true"'}><span class="m-wheel-label">${profileActivated?'ПОДАРКИ':'НУЖНА АКТИВАЦИЯ'}</span><span class="m-tile-ico m-wheel-ico">${profileActivated?'🎁':'🔒'}</span><b>Колесо фортуны</b><small>${profileActivated?'Испытать удачу и получить подарок':'Заполните профиль, чтобы открыть колесо'}</small></a>
+      <a id="mWheelTile" class="m-profile-tile tile-wheel ${emailConfirmed?'is-active':'is-locked'}" href="${emailConfirmed?'mobile-wheel.html':'mobile-profile-data.html#security'}" ${emailConfirmed?'':'aria-disabled="true"'}><span class="m-wheel-label">${emailConfirmed?'ПОДАРКИ':'ПОДТВЕРДИТЕ ПОЧТУ'}</span><span class="m-tile-ico m-wheel-ico" aria-hidden="true"><span>GO</span></span><b>Колесо фортуны</b><small>${emailConfirmed?'Испытать удачу и получить подарок':'Подтвердите Email, чтобы открыть колесо'}</small></a>
       <a class="m-profile-tile tile-green" href="mobile-catalog.html"><span class="m-tile-ico"><img src="assets/icons/package.svg" alt=""></span><b>Каталог товаров</b><small>Все товары AutoStyle</small></a>
       <a class="m-profile-tile" href="mobile-favorites.html"><span class="m-tile-ico"><img src="assets/icons/heart.svg" alt=""></span><b>Избранное</b><small>Сохранённые товары</small></a>
       <a class="m-profile-tile" href="mobile-cart.html"><span class="m-tile-ico"><img src="assets/icons/cart.svg" alt=""></span><b>Корзина</b><small>Товары и оформление</small></a>
@@ -1644,9 +1635,9 @@ async function renderProfile(){
     if(wheelTile){
       wheelTile.addEventListener('click', function(event){
         event.preventDefault();
-        if(!profileActivated){
-          alert('Колесо фортуны доступно только после активации профиля. Заполните имя, телефон, город, адрес и автомобиль.');
-          location.href='mobile-profile-data.html#account';
+        if(!emailConfirmed){
+          alert('Колесо фортуны доступно после подтверждения почты. Откройте письмо от AutoStyle и подтвердите Email.');
+          location.href='mobile-profile-data.html#security';
           return;
         }
         location.href='mobile-wheel.html';
@@ -1656,11 +1647,6 @@ async function renderProfile(){
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
     if($('#saveProfile')) $('#saveProfile').onclick=async()=>{
       const data=profileDataFromForm(u,d);
-      const profileComplete=isProfileCompleteData(data);
-      const firstProfileActivation=profileComplete && !isProfileActivatedData(d);
-      const activatedAt=firstProfileActivation
-        ? new Date().toISOString()
-        : (d.profileActivatedAt || '');
       await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null});
       if($('#pPassEdit').value.trim()){
         await updatePassword(u,$('#pPassEdit').value.trim());
@@ -1668,15 +1654,12 @@ async function renderProfile(){
       }
       await setDoc(current.ref,{
         ...data,
-        profileActivated:profileComplete ? true : isProfileActivatedData(d),
-        profileActivatedAt:activatedAt,
+        emailVerified:emailConfirmed,
         updatedAt:new Date().toISOString(),
         createdAt:d.createdAt||new Date().toISOString(),
         role:d.role||'user'
       },{merge:true});
-      alert(firstProfileActivation
-        ? 'Профиль активирован. Колесо фортуны теперь доступно.'
-        : 'Профиль сохранён');
+      alert('Профиль сохранён');
       location.reload();
     };
     if($('#mGetDiscount')) $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);

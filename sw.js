@@ -1,6 +1,6 @@
 // AutoStyle service worker: быстрый стабильный кеш с обновлением в фоне.
-const SHELL_CACHE = 'autostyle-shell-20260728-v7';
-const RUNTIME_CACHE = 'autostyle-runtime-20260728-v7';
+const SHELL_CACHE = 'autostyle-shell-20260728-v8';
+const RUNTIME_CACHE = 'autostyle-runtime-20260728-v8';
 const CACHE_PREFIX = 'autostyle-';
 
 self.addEventListener('install', event => {
