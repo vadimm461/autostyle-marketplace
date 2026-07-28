@@ -55,13 +55,12 @@ function relatedCard(p){
           <div class="price">${money(p.price)}</div>
           ${op ? `<div class="old-price">${money(op)}</div>` : ''}
         </div>
-        ${s > 0 ? `<div class="catalog-card-stock">В наличии: ${s}</div>` : `<div class="stock-zero">Нет в наличии</div>`}
       </a>
-      <button class="cart related-cart" type="button" ${s <= 0 ? 'disabled' : ''}>В корзину</button>
+      <button class="cart related-cart${s <= 0 ? ' is-unavailable' : ''}" type="button" ${s <= 0 ? 'disabled aria-disabled="true"' : ''}>В корзину</button>
     </article>`;
 }
 function setupRelatedActions(){
-  document.querySelectorAll('.related-cart').forEach(btn => {
+  document.querySelectorAll('.related-cart:not(:disabled)').forEach(btn => {
     btn.onclick = async (e) => {
       const card = e.currentTarget.closest('.related-card');
       const id = card?.dataset.id;
@@ -103,9 +102,9 @@ async function renderRelated(current){
     const products = await getProducts();
     const currentGroup = group(current).toLowerCase().trim();
     const currentParent = (current.parentCategory || current.parentGroup || current.categoryParent || '').toLowerCase().trim();
-    let related = products.filter(p => p.id !== current.id && stock(p) > 0 && group(p).toLowerCase().trim() === currentGroup);
+    let related = products.filter(p => p.id !== current.id && group(p).toLowerCase().trim() === currentGroup);
     if (related.length < 4 && currentParent){
-      const extra = products.filter(p => p.id !== current.id && stock(p) > 0 && !related.some(x => x.id === p.id) && String(p.parentCategory || p.parentGroup || p.categoryParent || '').toLowerCase().trim() === currentParent);
+      const extra = products.filter(p => p.id !== current.id && !related.some(x => x.id === p.id) && String(p.parentCategory || p.parentGroup || p.categoryParent || '').toLowerCase().trim() === currentParent);
       related = [...related, ...extra];
     }
     if (!related.length){ box.innerHTML = ''; return; }
@@ -179,10 +178,9 @@ async function loadProduct(){
               ${op ? `<div class="old-price product-old-price">${money(op)}</div>` : ''}
               ${inst ? `<div class="product-installment-inline"><b>Рассрочка</b><span>от ${money(installmentMonth(p))} в мес. на 12 мес.</span></div>` : ''}
             </div>
-            ${s > 0 ? `<div class="stock-ok product-stock-ok">В наличии: ${s}</div>` : `<div class="stock-zero product-stock-zero">Нет в наличии</div>`}
           </div>
           <div class="product-actions">
-            <button id="addToCart" class="buy-btn product-action-btn" ${s <= 0 ? 'disabled' : ''}>В корзину</button>
+            <button id="addToCart" class="buy-btn product-action-btn${s <= 0 ? ' is-unavailable' : ''}" ${s <= 0 ? 'disabled aria-disabled="true"' : ''}>В корзину</button>
             <button id="favProduct" class="quick-btn product-fav-btn ${favActive ? 'active' : ''}" type="button">${favActive ? '♥ В избранном' : '♡ В избранное'}</button>
           </div>
         </div>
@@ -193,7 +191,6 @@ async function loadProduct(){
         <section class="product-block"><h2>Характеристики</h2>
           <div class="spec"><span>Название</span><b>${name}</b></div>
           <div class="spec"><span>Группа</span><b><a href="catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></b></div>
-          <div class="spec"><span>Остаток</span><b>${s}</b></div>
           <div class="spec"><span>Цена</span><b>${money(p.price)}</b></div>
           ${d ? `<div class="spec"><span>Скидка</span><b>${d}%</b></div>` : ''}
         </section>
