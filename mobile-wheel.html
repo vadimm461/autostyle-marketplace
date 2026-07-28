@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" type="image/png" href="assets/as-logo-192.png">
   <link rel="stylesheet" href="css/mobile-market.css">
-  <link rel="stylesheet" href="css/mobile-wheel.css?v=20260724-auth-fix">
+  <link rel="stylesheet" href="css/mobile-wheel.css?v=20260728-pointer-menu-fix">
 </head>
 <body class="mobile-page mobile-wheel-page" data-page="wheel">
   <div id="mLoader" class="m-loader">
@@ -22,12 +22,11 @@
   </div>
 
   <div class="mw-shell">
-    <header class="mw-topbar">
-      <a class="mw-back" href="mobile-profile.html" aria-label="Назад в профиль">←</a>
-      <a class="mw-brand" href="mobile.html" aria-label="AutoStyle — главная">
-        <img src="assets/autostyle-logo-header-clean@3x.png" alt="AutoStyle">
+    <header class="mw-topbar mw-topbar-exit-only">
+      <a class="mw-exit-button" href="mobile-profile.html" aria-label="Выйти из колеса">
+        <span aria-hidden="true">←</span>
+        <b>Выйти</b>
       </a>
-      <a class="mw-profile-link" href="mobile-profile.html" aria-label="Профиль">👤</a>
     </header>
 
     <main class="mw-main">
@@ -93,18 +92,7 @@
       </section>
     </main>
   </div>
-
-  <nav class="m-bottom-nav">
-    <div class="m-bottom-inner">
-      <a href="mobile.html">⌂<span>Главная</span></a>
-      <a href="mobile-catalog.html">▦<span>Каталог</span></a>
-      <a href="mobile-favorites.html">♡<span>Избранное</span></a>
-      <a href="mobile-cart.html">🛒<span>Корзина</span></a>
-      <a class="active" href="mobile-profile.html">👤<span>Профиль</span></a>
-    </div>
-  </nav>
-
-  <div id="mwAuthGate" class="mw-auth-gate" hidden>
+<div id="mwAuthGate" class="mw-auth-gate" hidden>
     <div class="mw-auth-card">
       <span>🎁</span>
       <h2>Войдите в профиль</h2>
@@ -130,7 +118,7 @@
 
   <script src="js/mobile-page-cache.js"></script>
   <script src="js/mobile-pull-refresh.js"></script>
-  <script type="module" src="js/mobile-wheel.js?v=20260724-auth-fix"></script>
+  <script type="module" src="js/mobile-wheel.js?v=20260728-pointer-menu-fix"></script>
   <script type="module" src="js/site-analytics.js?v=20260707-1"></script>
 </body>
 </html>
