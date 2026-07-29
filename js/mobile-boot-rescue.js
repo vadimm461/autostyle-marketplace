@@ -8,6 +8,31 @@
     event.preventDefault();
   }
 
+  function lockMobileViewport(){
+    if(document.getElementById('as-mobile-viewport-lock')) return;
+    var style=document.createElement('style');
+    style.id='as-mobile-viewport-lock';
+    style.textContent='\
+      html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;overscroll-behavior-x:none!important}\
+      body.mobile-page{position:relative!important;margin:0!important;left:0!important;right:0!important}\
+      body.mobile-page .m-shell{width:100%!important;max-width:520px!important;margin-left:auto!important;margin-right:auto!important;overflow-x:hidden!important;transform:none!important}\
+      body.mobile-page .m-top{width:100%!important;max-width:520px!important;left:0!important;right:0!important;margin-left:auto!important;margin-right:auto!important;transform:none!important}\
+      body.mobile-page .m-content{width:100%!important;max-width:100%!important;overflow-x:hidden!important}\
+      body.mobile-page img,body.mobile-page video,body.mobile-page canvas{max-width:100%!important}\
+      body.mobile-page .m-bottom-nav{max-width:520px!important;margin-left:auto!important;margin-right:auto!important}\
+    ';
+    document.head.appendChild(style);
+  }
+
+  function resetHorizontalPosition(){
+    if(window.scrollX!==0) window.scrollTo(0,window.scrollY||0);
+    document.documentElement.scrollLeft=0;
+    if(document.body) document.body.scrollLeft=0;
+  }
+
+  lockMobileViewport();
+  resetHorizontalPosition();
+
   function scrollableParent(target){
     var node=target;
     while(node&&node!==document.body&&node!==document.documentElement){
@@ -36,6 +61,9 @@
     var touch=event.touches[0];
     var dx=touch.clientX-touchStartX;
     var dy=touch.clientY-touchStartY;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8){
+      resetHorizontalPosition();
+    }
     if(dy<=0||Math.abs(dy)<=Math.abs(dx)) return;
     var scroller=scrollableParent(event.target);
     if(scroller&&scroller.scrollTop>0) return;
@@ -55,12 +83,11 @@
       document.body.style.visibility='visible';
       document.body.style.opacity='1';
     }
+    resetHorizontalPosition();
   }
 
-  // No loader is allowed to cover the page longer than 4.5 seconds.
   setTimeout(reveal,4500);
 
-  // Recover once from a stale service worker/cache after a long idle period.
   window.addEventListener('error',function(event){
     var text=String(event.message||'')+' '+String(event.filename||'');
     if(!/mobile-app|firebase|data-cache|module/i.test(text)) return;
@@ -82,6 +109,11 @@
   });
 
   window.addEventListener('pageshow',function(){
+    lockMobileViewport();
+    resetHorizontalPosition();
     if(Date.now()-started>3000) reveal();
   });
+
+  window.addEventListener('resize',resetHorizontalPosition,{passive:true});
+  window.addEventListener('orientationchange',function(){setTimeout(resetHorizontalPosition,80);},{passive:true});
 })();
