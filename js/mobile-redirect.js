@@ -1,4 +1,13 @@
 (function(){
+  if(!('serviceWorker' in navigator)) return;
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(function(error){
+      console.warn('AutoStyle cache worker:',error);
+    });
+  },{once:true});
+})();
+
+(function(){
   try{
     if (sessionStorage.getItem('as_force_desktop') === '1') return;
     var isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
