@@ -11,6 +11,15 @@
     }, { once:true });
   }
 
+  // Один общий модуль для плавной жидкой капли нижнего меню на всех мобильных страницах.
+  if (!document.querySelector('script[data-as-liquid-nav]')) {
+    const liquidNav = document.createElement('script');
+    liquidNav.src = './js/mobile-liquid-nav.js?v=20260729-1';
+    liquidNav.defer = true;
+    liquidNav.dataset.asLiquidNav = '1';
+    document.head.appendChild(liquidNav);
+  }
+
   const VERSION = '20260729-mobile-cache-v2';
   const MAX_AGE = 1000 * 60;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
