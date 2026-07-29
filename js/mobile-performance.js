@@ -17,6 +17,30 @@
 
   function scanImages(root){(root||document).querySelectorAll('img').forEach(markImage);}
 
+  function arrangeCardBadges(root){
+    var scope=root&&root.querySelectorAll?root:document;
+    var cards=[];
+    if(scope.matches&&scope.matches('.m-card')) cards.push(scope);
+    scope.querySelectorAll('.m-card').forEach(function(card){cards.push(card);});
+
+    cards.forEach(function(card){
+      var installment=card.querySelector('.m-installment');
+      if(!installment||installment.closest('.as-card-badges')) return;
+
+      var rail=card.querySelector('.as-card-badges');
+      if(!rail){
+        rail=document.createElement('div');
+        rail.className='as-card-badges';
+        card.insertBefore(rail,card.firstChild);
+      }
+
+      var discount=card.querySelector('.m-discount');
+      if(discount&&!discount.closest('.as-card-badges')) rail.appendChild(discount);
+      installment.classList.add('as-installment-top');
+      rail.appendChild(installment);
+    });
+  }
+
   function releaseLoader(){
     if(loaderReleased) return;
     loaderReleased=true;
@@ -36,6 +60,7 @@
 
   function readyEnough(){
     scanImages(document);
+    arrangeCardBadges(document);
     requestAnimationFrame(function(){requestAnimationFrame(releaseLoader);});
   }
 
@@ -49,11 +74,13 @@
 
   document.addEventListener('DOMContentLoaded',function(){
     scanImages(document);
+    arrangeCardBadges(document);
     var observer=new MutationObserver(function(records){
       records.forEach(function(record){record.addedNodes.forEach(function(node){
         if(node.nodeType!==1) return;
         if(node.tagName==='IMG') markImage(node);
         scanImages(node);
+        arrangeCardBadges(node);
       });});
     });
     observer.observe(document.body,{childList:true,subtree:true});
