@@ -6,6 +6,7 @@ import { loginEmail, registerEmail, ensureUserProfile } from './auth-core.js';
 import { getCollectionCached, getProducts } from './data-cache.js?v=20260728-performance-stage23';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
 import { setupDesktopLiveSearch } from './desktop-live-search.js?v=20260728-live-search';
+import { getFavorites, subscribeFavorites, toggleFavorite } from './user-favorites-store.js?v=20260729-profile-favorites';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -30,7 +31,7 @@ const SECTION_PROMO_CARDS_COLLECTIONS = [...new Set([
   'sectionPromoCards'
 ].filter(Boolean))];
 let cart = [];
-let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+let favs = getFavorites();
 
 
 async function getAccountMenuUser(user){
@@ -82,7 +83,15 @@ function normalizeKey(v){ return String(v || '').trim().toLowerCase(); }
 function isMarkedForHome(p){ return p.showOnHome === true || p.showOnHome === 'true' || p.onHome === true || p.home === true; }
 function cartQtyCount(rows = cart){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
 function saveCart(){ cart = getCurrentUserCart(); updateCartBadges(cart); }
-function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
+function syncFavoriteButtons(){
+  document.querySelectorAll('[data-fav]').forEach(button => {
+    button.classList.toggle('active', favs.includes(String(button.dataset.fav || '')));
+  });
+}
+subscribeFavorites(ids => {
+  favs = ids;
+  syncFavoriteButtons();
+});
 async function loadCollection(name){ return await getCollectionCached(name); }
 async function safeLoadCollection(name){ try { return await loadCollection(name); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } }
 
@@ -309,7 +318,7 @@ function card(p){
   const installment = p.installment === true || p.installmentAvailable === true || p.credit === true || priceNum >= 199;
   const monthPay = Math.ceil(priceNum / 12);
   return `<article class="product-card" data-product-href="product.html?id=${encodeURIComponent(p.id)}">
-    <button class="fav-btn ${favs.includes(p.id) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
+    <button class="fav-btn ${favs.includes(String(p.id)) ? 'active' : ''}" data-fav="${p.id}" type="button">♡</button>
     <a class="product-card-link" href="product.html?id=${encodeURIComponent(p.id)}">
       <div class="product-img">${d ? `<span class="discount-badge">-${d}%</span>` : ''}${im ? `<img loading="lazy" decoding="async" src="${im}" alt="${title(p)}">` : '<span>Фото</span>'}</div>
       <div class="product-title">${title(p)}</div>
@@ -324,7 +333,15 @@ function card(p){
 }
 function bindProductButtons(scope=document){
   scope.querySelectorAll('[data-cart]:not(:disabled)').forEach(b => b.onclick = async e => { e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart = getCurrentUserCart(); saveCart(); b.textContent='✓ Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); } });
-  scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id]; b.classList.toggle('active', favs.includes(id)); saveFav(); });
+  scope.querySelectorAll('[data-fav]').forEach(b => b.onclick = async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await toggleFavorite(b.dataset.fav);
+    } catch (err) {
+      alert(err?.message || 'Не удалось обновить избранное');
+    }
+  });
 }
 function makeSection(block, products){
   const id = `homeBlock_${String(block.key).replace(/[^a-zA-Z0-9_-]/g,'_')}`;
