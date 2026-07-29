@@ -1,0 +1,106 @@
+/* AutoStyle Mobile performance shell — isolated from business logic */
+:root{
+  --as-mobile-bg:#f3f5f7;
+  --as-mobile-dark:#0b1018;
+  --as-mobile-green:#28e11a;
+}
+
+html{background:var(--as-mobile-bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body.mobile-page{min-height:100dvh;overflow-x:hidden;overscroll-behavior-y:none}
+
+/* Reserve space early and reduce expensive off-screen rendering. */
+.m-content{min-height:62dvh}
+.m-section,.m-home-section,.m-profile-section,.m-catalog-section{
+  content-visibility:auto;
+  contain-intrinsic-size:1px 520px;
+}
+img{max-width:100%}
+.m-card-img img,.m-list-img img,.m-photo img,.m-hero img{
+  opacity:0;
+  transition:opacity .24s ease;
+}
+.m-card-img img.as-img-ready,.m-list-img img.as-img-ready,.m-photo img.as-img-ready,.m-hero img.as-img-ready,
+.m-card-img img[complete],.m-list-img img[complete],.m-photo img[complete],.m-hero img[complete]{opacity:1}
+
+/* Premium splash screen. It never blocks interaction after JS releases it. */
+.m-loader{
+  position:fixed!important;
+  inset:0!important;
+  z-index:10000!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)!important;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(40,225,26,.16),transparent 34%),
+    #080d14!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  opacity:1;
+  visibility:visible;
+  transition:opacity .32s ease,visibility .32s ease;
+}
+.m-loader.as-loader-hidden{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+.m-loader-card{
+  width:min(78vw,290px)!important;
+  height:auto!important;
+  min-height:150px;
+  padding:28px 26px 24px;
+  border-radius:30px!important;
+  display:flex!important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+  background:rgba(255,255,255,.055)!important;
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 28px 80px rgba(0,0,0,.42)!important;
+  animation:none!important;
+}
+.m-loader-card span{
+  width:178px!important;
+  height:40px!important;
+  border-radius:0!important;
+  background:url('../assets/autostyle-logo-header-clean@2x.png') center/contain no-repeat!important;
+  box-shadow:none!important;
+  color:transparent!important;
+}
+.m-loader-card:before{
+  content:"";
+  width:100%;
+  height:3px;
+  margin-top:4px;
+  border-radius:99px;
+  background:linear-gradient(90deg,var(--as-mobile-green) 0 34%,rgba(255,255,255,.13) 34% 100%);
+  background-size:300% 100%;
+  animation:asLoaderProgress 1.15s ease-in-out infinite;
+}
+.m-loader-card:after{
+  content:"Загружаем AutoStyle"!important;
+  position:static!important;
+  transform:none!important;
+  color:rgba(255,255,255,.66)!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:800!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap;
+}
+@keyframes asLoaderProgress{
+  0%{background-position:100% 0}
+  100%{background-position:0 0}
+}
+
+/* Make taps feel native without changing button logic. */
+button,a,.m-card{-webkit-tap-highlight-color:transparent}
+button:active,.m-action:active,.m-cart:active,.m-bottom-inner a:active{transform:scale(.975)}
+button,.m-action,.m-cart,.m-bottom-inner a{transition:transform .12s ease,opacity .16s ease,background-color .18s ease}
+
+/* Stable safe areas on modern iPhones. */
+.m-top{padding-top:max(12px,env(safe-area-inset-top))!important}
+.m-bottom-nav{padding-bottom:max(7px,env(safe-area-inset-bottom))!important}
+
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
