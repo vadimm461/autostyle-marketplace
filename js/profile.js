@@ -14,8 +14,10 @@ import { updateCartCount, fmtPrice, productTitle, productImage } from './common.
 import { resendEmailVerification, userProviders, providerTitle, ensureUserProfile, getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { createPasswordChangedNotification } from './notify-service.js';
 import { trackEvent } from './site-analytics.js';
+import { getFavorites, subscribeFavorites, waitFavoritesReady } from './user-favorites-store.js?v=20260729-profile-favorites';
 
 const $ = s => document.querySelector(s);
+let profileFavoritesReady = false;
 
 function clearCartAndFavorites(){
   // Выход из аккаунта не должен стирать корзину и избранное в браузере.
@@ -218,7 +220,8 @@ async function submitFeedback(user){
 async function renderFavorites(){
   const box = $('#profileFavorites');
   if(!box) return;
-  const ids = JSON.parse(localStorage.getItem('favorites') || '[]');
+  await waitFavoritesReady();
+  const ids = getFavorites();
   if(!ids.length){ box.innerHTML = '<div class="profile-empty">Избранное пока пустое.</div>'; return; }
   try{
     const snap = await getDocs(collection(db, productsCollection));
@@ -238,6 +241,9 @@ async function renderFavorites(){
     }));
   }catch(e){ box.innerHTML = '<div class="profile-empty">Не удалось загрузить избранное.</div>'; }
 }
+subscribeFavorites(() => {
+  if (profileFavoritesReady && auth.currentUser) renderFavorites();
+});
 const ORDER_STATUSES = {
   new: 'Новый',
   processing: 'В обработке',
@@ -671,7 +677,7 @@ function setupAccessManager(profile={}){
 onAuthStateChanged(auth, async user => {
   try{
     renderHeaderAccount(user);
-    if(!user){ window.AutoStyleAccountMenu?.renderGuest(); $('#profileGuest').hidden = false; $('#profileApp').hidden = true; $('#profileLogout').style.display='none'; window.AutoStyleLoader?.hide(); return; }
+    if(!user){ profileFavoritesReady = false; window.AutoStyleAccountMenu?.renderGuest(); $('#profileGuest').hidden = false; $('#profileApp').hidden = true; $('#profileLogout').style.display='none'; window.AutoStyleLoader?.hide(); return; }
     window.AutoStyleAccountMenu?.renderUser(user, async () => { clearCartAndFavorites(); await signOut(auth); location.href = 'index.html'; });
     $('#profileGuest').hidden = true;
     $('#profileApp').hidden = false;
@@ -688,6 +694,7 @@ onAuthStateChanged(auth, async user => {
     if ($('#feedbackForm')) $('#feedbackForm').onsubmit = async e => { e.preventDefault(); try{ await submitFeedback(user); }catch(err){ message($('#feedbackMsg'), 'Ошибка отправки: ' + (err.message || err), false); } };
     const getCardBtn = $('#getDiscountCardBtn');
     if (getCardBtn) getCardBtn.onclick = async () => { try { await getDiscountCard(user); } catch(err) { alert('Не удалось получить карту: ' + (err.message || err)); } };
+    profileFavoritesReady = true;
     await renderFavorites();
     await renderOrders(user);
     window.AutoStyleLoader?.hide();
