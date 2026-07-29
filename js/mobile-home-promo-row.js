@@ -66,7 +66,7 @@ function cardHtml(card){
 async function loadPromos(){
   const groups=await Promise.all(COLLECTION_NAMES.map(async name=>{
     try{
-      const rows=await getCollectionCached(name,{force:true});
+      const rows=await getCollectionCached(name,{force:true,staleWhileRevalidate:false});
       return (rows||[]).map(row=>({...row,_collection:name}));
     }catch(error){
       console.warn('Не удалось загрузить мобильные промо',name,error);
@@ -119,35 +119,58 @@ function startAutoplay(row){
   schedule();
 }
 
+let renderBusy=false;
+let retryTimer=0;
 async function render(){
-  if(document.body?.dataset.page!=='home') return;
-  let mount=document.getElementById('mHomePromoMount');
-  if(!mount){
-    const dynamic=document.getElementById('mHomeDynamic');
-    if(!dynamic) return;
-    mount=document.createElement('div');
-    mount.id='mHomePromoMount';
-    dynamic.prepend(mount);
+  if(document.body?.dataset.page!=='home'||renderBusy) return;
+  renderBusy=true;
+  try{
+    let mount=document.getElementById('mHomePromoMount');
+    if(!mount){
+      const dynamic=document.getElementById('mHomeDynamic');
+      if(!dynamic) return;
+      mount=document.createElement('div');
+      mount.id='mHomePromoMount';
+      dynamic.prepend(mount);
+    }
+    const promos=await loadPromos();
+    if(!promos.length){
+      console.warn('Мобильные промо пока не загружены, повторяем запрос');
+      return;
+    }
+    mount.innerHTML=`<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promos.map(cardHtml).join('')}</div></section>`;
+    startAutoplay(mount.querySelector('.m-promo-row'));
+  }finally{
+    renderBusy=false;
   }
-  const promos=await loadPromos();
-  if(!promos.length){
-    mount.innerHTML='';
-    console.warn('Мобильные промо не найдены в доступных коллекциях');
-    return;
-  }
-  mount.innerHTML=`<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promos.map(cardHtml).join('')}</div></section>`;
-  startAutoplay(mount.querySelector('.m-promo-row'));
+}
+
+function scheduleRender(){
+  clearTimeout(retryTimer);
+  retryTimer=setTimeout(()=>render(),90);
+  setTimeout(()=>{
+    const mount=document.getElementById('mHomePromoMount');
+    if(!mount?.querySelector('.m-promo-card')) render();
+  },450);
+  setTimeout(()=>{
+    const mount=document.getElementById('mHomePromoMount');
+    if(!mount?.querySelector('.m-promo-card')) render();
+  },1400);
 }
 
 const boot=()=>{
-  render();
-  const observer=new MutationObserver(()=>{
-    const mount=document.getElementById('mHomePromoMount');
-    if(mount&&!mount.querySelector('.m-promo-card')) render();
-  });
+  scheduleRender();
   const dynamic=document.getElementById('mHomeDynamic');
-  if(dynamic) observer.observe(dynamic,{childList:true,subtree:true});
-  window.addEventListener('pageshow',()=>render(),{passive:true});
+  if(dynamic){
+    const observer=new MutationObserver(()=>{
+      const mount=document.getElementById('mHomePromoMount');
+      if(!mount?.querySelector('.m-promo-card')) scheduleRender();
+    });
+    observer.observe(dynamic,{childList:true,subtree:true});
+  }
+  window.addEventListener('pageshow',scheduleRender,{passive:true});
+  window.addEventListener('focus',scheduleRender,{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleRender();},{passive:true});
 };
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
