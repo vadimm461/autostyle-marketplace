@@ -1,6 +1,6 @@
 // AutoStyle service worker: быстрый стабильный кеш с обновлением в фоне.
-const SHELL_CACHE = 'autostyle-shell-20260729-v10';
-const RUNTIME_CACHE = 'autostyle-runtime-20260729-v10';
+const SHELL_CACHE = 'autostyle-shell-20260729-v11';
+const RUNTIME_CACHE = 'autostyle-runtime-20260729-v11';
 const CACHE_PREFIX = 'autostyle-';
 
 self.addEventListener('install', event => {
@@ -48,6 +48,26 @@ self.addEventListener('fetch', event => {
         return (await caches.match(request, {ignoreSearch:true})) ||
           (await caches.match(new URL('index.html', self.registration.scope).href, {ignoreSearch:true})) ||
           Response.error();
+      }
+    })());
+    return;
+  }
+
+  const criticalMobilePromoAsset = sameOrigin && (
+    url.pathname.endsWith('/js/mobile-home-promo-row.js') ||
+    url.pathname.endsWith('/css/mobile-home-promo-row.css') ||
+    url.pathname.endsWith('/js/mobile-app.js')
+  );
+
+  if (criticalMobilePromoAsset) {
+    event.respondWith((async () => {
+      const cache = await caches.open(RUNTIME_CACHE);
+      try {
+        const response = await fetch(request, { cache:'no-store' });
+        if (response.ok) cache.put(request, response.clone()).catch(() => {});
+        return response;
+      } catch {
+        return (await cache.match(request)) || Response.error();
       }
     })());
     return;
