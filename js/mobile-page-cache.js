@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260729-global-nav-single-icons';
+  const VERSION = '20260729-nav-duplicate-renderer-removed';
   const MAX_AGE = 1000 * 60 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
@@ -19,14 +19,6 @@
   const scrollKey = keyBase + ':scroll';
   const skip = new Set(['cart']);
   const contentSelector = '.m-content';
-
-  const NAV_ICONS = {
-    home:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5"/><path d="M9.5 21v-6h5v6"/></svg>',
-    catalog:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
-    fav:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.5 5.5 0 0 0-7.8 0L12 5.9l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.3 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
-    cart:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6"/><circle cx="9.5" cy="20" r="1.2"/><circle cx="17.5" cy="20" r="1.2"/></svg>',
-    profile:'<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5.5 21v-2.2a6.5 6.5 0 0 1 13 0V21"/></svg>'
-  };
 
   function now(){ return Date.now(); }
   function canCache(){ return !skip.has(page) && !!document.querySelector(contentSelector); }
@@ -89,43 +81,6 @@
       fetch(href, { credentials:'same-origin', cache:'force-cache' }).catch(()=>{});
     }, { passive:true });
   }
-  function unifyBottomNavigation(){
-    const nav = document.querySelector('.m-bottom-inner');
-    if(!nav) return;
-    const items = [
-      { key:'home', label:'Главная' },
-      { key:'catalog', label:'Каталог' },
-      { key:'fav', label:'Избранное', counter:'mFavCount' },
-      { key:'cart', label:'Корзина', counter:'mCartCount' },
-      { key:'profile', label:'Профиль' }
-    ];
-    nav.querySelectorAll(':scope > a').forEach((link,index)=>{
-      const item = items[index];
-      if(!item) return;
-      const oldCounter = item.counter ? link.querySelector('#' + item.counter)?.textContent || '0' : '';
-      link.innerHTML = `<span class="as-nav-icon" aria-hidden="true">${NAV_ICONS[item.key]}</span><span class="as-nav-label">${item.label}${item.counter ? ` <b id="${item.counter}">${oldCounter}</b>` : ''}</span>`;
-      link.dataset.asUnifiedIcon = item.key;
-      link.style.cssText = 'position:relative!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;height:64px!important;border-radius:22px!important;';
-      const icon = link.querySelector('.as-nav-icon');
-      const label = link.querySelector('.as-nav-label');
-      if(icon) icon.style.cssText = 'display:grid!important;place-items:center!important;width:29px!important;height:29px!important;line-height:0!important;flex:0 0 29px!important;';
-      if(label) label.style.cssText = 'display:flex!important;align-items:center!important;justify-content:center!important;gap:3px!important;font-size:10px!important;font-weight:900!important;line-height:1!important;white-space:nowrap!important;';
-    });
-  }
-  function watchBottomNavigation(){
-    const nav = document.querySelector('.m-bottom-inner');
-    if(!nav) return;
-    unifyBottomNavigation();
-    let busy = false;
-    new MutationObserver(()=>{
-      if(busy) return;
-      busy = true;
-      requestAnimationFrame(()=>{
-        unifyBottomNavigation();
-        busy = false;
-      });
-    }).observe(nav,{childList:true,subtree:false});
-  }
   function debounce(fn, wait){ let t=0; return ()=>{ clearTimeout(t); t=setTimeout(fn, wait); }; }
   const saveSoon = debounce(write, 300);
   window.AutoStyleMobilePageCache = {
@@ -157,7 +112,6 @@
   const start = ()=>{
     startObserve();
     startFastProfileNavigation();
-    watchBottomNavigation();
   };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once:true });
   else start();
