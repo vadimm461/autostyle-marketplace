@@ -5,8 +5,10 @@
   var loaderReleased=false;
   var loaderShownAt=performance.now();
   var isWarm=sessionStorage.getItem('as_mobile_splash_seen')==='1';
-  var MIN_SPLASH=isWarm?0:180;
-  var MAX_SPLASH=1400;
+  var isProfilePage=document.body&&document.body.dataset&&String(document.body.dataset.page||'').indexOf('profile')===0;
+  var MIN_SPLASH=isProfilePage?0:(isWarm?0:180);
+  var MAX_SPLASH=isProfilePage?450:1400;
+  var PROFILE_CACHE_KEY='as_mobile_profile_html_v1';
 
   function markImage(img){
     if(!img) return;
@@ -39,6 +41,24 @@
       installment.classList.add('as-installment-top');
       rail.appendChild(installment);
     });
+  }
+
+  function restoreProfileShell(){
+    if(!isProfilePage) return;
+    var box=document.getElementById('mProfileBox');
+    if(!box) return;
+    try{
+      var cached=sessionStorage.getItem(PROFILE_CACHE_KEY);
+      if(cached){box.innerHTML=cached;box.setAttribute('data-as-cached','1');return;}
+    }catch(e){}
+    if(!box.innerHTML.trim()) box.innerHTML='<div class="m-empty" style="min-height:220px;display:grid;place-items:center">Загружаем профиль...</div>';
+  }
+
+  function cacheProfileShell(){
+    if(!isProfilePage) return;
+    var box=document.getElementById('mProfileBox');
+    if(!box||!box.innerHTML.trim()||box.querySelector('.m-auth-unified')||box.textContent.indexOf('Загружаем профиль')!==-1) return;
+    try{sessionStorage.setItem(PROFILE_CACHE_KEY,box.innerHTML);}catch(e){}
   }
 
   function injectMobileNavStyles(){
@@ -139,7 +159,7 @@
       var loader=document.getElementById('mLoader');
       if(loader){
         loader.classList.add('as-loader-hidden');
-        window.setTimeout(function(){if(loader&&loader.parentNode) loader.parentNode.removeChild(loader);},220);
+        window.setTimeout(function(){if(loader&&loader.parentNode) loader.parentNode.removeChild(loader);},isProfilePage?80:220);
       }
       try{sessionStorage.setItem('as_mobile_splash_seen','1');}catch(e){}
       document.documentElement.classList.add('m-app-visible');
@@ -174,6 +194,8 @@
   document.addEventListener('DOMContentLoaded',function(){
     injectMobileNavStyles();
     setupAppLikeNavigation();
+    restoreProfileShell();
+    if(isProfilePage) releaseLoader();
     scanImages(document);
     arrangeCardBadges(document);
     var observer=new MutationObserver(function(records){
@@ -183,6 +205,7 @@
         scanImages(node);
         arrangeCardBadges(node);
       });});
+      cacheProfileShell();
     });
     observer.observe(document.body,{childList:true,subtree:true});
     document.addEventListener('touchstart',function(event){var anchor=event.target.closest&&event.target.closest('a[href]');if(anchor) prefetch(anchor.getAttribute('href'));},{passive:true,capture:true});
@@ -191,7 +214,7 @@
     warmMainPages();
   });
 
-  window.addEventListener('load',readyEnough,{once:true});
+  window.addEventListener('load',function(){readyEnough();cacheProfileShell();},{once:true});
   window.addEventListener('pageshow',function(event){if(event.persisted) releaseLoader();});
   window.addEventListener('error',releaseLoader,true);
   window.addEventListener('unhandledrejection',releaseLoader);
