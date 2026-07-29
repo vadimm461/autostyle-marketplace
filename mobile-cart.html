@@ -11,8 +11,10 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="//www.gstatic.com">
   <link rel="preload" href="css/mobile-market.css?v=20260728-wheel-access" as="style">
+  <link rel="preload" href="assets/autostyle-logo-header-clean@2x.png" as="image">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="css/mobile-performance.css?v=20260729-2">
   <link rel="stylesheet" href="css/mobile-market.css?v=20260728-wheel-access">
   <link rel="stylesheet" href="css/mobile-cart.css?v=20260728-cart-parity-1">
   <link rel="stylesheet" href="css/auth-upgrade.css">
@@ -33,12 +35,12 @@
   <script src="js/mobile-boot-rescue.js?v=20260728-viewport-lock"></script>
 </head>
 <body class="mobile-page" data-page="cart">
-  <div id="mLoader" class="m-loader"><div class="m-loader-card"><span>AS</span></div></div>
+  <div id="mLoader" class="m-loader" role="status" aria-label="Загрузка AutoStyle"><div class="m-loader-card"><span>AutoStyle</span></div></div>
   <div class="m-shell">
     <header class="m-top">
       <div class="m-row">
         <a class="m-logo" href="mobile.html" aria-label="AutoStyle — главная">
-          <img class="m-logo-img" src="assets/autostyle-logo-header-clean@3x.png" srcset="assets/autostyle-logo-header-clean.png 1x, assets/autostyle-logo-header-clean@2x.png 2x, assets/autostyle-logo-header-clean@3x.png 3x" width="720" height="158" alt="AutoStyle" decoding="async">
+          <img class="m-logo-img" src="assets/autostyle-logo-header-clean@3x.png" srcset="assets/autostyle-logo-header-clean.png 1x, assets/autostyle-logo-header-clean@2x.png 2x, assets/autostyle-logo-header-clean@3x.png 3x" width="720" height="158" alt="AutoStyle" decoding="async" fetchpriority="high">
         </a>
         <span class="m-head-spacer"></span>
       </div>
@@ -89,6 +91,7 @@
   </div>
 
   <nav class="m-bottom-nav"><div class="m-bottom-inner"></div></nav>
+  <script src="js/mobile-performance.js?v=20260729-2"></script>
   <script src="js/mobile-page-cache.js"></script>
   <!-- Pull-to-refresh отключён на корзине: он конфликтовал с +/- и вызывал моргание. -->
   <script type="module" src="js/mobile-app.js?v=20260729-profile-favorites"></script>
