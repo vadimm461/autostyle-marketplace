@@ -22,6 +22,44 @@ img{max-width:100%}
 .m-card-img img.as-img-ready,.m-list-img img.as-img-ready,.m-photo img.as-img-ready,.m-hero img.as-img-ready,
 .m-card-img img[complete],.m-list-img img[complete],.m-photo img[complete],.m-hero img[complete]{opacity:1}
 
+/* Discount and installment now share one compact top badge row. */
+.m-card .as-card-badges{
+  position:absolute;
+  z-index:4;
+  top:16px;
+  left:16px;
+  right:58px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.m-card .as-card-badges .m-discount,
+.m-card .as-card-badges .m-installment{
+  position:static!important;
+  inset:auto!important;
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  margin:0!important;
+  padding:6px 9px!important;
+  border-radius:999px!important;
+  line-height:1!important;
+  font-size:11px!important;
+  font-weight:950!important;
+  box-sizing:border-box;
+  box-shadow:0 6px 18px rgba(15,23,42,.10);
+}
+.m-card .as-card-badges .m-installment{
+  max-width:112px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  background:#dff8dc!important;
+  color:#0b7f16!important;
+}
+
 /* Premium splash screen. It never blocks interaction after JS releases it. */
 .m-loader{
   position:fixed!important;
@@ -100,6 +138,13 @@ button,.m-action,.m-cart,.m-bottom-inner a{transition:transform .12s ease,opacit
 /* Stable safe areas on modern iPhones. */
 .m-top{padding-top:max(12px,env(safe-area-inset-top))!important}
 .m-bottom-nav{padding-bottom:max(7px,env(safe-area-inset-bottom))!important}
+
+@media(max-width:380px){
+  .m-card .as-card-badges{gap:4px;right:54px}
+  .m-card .as-card-badges .m-discount,
+  .m-card .as-card-badges .m-installment{font-size:10px!important;padding:5px 7px!important;min-height:28px}
+  .m-card .as-card-badges .m-installment{max-width:98px}
+}
 
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
