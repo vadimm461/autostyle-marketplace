@@ -1,4 +1,13 @@
 (function(){
+  if(!('serviceWorker' in navigator)) return;
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(function(error){
+      console.warn('AutoStyle cache worker:',error);
+    });
+  },{once:true});
+})();
+
+(function(){
   var KEY='as_mobile_boot_recovery';
   var started=Date.now();
   var touchStartX=0;
