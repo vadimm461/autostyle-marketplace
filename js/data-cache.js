@@ -2,13 +2,13 @@ import { db, storage, COLLECTIONS } from './firebase.js';
 import { collection, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ref, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
-// v7: быстрый кэш + глобальная версия из Firestore.
-// Админка меняет autostyle_settings/cacheVersion.value — у всех пользователей сайт видит новую версию и обновляет кэш.
-const CACHE_PREFIX = 'as_cache_v7:';
+// v8: безопасный кэш. Пустой или просроченный снимок больше не блокирует загрузку сайта.
+// Новая версия префикса автоматически отбрасывает повреждённый кэш v7 у всех клиентов.
+const CACHE_PREFIX = 'as_cache_v8:';
 const VERSION_KEY = CACHE_PREFIX + 'siteVersion';
 const SETTINGS_COLLECTION = COLLECTIONS.settings || 'autostyle_settings';
 const VERSION_DOC = 'cacheVersion';
-const MAX_CACHE_AGE = 15 * 60 * 1000; // 15 минут — под выгрузку из 1С
+const MAX_CACHE_AGE = 15 * 60 * 1000;
 const VERSION_CHECK_TTL = 10 * 1000;
 
 let versionMemo = { value: null, checkedAt: 0 };
@@ -79,7 +79,6 @@ function looksLikeStoragePath(value){
 async function storageUrl(value){
   const v = String(value || '').trim();
   if (!v || !looksLikeStoragePath(v)) return v;
-  // Одна медленная ссылка Storage не должна задерживать весь каталог.
   try { return await withTimeout(getDownloadURL(ref(storage, v)), 1500, v); } catch(e) { return v; }
 }
 
@@ -115,6 +114,7 @@ async function normalizeProductRow(row){
 }
 
 async function fetchCollection(name){
+  if (!name) return [];
   const snap = await getDocs(collection(db, name));
   const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   return name === (COLLECTIONS.products || 'autostyle_products') ? await Promise.all(rows.map(normalizeProductRow)) : rows;
@@ -135,7 +135,11 @@ export async function bumpCacheVersion(reason='admin-force-refresh'){
 
 export function clearDataCache(){
   try {
-    Object.keys(localStorage).forEach(k => { if (k.startsWith(CACHE_PREFIX) || k.startsWith('as_cache_v5:') || k.startsWith('as_cache_v6:')) localStorage.removeItem(k); });
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('as_cache_v5:') || k.startsWith('as_cache_v6:') || k.startsWith('as_cache_v7:') || k.startsWith(CACHE_PREFIX)) {
+        localStorage.removeItem(k);
+      }
+    });
   } catch(e) {}
 }
 
@@ -146,15 +150,19 @@ export async function getCollectionCached(name, options={}){
   const cached = readJson(cacheKey, null);
   const age = cached ? now() - Number(cached.savedAt || 0) : Infinity;
   const hasCachedRows = !!(cached && Array.isArray(cached.rows));
+  const hasUsableCachedRows = hasCachedRows && cached.rows.length > 0;
 
-  // Десктоп сохраняет прежнее поведение. Только мобильный клиент может
-  // сразу показать просроченный снимок и обновить его без блокировки экрана.
-  if (!force && hasCachedRows && (age < MAX_CACHE_AGE || staleWhileRevalidate)) {
-    if (staleWhileRevalidate && age >= MAX_CACHE_AGE) {
-      getCollectionCached(name, { force:true }).catch(e => {
-        console.warn('Mobile background cache refresh failed', name, e);
-      });
-    }
+  // Свежий непустой кэш можно вернуть сразу.
+  if (!force && hasUsableCachedRows && age < MAX_CACHE_AGE) {
+    return cached.rows;
+  }
+
+  // Просроченный непустой кэш разрешён только как временный снимок.
+  // Пустой кэш никогда не возвращается вместо запроса к Firestore.
+  if (!force && staleWhileRevalidate && hasUsableCachedRows && age >= MAX_CACHE_AGE) {
+    getCollectionCached(name, { force:true }).catch(e => {
+      console.warn('Mobile background cache refresh failed', name, e);
+    });
     return cached.rows;
   }
 
@@ -162,26 +170,30 @@ export async function getCollectionCached(name, options={}){
   if (!force) remoteVersion = await withTimeout(getRemoteVersion(), 2500, null);
 
   try{
-    const rows = await withTimeout(fetchCollection(name), 7000, null);
-    if(!rows){
-      if(hasCachedRows) return cached.rows;
-      return [];
+    const rows = await withTimeout(fetchCollection(name), 9000, null);
+    if (!rows) {
+      return hasUsableCachedRows ? cached.rows : [];
     }
+
+    // Не записываем пустой ответ поверх рабочего непустого кэша.
+    if (rows.length === 0 && hasUsableCachedRows) {
+      return cached.rows;
+    }
+
     const saveVersion = safeString(remoteVersion || await getRemoteVersion(true) || '0');
     writeJson(cacheKey, { rows, savedAt: now(), version: saveVersion });
     try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
     return rows;
   }catch(e){
     console.warn('Collection load failed', name, e);
-    return hasCachedRows ? cached.rows : [];
+    return hasUsableCachedRows ? cached.rows : [];
   }
 }
 
-export function getProducts(options={}){ return getCollectionCached(COLLECTIONS.products, options); }
-export function getCategories(options={}){ return getCollectionCached(COLLECTIONS.categories, options); }
-export function getBanners(options={}){ return getCollectionCached(COLLECTIONS.banners, options); }
+export function getProducts(options={}){ return getCollectionCached(COLLECTIONS.products || 'autostyle_products', options); }
+export function getCategories(options={}){ return getCollectionCached(COLLECTIONS.categories || 'autostyle_categories', options); }
+export function getBanners(options={}){ return getCollectionCached(COLLECTIONS.banners || 'autostyle_banners', options); }
 
-// Полная очистка кэша сайта у всех пользователей.
 const FULL_CACHE_DOC = 'fullCacheReset';
 const FULL_CACHE_LOCAL_KEY = CACHE_PREFIX + 'fullCacheResetVersion';
 let fullCacheWatcherStarted = false;
