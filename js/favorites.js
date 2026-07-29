@@ -2,10 +2,12 @@ import { db, COLLECTIONS, auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getProducts } from './data-cache.js';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
+import { getFavorites, subscribeFavorites, toggleFavorite, waitFavoritesReady } from './user-favorites-store.js?v=20260729-profile-favorites';
 
 const $ = s => document.querySelector(s);
-let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+let favs = getFavorites();
 let cart = [];
+let favoritesPageReady = false;
 
 function clearCartAndFavorites(){
   // Не очищаем корзину и избранное при обычной загрузке страницы или выходе.
@@ -22,7 +24,6 @@ const group = p => p.group || p.category || p.categoryName || 'Без групп
 const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0);
 const oldPrice = p => { const op = rawOldPrice(p), pr = Number(p.price || 0); return op > pr ? op : 0; };
 function discount(p){ const d=Number(p.discount||p.discountPercent||0); if(d>0)return d; const op=oldPrice(p), pr=Number(p.price||0); return op>pr&&pr>0?Math.round((op-pr)/op*100):0; }
-function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function cartQtyCount(rows = cart){ return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0); }
 function updateCart(){ cart = getCurrentUserCart(); updateCartBadges(cart); }
 function setupSearch(){
@@ -43,11 +44,18 @@ function card(p){
 }
 function bind(){
   document.querySelectorAll('[data-cart]:not(:disabled)').forEach(b=>b.onclick=async e=>{e.preventDefault(); try{ await addUserCartItem(b.dataset.cart); cart=getCurrentUserCart(); updateCart(); b.textContent='Добавлено'; setTimeout(()=>b.textContent='В корзину',900); }catch(err){ alert(err?.message || 'Войдите в аккаунт, чтобы добавить товар в корзину'); }});
-  document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.preventDefault(); e.stopPropagation(); const id=b.dataset.fav; favs=favs.filter(x=>x!==id); saveFav(); loadFavorites();});
+  document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=async e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await toggleFavorite(b.dataset.fav);
+    } catch (err) {
+      alert(err?.message || 'Не удалось обновить избранное');
+    }
+  });
 }
 async function loadFavorites(){
   const grid=$('#favoritesGrid'), titleEl=$('#favoritesCount'); if(!grid) return;
-  favs = JSON.parse(localStorage.getItem('favorites') || '[]');
   titleEl && (titleEl.textContent = favs.length ? `Избранное: ${favs.length}` : 'Избранное');
   if(!favs.length){ grid.innerHTML='<div class="notice">В избранном пока пусто.</div>'; return; }
   grid.innerHTML='<div class="app-loader">Загрузка избранного...</div>';
@@ -59,11 +67,16 @@ async function loadFavorites(){
   grid.innerHTML=products.map(card).join(''); bind();
 }
 setupSearch();
+subscribeFavorites(ids => {
+  favs = ids;
+  if (favoritesPageReady) loadFavorites();
+});
 onAuthStateChanged(auth, async user => {
   if (!user) { clearCartAndFavorites(); }
-  await waitUserCartReady();
+  await Promise.all([waitUserCartReady(), waitFavoritesReady()]);
   cart = getCurrentUserCart();
-  favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+  favs = getFavorites();
+  favoritesPageReady = true;
   updateCart();
   loadFavorites().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });
