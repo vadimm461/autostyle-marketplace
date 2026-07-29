@@ -1,20 +1,12 @@
-import { COLLECTIONS } from './firebase.js';
-import { getCollectionCached } from './data-cache.js';
+import { db } from './firebase.js';
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const COLLECTION_NAMES = [...new Set([
+// Те же коллекции, которые использует десктопная главная.
+const COLLECTION_NAMES = [
   'autostyle_horizontal_promo_cards',
   'autostyle_home_promo_cards',
-  'homePromoCards',
-  COLLECTIONS.promoCards || 'autostyle_promo_cards',
-  'autostyle_promo_cards',
-  'autostyle_promoCards',
-  'promoCards',
-  'autostyle_section_promo_cards',
-  'autostyle_between_promo_cards',
-  'sectionPromoCards',
-  'autostyle_home_cards',
-  'homeCards'
-].filter(Boolean))];
+  'homePromoCards'
+];
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
@@ -31,134 +23,126 @@ function mobileUrl(value){
     .replace(/^profile\.html(.*)$/i, 'mobile-profile.html$1');
 }
 
-function imageOf(card = {}){
-  return String(
-    card.image || card.imageUrl || card.imageURL || card.photo ||
-    card.photoUrl || card.photoURL || card.backgroundImage || card.bgImage || ''
-  ).trim();
-}
-
-function isVertical(card = {}){
-  const value = [
-    card.orientation, card.direction, card.format, card.layout, card.type,
-    card.cardType, card.viewType, card.bannerType, card.mode, card.displayMode
-  ].map(item => String(item || '').toLowerCase()).join(' ');
-
-  return /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar)([\s_-]|$)/i.test(value)
-    || card.vertical === true
-    || card.isVertical === true
-    || card.mobileVertical === true;
-}
-
-function linkOf(card = {}){
-  const type = String(card.linkType || '').toLowerCase();
-  const target = card.linkValue || card.value || card.target || '';
-  if ((type === 'category' || type === 'subcategory') && target) {
-    return `mobile-catalog.html?category=${encodeURIComponent(target)}`;
+function buildLink(card = {}){
+  const type = String(card.linkType || card.targetType || 'url').toLowerCase();
+  const value = card.linkValue || card.targetValue || card.link || card.url || '';
+  if ((type === 'category' || type === 'subcategory') && value) {
+    return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
   }
-  if (type === 'brand' && target) {
-    return `mobile-catalog.html?brand=${encodeURIComponent(target)}`;
+  if (type === 'brand' && value) {
+    return `mobile-catalog.html?brand=${encodeURIComponent(value)}`;
   }
-  return mobileUrl(card.link || card.linkURL || card.url || target);
+  return mobileUrl(value);
 }
 
-function cardMarkup(card){
-  const image = imageOf(card);
-  if (!image) return '';
+function normalizeCard(card = {}){
+  return {
+    ...card,
+    title: card.title || card.name || 'Промо',
+    text: card.text || card.description || '',
+    image: card.image || card.imageUrl || card.photoUrl || '',
+    link: buildLink(card),
+    order: Number(card.order ?? 999),
+    enabled: card.enabled !== false
+  };
+}
 
-  const title = escapeHtml(card.title || card.name || 'AutoStyle');
-  const text = escapeHtml(card.text || card.description || '');
-  const imageOnly = card.imageOnly === true
-    || card.mode === 'image'
-    || card.viewMode === 'image'
-    || card.displayMode === 'image'
-    || card.cardMode === 'imageOnly'
-    || (!card.text && !card.description);
+function cardMarkup(rawCard){
+  const card = normalizeCard(rawCard);
+  const title = escapeHtml(card.title);
+  const image = String(card.image || '').trim();
+  const imageOnly = card.displayMode === 'image' || card.imageOnly === true;
 
-  if (imageOnly) {
+  if (imageOnly && image) {
     const safeImage = image.replaceAll("'", '%27');
-    return `<a class="m-promo-card m-promo-image-only" href="${linkOf(card)}" style="background-image:url('${safeImage}')" aria-label="${title}"></a>`;
+    return `<a class="m-promo-card m-promo-image-only" href="${card.link}" style="background-image:url('${safeImage}')" aria-label="${title}"></a>`;
   }
 
-  return `<a class="m-promo-card" href="${linkOf(card)}"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="${title}"><span><b>${title}</b>${text ? `<small>${text}</small>` : ''}</span></a>`;
+  return `<a class="m-promo-card" href="${card.link}">
+    ${image ? `<img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="${title}">` : ''}
+    <span><b>${title}</b>${card.text ? `<small>${escapeHtml(card.text)}</small>` : ''}</span>
+  </a>`;
 }
 
 async function loadPromos(){
-  const groups = await Promise.all(COLLECTION_NAMES.map(async collectionName => {
+  const all = [];
+
+  for (const collectionName of COLLECTION_NAMES) {
     try {
-      const rows = await getCollectionCached(collectionName, { force:true, staleWhileRevalidate:false });
-      return (rows || []).map(row => ({ ...row, _collection:collectionName }));
+      const snapshot = await getDocs(collection(db, collectionName));
+      snapshot.forEach(documentSnapshot => {
+        all.push({ id:documentSnapshot.id, ...documentSnapshot.data() });
+      });
     } catch (error) {
-      console.warn('Не удалось загрузить промо', collectionName, error);
-      return [];
+      console.warn('Не удалось загрузить горизонтальные промо', collectionName, error);
     }
-  }));
+  }
 
   const seen = new Set();
-  return groups.flat()
-    .filter(card => card && card.enabled !== false && card.active !== false && card.visible !== false)
-    .filter(card => !isVertical(card) && imageOf(card))
+  return all
+    .map(normalizeCard)
+    .filter(card => card.enabled !== false)
     .filter(card => {
-      const key = String(card.id || card.key || card.slug || imageOf(card));
+      const key = String(card.id || card.key || card.slug || `${card.title}:${card.image}`);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .sort((a, b) => Number(a.order ?? 999) - Number(b.order ?? 999));
+    .sort((a, b) => a.order - b.order);
 }
 
 function startAutoplay(row){
   const cards = [...row.querySelectorAll('.m-promo-card')];
   if (cards.length < 2) return;
 
-  let activeIndex = 0;
+  let index = 0;
   let pausedUntil = 0;
 
-  const goTo = index => {
-    activeIndex = index;
-    row.scrollTo({ left:cards[index].offsetLeft, behavior:'smooth' });
+  const updateIndex = () => {
+    let nearest = 0;
+    let distance = Infinity;
+    cards.forEach((card, cardIndex) => {
+      const currentDistance = Math.abs(card.offsetLeft - row.scrollLeft);
+      if (currentDistance < distance) {
+        distance = currentDistance;
+        nearest = cardIndex;
+      }
+    });
+    index = nearest;
   };
 
   const pause = () => { pausedUntil = Date.now() + 9000; };
   row.addEventListener('touchstart', pause, { passive:true });
   row.addEventListener('pointerdown', pause, { passive:true });
-  row.addEventListener('scroll', () => {
-    let nearest = 0;
-    let distance = Infinity;
-    cards.forEach((card, index) => {
-      const currentDistance = Math.abs(card.offsetLeft - row.scrollLeft);
-      if (currentDistance < distance) {
-        distance = currentDistance;
-        nearest = index;
-      }
-    });
-    activeIndex = nearest;
-  }, { passive:true });
+  row.addEventListener('scroll', updateIndex, { passive:true });
 
   window.setInterval(() => {
     if (document.hidden || Date.now() < pausedUntil) return;
-    goTo((activeIndex + 1) % cards.length);
+    index = (index + 1) % cards.length;
+    row.scrollTo({ left:cards[index].offsetLeft, behavior:'smooth' });
   }, 5200);
 }
 
-async function renderStablePromo(){
+async function renderPromo(){
   const mount = document.getElementById('mStablePromoMount');
-  if (!mount || mount.dataset.rendered === '1') return;
+  if (!mount) return;
 
   const promos = await loadPromos();
-  if (!promos.length) {
+  const markup = promos.map(cardMarkup).filter(Boolean).join('');
+
+  if (!markup) {
     mount.hidden = true;
+    mount.replaceChildren();
     return;
   }
 
   mount.hidden = false;
-  mount.dataset.rendered = '1';
-  mount.innerHTML = `<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promos.map(cardMarkup).join('')}</div></section>`;
+  mount.innerHTML = `<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${markup}</div></section>`;
   startAutoplay(mount.querySelector('.m-promo-row'));
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderStablePromo, { once:true });
+  document.addEventListener('DOMContentLoaded', renderPromo, { once:true });
 } else {
-  renderStablePromo();
+  renderPromo();
 }
