@@ -75,7 +75,14 @@
     document.querySelectorAll('.fav-btn, .product-fav-btn, .related-fav').forEach(el => setIcon(el, 'heart'));
   }
 
+  function shareMobileNavGlassStyle(){
+    document.querySelectorAll('.m-bottom-inner').forEach(nav => {
+      nav.classList.add('m-profile-inner-nav');
+    });
+  }
+
   function init(){
+    shareMobileNavGlassStyle();
     fixHeader();
     fixAccountMenus();
     fixProductIcons();
