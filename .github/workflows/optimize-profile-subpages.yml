@@ -1,0 +1,65 @@
+name: Optimize profile subpages
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.autostyle-profile-speed'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove blocking duplicate profile requests
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('js/mobile-app.js')
+          text = path.read_text(encoding='utf-8')
+          old1 = '''  onAuthStateChanged(auth, async u=>{
+    if(u){
+      try{ await u.reload(); u = auth.currentUser || u; }catch(e){ console.warn('Не удалось обновить статус Email', e); }
+    }
+    userNow=u; const box=$('#mProfileBox');'''
+          new1 = '''  onAuthStateChanged(auth, async u=>{
+    userNow=u; const box=$('#mProfileBox');'''
+          old2 = '''    try{ await u.reload(); }catch(e){ console.warn('Не удалось обновить статус подтверждения почты', e); }
+    const current=await getUserDoc(u.uid);
+    let d=current.data || {};
+    const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
+    if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
+    const myOrders = await loadMobileOrders(u).catch(()=>[]);'''
+          new2 = '''    const profileCacheKey = `autostyle_mobile_profile_${u.uid}`;
+    let cachedProfile = {};
+    try { cachedProfile = JSON.parse(sessionStorage.getItem(profileCacheKey) || '{}'); } catch(e) {}
+    const current=await getUserDoc(u.uid);
+    let d={ ...cachedProfile, ...(current.data || {}) };
+    try { sessionStorage.setItem(profileCacheKey, JSON.stringify(d)); } catch(e) {}
+    if(page === 'discount-card'){
+      const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
+      if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
+    }
+    const myOrders = page === 'orders' ? await loadMobileOrders(u).catch(()=>[]) : [];'''
+          if old1 not in text:
+            raise SystemExit('Auth reload block not found')
+          if old2 not in text:
+            raise SystemExit('Profile requests block not found')
+          text = text.replace(old1, new1, 1).replace(old2, new2, 1)
+          path.write_text(text, encoding='utf-8')
+      - name: Commit optimization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/mobile-app.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Speed up mobile profile subpages"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
