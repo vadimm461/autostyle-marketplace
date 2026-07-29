@@ -1,8 +1,6 @@
 (function(){
   'use strict';
 
-  // На мобильных страницах mobile-redirect.js не подключается, поэтому Service Worker
-  // регистрируем здесь. updateViaCache:none заставляет Safari проверять свежий worker.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){
       navigator.serviceWorker.register('./service-worker.js', { scope:'./', updateViaCache:'none' })
@@ -11,16 +9,16 @@
     }, { once:true });
   }
 
-  // Общий стиль нижнего мобильного меню без жидкой капли.
+  // Единственный общий источник оформления нижнего меню для всех мобильных страниц.
   if (!document.querySelector('script[data-as-liquid-nav]')) {
-    const liquidNav = document.createElement('script');
-    liquidNav.src = './js/mobile-liquid-nav.js?v=20260729-4';
-    liquidNav.defer = true;
-    liquidNav.dataset.asLiquidNav = '1';
-    document.head.appendChild(liquidNav);
+    const bottomNav = document.createElement('script');
+    bottomNav.src = './js/mobile-liquid-nav.js?v=20260729-single-nav';
+    bottomNav.defer = true;
+    bottomNav.dataset.asLiquidNav = '1';
+    document.head.appendChild(bottomNav);
   }
 
-  const VERSION = '20260729-mobile-cache-v5';
+  const VERSION = '20260729-mobile-cache-single-nav';
   const MAX_AGE = 1000 * 60;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
