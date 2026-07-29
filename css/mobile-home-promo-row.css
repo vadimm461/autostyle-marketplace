@@ -1,0 +1,62 @@
+/* Mobile home: one horizontal promo card per viewport */
+#mHomePromoMount:empty{display:none}
+#mHomePromoMount .m-horizontal-promos{margin:18px 0 24px}
+#mHomePromoMount .m-section-head{margin-bottom:10px}
+#mHomePromoMount .m-promo-row{
+  display:flex!important;
+  gap:12px!important;
+  width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x mandatory!important;
+  scroll-behavior:smooth!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-width:none!important;
+  padding:2px 0 10px!important;
+}
+#mHomePromoMount .m-promo-row::-webkit-scrollbar{display:none!important}
+#mHomePromoMount .m-promo-card{
+  flex:0 0 100%!important;
+  width:100%!important;
+  min-width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  aspect-ratio:16/7!important;
+  scroll-snap-align:start!important;
+  scroll-snap-stop:always!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  position:relative!important;
+  box-shadow:0 12px 32px rgba(15,23,42,.12)!important;
+  background:#10141b!important;
+}
+#mHomePromoMount .m-promo-card>img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  display:block!important;
+}
+#mHomePromoMount .m-promo-image-only{
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+#mHomePromoMount .m-promo-card>span{
+  position:absolute!important;
+  left:18px!important;
+  right:18px!important;
+  bottom:16px!important;
+  z-index:2!important;
+  color:#fff!important;
+  text-shadow:0 2px 12px rgba(0,0,0,.65)!important;
+}
+#mHomePromoMount .m-promo-card>span b{display:block;font-size:20px;line-height:1.05;font-weight:950}
+#mHomePromoMount .m-promo-card>span small{display:block;margin-top:5px;font-size:12px;font-weight:750}
+#mHomePromoMount .m-promo-card:not(.m-promo-image-only)::after{
+  content:"";
+  position:absolute;
+  inset:38% 0 0;
+  background:linear-gradient(transparent,rgba(0,0,0,.72));
+  pointer-events:none;
+}
