@@ -1949,3 +1949,37 @@ html.m-app-visible body{
 .m-bottom-nav{
   visibility:visible;
 }
+
+/* Product page: cart and favorite actions stay on one level in every state. */
+body.mobile-page[data-page="product"] .m-buy-actions{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+body.mobile-page[data-page="product"] .m-buy-actions .m-action{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  gap:8px !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:56px !important;
+  min-height:56px !important;
+  max-height:56px !important;
+  margin:0 !important;
+  padding:0 8px !important;
+  border-radius:16px !important;
+  font-size:clamp(13px,3.6vw,15px) !important;
+  line-height:1 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  vertical-align:middle !important;
+}
+body.mobile-page[data-page="product"] .m-buy-actions .m-action .as-file-icon{
+  flex:0 0 20px !important;
+  margin:0 !important;
+}
