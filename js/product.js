@@ -3,10 +3,11 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/f
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getProducts } from './data-cache.js';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
+import { getFavorites, subscribeFavorites, toggleFavorite } from './user-favorites-store.js?v=20260729-profile-favorites';
 
 const $ = s => document.querySelector(s);
 let cart = [];
-let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+let favs = getFavorites();
 
 function clearCartAndFavorites(){
   // Не очищаем корзину и избранное при обычной загрузке страницы или выходе.
@@ -37,13 +38,25 @@ function discount(p){
 function escapeHtml(value){
   return String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 }
+function syncFavoriteButtons(){
+  document.querySelectorAll('[data-fav]').forEach(button => {
+    const active = favs.includes(String(button.dataset.fav || ''));
+    button.classList.toggle('active', active);
+    if (button.classList.contains('related-fav')) button.textContent = active ? '♥' : '♡';
+    if (button.id === 'favProduct') button.textContent = active ? '♥ В избранном' : '♡ В избранное';
+  });
+}
+subscribeFavorites(ids => {
+  favs = ids;
+  syncFavoriteButtons();
+});
 function productHref(p){ return `product.html?id=${encodeURIComponent(p.id)}`; }
 function relatedCard(p){
   const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p);
-  const favActive = favs.includes(p.id);
+  const favActive = favs.includes(String(p.id));
   return `
     <article class="related-card product-card" data-id="${escapeHtml(p.id)}">
-      <button class="fav-btn related-fav ${favActive ? 'active' : ''}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
+      <button class="fav-btn related-fav ${favActive ? 'active' : ''}" data-fav="${escapeHtml(p.id)}" type="button" aria-label="Избранное">${favActive ? '♥' : '♡'}</button>
       <a class="product-card-link" href="${productHref(p)}">
         <div class="product-img related-img">
           ${d ? `<span class="discount-badge">-${d}%</span>` : ''}
@@ -73,13 +86,13 @@ function setupRelatedActions(){
   document.querySelectorAll('.related-fav').forEach(btn => {
     btn.onclick = async (e) => {
       e.preventDefault(); e.stopPropagation();
-      const card = e.currentTarget.closest('.related-card');
-      const id = card?.dataset.id;
+      const id = e.currentTarget.dataset.fav;
       if (!id) return;
-      favs = favs.includes(id) ? favs.filter(x => x !== id) : [...favs, id];
-      saveFav();
-      e.currentTarget.classList.toggle('active', favs.includes(id));
-      e.currentTarget.textContent = favs.includes(id) ? '♥' : '♡';
+      try {
+        await toggleFavorite(id);
+      } catch (err) {
+        alert(err?.message || 'Не удалось обновить избранное');
+      }
     };
   });
 }
@@ -120,7 +133,6 @@ function saveCart(){
   cart = getCurrentUserCart();
   updateCartBadges(cart);
 }
-function saveFav(){ localStorage.setItem('favorites', JSON.stringify(favs)); }
 function saveViewed(id){
   let v = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
   v = v.filter(x => x !== id);
@@ -159,7 +171,7 @@ async function loadProduct(){
     const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p), inst = isInstallment(p);
     saveViewed(p.id);
     document.title = `${name} — AutoStyle`;
-    const favActive = favs.includes(p.id);
+    const favActive = favs.includes(String(p.id));
     box.innerHTML = `
       <div class="product-gallery product-card-clean">
         <div class="main-photo product-main-photo">
@@ -181,7 +193,7 @@ async function loadProduct(){
           </div>
           <div class="product-actions">
             <button id="addToCart" class="buy-btn product-action-btn${s <= 0 ? ' is-unavailable' : ''}" ${s <= 0 ? 'disabled aria-disabled="true"' : ''}>В корзину</button>
-            <button id="favProduct" class="quick-btn product-fav-btn ${favActive ? 'active' : ''}" type="button">${favActive ? '♥ В избранном' : '♡ В избранное'}</button>
+            <button id="favProduct" class="quick-btn product-fav-btn ${favActive ? 'active' : ''}" data-fav="${escapeHtml(p.id)}" type="button">${favActive ? '♥ В избранном' : '♡ В избранное'}</button>
           </div>
         </div>
         <section class="product-block description-collapsed" id="productDescriptionBlock">
@@ -211,11 +223,12 @@ async function loadProduct(){
       $('#addToCart').textContent = '✓ Добавлено';
       setTimeout(() => $('#addToCart').textContent = 'В корзину', 1200);
     });
-    $('#favProduct') && ($('#favProduct').onclick = () => {
-      favs = favs.includes(p.id) ? favs.filter(x => x !== p.id) : [...favs, p.id];
-      saveFav();
-      $('#favProduct').classList.toggle('active', favs.includes(p.id));
-      $('#favProduct').textContent = favs.includes(p.id) ? '♥ В избранном' : '♡ В избранное';
+    $('#favProduct') && ($('#favProduct').onclick = async () => {
+      try {
+        await toggleFavorite(p.id);
+      } catch (err) {
+        alert(err?.message || 'Не удалось обновить избранное');
+      }
     });
     renderRelated(p);
   } catch (err) {
@@ -227,7 +240,6 @@ onAuthStateChanged(auth, async user => {
   if (!user) { clearCartAndFavorites(); }
   await waitUserCartReady();
   cart = getCurrentUserCart();
-  favs = JSON.parse(localStorage.getItem('favorites') || '[]');
   saveCart();
   loadProduct().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 });
