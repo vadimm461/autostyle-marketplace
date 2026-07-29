@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260729-global-nav-profile-style';
+  const VERSION = '20260729-global-nav-single-icons';
   const MAX_AGE = 1000 * 60 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
@@ -21,99 +21,12 @@
   const contentSelector = '.m-content';
 
   const NAV_ICONS = {
-    home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5"/><path d="M9.5 21v-6h5v6"/></svg>',
-    catalog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
-    fav:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.5 5.5 0 0 0-7.8 0L12 5.9l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.3 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
-    cart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6"/><circle cx="9.5" cy="20" r="1.2"/><circle cx="17.5" cy="20" r="1.2"/></svg>',
-    profile:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5.5 21v-2.2a6.5 6.5 0 0 1 13 0V21"/></svg>'
+    home:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5"/><path d="M9.5 21v-6h5v6"/></svg>',
+    catalog:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
+    fav:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.5 5.5 0 0 0-7.8 0L12 5.9l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.3 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+    cart:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6"/><circle cx="9.5" cy="20" r="1.2"/><circle cx="17.5" cy="20" r="1.2"/></svg>',
+    profile:'<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5.5 21v-2.2a6.5 6.5 0 0 1 13 0V21"/></svg>'
   };
-
-  function installProfileStyleForGlobalNav(){
-    if(document.getElementById('asGlobalNavProfileStyle')) return;
-    const style = document.createElement('style');
-    style.id = 'asGlobalNavProfileStyle';
-    style.textContent = `
-      body.mobile-page .m-bottom-inner{
-        display:grid!important;
-        grid-template-columns:repeat(5,minmax(0,1fr))!important;
-        gap:4px!important;
-        padding:6px!important;
-        border:1px solid rgba(255,255,255,.16)!important;
-        border-radius:28px!important;
-        background:linear-gradient(145deg,rgba(16,20,27,.82),rgba(16,20,27,.68))!important;
-        -webkit-backdrop-filter:blur(28px) saturate(190%)!important;
-        backdrop-filter:blur(28px) saturate(190%)!important;
-        overflow:hidden!important;
-      }
-      body.mobile-page .m-bottom-inner a{
-        position:relative!important;
-        z-index:1!important;
-        min-width:0!important;
-        min-height:64px!important;
-        height:64px!important;
-        padding:8px 4px!important;
-        border:1px solid transparent!important;
-        border-radius:22px!important;
-        background:transparent!important;
-        color:#e8edf5!important;
-        display:flex!important;
-        flex-direction:column!important;
-        align-items:center!important;
-        justify-content:center!important;
-        gap:5px!important;
-        text-align:center!important;
-        text-shadow:0 1px 2px rgba(0,0,0,.35)!important;
-      }
-      body.mobile-page .m-bottom-inner a.active{
-        border-color:rgba(40,225,26,.42)!important;
-        background:linear-gradient(145deg,rgba(40,225,26,.24),rgba(40,225,26,.12))!important;
-        color:#28e11a!important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.78),0 8px 20px rgba(15,23,42,.10)!important;
-      }
-      body.mobile-page .m-bottom-inner .as-nav-icon{
-        width:29px!important;
-        height:29px!important;
-        flex:0 0 29px!important;
-        border-radius:10px!important;
-        display:grid!important;
-        place-items:center!important;
-        background:transparent!important;
-        line-height:0!important;
-      }
-      body.mobile-page .m-bottom-inner .as-nav-icon svg{
-        width:18px!important;
-        height:18px!important;
-        display:block!important;
-      }
-      body.mobile-page .m-bottom-inner a>span:not(.as-nav-icon){
-        display:block!important;
-        min-width:0!important;
-        font-size:10px!important;
-        font-weight:900!important;
-        line-height:1.05!important;
-        white-space:nowrap!important;
-      }
-      body.mobile-page .m-bottom-inner a>span:not(.as-nav-icon)>b{
-        position:absolute!important;
-        top:3px!important;
-        left:calc(50% + 5px)!important;
-        min-width:19px!important;
-        height:19px!important;
-        margin:0!important;
-        padding:0 4px!important;
-        display:grid!important;
-        place-items:center!important;
-        border-radius:999px!important;
-        font-size:11px!important;
-        line-height:19px!important;
-      }
-      @media(max-width:380px){
-        body.mobile-page .m-bottom-inner a{min-height:60px!important;height:60px!important;padding:6px 2px!important;}
-        body.mobile-page .m-bottom-inner a>span:not(.as-nav-icon){font-size:9px!important;}
-      }
-    `;
-    document.head.appendChild(style);
-  }
 
   function now(){ return Date.now(); }
   function canCache(){ return !skip.has(page) && !!document.querySelector(contentSelector); }
@@ -180,36 +93,38 @@
     const nav = document.querySelector('.m-bottom-inner');
     if(!nav) return;
     const items = [
-      ['home','Главная'],
-      ['catalog','Каталог'],
-      ['fav','Избранное'],
-      ['cart','Корзина'],
-      ['profile','Профиль']
+      { key:'home', label:'Главная' },
+      { key:'catalog', label:'Каталог' },
+      { key:'fav', label:'Избранное', counter:'mFavCount' },
+      { key:'cart', label:'Корзина', counter:'mCartCount' },
+      { key:'profile', label:'Профиль' }
     ];
-    const links = nav.querySelectorAll(':scope > a');
-    links.forEach((link,index)=>{
+    nav.querySelectorAll(':scope > a').forEach((link,index)=>{
       const item = items[index];
       if(!item) return;
-      const key = item[0];
-      if(link.dataset.asUnifiedIcon === key) return;
-      const label = link.querySelector('span');
-      Array.from(link.childNodes).forEach(node=>{
-        if(node.nodeType === Node.TEXT_NODE) node.remove();
-        if(node.nodeType === Node.ELEMENT_NODE && node.classList?.contains('as-nav-icon')) node.remove();
-      });
-      const icon = document.createElement('span');
-      icon.className = 'as-nav-icon';
-      icon.setAttribute('aria-hidden','true');
-      icon.innerHTML = NAV_ICONS[key];
-      link.insertBefore(icon, label || link.firstChild);
-      link.dataset.asUnifiedIcon = key;
+      const oldCounter = item.counter ? link.querySelector('#' + item.counter)?.textContent || '0' : '';
+      link.innerHTML = `<span class="as-nav-icon" aria-hidden="true">${NAV_ICONS[item.key]}</span><span class="as-nav-label">${item.label}${item.counter ? ` <b id="${item.counter}">${oldCounter}</b>` : ''}</span>`;
+      link.dataset.asUnifiedIcon = item.key;
+      link.style.cssText = 'position:relative!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;height:64px!important;border-radius:22px!important;';
+      const icon = link.querySelector('.as-nav-icon');
+      const label = link.querySelector('.as-nav-label');
+      if(icon) icon.style.cssText = 'display:grid!important;place-items:center!important;width:29px!important;height:29px!important;line-height:0!important;flex:0 0 29px!important;';
+      if(label) label.style.cssText = 'display:flex!important;align-items:center!important;justify-content:center!important;gap:3px!important;font-size:10px!important;font-weight:900!important;line-height:1!important;white-space:nowrap!important;';
     });
   }
   function watchBottomNavigation(){
-    unifyBottomNavigation();
     const nav = document.querySelector('.m-bottom-inner');
     if(!nav) return;
-    new MutationObserver(unifyBottomNavigation).observe(nav,{childList:true,subtree:false});
+    unifyBottomNavigation();
+    let busy = false;
+    new MutationObserver(()=>{
+      if(busy) return;
+      busy = true;
+      requestAnimationFrame(()=>{
+        unifyBottomNavigation();
+        busy = false;
+      });
+    }).observe(nav,{childList:true,subtree:false});
   }
   function debounce(fn, wait){ let t=0; return ()=>{ clearTimeout(t); t=setTimeout(fn, wait); }; }
   const saveSoon = debounce(write, 300);
@@ -222,7 +137,6 @@
     clearCurrent(){ storage.removeItem(keyBase); storage.removeItem(scrollKey); },
     key: keyBase
   };
-  installProfileStyleForGlobalNav();
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restore, { once:true });
   else restore();
   window.addEventListener('autostyle-mobile-rendered', saveSoon);
