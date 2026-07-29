@@ -1,4 +1,4 @@
-const VERSION = 'autostyle-v1-20260729-nav-clean';
+const VERSION = 'autostyle-v1-20260729-single-bottom-nav';
 const STATIC_CACHE = `${VERSION}-static`;
 const IMAGE_CACHE = `${VERSION}-images`;
 const PAGE_CACHE = `${VERSION}-pages`;
