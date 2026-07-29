@@ -75,14 +75,16 @@
     document.querySelectorAll('.fav-btn, .product-fav-btn, .related-fav').forEach(el => setIcon(el, 'heart'));
   }
 
-  function shareMobileNavGlassStyle(){
+  function applyMobileNavShadow(){
+    const shadow = '0 14px 38px rgba(15,23,42,.16), inset 0 1px 0 rgba(255,255,255,.70), inset 0 -1px 0 rgba(255,255,255,.18)';
     document.querySelectorAll('.m-bottom-inner').forEach(nav => {
-      nav.classList.add('m-profile-inner-nav');
+      nav.classList.remove('m-profile-inner-nav');
+      nav.style.setProperty('box-shadow', shadow, 'important');
     });
   }
 
   function init(){
-    shareMobileNavGlassStyle();
+    applyMobileNavShadow();
     fixHeader();
     fixAccountMenus();
     fixProductIcons();
