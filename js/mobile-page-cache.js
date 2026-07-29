@@ -1,7 +1,18 @@
 (function(){
   'use strict';
-  const VERSION = '20260702-mobile-cache-v1';
-  const MAX_AGE = 1000 * 60; // 1 минута: только минимальный кеш для быстрых переходов
+
+  // На мобильных страницах mobile-redirect.js не подключается, поэтому Service Worker
+  // регистрируем здесь. updateViaCache:none заставляет Safari проверять свежий worker.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./service-worker.js', { scope:'./', updateViaCache:'none' })
+        .then(function(registration){ return registration.update().catch(function(){}); })
+        .catch(function(error){ console.warn('AutoStyle mobile cache worker:', error); });
+    }, { once:true });
+  }
+
+  const VERSION = '20260729-mobile-cache-v2';
+  const MAX_AGE = 1000 * 60;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
   const scrollKey = keyBase + ':scroll';
@@ -22,7 +33,6 @@
       localStorage.setItem(keyBase, JSON.stringify({ t: now(), page, title: document.title, html }));
       localStorage.setItem(scrollKey, String(window.scrollY || 0));
     }catch(e){
-      // localStorage full — clear old mobile page snapshots only
       Object.keys(localStorage).filter(k=>k.startsWith('as_mobile_page_cache:')).slice(0,20).forEach(k=>localStorage.removeItem(k));
     }
   }
