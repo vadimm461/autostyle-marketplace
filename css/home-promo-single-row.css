@@ -1,0 +1,64 @@
+/* AutoStyle desktop home promo slider: one wide card per viewport, single horizontal row. */
+#banners.home-mini-promos,
+#banners.banner-row.home-mini-promos{
+  position:relative;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:18px!important;
+  width:100%;
+  margin:22px 0 30px!important;
+  padding:0 0 8px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+  overscroll-behavior-inline:contain;
+}
+#banners.home-mini-promos::-webkit-scrollbar{display:none}
+#banners.home-mini-promos .home-mini-promo-card{
+  position:relative;
+  flex:0 0 100%!important;
+  width:100%!important;
+  min-width:100%!important;
+  max-width:100%!important;
+  min-height:220px!important;
+  aspect-ratio:16/5;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  border-radius:26px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+#banners.home-mini-promos .home-mini-promo-image-only{
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+#banners.home-mini-promos .home-mini-promo-img{
+  width:42%!important;
+  min-width:42%!important;
+  height:100%!important;
+}
+#banners.home-mini-promos .home-mini-promo-img img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+#banners.home-mini-promos .home-mini-promo-content{
+  padding:30px 34px!important;
+}
+#banners.home-mini-promos .home-mini-promo-content b{
+  font-size:clamp(24px,2.4vw,38px)!important;
+  line-height:1.05!important;
+}
+#banners.home-mini-promos .home-mini-promo-content small{
+  margin-top:10px!important;
+  font-size:15px!important;
+  line-height:1.45!important;
+}
+@media(max-width:900px){
+  #banners.home-mini-promos .home-mini-promo-card{min-height:190px!important;aspect-ratio:16/6}
+  #banners.home-mini-promos .home-mini-promo-content{padding:24px!important}
+}
