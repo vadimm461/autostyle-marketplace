@@ -5,8 +5,8 @@
   var loaderReleased=false;
   var loaderShownAt=performance.now();
   var isWarm=sessionStorage.getItem('as_mobile_splash_seen')==='1';
-  var MIN_SPLASH=isWarm?520:1150;
-  var MAX_SPLASH=2600;
+  var MIN_SPLASH=isWarm?0:180;
+  var MAX_SPLASH=1400;
 
   function markImage(img){
     if(!img) return;
@@ -94,9 +94,9 @@
         box-shadow:inset 0 0 0 1px rgba(40,225,26,.10)!important\
       }\
       body.mobile-page.as-page-leaving .m-shell{opacity:.45;transform:translateX(-8px)}\
-      body.mobile-page.as-page-enter .m-shell{animation:asMobilePageIn .22s ease both}\
-      body.mobile-page .m-shell{transition:opacity .18s ease,transform .18s ease}\
-      @keyframes asMobilePageIn{from{opacity:.55;transform:translateX(8px)}to{opacity:1;transform:none}}\
+      body.mobile-page.as-page-enter .m-shell{animation:asMobilePageIn .18s ease both}\
+      body.mobile-page .m-shell{transition:opacity .14s ease,transform .14s ease}\
+      @keyframes asMobilePageIn{from{opacity:.7;transform:translateX(6px)}to{opacity:1;transform:none}}\
       @media (prefers-reduced-motion:reduce){body.mobile-page .m-shell{transition:none!important;animation:none!important}}\
     ';
     document.head.appendChild(style);
@@ -104,7 +104,7 @@
 
   function setupAppLikeNavigation(){
     document.body.classList.add('as-page-enter');
-    window.setTimeout(function(){document.body.classList.remove('as-page-enter');},260);
+    window.setTimeout(function(){document.body.classList.remove('as-page-enter');},220);
 
     document.addEventListener('click',function(event){
       var anchor=event.target.closest&&event.target.closest('.m-bottom-inner a[href]');
@@ -122,7 +122,7 @@
       event.preventDefault();
       anchor.classList.add('active');
       document.body.classList.add('as-page-leaving');
-      window.setTimeout(function(){location.href=targetUrl.href;},135);
+      window.setTimeout(function(){location.href=targetUrl.href;},75);
     },true);
 
     window.addEventListener('pageshow',function(){
@@ -139,7 +139,7 @@
       var loader=document.getElementById('mLoader');
       if(loader){
         loader.classList.add('as-loader-hidden');
-        window.setTimeout(function(){if(loader&&loader.parentNode) loader.parentNode.removeChild(loader);},380);
+        window.setTimeout(function(){if(loader&&loader.parentNode) loader.parentNode.removeChild(loader);},220);
       }
       try{sessionStorage.setItem('as_mobile_splash_seen','1');}catch(e){}
       document.documentElement.classList.add('m-app-visible');
@@ -161,6 +161,14 @@
     document.head.appendChild(link);
   }
 
+  function warmMainPages(){
+    var run=function(){
+      ['mobile-catalog.html','mobile-favorites.html','mobile-cart.html','mobile-profile.html'].forEach(prefetch);
+    };
+    if('requestIdleCallback' in window) requestIdleCallback(run,{timeout:1600});
+    else setTimeout(run,700);
+  }
+
   injectMobileNavStyles();
 
   document.addEventListener('DOMContentLoaded',function(){
@@ -180,6 +188,7 @@
     document.addEventListener('touchstart',function(event){var anchor=event.target.closest&&event.target.closest('a[href]');if(anchor) prefetch(anchor.getAttribute('href'));},{passive:true,capture:true});
     document.addEventListener('mouseover',function(event){var anchor=event.target.closest&&event.target.closest('a[href]');if(anchor) prefetch(anchor.getAttribute('href'));},{passive:true,capture:true});
     readyEnough();
+    warmMainPages();
   });
 
   window.addEventListener('load',readyEnough,{once:true});
