@@ -2,7 +2,14 @@
   const MAP = {
     '☰':'menu','≡':'menu','👤':'user','🔔':'bell','♡':'heart','♥':'heart-filled','❤':'heart-filled','🛒':'cart','🔎':'search','🔍':'search','⌂':'home','×':'close','✕':'close','📦':'package','🗂️':'grid','🗂':'grid','🖼️':'image','🖼':'image','🏠':'home','🎁':'gift','💳':'card','📁':'grid','📄':'file','⚙️':'settings','⚙':'settings','🌐':'globe'
   };
-  const NAV = [
+  const NAV_BY_ROUTE = {
+    'mobile.html':['home','Главная'],
+    'mobile-catalog.html':['menu','Каталог'],
+    'mobile-favorites.html':['heart','Избранное'],
+    'mobile-cart.html':['cart','Корзина'],
+    'mobile-profile.html':['user','Профиль']
+  };
+  const NAV_FALLBACK = [
     ['home','Главная'],
     ['menu','Каталог'],
     ['heart','Избранное'],
@@ -18,16 +25,33 @@
     return s;
   }
 
+  function routeFromHref(href){
+    try {
+      return new URL(href || '', location.href).pathname.split('/').pop() || '';
+    } catch (_) {
+      return String(href || '').split('?')[0].split('#')[0].split('/').pop();
+    }
+  }
+
   function normalizeBottomNav(){
     const nav=document.querySelector('.m-bottom-inner');
     if(!nav) return;
+    const currentRoute=location.pathname.split('/').pop() || 'mobile.html';
     nav.querySelectorAll(':scope > a').forEach((a,index)=>{
-      const item=NAV[index];
+      const route=routeFromHref(a.getAttribute('href'));
+      const item=NAV_BY_ROUTE[route] || NAV_FALLBACK[index];
       if(!item) return;
-      const fav=index===2 ? (a.querySelector('#mFavCount')?.textContent || '0') : '';
-      const cart=index===3 ? (a.querySelector('#mCartCount')?.textContent || '0') : '';
-      const counter=index===2 ? `<b id="mFavCount">${fav}</b>` : index===3 ? `<b id="mCartCount">${cart}</b>` : '';
+      const fav=route==='mobile-favorites.html' ? (a.querySelector('#mFavCount')?.textContent || '0') : '';
+      const cart=route==='mobile-cart.html' ? (a.querySelector('#mCartCount')?.textContent || '0') : '';
+      const counter=route==='mobile-favorites.html' ? `<b id="mFavCount">${fav}</b>` : route==='mobile-cart.html' ? `<b id="mCartCount">${cart}</b>` : '';
       a.innerHTML=`<span class="as-nav-icon as-file-icon as-icon-${item[0]}" aria-hidden="true"></span><span>${item[1]}${counter}</span>`;
+      const isActive=route===currentRoute;
+      a.classList.toggle('active',isActive);
+      if(isActive) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+      if(route==='mobile-profile.html') {
+        a.dataset.navItem='profile';
+        a.setAttribute('aria-label','Профиль');
+      }
       a.dataset.asBottomNavReady='1';
     });
   }
