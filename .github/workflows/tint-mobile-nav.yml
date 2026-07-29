@@ -1,0 +1,62 @@
+name: Tint mobile navigation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.autostyle-nav-tint'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tint shared mobile navigation styles
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('css/mobile-market.css')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+            'background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.10))!important;': 'background:linear-gradient(145deg,rgba(16,20,27,.82),rgba(16,20,27,.68))!important;',
+            'border:1px solid rgba(255,255,255,.46)!important;': 'border:1px solid rgba(255,255,255,.16)!important;',
+            'background:linear-gradient(115deg,rgba(255,255,255,.30),transparent 34%,rgba(255,255,255,.10) 68%,transparent)!important;': 'background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 34%,rgba(255,255,255,.04) 68%,transparent)!important;',
+            'color:#3f4856!important;': 'color:#e8edf5!important;',
+            'text-shadow:0 1px 0 rgba(255,255,255,.45)!important;': 'text-shadow:0 1px 2px rgba(0,0,0,.35)!important;',
+            'border-color:rgba(255,255,255,.52)!important;': 'border-color:rgba(40,225,26,.42)!important;',
+            'background:linear-gradient(145deg,rgba(255,255,255,.48),rgba(40,225,26,.18))!important;': 'background:linear-gradient(145deg,rgba(40,225,26,.24),rgba(40,225,26,.12))!important;',
+            'color:#075d10!important;': 'color:#28e11a!important;',
+            'background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.10));': 'background:linear-gradient(145deg,rgba(16,20,27,.82),rgba(16,20,27,.68));',
+            'border:1px solid rgba(255,255,255,.46);': 'border:1px solid rgba(255,255,255,.16);',
+            'background:linear-gradient(115deg,rgba(255,255,255,.30),transparent 34%,rgba(255,255,255,.10) 68%,transparent);': 'background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 34%,rgba(255,255,255,.04) 68%,transparent);',
+            'color:#3f4856;': 'color:#e8edf5;',
+            'text-shadow:0 1px 0 rgba(255,255,255,.45);': 'text-shadow:0 1px 2px rgba(0,0,0,.35);',
+            'border-color:rgba(255,255,255,.52);': 'border-color:rgba(40,225,26,.42);',
+            'background:linear-gradient(145deg,rgba(255,255,255,.48),rgba(40,225,26,.18));': 'background:linear-gradient(145deg,rgba(40,225,26,.24),rgba(40,225,26,.12));',
+            'color:#075d10;': 'color:#28e11a;'
+          }
+          changed = 0
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count:
+                  text = text.replace(old, new)
+                  changed += count
+          if not changed:
+              raise SystemExit('Navigation tint patterns not found')
+          path.write_text(text, encoding='utf-8')
+      - name: Commit source change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add css/mobile-market.css
+          git diff --cached --quiet && exit 0
+          git commit -m "Tint mobile navigation glass dark"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
