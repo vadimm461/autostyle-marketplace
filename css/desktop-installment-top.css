@@ -1,0 +1,12 @@
+/* AutoStyle desktop: installment badge beside discount badge */
+@media (min-width: 769px){
+  .product-img,.catalog-card-photo,.favorite-photo,.favorite-card-photo,.related-photo,.similar-photo,.home-photo{position:relative!important;}
+  .as-desktop-top-badges{position:absolute;left:12px;top:12px;z-index:5;display:flex;align-items:center;gap:7px;max-width:calc(100% - 66px);pointer-events:none;}
+  .as-desktop-top-badges .discount-badge,.as-desktop-top-badges .catalog-discount-badge,.as-desktop-top-badges .sale-badge{position:static!important;inset:auto!important;margin:0!important;flex:0 0 auto;}
+  .as-desktop-installment-top{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:28px!important;max-width:150px!important;padding:6px 10px!important;margin:0!important;border-radius:999px!important;background:#dff8dc!important;color:#087414!important;font-size:12px!important;line-height:1!important;font-weight:950!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;box-shadow:0 5px 14px rgba(10,116,20,.12)!important;}
+  .product-badges:empty,.product-badges .installment-badge:empty{display:none!important;}
+  .product-card-price-area>.product-badges,.catalog-card .product-badges{min-height:0!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+  .product-card-price-area{display:flex!important;flex-direction:column!important;}
+  .price-row-card{order:1!important;}
+  @media(max-width:1100px){.as-desktop-installment-top{max-width:125px!important;font-size:11px!important;padding:6px 8px!important}.as-desktop-top-badges{gap:5px;}}
+}
