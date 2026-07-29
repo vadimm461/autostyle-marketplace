@@ -1,12 +1,19 @@
 import { db } from './firebase.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// Те же коллекции, которые использует десктопная главная.
-const COLLECTION_NAMES = [
+// Все реально используемые коллекции промо. Блок отрисовывается в отдельном
+// постоянном контейнере и не зависит от перерисовки товарных секций.
+const COLLECTION_NAMES = [...new Set([
   'autostyle_horizontal_promo_cards',
   'autostyle_home_promo_cards',
-  'homePromoCards'
-];
+  'homePromoCards',
+  'autostyle_promo_cards',
+  'autostyle_promoCards',
+  'promoCards',
+  'autostyle_section_promo_cards',
+  'autostyle_between_promo_cards',
+  'sectionPromoCards'
+])];
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
@@ -25,7 +32,7 @@ function mobileUrl(value){
 
 function buildLink(card = {}){
   const type = String(card.linkType || card.targetType || 'url').toLowerCase();
-  const value = card.linkValue || card.targetValue || card.link || card.url || '';
+  const value = card.linkValue || card.targetValue || card.link || card.linkURL || card.url || '';
   if ((type === 'category' || type === 'subcategory') && value) {
     return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
   }
@@ -35,15 +42,27 @@ function buildLink(card = {}){
   return mobileUrl(value);
 }
 
+function isExplicitVertical(card = {}){
+  const descriptor = [
+    card.orientation, card.direction, card.format, card.layout, card.type,
+    card.cardType, card.viewType, card.bannerType, card.mode, card.displayMode
+  ].map(value => String(value || '').toLowerCase()).join(' ');
+
+  return card.vertical === true
+    || card.isVertical === true
+    || card.mobileVertical === true
+    || /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar)([\s_-]|$)/i.test(descriptor);
+}
+
 function normalizeCard(card = {}){
   return {
     ...card,
     title: card.title || card.name || 'Промо',
     text: card.text || card.description || '',
-    image: card.image || card.imageUrl || card.photoUrl || '',
+    image: card.image || card.imageUrl || card.imageURL || card.photo || card.photoUrl || card.photoURL || '',
     link: buildLink(card),
     order: Number(card.order ?? 999),
-    enabled: card.enabled !== false
+    enabled: card.enabled !== false && card.active !== false && card.visible !== false
   };
 }
 
@@ -51,15 +70,20 @@ function cardMarkup(rawCard){
   const card = normalizeCard(rawCard);
   const title = escapeHtml(card.title);
   const image = String(card.image || '').trim();
-  const imageOnly = card.displayMode === 'image' || card.imageOnly === true;
+  if (!image) return '';
 
-  if (imageOnly && image) {
+  const imageOnly = card.displayMode === 'image'
+    || card.imageOnly === true
+    || card.mode === 'image'
+    || (!card.text && !card.description);
+
+  if (imageOnly) {
     const safeImage = image.replaceAll("'", '%27');
     return `<a class="m-promo-card m-promo-image-only" href="${card.link}" style="background-image:url('${safeImage}')" aria-label="${title}"></a>`;
   }
 
   return `<a class="m-promo-card" href="${card.link}">
-    ${image ? `<img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="${title}">` : ''}
+    <img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="${title}">
     <span><b>${title}</b>${card.text ? `<small>${escapeHtml(card.text)}</small>` : ''}</span>
   </a>`;
 }
@@ -71,19 +95,19 @@ async function loadPromos(){
     try {
       const snapshot = await getDocs(collection(db, collectionName));
       snapshot.forEach(documentSnapshot => {
-        all.push({ id:documentSnapshot.id, ...documentSnapshot.data() });
+        all.push({ id:documentSnapshot.id, _collection:collectionName, ...documentSnapshot.data() });
       });
     } catch (error) {
-      console.warn('Не удалось загрузить горизонтальные промо', collectionName, error);
+      console.warn('Не удалось загрузить промо', collectionName, error);
     }
   }
 
   const seen = new Set();
   return all
     .map(normalizeCard)
-    .filter(card => card.enabled !== false)
+    .filter(card => card.enabled && !isExplicitVertical(card) && card.image)
     .filter(card => {
-      const key = String(card.id || card.key || card.slug || `${card.title}:${card.image}`);
+      const key = String(card.id || card.key || card.slug || card.image);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -97,8 +121,11 @@ function startAutoplay(row){
 
   let index = 0;
   let pausedUntil = 0;
+  const pause = () => { pausedUntil = Date.now() + 9000; };
 
-  const updateIndex = () => {
+  row.addEventListener('touchstart', pause, { passive:true });
+  row.addEventListener('pointerdown', pause, { passive:true });
+  row.addEventListener('scroll', () => {
     let nearest = 0;
     let distance = Infinity;
     cards.forEach((card, cardIndex) => {
@@ -109,12 +136,7 @@ function startAutoplay(row){
       }
     });
     index = nearest;
-  };
-
-  const pause = () => { pausedUntil = Date.now() + 9000; };
-  row.addEventListener('touchstart', pause, { passive:true });
-  row.addEventListener('pointerdown', pause, { passive:true });
-  row.addEventListener('scroll', updateIndex, { passive:true });
+  }, { passive:true });
 
   window.setInterval(() => {
     if (document.hidden || Date.now() < pausedUntil) return;
@@ -133,6 +155,7 @@ async function renderPromo(){
   if (!markup) {
     mount.hidden = true;
     mount.replaceChildren();
+    console.warn('Промо-карточки не найдены ни в одной используемой коллекции');
     return;
   }
 
