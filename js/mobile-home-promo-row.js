@@ -1,8 +1,6 @@
 import { db } from './firebase.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// Все реально используемые коллекции промо. Блок отрисовывается в отдельном
-// постоянном контейнере и не зависит от перерисовки товарных секций.
 const COLLECTION_NAMES = [...new Set([
   'autostyle_horizontal_promo_cards',
   'autostyle_home_promo_cards',
@@ -66,7 +64,7 @@ function normalizeCard(card = {}){
   };
 }
 
-function cardMarkup(rawCard){
+function cardMarkup(rawCard, index){
   const card = normalizeCard(rawCard);
   const title = escapeHtml(card.title);
   const image = String(card.image || '').trim();
@@ -77,32 +75,34 @@ function cardMarkup(rawCard){
     || card.mode === 'image'
     || (!card.text && !card.description);
 
-  if (imageOnly) {
-    const safeImage = image.replaceAll("'", '%27');
-    return `<a class="m-promo-card m-promo-image-only" href="${card.link}" style="background-image:url('${safeImage}')" aria-label="${title}"></a>`;
-  }
+  const loading = index === 0 ? 'eager' : 'lazy';
+  const priority = index === 0 ? 'high' : 'auto';
 
-  return `<a class="m-promo-card" href="${card.link}">
-    <img loading="lazy" decoding="async" src="${escapeHtml(image)}" alt="${title}">
-    <span><b>${title}</b>${card.text ? `<small>${escapeHtml(card.text)}</small>` : ''}</span>
+  return `<a class="m-promo-card${imageOnly ? ' m-promo-image-only' : ''}" href="${card.link}" aria-label="${title}">
+    <img loading="${loading}" fetchpriority="${priority}" decoding="async" src="${escapeHtml(image)}" alt="${title}">
+    ${imageOnly ? '' : `<span><b>${title}</b>${card.text ? `<small>${escapeHtml(card.text)}</small>` : ''}</span>`}
   </a>`;
 }
 
-async function loadPromos(){
-  const all = [];
-
-  for (const collectionName of COLLECTION_NAMES) {
-    try {
-      const snapshot = await getDocs(collection(db, collectionName));
-      snapshot.forEach(documentSnapshot => {
-        all.push({ id:documentSnapshot.id, _collection:collectionName, ...documentSnapshot.data() });
-      });
-    } catch (error) {
-      console.warn('Не удалось загрузить промо', collectionName, error);
-    }
+async function loadCollection(name){
+  try {
+    const snapshot = await getDocs(collection(db, name));
+    return snapshot.docs.map(documentSnapshot => ({
+      id:documentSnapshot.id,
+      _collection:name,
+      ...documentSnapshot.data()
+    }));
+  } catch (error) {
+    console.warn('Не удалось загрузить промо', name, error);
+    return [];
   }
+}
 
+async function loadPromos(){
+  const groups = await Promise.all(COLLECTION_NAMES.map(loadCollection));
+  const all = groups.flat();
   const seen = new Set();
+
   return all
     .map(normalizeCard)
     .filter(card => card.enabled && !isExplicitVertical(card) && card.image)
