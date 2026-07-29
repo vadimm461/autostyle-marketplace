@@ -8,7 +8,12 @@ const COLLECTION_NAMES = [...new Set([
   COLLECTIONS.promoCards || 'autostyle_promo_cards',
   'autostyle_promo_cards',
   'autostyle_promoCards',
-  'promoCards'
+  'promoCards',
+  'autostyle_section_promo_cards',
+  'autostyle_between_promo_cards',
+  'sectionPromoCards',
+  'autostyle_home_cards',
+  'homeCards'
 ].filter(Boolean))];
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -27,13 +32,13 @@ function appUrl(url){
 }
 
 function imageOf(card){
-  return String(card.image||card.imageUrl||card.imageURL||card.photo||card.photoUrl||card.photoURL||'').trim();
+  return String(card.image||card.imageUrl||card.imageURL||card.photo||card.photoUrl||card.photoURL||card.backgroundImage||card.bgImage||'').trim();
 }
 
 function isVertical(card){
-  const raw=[card.orientation,card.direction,card.format,card.layout,card.type,card.cardType,card.viewType,card.bannerType,card.mode,card.displayMode,card.position]
+  const raw=[card.orientation,card.direction,card.format,card.layout,card.type,card.cardType,card.viewType,card.bannerType,card.mode,card.displayMode]
     .map(v=>String(v||'').toLowerCase()).join(' ');
-  return /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar|right|left)([\s_-]|$)/i.test(raw)
+  return /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar)([\s_-]|$)/i.test(raw)
     || card.vertical===true || card.isVertical===true || card.mobileVertical===true;
 }
 
@@ -42,7 +47,7 @@ function linkOf(card){
   const value=card.linkValue||card.value||card.target||'';
   if((type==='category'||type==='subcategory')&&value) return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
   if(type==='brand'&&value) return `mobile-catalog.html?brand=${encodeURIComponent(value)}`;
-  return appUrl(card.link||card.url||value||'mobile-catalog.html');
+  return appUrl(card.link||card.linkURL||card.url||value||'mobile-catalog.html');
 }
 
 function cardHtml(card){
@@ -50,7 +55,7 @@ function cardHtml(card){
   if(!image) return '';
   const title=esc(card.title||card.name||'AutoStyle');
   const text=esc(card.text||card.description||'');
-  const imageOnly=card.imageOnly===true||card.mode==='image'||card.viewMode==='image'||card.displayMode==='image'||card.cardMode==='imageOnly';
+  const imageOnly=card.imageOnly===true||card.mode==='image'||card.viewMode==='image'||card.displayMode==='image'||card.cardMode==='imageOnly'||(!card.text&&!card.description);
   if(imageOnly){
     const safeImage=String(image).replaceAll("'",'%27');
     return `<a class="m-promo-card m-promo-image-only" href="${linkOf(card)}" style="background-image:url('${safeImage}')" aria-label="${title}"></a>`;
@@ -61,7 +66,7 @@ function cardHtml(card){
 async function loadPromos(){
   const groups=await Promise.all(COLLECTION_NAMES.map(async name=>{
     try{
-      const rows=await getCollectionCached(name,{staleWhileRevalidate:true});
+      const rows=await getCollectionCached(name,{force:true});
       return (rows||[]).map(row=>({...row,_collection:name}));
     }catch(error){
       console.warn('Не удалось загрузить мобильные промо',name,error);
@@ -70,9 +75,9 @@ async function loadPromos(){
   }));
   const seen=new Set();
   return groups.flat()
-    .filter(card=>card&&card.enabled!==false&&!isVertical(card)&&imageOf(card))
+    .filter(card=>card&&card.enabled!==false&&card.active!==false&&card.visible!==false&&!isVertical(card)&&imageOf(card))
     .filter(card=>{
-      const key=String(card.id||card.key||card.slug||`${card._collection}:${imageOf(card)}`);
+      const key=String(card.id||card.key||card.slug||imageOf(card));
       if(seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -87,8 +92,15 @@ function startAutoplay(row){
   let pausedUntil=0;
   const cards=()=>[...row.querySelectorAll('.m-promo-card')];
   const currentIndex=()=>{
-    const width=row.clientWidth||1;
-    return Math.round(row.scrollLeft/width);
+    const list=cards();
+    if(!list.length) return 0;
+    let nearest=0;
+    let distance=Infinity;
+    list.forEach((card,index)=>{
+      const d=Math.abs(card.offsetLeft-row.scrollLeft);
+      if(d<distance){distance=d;nearest=index;}
+    });
+    return nearest;
   };
   const schedule=()=>{
     clearInterval(timer);
@@ -118,7 +130,11 @@ async function render(){
     dynamic.prepend(mount);
   }
   const promos=await loadPromos();
-  if(!promos.length){mount.innerHTML='';return;}
+  if(!promos.length){
+    mount.innerHTML='';
+    console.warn('Мобильные промо не найдены в доступных коллекциях');
+    return;
+  }
   mount.innerHTML=`<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promos.map(cardHtml).join('')}</div></section>`;
   startAutoplay(mount.querySelector('.m-promo-row'));
 }
@@ -131,6 +147,7 @@ const boot=()=>{
   });
   const dynamic=document.getElementById('mHomeDynamic');
   if(dynamic) observer.observe(dynamic,{childList:true,subtree:true});
+  window.addEventListener('pageshow',()=>render(),{passive:true});
 };
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
