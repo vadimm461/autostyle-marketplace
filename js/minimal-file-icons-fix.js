@@ -75,42 +75,17 @@
     document.querySelectorAll('.fav-btn, .product-fav-btn, .related-fav').forEach(el => setIcon(el, 'heart'));
   }
 
-  function forceDarkProfileBottomNav(){
-    if (!document.body || !document.body.classList.contains('mobile-page')) return;
-    const nav = document.querySelector('.m-bottom-nav');
-    const inner = nav && nav.querySelector('.m-bottom-inner');
-    if (!nav || !inner) return;
-
-    nav.style.setProperty('background', 'linear-gradient(180deg,rgba(13,18,26,.94),rgba(5,8,14,.92))', 'important');
-    nav.style.setProperty('background-color', '#090d14', 'important');
-    nav.style.setProperty('border', '1px solid rgba(255,255,255,.13)', 'important');
-    nav.style.setProperty('box-shadow', '0 18px 48px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.12)', 'important');
-    nav.style.setProperty('-webkit-backdrop-filter', 'blur(24px) saturate(170%)', 'important');
-    nav.style.setProperty('backdrop-filter', 'blur(24px) saturate(170%)', 'important');
-
-    inner.style.setProperty('background', 'transparent', 'important');
-    inner.querySelectorAll(':scope > a').forEach(link => {
-      link.style.setProperty('background', link.classList.contains('active') ? 'rgba(40,225,26,.13)' : 'transparent', 'important');
-      link.style.setProperty('box-shadow', link.classList.contains('active') ? 'inset 0 0 0 1px rgba(40,225,26,.16),0 6px 18px rgba(0,0,0,.14)' : 'none', 'important');
-      link.style.setProperty('color', link.classList.contains('active') ? '#62f257' : 'rgba(255,255,255,.72)', 'important');
-    });
-
-    inner.querySelectorAll('.as-liquid-drop').forEach(el => el.remove());
-  }
-
   function init(){
     fixHeader();
     fixAccountMenus();
     fixProductIcons();
-    forceDarkProfileBottomNav();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-  window.addEventListener('load', () => { init(); setTimeout(init, 250); setTimeout(init, 1000); }, {once:true});
   document.addEventListener('click', () => setTimeout(init, 80), true);
   const mo = new MutationObserver(() => {
     clearTimeout(window.__asMinimalFileIconsTimer);
     window.__asMinimalFileIconsTimer = setTimeout(init, 80);
   });
-  mo.observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['class','style']});
+  mo.observe(document.documentElement, {childList:true, subtree:true});
 })();
