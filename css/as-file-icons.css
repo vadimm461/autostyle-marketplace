@@ -51,99 +51,15 @@
 .fav-btn .as-file-icon,.product-fav-btn .as-file-icon,.m-fav .as-file-icon,.m-action.fav .as-file-icon{width:20px;height:20px;min-width:20px;color:currentColor}
 .quick-modal-close .as-file-icon,#closeAuth .as-file-icon{width:18px;height:18px;min-width:18px}
 
-/* Exact profile subsection glass style for the shared mobile bottom navigation */
+/* Copy only the shadow/highlight from .m-profile-inner-nav. Do not change nav sizing. */
 body.mobile-page .m-bottom-inner{
-  position:relative!important;
-  display:grid!important;
-  grid-template-columns:repeat(5,minmax(0,1fr))!important;
-  gap:4px!important;
-  margin:0 auto!important;
-  padding:6px!important;
-  border:1px solid rgba(255,255,255,.16)!important;
-  border-radius:28px!important;
-  background:linear-gradient(145deg,rgba(16,20,27,.82),rgba(16,20,27,.68))!important;
-  -webkit-backdrop-filter:blur(28px) saturate(190%)!important;
-  backdrop-filter:blur(28px) saturate(190%)!important;
   box-shadow:0 14px 38px rgba(15,23,42,.16),inset 0 1px 0 rgba(255,255,255,.70),inset 0 -1px 0 rgba(255,255,255,.18)!important;
-  overflow:hidden!important;
 }
 body.mobile-page .m-bottom-inner::before{
-  content:""!important;
-  position:absolute!important;
-  inset:0!important;
-  border-radius:inherit!important;
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
   background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 34%,rgba(255,255,255,.04) 68%,transparent)!important;
-  pointer-events:none!important;
-  z-index:0!important;
-}
-body.mobile-page .m-bottom-inner::after{
-  content:""!important;
-  position:absolute!important;
-  top:0!important;
-  left:14px!important;
-  right:14px!important;
-  height:1px!important;
-  border-radius:999px!important;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.92) 18%,rgba(255,255,255,.72) 82%,transparent)!important;
-  box-shadow:0 1px 7px rgba(255,255,255,.28)!important;
-  pointer-events:none!important;
-  z-index:2!important;
-}
-body.mobile-page .m-bottom-inner>a{
-  position:relative!important;
-  z-index:1!important;
-  min-height:64px!important;
-  padding:8px 4px!important;
-  border:1px solid transparent!important;
-  border-radius:22px!important;
-  background:transparent!important;
-  color:#e8edf5!important;
-  text-decoration:none!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:5px!important;
-  text-align:center!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.35)!important;
-  touch-action:manipulation!important;
-  -webkit-tap-highlight-color:transparent!important;
-}
-body.mobile-page .m-bottom-inner>a.active{
-  border-color:rgba(40,225,26,.42)!important;
-  background:linear-gradient(145deg,rgba(40,225,26,.24),rgba(40,225,26,.12))!important;
-  color:#28e11a!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.78),0 8px 20px rgba(15,23,42,.10)!important;
-}
-body.mobile-page .m-bottom-inner>a>.as-file-icon{
-  width:29px!important;
-  height:29px!important;
-  min-width:29px!important;
-  border-radius:10px!important;
-  background:transparent!important;
-  display:grid!important;
-  place-items:center!important;
-  flex:0 0 29px!important;
-}
-body.mobile-page .m-bottom-inner>a>.as-file-icon::before{
-  width:18px!important;
-  height:18px!important;
-}
-body.mobile-page .m-bottom-inner>a>span:not(.as-file-icon){
-  font-size:10px!important;
-  line-height:1.05!important;
-  font-weight:900!important;
-}
-body.mobile-page .m-bottom-inner>a b{
-  display:inline-grid!important;
-  place-items:center!important;
-  min-width:19px!important;
-  height:19px!important;
-  margin-left:2px!important;
-  border-radius:999px!important;
-  background:#28e11a!important;
-  color:#031003!important;
-  font-size:11px!important;
-  line-height:1!important;
-  text-shadow:none!important;
+  pointer-events:none;
 }
