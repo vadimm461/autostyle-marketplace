@@ -14,13 +14,13 @@
   // Общий стиль нижнего мобильного меню без жидкой капли.
   if (!document.querySelector('script[data-as-liquid-nav]')) {
     const liquidNav = document.createElement('script');
-    liquidNav.src = './js/mobile-liquid-nav.js?v=20260729-3';
+    liquidNav.src = './js/mobile-liquid-nav.js?v=20260729-4';
     liquidNav.defer = true;
     liquidNav.dataset.asLiquidNav = '1';
     document.head.appendChild(liquidNav);
   }
 
-  const VERSION = '20260729-mobile-cache-v4';
+  const VERSION = '20260729-mobile-cache-v5';
   const MAX_AGE = 1000 * 60;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
