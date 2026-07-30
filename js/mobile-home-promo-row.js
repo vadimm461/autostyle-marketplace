@@ -13,9 +13,20 @@ const HORIZONTAL_COLLECTION_NAMES = new Set([
   'autostyle_home_promo_cards',
   'homePromoCards'
 ].map(name => name.toLowerCase()));
+const SECTION_COLLECTION_NAMES = new Set([
+  'autostyle_section_promo_cards',
+  'autostyle_between_promo_cards',
+  'sectionPromoCards'
+].map(name => name.toLowerCase()));
+const SECTION_COLLECTION_QUERY_NAMES = [
+  'autostyle_section_promo_cards',
+  'autostyle_between_promo_cards',
+  'sectionPromoCards'
+];
 const COLLECTION_NAMES = [...new Set([
   ...VERTICAL_COLLECTION_NAMES,
-  ...HORIZONTAL_COLLECTION_NAMES
+  ...HORIZONTAL_COLLECTION_NAMES,
+  ...SECTION_COLLECTION_QUERY_NAMES
 ])];
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -71,6 +82,15 @@ function normalizeCard(card = {}){
   };
 }
 
+function showOnMobileHome(card = {}){
+  if (Object.prototype.hasOwnProperty.call(card, 'showOnMobileHome')) {
+    return !(card.showOnMobileHome === false || card.showOnMobileHome === 'false' || card.showOnMobileHome === 0 || card.showOnMobileHome === '0');
+  }
+  // Старые вертикальные и горизонтальные карточки уже были на mobile.
+  // Промо между разделами раньше не дублировались на mobile без явного выбора.
+  return !SECTION_COLLECTION_NAMES.has(String(card._collection || '').toLowerCase());
+}
+
 function cardMarkup(rawCard, index){
   const card = normalizeCard(rawCard);
   const title = escapeHtml(card.title);
@@ -113,7 +133,7 @@ async function loadPromos(){
 
   return all
     .map(normalizeCard)
-    .filter(card => card.enabled && card.image)
+    .filter(card => card.enabled && showOnMobileHome(card) && card.image)
     .filter(card => {
       const key = String(card.key || card.slug || `${card._collection || 'promo'}:${card.id || card.image}`);
       if (seen.has(key)) return false;
