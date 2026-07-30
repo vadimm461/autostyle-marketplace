@@ -1,1 +1,247 @@
-sed: can't read firestore.rules: No such file or directory
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+
+    function isProfileVerified() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true
+        || request.auth.token.phone_number is string
+        || (
+          exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+          && (
+            get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.emailVerified == true
+            || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.phoneVerified == true
+            || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.verified == true
+            || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.isVerified == true
+          )
+        )
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in [
+          "vadimm461@gmail.com",
+          "vadim462@gmail.com"
+        ]
+        || (
+          exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin"
+        )
+      );
+    }
+
+    function hasPermission(permission) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin"
+          || get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.permissions[permission] == true
+        );
+    }
+
+    /* Товары и контент */
+    match /autostyle_products/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_settings/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_pages/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_media/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_homeBlocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_promoCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_home_blocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_horizontal_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_home_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+
+    /* Пользователи */
+    match /autostyle_users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+      );
+      allow delete: if isAdmin();
+    }
+
+    /* Заказы */
+    match /autostyle_orders/{orderId} {
+      allow create: if isProfileVerified();
+      allow read: if isAdmin() || (
+        isProfileVerified() && (
+          resource.data.userId == request.auth.uid
+          || resource.data.uid == request.auth.uid
+        )
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    /* Скидочные карты */
+    match /autostyle_discount_cards/{cardId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /autostyle_discountCards/{cardId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    /* Группы пользователей */
+    match /autostyle_user_groups/{groupId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /* Уведомления */
+    match /autostyle_notifications/{notificationId} {
+      // Гости уведомления не читают. Общие видны только после входа.
+      allow read: if isAdmin()
+        || (
+          isSignedIn()
+          && (
+            resource.data.audience == "all"
+            || resource.data.audience == "group"
+            || resource.data.userId == request.auth.uid
+            || resource.data.uid == request.auth.uid
+            || resource.data.userEmail == request.auth.token.email
+          )
+        );
+
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /autostyle_notification_reads/{userId} {
+      allow read, create, update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+
+    /* Предложения и жалобы */
+    match /autostyle_feedback/{feedbackId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.userId == request.auth.uid
+        || resource.data.uid == request.auth.uid
+        || resource.data.userEmail == request.auth.token.email
+      );
+      allow update, delete: if isAdmin();
+    }
+
+
+
+    /* Полная аналитика сайта */
+    match /autostyle_page_views/{document=**} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /autostyle_events/{document=**} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /autostyle_online_sessions/{sessionId} {
+      allow create, update: if true;
+      allow read, delete: if isAdmin();
+    }
+
+
+    /* Товарная аналитика и снимки товаров */
+    match /autostyle_product_snapshots/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_product_changes/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_lost_products/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_purchase_recommendations/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_product_sync_runs/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_inventory_history/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /autostyle_top_products/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+
+    /* Колесо фортуны */
+    match /autostyle_wheel_config/{configId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /autostyle_wheel_state/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isAdmin();
+    }
+
+    match /autostyle_wheel_prizes/{prizeId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == "active";
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    /* Старые коллекции */
+    match /site/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /products/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /categories/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /banners/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /promoCards/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+    match /homeCards/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
+
+    match /users/{userId} {
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /salary/{document=**} { allow read, write: if isAdmin() || hasPermission("staffSalary") || hasPermission("legacyAdmin"); }
+  }
+}
