@@ -155,7 +155,7 @@ async function loadProduct(){
   if (!id) { box.innerHTML = '<div class="product-message">Товар не найден.</div>'; return; }
   try {
     let productsCache = [];
-    try { productsCache = await getProducts(); } catch(e) { productsCache = []; }
+    try { productsCache = await getProducts({ force: true }); } catch(e) { productsCache = []; }
 
     // На странице товара берём сам товар напрямую из Firestore,
     // чтобы правки цены/скидки не зависали из старого кэша.
