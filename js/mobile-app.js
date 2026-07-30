@@ -64,6 +64,22 @@ const appUrl = url => {
     .replace(/^orders\.html(.*)$/i, 'mobile-orders.html$1')
     .replace(/^discount-card\.html(.*)$/i, 'mobile-discount-card.html$1');
 };
+const notificationActionUrl = url => {
+  const raw = String(url || '').trim();
+  if (!raw || raw === '#') return '';
+  if (/^(?:https?:|mailto:|tel:|#)/i.test(raw)) return raw;
+  if (/^profile\.html#(?:wheel|fortune-wheel)/i.test(raw)) return raw.replace(/^profile\.html/i, 'mobile-wheel.html');
+  return raw
+    .replace(/^index\.html(.*)$/i, 'mobile.html$1')
+    .replace(/^catalog\.html(.*)$/i, 'mobile-catalog.html$1')
+    .replace(/^product\.html(.*)$/i, 'mobile-product.html$1')
+    .replace(/^cart\.html(.*)$/i, 'mobile-cart.html$1')
+    .replace(/^favorites\.html(.*)$/i, 'mobile-favorites.html$1')
+    .replace(/^profile\.html(.*)$/i, 'mobile-profile.html$1')
+    .replace(/^notifications\.html(.*)$/i, 'mobile-notifications.html$1')
+    .replace(/^orders\.html(.*)$/i, 'mobile-orders.html$1')
+    .replace(/^discount-card\.html(.*)$/i, 'mobile-discount-card.html$1');
+};
 const MOBILE_CACHE_OPTIONS = { staleWhileRevalidate:true };
 const safeLoadCollection = async (name, options=MOBILE_CACHE_OPTIONS) => { try { return await getCollectionCached(name, options); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
 const safeLoadCollections = async (names, options=MOBILE_CACHE_OPTIONS) => {
@@ -1496,7 +1512,12 @@ function renderMobileNotificationList(root, data){
   const selected = new URLSearchParams(location.search).get('id') || '';
   const open = selected ? list.find(n => n.id === selected) : null;
   if(open){
-    root.innerHTML = `<section class="m-profile-pane"><a class="m-btn" href="mobile-notifications.html">← Все уведомления</a><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${open.html || `<p>${escapeHtml(notificationText(open))}</p>`}</div></section>`;
+    root.innerHTML = `<section class="m-profile-pane m-notification-detail" data-notification-detail><button class="m-btn m-notification-back" type="button">← Все уведомления</button><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${open.html || `<p>${escapeHtml(notificationText(open))}</p>`}</div>${open.link ? `<p class="m-notification-action"><a class="m-btn green" href="${escapeHtml(notificationActionUrl(open.link))}">Перейти</a></p>` : ''}</section>`;
+    const back = root.querySelector('.m-notification-back');
+    back?.addEventListener('click', event => {
+      event.preventDefault();
+      location.href = 'mobile-notifications.html';
+    });
     markNotificationRead(auth.currentUser, open.id).catch(()=>{});
     return;
   }

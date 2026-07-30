@@ -19,6 +19,55 @@ let unsubscribe = null;
 let pageMode = 'list';
 let openNotificationId = new URLSearchParams(location.search).get('id') || localStorage.getItem('autostyle_selected_notification') || '';
 
+function isMobileNotificationView(){
+  return document.body?.classList.contains('mobile-page') ||
+    Boolean(window.matchMedia?.('(max-width: 768px)').matches);
+}
+
+function notificationPageUrl(id = ''){
+  const file = isMobileNotificationView() ? 'mobile-notifications.html' : 'notifications.html';
+  return `${file}${id ? `?id=${encodeURIComponent(id)}` : ''}`;
+}
+
+function notificationActionUrl(value){
+  const raw = String(value || '').trim();
+  if (!raw || raw === '#') return '';
+  if (/^(?:https?:|mailto:|tel:|#)/i.test(raw)) return raw;
+
+  const mobile = isMobileNotificationView();
+  if (mobile && /^profile\.html#(?:wheel|fortune-wheel)/i.test(raw)) {
+    return raw.replace(/^profile\.html/i, 'mobile-wheel.html');
+  }
+  const routeMap = mobile ? {
+    'index.html':'mobile.html',
+    'catalog.html':'mobile-catalog.html',
+    'product.html':'mobile-product.html',
+    'cart.html':'mobile-cart.html',
+    'favorites.html':'mobile-favorites.html',
+    'profile.html':'mobile-profile.html',
+    'notifications.html':'mobile-notifications.html',
+    'orders.html':'mobile-orders.html',
+    'discount-card.html':'mobile-discount-card.html'
+  } : {
+    'mobile.html':'index.html',
+    'mobile-catalog.html':'catalog.html',
+    'mobile-product.html':'product.html',
+    'mobile-cart.html':'cart.html',
+    'mobile-favorites.html':'favorites.html',
+    'mobile-profile.html':'profile.html',
+    'mobile-wheel.html':'profile.html#wheel',
+    'mobile-notifications.html':'notifications.html',
+    'mobile-orders.html':'profile.html',
+    'mobile-discount-card.html':'profile.html'
+  };
+  const match = raw.match(/^([^?#]+)([?#].*)?$/);
+  if (!match) return raw;
+  const path = match[1].split('/').pop().toLowerCase();
+  const mapped = routeMap[path];
+  if (!mapped) return raw;
+  return raw.replace(match[1], mapped);
+}
+
 
 function clearAccountLocalState(){
   try{
@@ -182,12 +231,10 @@ function bindNotificationOpen(root){
       const id = btn.dataset.notifyId;
       localStorage.setItem('autostyle_selected_notification', id);
       await markNotificationRead(currentUser, id);
-      const n = state.list.find(x => x.id === id);
-      if (n?.link && !location.pathname.endsWith('notifications.html')) {
-        location.href = n.link;
-        return;
-      }
-      location.href = `notifications.html?id=${encodeURIComponent(id)}`;
+      // A preview always opens the notification itself. The optional action
+      // link is shown only inside the detail view, so a stale mobile link can
+      // never replace the desktop notification page.
+      location.href = notificationPageUrl(id);
     });
   });
 }
@@ -216,7 +263,7 @@ function renderDropdown(){
       ${state.unread ? `<button type="button" id="markAllNotificationsRead">Прочитать все</button>` : ''}
     </div>
     ${list.length ? list.map(notificationPreview).join('') : `<div class="as-notify-empty">Пока уведомлений нет.</div>`}
-    <a class="as-notify-preview" href="notifications.html"><b>Открыть все уведомления</b></a>`;
+    <a class="as-notify-preview" href="${notificationPageUrl()}"><b>Открыть все уведомления</b></a>`;
   bindNotificationOpen(dd);
   $('#markAllNotificationsRead')?.addEventListener('click', async e => {
     e.preventDefault();
@@ -301,7 +348,7 @@ function renderPage(){
       <h1 class="as-notify-detail-title">${esc(n.title || 'Уведомление')}</h1>
       <div class="as-notify-detail-date">${esc(fmt(n.createdAt || n.createdAtLocal))}</div>
       <div class="as-notify-detail-body">${n.html || `<p>${esc(notificationText(n))}</p>`}</div>
-      ${n.link ? `<p><a class="primary as-notify-link" href="${esc(n.link)}">Перейти</a></p>` : ''}`;
+      ${n.link ? `<p><a class="primary as-notify-link" href="${esc(notificationActionUrl(n.link))}">Перейти</a></p>` : ''}`;
     root.querySelector('.as-notify-back').addEventListener('click', showList);
   }
 

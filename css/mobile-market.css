@@ -362,6 +362,26 @@
   overflow:hidden;
 }
 .m-notification-body img{max-width:100%;height:auto;border-radius:14px}
+/* Notification detail must stay above the profile card's visual layers on iOS. */
+body.mobile-page[data-page="notifications"] .m-content,
+body.mobile-page[data-page="notifications"] .m-profile-card,
+body.mobile-page[data-page="notifications"] .m-profile-inner-nav,
+body.mobile-page[data-page="notifications"] #mMobileNotifications,
+body.mobile-page[data-page="notifications"] .m-notification-detail{
+  position:relative;
+  z-index:1;
+  pointer-events:auto;
+}
+body.mobile-page[data-page="notifications"] .m-profile-inner-nav a,
+body.mobile-page[data-page="notifications"] #mMobileNotifications a,
+body.mobile-page[data-page="notifications"] #mMobileNotifications button{
+  pointer-events:auto;
+  touch-action:manipulation;
+  -webkit-appearance:none;
+  appearance:none;
+  cursor:pointer;
+}
+.m-notification-action{margin:14px 0 0}
 
 /* AutoStyle mobile cached navigation + pull refresh */
 .as-mobile-cache-visible .m-content.m-cache-restored{animation:mCacheFade .16s ease both}

@@ -26,6 +26,7 @@
       'contacts.html':'mobile-contacts.html',
       'installment.html':'mobile-installment.html',
       'certificates.html':'mobile-certificates.html',
+      'notifications.html':'mobile-notifications.html',
       'login.html':'mobile-profile.html',
       'register.html':'mobile-profile.html'
     };
