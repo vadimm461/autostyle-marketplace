@@ -27,21 +27,6 @@ const waitAuthUser = () => new Promise(resolve => {
 
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const MAIN_BANNERS_COLLECTION = COLLECTIONS.banners || 'autostyle_banners';
-const DEDICATED_HORIZONTAL_PROMO_COLLECTIONS = [
-  'autostyle_horizontal_promo_cards',
-  'autostyle_home_promo_cards',
-  'homePromoCards'
-];
-const PROMO_CARDS_COLLECTIONS = [...new Set([
-  ...DEDICATED_HORIZONTAL_PROMO_COLLECTIONS,
-  COLLECTIONS.promoCards || 'autostyle_promo_cards',
-  'autostyle_promo_cards',
-  'autostyle_promoCards',
-  'promoCards',
-  'autostyle_home_cards',
-  'homeCards'
-].filter(Boolean))];
-const DEDICATED_HORIZONTAL_PROMO_KEYS = new Set(DEDICATED_HORIZONTAL_PROMO_COLLECTIONS.map(name => name.toLowerCase()));
 const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
 const appUrl = url => {
@@ -130,47 +115,6 @@ function productsForHomeBlock(block){
   if (key === 'hot') return blockProducts.filter(isMarkedForHome).concat(blockProducts).filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i).slice(0,20);
   return blockProducts.filter(p => isMarkedForHome(p)).slice(0,20);
 }
-function promoLink(c){
-  const type = String(c.linkType || c.type || '').toLowerCase();
-  const value = c.linkValue || c.value || c.target || '';
-  if (type === 'category' && value) return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
-  if (type === 'subcategory' && value) return `mobile-catalog.html?category=${encodeURIComponent(value)}`;
-  if (type === 'brand' && value) return `mobile-catalog.html?brand=${encodeURIComponent(value)}`;
-  if (type === 'page' && value) return appUrl(value);
-  return appUrl(c.link || c.url || value || 'mobile-catalog.html');
-}
-function isMobileVerticalPromo(c){
-  const raw = [
-    c.orientation, c.direction, c.format, c.layout, c.type,
-    c.cardType, c.viewType, c.bannerType, c.mode, c.displayMode, c.position
-  ].map(v => String(v || '').toLowerCase()).join(' ');
-  return /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar|right|left)([\s_-]|$)/i.test(raw)
-    || c.vertical === true
-    || c.isVertical === true
-    || c.mobileVertical === true;
-}
-function isMobileHorizontalPromo(c){
-  const source = String(c._collection || '').toLowerCase();
-  const raw = [
-    c.orientation, c.direction, c.format, c.layout, c.type,
-    c.cardType, c.viewType, c.bannerType, c.mode, c.displayMode, c.position
-  ].map(v => String(v || '').toLowerCase()).join(' ');
-  return c.enabled !== false
-    && !isMobileVerticalPromo(c)
-    && (
-      DEDICATED_HORIZONTAL_PROMO_KEYS.has(source)
-      || /(^|[\s_-])(horizontal|landscape|wide)([\s_-]|$)/i.test(raw)
-      || c.horizontal === true
-      || c.isHorizontal === true
-    );
-}
-function promoCard(c){
-  const image = c.image || c.imageUrl || c.photoUrl || c.photo || '';
-  const titleText = escapeHtml(c.title || c.name || 'AutoStyle');
-  const imageOnly = c.imageOnly === true || c.mode === 'image' || c.viewMode === 'image' || c.displayMode === 'image' || c.cardMode === 'imageOnly';
-  const style = imageOnly && image ? ` style="background-image:url('${String(image).replaceAll("'",'%27')}')"` : '';
-  return `<a class="m-promo-card ${imageOnly?'m-promo-image-only':''}" href="${promoLink(c)}"${style}>${(!imageOnly && image) ? `<img loading="lazy" decoding="async" src="${image}" alt="${titleText}">` : ''}${imageOnly?'':`<span><b>${titleText}</b>${c.text || c.description ? `<small>${escapeHtml(c.text || c.description)}</small>` : ''}</span>`}</a>`;
-}
 let mobileHeroTimer = 0;
 function bannerImage(row = {}) {
   return String(row.image || row.imageUrl || row.imageURL || row.photo || row.photoUrl || row.photoURL || '').trim();
@@ -220,34 +164,17 @@ function renderMobileHero(rows = []) {
   });
 }
 
-function renderMobilePromos(rows = []) {
-  const mount = document.getElementById('mHomePromoMount');
-  if (!mount) return;
-  const promoHtml = (rows || [])
-    .filter(isMobileHorizontalPromo)
-    .sort((a, b) => Number(a.order ?? 999) - Number(b.order ?? 999))
-    .map(promoCard)
-    .join('');
-  mount.innerHTML = promoHtml
-    ? `<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${promoHtml}</div></section>`
-    : '';
-}
-
 async function loadMobileHomeMedia({ force = false } = {}) {
   const options = force ? { force: true } : MOBILE_CACHE_OPTIONS;
-  const [mainBanners, horizontalPromos] = await Promise.all([
-    safeLoadCollection(MAIN_BANNERS_COLLECTION, options),
-    safeLoadCollections(PROMO_CARDS_COLLECTIONS, options)
-  ]);
+  const mainBanners = await safeLoadCollection(MAIN_BANNERS_COLLECTION, options);
   return {
     banners: (mainBanners || []).filter(row => row && row.enabled !== false),
-    promos: horizontalPromos || []
+    promos: []
   };
 }
 
 function renderMobileHomeMedia(media = {}) {
   renderMobileHero(media.banners || []);
-  renderMobilePromos(media.promos || []);
 }
 
 function renderMobileSection(block, list){
@@ -613,7 +540,7 @@ async function renderHome() {
     .join('');
 
   const homeDynamic = $('#mHomeDynamic');
-  if (homeDynamic) homeDynamic.innerHTML = `<div id="mHomePromoMount"></div>${blocksHtml}`;
+  if (homeDynamic) homeDynamic.innerHTML = blocksHtml;
   bind();
 
   const quickMedia = await Promise.race([
