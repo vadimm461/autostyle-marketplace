@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // Ordinary pages and static assets may stay cached for 3 days.
 // Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260730-cache-v14-notifications';
+const VERSION = 'autostyle-20260730-cache-v15-notification-sanitize';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';

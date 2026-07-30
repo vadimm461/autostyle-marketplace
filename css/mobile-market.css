@@ -360,8 +360,24 @@
   color:#101828;
   line-height:1.55;
   overflow:hidden;
+  position:relative;
+  isolation:isolate;
+  contain:layout paint;
 }
 .m-notification-body img{max-width:100%;height:auto;border-radius:14px}
+.m-notification-body > *,
+.m-notification-body [style]{max-width:100%!important}
+.m-notification-body [style]{
+  position:static!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  z-index:auto!important;
+  pointer-events:auto!important;
+  transform:none!important;
+}
 /* Notification detail must stay above the profile card's visual layers on iOS. */
 body.mobile-page[data-page="notifications"] .m-content,
 body.mobile-page[data-page="notifications"] .m-profile-card,

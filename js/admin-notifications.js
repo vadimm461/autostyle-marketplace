@@ -12,6 +12,7 @@ import {
   esc,
   fmt,
   notificationText,
+  sanitizeNotificationHtml,
   USER_GROUPS_COLLECTION
 } from './notify-service.js';
 
@@ -223,7 +224,7 @@ async function renderHistory(){
     box.innerHTML = items.length ? items.map(n => `
       <article class="admin-notify-history-item">
         <b>${esc(n.title || 'Уведомление')}</b>
-        <div>${n.html || esc(notificationText(n))}</div>
+        <div>${sanitizeNotificationHtml(n.html) || esc(notificationText(n))}</div>
         <small>${esc(fmt(n.createdAt || n.createdAtLocal))} · ${esc(audienceLabel(n))}</small>
       </article>
     `).join('') : '<div class="muted">История уведомлений пустая.</div>';

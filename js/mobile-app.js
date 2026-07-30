@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, quer
 import { getProducts, getCategories, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, saveUserCart, clearUserCart } from './user-cart-store.js';
-import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, fmt } from './notify-service.js';
+import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { getFavorites, subscribeFavorites, toggleFavorite, waitFavoritesReady } from './user-favorites-store.js?v=20260729-profile-favorites';
 
@@ -1512,7 +1512,8 @@ function renderMobileNotificationList(root, data){
   const selected = new URLSearchParams(location.search).get('id') || '';
   const open = selected ? list.find(n => n.id === selected) : null;
   if(open){
-    root.innerHTML = `<section class="m-profile-pane m-notification-detail" data-notification-detail><button class="m-btn m-notification-back" type="button">← Все уведомления</button><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${open.html || `<p>${escapeHtml(notificationText(open))}</p>`}</div>${open.link ? `<p class="m-notification-action"><a class="m-btn green" href="${escapeHtml(notificationActionUrl(open.link))}">Перейти</a></p>` : ''}</section>`;
+    const bodyHtml = sanitizeNotificationHtml(open.html) || `<p>${escapeHtml(notificationText(open))}</p>`;
+    root.innerHTML = `<section class="m-profile-pane m-notification-detail" data-notification-detail><button class="m-btn m-notification-back" type="button">← Все уведомления</button><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${bodyHtml}</div>${open.link ? `<p class="m-notification-action"><a class="m-btn green" href="${escapeHtml(notificationActionUrl(open.link))}">Перейти</a></p>` : ''}</section>`;
     const back = root.querySelector('.m-notification-back');
     back?.addEventListener('click', event => {
       event.preventDefault();

@@ -7,7 +7,8 @@ import {
   markNotificationsRead,
   esc,
   fmt,
-  notificationText
+  notificationText,
+  sanitizeNotificationHtml
 } from './notify-service.js';
 
 const $ = s => document.querySelector(s);
@@ -343,11 +344,12 @@ function renderPage(){
     const n = state.list.find(x => String(x.id) === String(id)) || state.list[0];
     if (!n) { showList(); return; }
     await markNotificationRead(currentUser, n.id);
+    const bodyHtml = sanitizeNotificationHtml(n.html) || `<p>${esc(notificationText(n))}</p>`;
     root.innerHTML = `
       <button type="button" class="as-notify-back">← Все уведомления</button>
       <h1 class="as-notify-detail-title">${esc(n.title || 'Уведомление')}</h1>
       <div class="as-notify-detail-date">${esc(fmt(n.createdAt || n.createdAtLocal))}</div>
-      <div class="as-notify-detail-body">${n.html || `<p>${esc(notificationText(n))}</p>`}</div>
+      <div class="as-notify-detail-body">${bodyHtml}</div>
       ${n.link ? `<p><a class="primary as-notify-link" href="${esc(notificationActionUrl(n.link))}">Перейти</a></p>` : ''}`;
     root.querySelector('.as-notify-back').addEventListener('click', showList);
   }

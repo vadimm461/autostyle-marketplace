@@ -27,6 +27,112 @@ export function stripHtml(html){
   return div.textContent || div.innerText || '';
 }
 
+// Notification HTML is entered through the admin rich-text editor and is
+// stored in Firestore. Render it in a deliberately small, safe subset: a
+// pasted <style>, fixed-position element, event handler, or iframe must never
+// be able to cover the site's header and navigation.
+const SAFE_NOTIFICATION_TAGS = new Set([
+  'a','b','strong','i','em','u','s','del','mark','small','sub','sup','br',
+  'p','div','span','blockquote','pre','code','h1','h2','h3','h4','h5','h6',
+  'ul','ol','li','hr','img','table','thead','tbody','tfoot','tr','th','td'
+]);
+const REMOVE_NOTIFICATION_TAGS = new Set([
+  'script','style','link','meta','base','iframe','object','embed','form',
+  'input','button','select','textarea','option','video','audio','canvas','svg'
+]);
+const SAFE_NOTIFICATION_STYLE_PROPERTIES = new Set([
+  'color','background-color','font-size','font-family','font-weight',
+  'font-style','text-decoration','text-align','line-height','letter-spacing',
+  'border-radius','max-width','vertical-align'
+]);
+
+function safeNotificationUrl(value, kind){
+  const raw = String(value || '').trim();
+  if (!raw || /^javascript:|^vbscript:|^data:(?!image\/)/i.test(raw)) return '';
+  if (kind === 'image' && /^data:image\/(?:png|gif|jpe?g|webp);/i.test(raw)) return raw;
+  if (/^(?:https?:|mailto:|tel:|\/|\.?\.?\/|#)/i.test(raw)) return raw;
+  return '';
+}
+
+function safeNotificationStyle(value){
+  const probe = document.createElement('span');
+  probe.style.cssText = String(value || '');
+  const kept = [];
+  for (let i = 0; i < probe.style.length; i += 1) {
+    const property = probe.style[i].toLowerCase();
+    if (!SAFE_NOTIFICATION_STYLE_PROPERTIES.has(property)) continue;
+    const cssValue = probe.style.getPropertyValue(property).trim();
+    if (!cssValue || /url\s*\(|expression\s*\(|javascript\s*:|[{}]/i.test(cssValue)) continue;
+    kept.push(`${property}:${cssValue}`);
+  }
+  return kept.join(';');
+}
+
+export function sanitizeNotificationHtml(html){
+  const raw = String(html || '').trim();
+  if (!raw) return '';
+  const template = document.createElement('template');
+  template.innerHTML = raw;
+
+  [...template.content.querySelectorAll('*')].forEach(node => {
+    const tag = node.tagName.toLowerCase();
+    if (REMOVE_NOTIFICATION_TAGS.has(tag)) {
+      node.remove();
+      return;
+    }
+    if (!SAFE_NOTIFICATION_TAGS.has(tag)) {
+      const parent = node.parentNode;
+      if (!parent) return;
+      while (node.firstChild) parent.insertBefore(node.firstChild, node);
+      node.remove();
+      return;
+    }
+
+    [...node.attributes].forEach(attribute => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value;
+      if (name.startsWith('on') || ['id','class','srcset','formaction'].includes(name)) {
+        node.removeAttribute(attribute.name);
+        return;
+      }
+      if (name === 'style') {
+        const style = safeNotificationStyle(value);
+        if (style) node.setAttribute('style', style);
+        else node.removeAttribute('style');
+        return;
+      }
+      const allowed = ['alt','title','aria-label','colspan','rowspan','target','rel'].includes(name);
+      if (tag === 'a' && name === 'href') {
+        const href = safeNotificationUrl(value, 'link');
+        if (href) node.setAttribute('href', href);
+        else node.removeAttribute('href');
+        return;
+      }
+      if (tag === 'img' && name === 'src') {
+        const src = safeNotificationUrl(value, 'image');
+        if (src) node.setAttribute('src', src);
+        else node.removeAttribute('src');
+        return;
+      }
+      if (!allowed) node.removeAttribute(attribute.name);
+    });
+
+    if (tag === 'a' && node.hasAttribute('href')) {
+      const href = node.getAttribute('href') || '';
+      if (/^https?:/i.test(href)) {
+        node.setAttribute('target', '_blank');
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
+    }
+    if (tag === 'img' && node.hasAttribute('src')) {
+      node.setAttribute('loading', 'lazy');
+      node.setAttribute('decoding', 'async');
+    }
+  });
+
+  return template.innerHTML;
+}
+
 export function esc(v){
   return String(v ?? '')
     .replaceAll('&','&amp;')
