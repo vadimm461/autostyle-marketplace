@@ -2038,6 +2038,19 @@ function promoLinkText(card){
   return `${names[type] || 'ссылка'}: ${value}`;
 }
 
+function promoShowOnMobileHome(item = {}){
+  if (Object.prototype.hasOwnProperty.call(item, 'showOnMobileHome')) {
+    return !(item.showOnMobileHome === false || item.showOnMobileHome === 'false' || item.showOnMobileHome === 0 || item.showOnMobileHome === '0');
+  }
+  // Старые верхние промо уже показывались на mobile. Промо между разделами
+  // раньше там не выводились, поэтому для них нужен явный выбор администратора.
+  return !String(item._collection || '').toLowerCase().includes('section');
+}
+
+function promoMobileStatus(item){
+  return promoShowOnMobileHome(item) ? 'мобильная главная: да' : 'мобильная главная: нет';
+}
+
 function setPromoFormValues(prefix, item){
   setVal(`#${prefix}Title`, item.title || item.name || '');
   setVal(`#${prefix}Text`, item.text || item.description || '');
@@ -2059,6 +2072,8 @@ function setPromoFormValues(prefix, item){
   setVal(`#${prefix}PlacementPosition`, item.placementPosition || item.position || 'after');
   const enabled = $(`#${prefix}Enabled`);
   if (enabled) enabled.checked = item.enabled !== false;
+  const showOnMobileHome = $(`#${prefix}ShowOnMobileHome`);
+  if (showOnMobileHome) showOnMobileHome.checked = promoShowOnMobileHome(item);
 }
 
 function buildPromoData(prefix, fallbackTitle){
@@ -2086,6 +2101,7 @@ function buildPromoData(prefix, fallbackTitle){
     size: val(`#${prefix}Size`) || 'small',
     displayMode: val(`#${prefix}DisplayMode`) || 'classic',
     imageOnly: (val(`#${prefix}DisplayMode`) === 'image'),
+    showOnMobileHome: $(`#${prefix}ShowOnMobileHome`) ? $(`#${prefix}ShowOnMobileHome`).checked : true,
     placementBlock: val(`#${prefix}PlacementBlock`) || '',
     placementPosition: val(`#${prefix}PlacementPosition`) || 'after',
     updatedAt: new Date().toISOString()
@@ -2107,7 +2123,7 @@ async function renderVerticalPromoCardsAdmin() {
   list.innerHTML = cards.length ? cards.map(card => `
     <div class="row banner-row-admin">
       <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
-      <div><b>${card.title || 'Промо'}</b>${card.text || card.description ? `<p class="muted">${card.text || card.description}</p>` : ''}<p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p></div>
+      <div><b>${card.title || 'Промо'}</b>${card.text || card.description ? `<p class="muted">${card.text || card.description}</p>` : ''}<p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'} · ${promoMobileStatus(card)}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p></div>
       <button class="edit" data-editpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Редактировать</button>
       <button class="danger" data-delpc="${card.id}" data-pccol="${card._collection || PROMO_CARDS_COLLECTION}">Удалить</button>
     </div>`).join('') : '<p class="muted">Пока нет вертикальных промо</p>';
@@ -2129,7 +2145,7 @@ async function renderHorizontalPromoCardsAdmin() {
   list.innerHTML = cards.length ? cards.map(card => `
     <div class="row banner-row-admin">
       <div class="admin-banner-thumb admin-banner-thumb-small">${card.image ? `<img src="${card.image}" alt="${card.title || 'Промо'}">` : '<span>Фото</span>'}</div>
-      <div><b>${card.title || 'Промо'}</b>${card.text ? `<p class="muted">${card.text}</p>` : ''}<p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p></div>
+      <div><b>${card.title || 'Промо'}</b>${card.text ? `<p class="muted">${card.text}</p>` : ''}<p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'} · ${promoMobileStatus(card)}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p></div>
       <button class="edit" data-edithpc="${card.id}" data-hpccol="${card._collection || HORIZONTAL_PROMO_CARDS_COLLECTION}">Редактировать</button>
       <button class="danger" data-delhpc="${card.id}" data-hpccol="${card._collection || HORIZONTAL_PROMO_CARDS_COLLECTION}">Удалить</button>
     </div>`).join('') : '<p class="muted">Пока нет горизонтальных промо-карточек</p>';
@@ -2161,7 +2177,7 @@ async function renderSectionPromoCardsAdmin() {
       <div>
         <b>${card.title || 'Промо'}</b>
         ${card.text ? `<p class="muted">${card.text}</p>` : ''}
-        <p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'} · ${card.placementPosition === 'before' ? 'перед' : 'после'} блока: ${blockTitle(card.placementBlock)}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p>
+        <p class="muted">Порядок: ${Number(card.order ?? 999)} · ${card.enabled === false ? 'выключена' : 'включена'} · ${promoMobileStatus(card)} · ${card.placementPosition === 'before' ? 'перед' : 'после'} блока: ${blockTitle(card.placementBlock)}${promoLinkText(card) ? ` · ${promoLinkText(card)}` : ''}</p>
       </div>
       <button class="edit" data-editsc="${card.id}" data-sccol="${card._collection || SECTION_PROMO_CARDS_COLLECTION}">Редактировать</button>
       <button class="edit" data-movesc="${card.id}" data-sccol="${card._collection || SECTION_PROMO_CARDS_COLLECTION}" data-dir="-1">↑</button>
@@ -2265,9 +2281,9 @@ if ($('#sectionPromoCardsForm')) {
   };
 }
 
-if ($('#pcReset')) $('#pcReset').onclick = () => { editing.promoCard = null; editing.promoCardCollection = null; $('#promoCardsForm')?.reset(); if ($('#pcEnabled')) $('#pcEnabled').checked = true; if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = ''; $('#pcTitle')?.focus(); };
-if ($('#hpcReset')) $('#hpcReset').onclick = () => { editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; $('#horizontalPromoCardsForm')?.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcDisplayMode')) $('#hpcDisplayMode').value = 'classic'; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = ''; $('#hpcTitle')?.focus(); };
-if ($('#spcReset')) $('#spcReset').onclick = () => { editing.sectionPromoCard = null; editing.sectionPromoCardCollection = null; $('#sectionPromoCardsForm')?.reset(); if ($('#spcEnabled')) $('#spcEnabled').checked = true; if ($('#spcDisplayMode')) $('#spcDisplayMode').value = 'image'; if ($('#spcPlacementPosition')) $('#spcPlacementPosition').value = 'after'; if ($('#spcUploadStatus')) $('#spcUploadStatus').innerHTML = ''; $('#spcTitle')?.focus(); };
+if ($('#pcReset')) $('#pcReset').onclick = () => { editing.promoCard = null; editing.promoCardCollection = null; $('#promoCardsForm')?.reset(); if ($('#pcEnabled')) $('#pcEnabled').checked = true; if ($('#pcShowOnMobileHome')) $('#pcShowOnMobileHome').checked = true; if ($('#pcUploadStatus')) $('#pcUploadStatus').innerHTML = ''; $('#pcTitle')?.focus(); };
+if ($('#hpcReset')) $('#hpcReset').onclick = () => { editing.horizontalPromoCard = null; editing.horizontalPromoCardCollection = null; $('#horizontalPromoCardsForm')?.reset(); if ($('#hpcEnabled')) $('#hpcEnabled').checked = true; if ($('#hpcShowOnMobileHome')) $('#hpcShowOnMobileHome').checked = true; if ($('#hpcDisplayMode')) $('#hpcDisplayMode').value = 'classic'; if ($('#hpcUploadStatus')) $('#hpcUploadStatus').innerHTML = ''; $('#hpcTitle')?.focus(); };
+if ($('#spcReset')) $('#spcReset').onclick = () => { editing.sectionPromoCard = null; editing.sectionPromoCardCollection = null; $('#sectionPromoCardsForm')?.reset(); if ($('#spcEnabled')) $('#spcEnabled').checked = true; if ($('#spcShowOnMobileHome')) $('#spcShowOnMobileHome').checked = true; if ($('#spcDisplayMode')) $('#spcDisplayMode').value = 'image'; if ($('#spcPlacementPosition')) $('#spcPlacementPosition').value = 'after'; if ($('#spcUploadStatus')) $('#spcUploadStatus').innerHTML = ''; $('#spcTitle')?.focus(); };
 
 async function renderHomeBlocksAdmin() {
   const list = $('#homeBlockList');
@@ -2390,4 +2406,3 @@ if ($('#hbReset')) {
     $('#hbTitle')?.focus();
   };
 }
-
