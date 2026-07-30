@@ -18,7 +18,9 @@ const PROMO_CARDS_COLLECTIONS = [...new Set([
   PROMO_CARDS_COLLECTION,
   'autostyle_promo_cards',
   'autostyle_promoCards',
-  'promoCards'
+  'autostyle_home_cards',
+  'promoCards',
+  'homeCards'
 ].filter(Boolean))];
 const HORIZONTAL_PROMO_CARDS_COLLECTIONS = [...new Set([
   HORIZONTAL_PROMO_CARDS_COLLECTION,
@@ -170,7 +172,7 @@ function normalizePromoCard(c){
     key: c.key || c.slug || c.id,
     title: c.title || c.name || 'Промо',
     text: c.text || c.description || '',
-    image: c.image || c.imageUrl || c.photoUrl || '',
+    image: c.image || c.imageUrl || c.imageURL || c.photo || c.photoUrl || c.photoURL || '',
     link: c.link || c.url || buildPromoLink(type, value),
     linkType: type,
     linkValue: value,
@@ -239,7 +241,7 @@ function normalizePromoCardForHome(card){
     ...card,
     title: card.title || card.name || 'Промо',
     text: card.text || card.description || '',
-    image: card.image || card.imageUrl || card.photoUrl || '',
+    image: card.image || card.imageUrl || card.imageURL || card.photo || card.photoUrl || card.photoURL || '',
     link: card.link || card.url || build(type, value),
     order: Number(card.order ?? 999),
     enabled: card.enabled !== false,
@@ -284,8 +286,9 @@ function renderPromoCards(cards){
   const box = $('#banners');
   if (!box) return;
   const list = (cards || []).filter(c => c.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
+  box.hidden = !list.length;
+  box.classList.toggle('home-mini-promos', list.length > 0);
   if (!list.length) { box.innerHTML = ''; return; }
-  box.classList.add('home-mini-promos');
   box.innerHTML = list.map(card => {
     const titleText = card.title || 'Промо';
     const href = card.link || '#';
@@ -309,6 +312,36 @@ function renderPromoCards(cards){
       ${card.buttonText ? `<span class="home-mini-promo-button">${card.buttonText}</span>` : '<span class="home-mini-promo-arrow">›</span>'}
     </a>`;
   }).join('');
+}
+
+function prepareHomePromoZone(){
+  const main=document.querySelector('main.container');
+  const heroGrid=main?.querySelector('.home-hero-grid');
+  const vertical=document.getElementById('homePromoBanner');
+  const horizontalCards=document.getElementById('banners');
+  if(!main || !vertical || !horizontalCards) return;
+
+  let zone=document.getElementById('homePromoZone');
+  if(!zone){
+    zone=document.createElement('section');
+    zone.id='homePromoZone';
+    zone.className='home-promo-zone';
+    zone.hidden=true;
+    zone.setAttribute('aria-label','Промо и акции');
+    main.insertBefore(zone,heroGrid || main.firstElementChild);
+  }
+
+  vertical.classList.add('home-promo-vertical');
+  if(vertical.parentElement!==zone) zone.appendChild(vertical);
+
+  let horizontal=zone.querySelector('.home-promo-horizontal');
+  if(!horizontal){
+    horizontal=document.createElement('div');
+    horizontal.className='home-promo-horizontal';
+    zone.appendChild(horizontal);
+  }
+  if(horizontalCards.parentElement!==horizontal) horizontal.appendChild(horizontalCards);
+  heroGrid?.classList.add('home-main-hero');
 }
 
 
@@ -515,8 +548,19 @@ async function renderHome(){
   const horizontalPromoCards=mergePromoCards(horizontalRows);
   window.__autostyleSectionPromos=mergePromoCards(sectionRows);
   const sidePromo=document.getElementById('homePromoBanner');
-  if(sidePromo) sidePromo.innerHTML=renderImageSlides(verticalPromoCards,'promo-image-slider','Загрузите вертикальное промо в админке');
+  const hasVerticalPromos=verticalPromoCards.some(card => card && card.image);
+  if(sidePromo){
+    sidePromo.hidden=!hasVerticalPromos;
+    sidePromo.innerHTML=hasVerticalPromos ? renderImageSlides(verticalPromoCards,'promo-image-slider','') : '';
+  }
   renderPromoCards(horizontalPromoCards);
+  const promoZone=document.getElementById('homePromoZone');
+  const hasHorizontalPromos=horizontalPromoCards.length>0;
+  if(promoZone){
+    promoZone.hidden=!(hasVerticalPromos || hasHorizontalPromos);
+    promoZone.classList.toggle('has-vertical',hasVerticalPromos);
+    promoZone.classList.toggle('has-horizontal',hasHorizontalPromos);
+  }
   initImageBannerSliders(document);
   renderSections();
   renderCatalogMenu();
@@ -614,6 +658,7 @@ window.addEventListener('autostyle-cache-updated', e => {
   }
 });
 
+prepareHomePromoZone();
 authModal(); setupSearch(); setupExpand(); renderHome().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 
 function setupProductCardOpen(){
