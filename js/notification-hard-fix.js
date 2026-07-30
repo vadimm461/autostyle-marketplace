@@ -4,7 +4,7 @@
   // This file is deliberately standalone and loaded with a new URL on both
   // notification pages. It repairs pages that were opened from an older
   // three-day cache before the notification sanitizer was available.
-  const VERSION = '20260730-hard-fix';
+  const VERSION = '20260730-notification-stable';
 
   try {
     const file = (location.pathname.split('/').pop() || '').toLowerCase();
@@ -46,6 +46,22 @@
     document.getElementById('mLoader')?.remove();
     document.getElementById('asPageLoader')?.remove();
     document.body?.classList.remove('as-loading');
+  }
+
+  function clearStaleInteractionLocks(){
+    const body = document.body;
+    document.documentElement?.classList.remove('page-locked');
+    body?.classList.remove('page-locked', 'popup-open', 'modal-open', 'catalog-open');
+    if (body) body.style.removeProperty('pointer-events');
+
+    document.querySelectorAll(
+      '.as-alert-backdrop:not(.show), .modal:not(.open):not(.show), ' +
+      '.page-dim:not(.active), .catalog-overlay:not(.active), ' +
+      '.catalog-popup:not(.active), .mega-catalog:not(.active), .catalog-dropdown:not(.active)'
+    ).forEach(node => {
+      node.style.setProperty('display', 'none', 'important');
+      node.style.setProperty('pointer-events', 'none', 'important');
+    });
   }
 
   function bindSearchFallback(){
@@ -92,10 +108,14 @@
   function start(){
     installGuardStyle();
     removeBlockingLoaders();
+    clearStaleInteractionLocks();
     bindSearchFallback();
     cleanNotificationBodies();
     if (document.body && !window.__AS_NOTIFICATION_HARD_OBSERVER) {
-      window.__AS_NOTIFICATION_HARD_OBSERVER = new MutationObserver(cleanNotificationBodies);
+      window.__AS_NOTIFICATION_HARD_OBSERVER = new MutationObserver(() => {
+        cleanNotificationBodies();
+        clearStaleInteractionLocks();
+      });
       window.__AS_NOTIFICATION_HARD_OBSERVER.observe(document.body, { childList:true, subtree:true });
     }
   }
@@ -103,6 +123,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once:true });
   else start();
   window.addEventListener('pageshow', start, { passive:true });
+  document.addEventListener('click', clearStaleInteractionLocks, true);
   window.addEventListener('load', removeBlockingLoaders, { once:true, passive:true });
 
   // Force the current worker to be checked even when the notification page

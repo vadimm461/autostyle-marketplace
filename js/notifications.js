@@ -9,7 +9,7 @@ import {
   fmt,
   notificationText,
   sanitizeNotificationHtml
-} from './notify-service.js?v=20260730-hard-fix';
+} from './notify-service.js?v=20260730-notification-stable';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -35,7 +35,7 @@ function notificationPageUrl(id = ''){
   const file = isMobileNotificationView() ? 'mobile-notifications.html' : 'notifications.html';
   const query = new URLSearchParams();
   if (id) query.set('id', id);
-  query.set('__as_notify', '20260730-hard-fix');
+  query.set('__as_notify', '20260730-notification-stable');
   return `${file}?${query.toString()}`;
 }
 

@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, quer
 import { getProducts, getCategories, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, saveUserCart, clearUserCart } from './user-cart-store.js';
-import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js?v=20260730-hard-fix';
+import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js?v=20260730-notification-stable';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { getFavorites, subscribeFavorites, toggleFavorite, waitFavoritesReady } from './user-favorites-store.js?v=20260729-profile-favorites';
 
@@ -19,6 +19,7 @@ let favs = getFavorites();
 let mobileFavoritesBooted = false;
 let lastFavoritesSignature = '';
 const page = document.body.dataset.page;
+const isNotificationDetailPage = () => page === 'notifications' && new URLSearchParams(location.search).has('id');
 const waitAuthUser = () => new Promise(resolve => {
   if (auth.currentUser) return resolve(auth.currentUser);
   const off = onAuthStateChanged(auth, user => { off(); resolve(user || null); });
@@ -357,6 +358,7 @@ function installMobileBootWatchdog(){
   // После возвращения из долгого простоя один раз мягко перезапускаем данные.
   const wake=()=>{
     if(document.hidden) return;
+    if(isNotificationDetailPage()) return;
     if(page === 'cart') { updateCounts(); return; }
     if(window.__asMobileWakeTimer) clearTimeout(window.__asMobileWakeTimer);
     window.__asMobileWakeTimer=setTimeout(()=>{
@@ -1506,37 +1508,56 @@ async function registerByEmail(){
 function initials(u){const base=(u?.displayName||u?.email||'AS').trim();return base.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'AS'}
 
 let mobileNotificationsUnsub = null;
+let mobileNotificationRenderToken = 0;
+let mobileProfileAuthUnsub = null;
+let mobileProfileRenderToken = 0;
 function renderMobileNotificationList(root, data){
+  if(!root || !root.isConnected) return;
   const list = data.list || [];
   const readIds = data.readIds || new Set();
   const selected = new URLSearchParams(location.search).get('id') || '';
-  const open = selected ? list.find(n => n.id === selected) : null;
+  const open = selected ? list.find(n => String(n.id) === String(selected)) : null;
   if(open){
+    root.dataset.notificationDetail = '1';
     let bodyHtml = '';
     try { bodyHtml = sanitizeNotificationHtml(open.html); } catch (_) { bodyHtml = ''; }
     bodyHtml ||= `<p>${escapeHtml(notificationText(open))}</p>`;
-    const backUrl = 'mobile-notifications.html?__as_notify=20260730-hard-fix';
+    const backUrl = 'mobile-notifications.html?__as_notify=20260730-notification-stable';
     root.innerHTML = `<section class="m-profile-pane m-notification-detail" data-notification-detail><a class="m-btn m-notification-back" href="${backUrl}">← Все уведомления</a><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${bodyHtml}</div>${open.link ? `<p class="m-notification-action"><a class="m-btn green" href="${escapeHtml(notificationActionUrl(open.link))}">Перейти</a></p>` : ''}</section>`;
     markNotificationRead(auth.currentUser, open.id).catch(()=>{});
     return;
   }
-  root.innerHTML = `<section class="m-profile-pane"><h2>Уведомления</h2>${data.unread ? `<button id="mReadAllNotifications" class="m-btn" type="button" style="width:100%;margin-bottom:10px">Прочитать все</button>` : ''}<div class="m-notifications-list">${list.length ? list.map(n=>`<a class="m-notification-item ${readIds.has(n.id)?'is-read':'is-unread'}" href="mobile-notifications.html?__as_notify=20260730-hard-fix&amp;id=${encodeURIComponent(n.id)}"><b>${!readIds.has(n.id)?'<i></i>':''}${escapeHtml(n.title || 'Уведомление')}</b><span>${escapeHtml(notificationText(n))}</span><small>${escapeHtml(fmt(n.createdAt || n.createdAtLocal))}</small></a>`).join('') : '<div class="m-empty">Пока уведомлений нет.</div>'}</div></section>`;
+  delete root.dataset.notificationDetail;
+  root.innerHTML = `<section class="m-profile-pane"><h2>Уведомления</h2>${data.unread ? `<button id="mReadAllNotifications" class="m-btn" type="button" style="width:100%;margin-bottom:10px">Прочитать все</button>` : ''}<div class="m-notifications-list">${list.length ? list.map(n=>`<a class="m-notification-item ${readIds.has(n.id)?'is-read':'is-unread'}" href="mobile-notifications.html?__as_notify=20260730-notification-stable&amp;id=${encodeURIComponent(n.id)}"><b>${!readIds.has(n.id)?'<i></i>':''}${escapeHtml(n.title || 'Уведомление')}</b><span>${escapeHtml(notificationText(n))}</span><small>${escapeHtml(fmt(n.createdAt || n.createdAtLocal))}</small></a>`).join('') : '<div class="m-empty">Пока уведомлений нет.</div>'}</div></section>`;
   const readAll = $('#mReadAllNotifications');
   if(readAll) readAll.onclick = async()=>{ await markNotificationsRead(auth.currentUser, list.map(n=>n.id)); };
 }
 function startMobileNotifications(user, root){
+  const renderToken = ++mobileNotificationRenderToken;
   if(mobileNotificationsUnsub){ try{ mobileNotificationsUnsub(); }catch(e){} mobileNotificationsUnsub = null; }
+  if(!root || !root.isConnected) return;
   if(!user){ root.innerHTML = `<div class="m-empty"><b>Войдите в аккаунт</b><br>Уведомления доступны после входа.<br><br><a class="m-primary" href="mobile-profile.html">Войти</a></div>`; return; }
   root.innerHTML = '<div class="m-empty">Загружаем уведомления...</div>';
-  mobileNotificationsUnsub = watchNotifications(user, data => renderMobileNotificationList(root, data));
+  mobileNotificationsUnsub = watchNotifications(user, data => {
+    if(renderToken !== mobileNotificationRenderToken || !root.isConnected) return;
+    renderMobileNotificationList(root, data);
+  });
 }
 
 async function renderProfile(){
+  const renderToken = ++mobileProfileRenderToken;
+  if(mobileProfileAuthUnsub){
+    try{ mobileProfileAuthUnsub(); }catch(e){}
+    mobileProfileAuthUnsub = null;
+  }
   setupShell('profile');
-  onAuthStateChanged(auth, async u=>{
+  const isCurrentRender = () => renderToken === mobileProfileRenderToken && !!document.getElementById('mProfileBox');
+  mobileProfileAuthUnsub = onAuthStateChanged(auth, async u=>{
+    if(!isCurrentRender()) return;
     if(u){
       try{ await u.reload(); u = auth.currentUser || u; }catch(e){ console.warn('Не удалось обновить статус Email', e); }
     }
+    if(!isCurrentRender()) return;
     userNow=u; const box=$('#mProfileBox');
     if(!u){
       box.innerHTML=`<section class="m-auth-unified">
@@ -1728,10 +1749,13 @@ async function renderProfile(){
     }
     try{ await u.reload(); }catch(e){ console.warn('Не удалось обновить статус подтверждения почты', e); }
     const current=await getUserDoc(u.uid);
+    if(!isCurrentRender()) return;
     let d=current.data || {};
     const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
+    if(!isCurrentRender()) return;
     if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
     const myOrders = await loadMobileOrders(u).catch(()=>[]);
+    if(!isCurrentRender()) return;
     const registeredCar = d.car || d.carText || [d.carBrand, d.carModel, d.carYear].filter(Boolean).join(' ');
     const emailConfirmed = u.emailVerified === true;
     if(d.emailVerified !== emailConfirmed){
@@ -1758,13 +1782,13 @@ async function renderProfile(){
       <a class="m-profile-tile tile-feedback" href="mobile-feedback.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Предложения и жалобы</b><small>Связь с администрацией</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход и безопасность</b><small>Почта и пароль</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Изменить пароль</b><small>Настройки доступа</small></a>
-      <a class="m-profile-tile" href="mobile-notifications.html?__as_notify=20260730-hard-fix"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
+      <a class="m-profile-tile" href="mobile-notifications.html?__as_notify=20260730-notification-stable"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
     </div>`; 
     const innerNav = `<div class="m-profile-inner-nav">
       <a class="${page==='profile-data'?'active':''}" href="mobile-profile-data.html"><span><img src="assets/icons/user.svg" alt=""></span><b>Данные</b></a>
       <a class="${page==='discount-card'?'active':''}" href="mobile-discount-card.html"><span><img src="assets/icons/card.svg" alt=""></span><b>Карта</b></a>
       <a class="${page==='orders'?'active':''}" href="mobile-orders.html"><span><img src="assets/icons/package.svg" alt=""></span><b>Заказы</b></a>
-      <a class="${page==='notifications'?'active':''}" href="mobile-notifications.html?__as_notify=20260730-hard-fix"><span><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b></a>
+      <a class="${page==='notifications'?'active':''}" href="mobile-notifications.html?__as_notify=20260730-notification-stable"><span><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b></a>
       <a class="${page==='feedback'?'active':''}" href="mobile-feedback.html"><span><img src="assets/icons/settings.svg" alt=""></span><b>Обращения</b></a>
     </div>`;
     let body = profileMenu;
@@ -1843,6 +1867,7 @@ async function renderProfile(){
 let mobileRefreshBusy = false;
 let mobileRefreshTimer = 0;
 async function refreshCurrentMobilePage(reason='refresh'){
+  if(isNotificationDetailPage()) return;
   clearTimeout(mobileRefreshTimer);
   mobileRefreshTimer = setTimeout(async()=>{
     if (mobileRefreshBusy) return;
