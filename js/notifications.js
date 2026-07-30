@@ -9,7 +9,7 @@ import {
   fmt,
   notificationText,
   sanitizeNotificationHtml
-} from './notify-service.js';
+} from './notify-service.js?v=20260730-hard-fix';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -18,16 +18,25 @@ let currentUser = null;
 let state = { list: [], readIds: new Set(), unread: 0 };
 let unsubscribe = null;
 let pageMode = 'list';
-let openNotificationId = new URLSearchParams(location.search).get('id') || localStorage.getItem('autostyle_selected_notification') || '';
+const notificationQuery = new URLSearchParams(location.search);
+const explicitNotificationId = notificationQuery.get('id') || '';
+if (!explicitNotificationId && notificationQuery.has('__as_notify')) {
+  localStorage.removeItem('autostyle_selected_notification');
+}
+let openNotificationId = explicitNotificationId || localStorage.getItem('autostyle_selected_notification') || '';
 
 function isMobileNotificationView(){
-  return document.body?.classList.contains('mobile-page') ||
-    Boolean(window.matchMedia?.('(max-width: 768px)').matches);
+  return window.__AS_NOTIFICATION_LAYOUT === 'mobile' ||
+    document.body?.classList.contains('mobile-page') ||
+    (location.pathname.split('/').pop() || '').toLowerCase() === 'mobile-notifications.html';
 }
 
 function notificationPageUrl(id = ''){
   const file = isMobileNotificationView() ? 'mobile-notifications.html' : 'notifications.html';
-  return `${file}${id ? `?id=${encodeURIComponent(id)}` : ''}`;
+  const query = new URLSearchParams();
+  if (id) query.set('id', id);
+  query.set('__as_notify', '20260730-hard-fix');
+  return `${file}?${query.toString()}`;
 }
 
 function notificationActionUrl(value){
@@ -228,13 +237,14 @@ function notificationPreview(n){
 
 function bindNotificationOpen(root){
   root.querySelectorAll('[data-notify-id]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', event => {
+      event.preventDefault();
       const id = btn.dataset.notifyId;
       localStorage.setItem('autostyle_selected_notification', id);
-      await markNotificationRead(currentUser, id);
       // A preview always opens the notification itself. The optional action
       // link is shown only inside the detail view, so a stale mobile link can
       // never replace the desktop notification page.
+      markNotificationRead(currentUser, id).catch(() => {});
       location.href = notificationPageUrl(id);
     });
   });
@@ -343,15 +353,16 @@ function renderPage(){
     openNotificationId = id;
     const n = state.list.find(x => String(x.id) === String(id)) || state.list[0];
     if (!n) { showList(); return; }
-    await markNotificationRead(currentUser, n.id);
-    const bodyHtml = sanitizeNotificationHtml(n.html) || `<p>${esc(notificationText(n))}</p>`;
+    markNotificationRead(currentUser, n.id).catch(() => {});
+    let bodyHtml = '';
+    try { bodyHtml = sanitizeNotificationHtml(n.html); } catch (_) { bodyHtml = ''; }
+    bodyHtml ||= `<p>${esc(notificationText(n))}</p>`;
     root.innerHTML = `
-      <button type="button" class="as-notify-back">← Все уведомления</button>
+      <a class="as-notify-back" href="${notificationPageUrl()}">← Все уведомления</a>
       <h1 class="as-notify-detail-title">${esc(n.title || 'Уведомление')}</h1>
       <div class="as-notify-detail-date">${esc(fmt(n.createdAt || n.createdAtLocal))}</div>
       <div class="as-notify-detail-body">${bodyHtml}</div>
       ${n.link ? `<p><a class="primary as-notify-link" href="${esc(notificationActionUrl(n.link))}">Перейти</a></p>` : ''}`;
-    root.querySelector('.as-notify-back').addEventListener('click', showList);
   }
 
   if (openNotificationId) showDetail(openNotificationId);

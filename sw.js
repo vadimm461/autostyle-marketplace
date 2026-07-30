@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // Ordinary pages and static assets may stay cached for 3 days.
 // Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260730-cache-v15-notification-sanitize';
+const VERSION = 'autostyle-20260730-cache-v16-notification-hard-fix';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
@@ -52,6 +52,17 @@ function isFirebaseData(url) {
 function isProductPage(url) {
   const name = url.pathname.split('/').pop().toLowerCase();
   return name === 'product.html' || name === 'mobile-product.html';
+}
+
+function isNotificationPage(url) {
+  const name = url.pathname.split('/').pop().toLowerCase();
+  return name === 'notifications.html' || name === 'mobile-notifications.html';
+}
+
+function isNotificationAsset(url) {
+  if (url.origin !== self.location.origin) return false;
+  return /\/js\/(?:notifications|mobile-app|notify-service|notification-route|notification-hard-fix)\.js$/i.test(url.pathname) ||
+    /\/css\/(?:mobile-market|final-request-clean-fix)\.css$/i.test(url.pathname);
 }
 
 function metaRequest(request) {
@@ -156,6 +167,17 @@ async function cachePageOrNetwork(request) {
   }
 }
 
+async function networkFirstNotification(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response && response.ok) await cache.put(request, response.clone()).catch(() => {});
+    return response;
+  } catch (_) {
+    return (await cache.match(request)) || Response.error();
+  }
+}
+
 async function networkOnlyProduct(request) {
   try {
     return await fetch(request, { cache: 'no-store' });
@@ -175,10 +197,17 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      isProductPage(url)
-        ? networkOnlyProduct(request)
-        : cachePageOrNetwork(request)
+      isNotificationPage(url)
+        ? networkFirstNotification(request, PAGE_CACHE)
+        : isProductPage(url)
+          ? networkOnlyProduct(request)
+          : cachePageOrNetwork(request)
     );
+    return;
+  }
+
+  if (isNotificationAsset(url)) {
+    event.respondWith(networkFirstNotification(request, STATIC_CACHE));
     return;
   }
 

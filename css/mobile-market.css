@@ -378,6 +378,18 @@
   pointer-events:auto!important;
   transform:none!important;
 }
+.m-notification-body *{
+  position:static!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  z-index:auto!important;
+  pointer-events:auto!important;
+  transform:none!important;
+  max-width:100%!important;
+}
 /* Notification detail must stay above the profile card's visual layers on iOS. */
 body.mobile-page[data-page="notifications"] .m-content,
 body.mobile-page[data-page="notifications"] .m-profile-card,

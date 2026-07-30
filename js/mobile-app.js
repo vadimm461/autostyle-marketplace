@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, quer
 import { getProducts, getCategories, getCollectionCached } from './data-cache.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, saveUserCart, clearUserCart } from './user-cart-store.js';
-import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js';
+import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js?v=20260730-hard-fix';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { getFavorites, subscribeFavorites, toggleFavorite, waitFavoritesReady } from './user-favorites-store.js?v=20260729-profile-favorites';
 
@@ -1512,17 +1512,15 @@ function renderMobileNotificationList(root, data){
   const selected = new URLSearchParams(location.search).get('id') || '';
   const open = selected ? list.find(n => n.id === selected) : null;
   if(open){
-    const bodyHtml = sanitizeNotificationHtml(open.html) || `<p>${escapeHtml(notificationText(open))}</p>`;
-    root.innerHTML = `<section class="m-profile-pane m-notification-detail" data-notification-detail><button class="m-btn m-notification-back" type="button">← Все уведомления</button><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${bodyHtml}</div>${open.link ? `<p class="m-notification-action"><a class="m-btn green" href="${escapeHtml(notificationActionUrl(open.link))}">Перейти</a></p>` : ''}</section>`;
-    const back = root.querySelector('.m-notification-back');
-    back?.addEventListener('click', event => {
-      event.preventDefault();
-      location.href = 'mobile-notifications.html';
-    });
+    let bodyHtml = '';
+    try { bodyHtml = sanitizeNotificationHtml(open.html); } catch (_) { bodyHtml = ''; }
+    bodyHtml ||= `<p>${escapeHtml(notificationText(open))}</p>`;
+    const backUrl = 'mobile-notifications.html?__as_notify=20260730-hard-fix';
+    root.innerHTML = `<section class="m-profile-pane m-notification-detail" data-notification-detail><a class="m-btn m-notification-back" href="${backUrl}">← Все уведомления</a><h2>${escapeHtml(open.title || 'Уведомление')}</h2><p class="m-group">${escapeHtml(fmt(open.createdAt || open.createdAtLocal))}</p><div class="m-notification-body">${bodyHtml}</div>${open.link ? `<p class="m-notification-action"><a class="m-btn green" href="${escapeHtml(notificationActionUrl(open.link))}">Перейти</a></p>` : ''}</section>`;
     markNotificationRead(auth.currentUser, open.id).catch(()=>{});
     return;
   }
-  root.innerHTML = `<section class="m-profile-pane"><h2>Уведомления</h2>${data.unread ? `<button id="mReadAllNotifications" class="m-btn" type="button" style="width:100%;margin-bottom:10px">Прочитать все</button>` : ''}<div class="m-notifications-list">${list.length ? list.map(n=>`<a class="m-notification-item ${readIds.has(n.id)?'is-read':'is-unread'}" href="mobile-notifications.html?id=${encodeURIComponent(n.id)}"><b>${!readIds.has(n.id)?'<i></i>':''}${escapeHtml(n.title || 'Уведомление')}</b><span>${escapeHtml(notificationText(n))}</span><small>${escapeHtml(fmt(n.createdAt || n.createdAtLocal))}</small></a>`).join('') : '<div class="m-empty">Пока уведомлений нет.</div>'}</div></section>`;
+  root.innerHTML = `<section class="m-profile-pane"><h2>Уведомления</h2>${data.unread ? `<button id="mReadAllNotifications" class="m-btn" type="button" style="width:100%;margin-bottom:10px">Прочитать все</button>` : ''}<div class="m-notifications-list">${list.length ? list.map(n=>`<a class="m-notification-item ${readIds.has(n.id)?'is-read':'is-unread'}" href="mobile-notifications.html?__as_notify=20260730-hard-fix&amp;id=${encodeURIComponent(n.id)}"><b>${!readIds.has(n.id)?'<i></i>':''}${escapeHtml(n.title || 'Уведомление')}</b><span>${escapeHtml(notificationText(n))}</span><small>${escapeHtml(fmt(n.createdAt || n.createdAtLocal))}</small></a>`).join('') : '<div class="m-empty">Пока уведомлений нет.</div>'}</div></section>`;
   const readAll = $('#mReadAllNotifications');
   if(readAll) readAll.onclick = async()=>{ await markNotificationsRead(auth.currentUser, list.map(n=>n.id)); };
 }
@@ -1760,13 +1758,13 @@ async function renderProfile(){
       <a class="m-profile-tile tile-feedback" href="mobile-feedback.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Предложения и жалобы</b><small>Связь с администрацией</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#security"><span class="m-tile-ico"><img src="assets/icons/settings.svg" alt=""></span><b>Вход и безопасность</b><small>Почта и пароль</small></a>
       <a class="m-profile-tile" href="mobile-profile-data.html#account"><span class="m-tile-ico"><img src="assets/icons/card.svg" alt=""></span><b>Изменить пароль</b><small>Настройки доступа</small></a>
-      <a class="m-profile-tile" href="mobile-notifications.html"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
+      <a class="m-profile-tile" href="mobile-notifications.html?__as_notify=20260730-hard-fix"><span class="m-tile-ico"><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b><small>Заказы и сообщения</small></a>
     </div>`; 
     const innerNav = `<div class="m-profile-inner-nav">
       <a class="${page==='profile-data'?'active':''}" href="mobile-profile-data.html"><span><img src="assets/icons/user.svg" alt=""></span><b>Данные</b></a>
       <a class="${page==='discount-card'?'active':''}" href="mobile-discount-card.html"><span><img src="assets/icons/card.svg" alt=""></span><b>Карта</b></a>
       <a class="${page==='orders'?'active':''}" href="mobile-orders.html"><span><img src="assets/icons/package.svg" alt=""></span><b>Заказы</b></a>
-      <a class="${page==='notifications'?'active':''}" href="mobile-notifications.html"><span><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b></a>
+      <a class="${page==='notifications'?'active':''}" href="mobile-notifications.html?__as_notify=20260730-hard-fix"><span><img src="assets/icons/bell.svg" alt=""></span><b>Уведомления</b></a>
       <a class="${page==='feedback'?'active':''}" href="mobile-feedback.html"><span><img src="assets/icons/settings.svg" alt=""></span><b>Обращения</b></a>
     </div>`;
     let body = profileMenu;

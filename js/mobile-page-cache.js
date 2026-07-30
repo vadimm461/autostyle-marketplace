@@ -14,14 +14,26 @@
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
   const sensitivePage = profilePages.has(page);
+  const notificationDetail = page === 'notifications' && new URLSearchParams(location.search).has('id');
   const storage = sensitivePage ? sessionStorage : localStorage;
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
   const scrollKey = keyBase + ':scroll';
   const skip = new Set(['cart','product','mobile-product']);
   const contentSelector = '.m-content';
 
+  // A notification detail is dynamic HTML and must never be restored from a
+  // previous DOM snapshot. Old snapshots could contain the broken full-page
+  // layer that made the header and bottom navigation untappable.
+  if (page === 'notifications') {
+    [localStorage, sessionStorage].forEach(store => {
+      Object.keys(store)
+        .filter(key => key.includes(':mobile-notifications.html?'))
+        .forEach(key => store.removeItem(key));
+    });
+  }
+
   function now(){ return Date.now(); }
-  function canCache(){ return !skip.has(page) && !!document.querySelector(contentSelector); }
+  function canCache(){ return !skip.has(page) && !notificationDetail && !!document.querySelector(contentSelector); }
   function read(){
     try { return JSON.parse(storage.getItem(keyBase) || 'null'); } catch(e){ return null; }
   }
@@ -60,7 +72,7 @@
       'mobile-profile-data.html',
       'mobile-discount-card.html',
       'mobile-orders.html',
-      'mobile-notifications.html',
+      'mobile-notifications.html?__as_notify=20260730-hard-fix',
       'mobile-feedback.html'
     ];
     const current = location.pathname.split('/').pop();

@@ -71,8 +71,13 @@ function safeNotificationStyle(value){
 export function sanitizeNotificationHtml(html){
   const raw = String(html || '').trim();
   if (!raw) return '';
-  const template = document.createElement('template');
-  template.innerHTML = raw;
+  let template;
+  try {
+    template = document.createElement('template');
+    template.innerHTML = raw;
+  } catch (_) {
+    return '';
+  }
 
   [...template.content.querySelectorAll('*')].forEach(node => {
     const tag = node.tagName.toLowerCase();
