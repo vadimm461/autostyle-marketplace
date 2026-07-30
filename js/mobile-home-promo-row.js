@@ -1,16 +1,21 @@
 import { db } from './firebase.js';
 import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const COLLECTION_NAMES = [...new Set([
+const VERTICAL_COLLECTION_NAMES = new Set([
+  'autostyle_promo_cards',
+  'autostyle_promocards',
+  'autostyle_home_cards',
+  'promocards',
+  'homecards'
+]);
+const HORIZONTAL_COLLECTION_NAMES = new Set([
   'autostyle_horizontal_promo_cards',
   'autostyle_home_promo_cards',
-  'homePromoCards',
-  'autostyle_promo_cards',
-  'autostyle_promoCards',
-  'promoCards',
-  'autostyle_section_promo_cards',
-  'autostyle_between_promo_cards',
-  'sectionPromoCards'
+  'homePromoCards'
+].map(name => name.toLowerCase()));
+const COLLECTION_NAMES = [...new Set([
+  ...VERTICAL_COLLECTION_NAMES,
+  ...HORIZONTAL_COLLECTION_NAMES
 ])];
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -41,6 +46,7 @@ function buildLink(card = {}){
 }
 
 function isExplicitVertical(card = {}){
+  const source = String(card._collection || '').toLowerCase();
   const descriptor = [
     card.orientation, card.direction, card.format, card.layout, card.type,
     card.cardType, card.viewType, card.bannerType, card.mode, card.displayMode
@@ -49,6 +55,7 @@ function isExplicitVertical(card = {}){
   return card.vertical === true
     || card.isVertical === true
     || card.mobileVertical === true
+    || VERTICAL_COLLECTION_NAMES.has(source)
     || /(^|[\s_-])(vertical|portrait|story|stories|reel|reels|sidebar)([\s_-]|$)/i.test(descriptor);
 }
 
@@ -78,7 +85,8 @@ function cardMarkup(rawCard, index){
   const loading = index === 0 ? 'eager' : 'lazy';
   const priority = index === 0 ? 'high' : 'auto';
 
-  return `<a class="m-promo-card${imageOnly ? ' m-promo-image-only' : ''}" href="${card.link}" aria-label="${title}">
+  const orientationClass = isExplicitVertical(card) ? ' m-promo-vertical' : ' m-promo-horizontal';
+  return `<a class="m-promo-card${orientationClass}${imageOnly ? ' m-promo-image-only' : ''}" href="${card.link}" aria-label="${title}">
     <img loading="${loading}" fetchpriority="${priority}" decoding="async" src="${escapeHtml(image)}" alt="${title}">
     ${imageOnly ? '' : `<span><b>${title}</b>${card.text ? `<small>${escapeHtml(card.text)}</small>` : ''}</span>`}
   </a>`;
@@ -105,9 +113,9 @@ async function loadPromos(){
 
   return all
     .map(normalizeCard)
-    .filter(card => card.enabled && !isExplicitVertical(card) && card.image)
+    .filter(card => card.enabled && card.image)
     .filter(card => {
-      const key = String(card.id || card.key || card.slug || card.image);
+      const key = String(card.key || card.slug || `${card._collection || 'promo'}:${card.id || card.image}`);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -149,10 +157,18 @@ async function renderPromo(){
   const mount = document.getElementById('mStablePromoMount');
   if (!mount) return;
 
-  const promos = await loadPromos();
-  const markup = promos.map(cardMarkup).filter(Boolean).join('');
+  const hero = document.getElementById('mHero');
+  if (hero && mount.parentElement === hero.parentElement && mount.nextElementSibling !== hero) {
+    hero.parentElement.insertBefore(mount, hero);
+  }
 
-  if (!markup) {
+  const promos = await loadPromos();
+  const vertical = promos.filter(isExplicitVertical);
+  const horizontal = promos.filter(card => !isExplicitVertical(card));
+  const verticalMarkup = vertical.map(cardMarkup).filter(Boolean).join('');
+  const horizontalMarkup = horizontal.map(cardMarkup).filter(Boolean).join('');
+
+  if (!verticalMarkup && !horizontalMarkup) {
     mount.hidden = true;
     mount.replaceChildren();
     console.warn('Промо-карточки не найдены ни в одной используемой коллекции');
@@ -160,8 +176,8 @@ async function renderPromo(){
   }
 
   mount.hidden = false;
-  mount.innerHTML = `<section class="m-section m-horizontal-promos"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row">${markup}</div></section>`;
-  startAutoplay(mount.querySelector('.m-promo-row'));
+  mount.innerHTML = `${verticalMarkup ? `<section class="m-section m-promo-group m-promo-group-vertical"><div class="m-section-head"><h2>Спецпредложения</h2></div><div class="m-promo-row m-promo-row-vertical">${verticalMarkup}</div></section>` : ''}${horizontalMarkup ? `<section class="m-section m-promo-group m-promo-group-horizontal"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row m-promo-row-horizontal">${horizontalMarkup}</div></section>` : ''}`;
+  mount.querySelectorAll('.m-promo-row').forEach(startAutoplay);
 }
 
 if (document.readyState === 'loading') {
