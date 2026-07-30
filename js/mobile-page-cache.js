@@ -3,21 +3,21 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){
-      navigator.serviceWorker.register('./service-worker.js', { scope:'./', updateViaCache:'none' })
+      navigator.serviceWorker.register('./sw.js', { scope:'./', updateViaCache:'none' })
         .then(function(registration){ return registration.update().catch(function(){}); })
         .catch(function(error){ console.warn('AutoStyle mobile cache worker:', error); });
     }, { once:true });
   }
 
-  const VERSION = '20260729-nav-duplicate-renderer-removed';
-  const MAX_AGE = 1000 * 60 * 3;
+  const VERSION = '20260730-long-pages-except-product';
+  const MAX_AGE = 1000 * 60 * 60 * 24 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
   const sensitivePage = profilePages.has(page);
   const storage = sensitivePage ? sessionStorage : localStorage;
   const keyBase = 'as_mobile_page_cache:' + VERSION + ':' + location.pathname.split('/').pop() + location.search;
   const scrollKey = keyBase + ':scroll';
-  const skip = new Set(['cart']);
+  const skip = new Set(['cart','product','mobile-product']);
   const contentSelector = '.m-content';
 
   function now(){ return Date.now(); }
