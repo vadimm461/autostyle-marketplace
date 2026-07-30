@@ -9,7 +9,7 @@ import {
   fmt,
   notificationText,
   sanitizeNotificationHtml
-} from './notify-service.js?v=20260730-notification-stable';
+} from './notify-service.js?v=20260730-notification-detail-v18';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -24,6 +24,8 @@ if (!explicitNotificationId && notificationQuery.has('__as_notify')) {
   localStorage.removeItem('autostyle_selected_notification');
 }
 let openNotificationId = explicitNotificationId || localStorage.getItem('autostyle_selected_notification') || '';
+let detailRendered = false;
+let detailRenderedId = '';
 
 function isMobileNotificationView(){
   return window.__AS_NOTIFICATION_LAYOUT === 'mobile' ||
@@ -35,7 +37,7 @@ function notificationPageUrl(id = ''){
   const file = isMobileNotificationView() ? 'mobile-notifications.html' : 'notifications.html';
   const query = new URLSearchParams();
   if (id) query.set('id', id);
-  query.set('__as_notify', '20260730-notification-stable');
+  query.set('__as_notify', '20260730-notification-detail-v18');
   return `${file}?${query.toString()}`;
 }
 
@@ -323,7 +325,13 @@ function renderPage(){
   const root = $('#notificationsPage');
   if (!root) return;
 
+  // A detail URL is a stable screen. Firestore may emit several snapshots
+  // while the notification is being marked as read; none of them may replace
+  // the DOM under the user's finger or recreate the navigation shell.
+  if (explicitNotificationId && detailRendered && detailRenderedId === String(explicitNotificationId)) return;
+
   function showList(){
+    if (explicitNotificationId) return;
     pageMode = 'list';
     openNotificationId = '';
     localStorage.removeItem('autostyle_selected_notification');
@@ -351,8 +359,21 @@ function renderPage(){
   async function showDetail(id){
     pageMode = 'detail';
     openNotificationId = id;
-    const n = state.list.find(x => String(x.id) === String(id)) || state.list[0];
-    if (!n) { showList(); return; }
+    const n = state.list.find(x => String(x.id) === String(id));
+    if (!n) {
+      // Do not show another notification while the requested one is still
+      // arriving from Firestore. That old fallback made the detail screen
+      // change underneath the user and could reopen a stale DOM state.
+      if (explicitNotificationId) {
+        root.innerHTML = '<div class="as-notify-empty">Загружаем уведомление…</div>';
+        return;
+      }
+      showList();
+      return;
+    }
+    if (explicitNotificationId && detailRendered && detailRenderedId === String(n.id)) return;
+    detailRendered = true;
+    detailRenderedId = String(n.id);
     markNotificationRead(currentUser, n.id).catch(() => {});
     let bodyHtml = '';
     try { bodyHtml = sanitizeNotificationHtml(n.html); } catch (_) { bodyHtml = ''; }
@@ -383,7 +404,25 @@ function start(user){
   initNotificationCatalogMenu();
   bindHeader();
   if (unsubscribe) unsubscribe();
-  unsubscribe = watchNotifications(currentUser, applyState);
+  let stop = () => {};
+  const onState = next => {
+    applyState(next);
+    if (explicitNotificationId && detailRendered) {
+      // watchNotifications emits cached data synchronously and starts its
+      // live listeners afterwards, so defer the unsubscribe until the stop
+      // function has been assigned.
+      Promise.resolve().then(() => {
+        stop();
+        if (unsubscribe === stop) unsubscribe = null;
+      });
+    }
+  };
+  stop = watchNotifications(currentUser, onState);
+  unsubscribe = stop;
+  if (explicitNotificationId && detailRendered) {
+    stop();
+    unsubscribe = null;
+  }
 }
 
 onAuthStateChanged(auth, start);

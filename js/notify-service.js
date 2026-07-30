@@ -249,15 +249,26 @@ export function watchNotifications(user, callback){
 
   const docs = new Map();
   const unsubs = [];
+  let stopped = false;
   let readIds = cachedReadIds();
   let groupIds = [];
   let lastList = cachedNotifications().filter(n => isNotificationForUser(n, user, groupIds));
+
+  const addUnsubscribe = fn => {
+    if (typeof fn !== 'function') return;
+    if (stopped) {
+      try { fn(); } catch (_) {}
+      return;
+    }
+    unsubs.push(fn);
+  };
 
   function visibleDocs(){
     return normalizeList(docs).filter(n => isNotificationForUser(n, user, groupIds));
   }
 
   function emit(){
+    if (stopped) return;
     const list = visibleDocs();
     cacheNotifications(list);
     callback({ list, readIds, unread: list.filter(n => !readIds.has(n.id)).length });
@@ -266,6 +277,7 @@ export function watchNotifications(user, callback){
   callback({ list: lastList, readIds, unread: lastList.filter(n => !readIds.has(n.id)).length });
 
   const applySnapshot = snap => {
+    if (stopped) return;
     snap.docChanges().forEach(change => {
       if (change.type === 'removed') docs.delete(change.doc.id);
       else docs.set(change.doc.id, { id: change.doc.id, ...change.doc.data() });
@@ -275,11 +287,12 @@ export function watchNotifications(user, callback){
   };
 
   loadUserGroupIds(user).then(ids => {
+    if (stopped) return;
     groupIds = ids;
     emit();
 
     try{
-      unsubs.push(onSnapshot(
+      addUnsubscribe(onSnapshot(
         query(collection(db, NOTIFICATIONS_COLLECTION), where('audience','==','all'), limit(80)),
         applySnapshot,
         err => console.warn('global notifications snapshot error', err)
@@ -287,7 +300,7 @@ export function watchNotifications(user, callback){
     }catch(e){ console.warn('global notifications query error', e); }
 
     try{
-      unsubs.push(onSnapshot(
+      addUnsubscribe(onSnapshot(
         query(collection(db, NOTIFICATIONS_COLLECTION), where('userId','==', user.uid), limit(80)),
         applySnapshot,
         err => console.warn('user notifications snapshot error', err)
@@ -295,8 +308,9 @@ export function watchNotifications(user, callback){
     }catch(e){ console.warn('user notifications query error', e); }
 
     groupIds.forEach(groupId => {
+      if (stopped) return;
       try{
-        unsubs.push(onSnapshot(
+        addUnsubscribe(onSnapshot(
           query(collection(db, NOTIFICATIONS_COLLECTION), where('audience','==','group'), where('groupId','==', groupId), limit(80)),
           applySnapshot,
           err => console.warn('group notifications snapshot error', err)
@@ -306,13 +320,18 @@ export function watchNotifications(user, callback){
   });
 
   const readRef = doc(db, NOTIFICATION_READS_COLLECTION, user.uid);
-  unsubs.push(onSnapshot(readRef, snap => {
+  addUnsubscribe(onSnapshot(readRef, snap => {
+    if (stopped) return;
     readIds = new Set(snap.exists() ? (snap.data().readIds || []) : []);
     cacheReadIds(readIds);
     emit();
   }, err => console.warn('notification reads snapshot error', err)));
 
-  return () => unsubs.forEach(fn => { try{ fn(); }catch(e){} });
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    unsubs.splice(0).forEach(fn => { try{ fn(); }catch(e){} });
+  };
 }
 
 export async function markNotificationRead(user, notificationId){

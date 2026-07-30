@@ -4,7 +4,7 @@
   // This file is deliberately standalone and loaded with a new URL on both
   // notification pages. It repairs pages that were opened from an older
   // three-day cache before the notification sanitizer was available.
-  const VERSION = '20260730-notification-stable';
+  const VERSION = '20260730-notification-detail-v18';
 
   try {
     const file = (location.pathname.split('/').pop() || '').toLowerCase();
@@ -64,6 +64,29 @@
     });
   }
 
+  function neutralizeUnexpectedViewportLayers(){
+    // Notification HTML is user-authored content. If an older cached render
+    // or an unsupported element still creates a fixed/absolute layer, it must
+    // never sit above the shared header or navigation.
+    const width = window.innerWidth || document.documentElement.clientWidth || 0;
+    const height = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (!width || !height) return;
+    document.body?.querySelectorAll('*').forEach(node => {
+      if (node.matches(
+        'header.topbar, .m-top, .m-bottom-nav, .m-bottom-inner, ' +
+        '.as-notify-dropdown, .as-account-popup, .as-alert-backdrop.show, ' +
+        '#asFloatingWheel, #asHeaderNotifyDropdown'
+      )) return;
+      const style = getComputedStyle(node);
+      if (!['fixed', 'absolute'].includes(style.position) || style.display === 'none' || style.visibility === 'hidden') return;
+      const rect = node.getBoundingClientRect();
+      const coversViewport = rect.width >= width * 0.85 && rect.height >= height * 0.65 && rect.left <= width * 0.15 && rect.top <= height * 0.35;
+      if (!coversViewport) return;
+      node.style.setProperty('display', 'none', 'important');
+      node.style.setProperty('pointer-events', 'none', 'important');
+    });
+  }
+
   function bindSearchFallback(){
     document.querySelectorAll('.search,.m-search').forEach(form => {
       if (form.dataset.asNotificationSearchReady === '1') return;
@@ -111,10 +134,12 @@
     clearStaleInteractionLocks();
     bindSearchFallback();
     cleanNotificationBodies();
+    neutralizeUnexpectedViewportLayers();
     if (document.body && !window.__AS_NOTIFICATION_HARD_OBSERVER) {
       window.__AS_NOTIFICATION_HARD_OBSERVER = new MutationObserver(() => {
         cleanNotificationBodies();
         clearStaleInteractionLocks();
+        neutralizeUnexpectedViewportLayers();
       });
       window.__AS_NOTIFICATION_HARD_OBSERVER.observe(document.body, { childList:true, subtree:true });
     }
