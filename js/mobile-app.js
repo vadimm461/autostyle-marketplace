@@ -554,10 +554,12 @@ function productInCategory(p, selected){
 }
 async function initData(options={}){
   if (!dataPromise || options.force) {
+    const dynamicOptions = options.force ? { force: true } : MOBILE_CACHE_OPTIONS;
+    const productOptions = options.productPage ? { force: true } : dynamicOptions;
     const loadPromise = Promise.all([
-      getProducts(MOBILE_CACHE_OPTIONS),
-      getCategories(MOBILE_CACHE_OPTIONS),
-      safeLoadCollection(HOME_BLOCKS_COLLECTION)
+      getProducts(productOptions),
+      getCategories(dynamicOptions),
+      safeLoadCollection(HOME_BLOCKS_COLLECTION, dynamicOptions)
     ]).then(([p,c,h])=>{
       allProducts=p||[];
       products=allProducts;
@@ -651,7 +653,7 @@ function renderCatalogBatch(list, start=0){
   }
 }
 async function renderProduct(){
-  setupShell('catalog'); await initData();
+  setupShell('catalog'); await initData({ productPage: true });
   const id=new URLSearchParams(location.search).get('id'); const p=products.find(x=>String(x.id)===String(id));
   if(!p){ $('#mProduct').innerHTML='<div class="m-empty">Товар не найден</div>'; clearLoader(); return; }
   const im=img(p), d=discount(p), op=oldPrice(p);
