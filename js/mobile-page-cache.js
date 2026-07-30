@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260730-notification-detail-v18';
+  const VERSION = '20260730-notification-detail-v19';
   const MAX_AGE = 1000 * 60 * 60 * 24 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
@@ -72,7 +72,7 @@
       'mobile-profile-data.html',
       'mobile-discount-card.html',
       'mobile-orders.html',
-      'mobile-notifications.html?__as_notify=20260730-notification-detail-v18',
+      'mobile-notifications.html?__as_notify=20260730-notification-detail-v19',
       'mobile-feedback.html'
     ];
     const current = location.pathname.split('/').pop();

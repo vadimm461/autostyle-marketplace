@@ -4,7 +4,7 @@
   // This file is deliberately standalone and loaded with a new URL on both
   // notification pages. It repairs pages that were opened from an older
   // three-day cache before the notification sanitizer was available.
-  const VERSION = '20260730-notification-detail-v18';
+  const VERSION = '20260730-notification-detail-v19';
 
   try {
     const file = (location.pathname.split('/').pop() || '').toLowerCase();

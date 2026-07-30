@@ -9,7 +9,7 @@ import {
   fmt,
   notificationText,
   sanitizeNotificationHtml
-} from './notify-service.js?v=20260730-notification-detail-v18';
+} from './notify-service.js?v=20260730-notification-detail-v19';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -19,7 +19,7 @@ let state = { list: [], readIds: new Set(), unread: 0 };
 let unsubscribe = null;
 let pageMode = 'list';
 const notificationQuery = new URLSearchParams(location.search);
-const explicitNotificationId = notificationQuery.get('id') || '';
+let explicitNotificationId = notificationQuery.get('id') || '';
 if (!explicitNotificationId && notificationQuery.has('__as_notify')) {
   localStorage.removeItem('autostyle_selected_notification');
 }
@@ -37,8 +37,21 @@ function notificationPageUrl(id = ''){
   const file = isMobileNotificationView() ? 'mobile-notifications.html' : 'notifications.html';
   const query = new URLSearchParams();
   if (id) query.set('id', id);
-  query.set('__as_notify', '20260730-notification-detail-v18');
+  query.set('__as_notify', '20260730-notification-detail-v19');
   return `${file}?${query.toString()}`;
+}
+
+function lockNotificationDetailUrl(id){
+  const normalizedId = String(id || '').trim();
+  if (!normalizedId) return;
+  explicitNotificationId = normalizedId;
+  openNotificationId = normalizedId;
+
+  const nextUrl = notificationPageUrl(normalizedId);
+  const currentUrl = `${location.pathname.split('/').pop() || ''}${location.search}`;
+  if (nextUrl !== currentUrl) {
+    try { history.replaceState({ asNotificationId: normalizedId }, '', nextUrl); } catch (_) {}
+  }
 }
 
 function notificationActionUrl(value){
@@ -328,7 +341,8 @@ function renderPage(){
   // A detail URL is a stable screen. Firestore may emit several snapshots
   // while the notification is being marked as read; none of them may replace
   // the DOM under the user's finger or recreate the navigation shell.
-  if (explicitNotificationId && detailRendered && detailRenderedId === String(explicitNotificationId)) return;
+  const activeDetailId = openNotificationId || explicitNotificationId;
+  if (detailRendered && detailRenderedId === String(activeDetailId)) return;
 
   function showList(){
     if (explicitNotificationId) return;
@@ -357,9 +371,17 @@ function renderPage(){
   }
 
   async function showDetail(id){
+    const normalizedId = String(id || '').trim();
+    if (!normalizedId) return;
+    if (detailRendered && detailRenderedId === normalizedId) return;
+
+    // Opening a card from the list used to keep the list URL without `id`.
+    // The read-state snapshot then called renderPage again and replaced the
+    // detail DOM underneath the user. Make the detail a real, stable route
+    // before marking it read, so every later state update keeps this screen.
+    lockNotificationDetailUrl(normalizedId);
     pageMode = 'detail';
-    openNotificationId = id;
-    const n = state.list.find(x => String(x.id) === String(id));
+    const n = state.list.find(x => String(x.id) === normalizedId);
     if (!n) {
       // Do not show another notification while the requested one is still
       // arriving from Firestore. That old fallback made the detail screen
@@ -371,7 +393,7 @@ function renderPage(){
       showList();
       return;
     }
-    if (explicitNotificationId && detailRendered && detailRenderedId === String(n.id)) return;
+    if (detailRendered && detailRenderedId === String(n.id)) return;
     detailRendered = true;
     detailRenderedId = String(n.id);
     markNotificationRead(currentUser, n.id).catch(() => {});
@@ -407,7 +429,7 @@ function start(user){
   let stop = () => {};
   const onState = next => {
     applyState(next);
-    if (explicitNotificationId && detailRendered) {
+    if (detailRendered) {
       // watchNotifications emits cached data synchronously and starts its
       // live listeners afterwards, so defer the unsubscribe until the stop
       // function has been assigned.
@@ -419,7 +441,7 @@ function start(user){
   };
   stop = watchNotifications(currentUser, onState);
   unsubscribe = stop;
-  if (explicitNotificationId && detailRendered) {
+  if (detailRendered) {
     stop();
     unsubscribe = null;
   }
