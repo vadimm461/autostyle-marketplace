@@ -255,3 +255,27 @@ body.mobile-page #mHero.m-hero .m-hero-image img{
   object-position:center center!important;
   background:#f3f5f7!important;
 }
+
+/* v26: use each source image's own ratio so mobile never crops promo content. */
+body.mobile-page #mStablePromoMount .m-promo-card,
+body.mobile-page #mHomePromoMount .m-promo-card{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-row-horizontal .m-promo-card,
+body.mobile-page #mStablePromoMount .m-promo-row-vertical .m-promo-card,
+body.mobile-page #mHomePromoMount .m-promo-card{
+  min-height:0!important;
+  max-height:none!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-card img,
+body.mobile-page #mHomePromoMount .m-promo-card img{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  display:block!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+}
