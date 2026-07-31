@@ -183,3 +183,75 @@ body.mobile-page .m-content{
 body.mobile-page #mHero{order:1!important;}
 body.mobile-page #mStablePromoMount{order:2!important;}
 body.mobile-page #mHomeDynamic{order:3!important;}
+
+/* Final mobile home layout: keep every banner fully visible and flat. */
+body.mobile-page #mStablePromoMount:not([hidden]),
+body.mobile-page #mHomePromoMount:not([hidden]){
+  margin-top:24px!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-card,
+body.mobile-page #mHomePromoMount .m-promo-card,
+body.mobile-page .m-promo-card{
+  box-shadow:none!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-card,
+body.mobile-page #mHomePromoMount .m-promo-card{
+  background:#fff!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-card img,
+body.mobile-page #mHomePromoMount .m-promo-card img,
+body.mobile-page .m-promo-card img{
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:#fff!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-card.m-promo-image-only::before,
+body.mobile-page #mStablePromoMount .m-promo-card.m-promo-image-only::after,
+body.mobile-page #mHomePromoMount .m-promo-card.m-promo-image-only::before,
+body.mobile-page #mHomePromoMount .m-promo-card.m-promo-image-only::after{
+  display:none!important;
+  content:none!important;
+  box-shadow:none!important;
+}
+
+/* The hero uses the banner's full 1600x700 canvas, without a top crop. */
+body.mobile-page #mHero.m-hero{
+  position:relative!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  padding:0!important;
+  aspect-ratio:1600 / 700!important;
+  overflow:hidden!important;
+  background:#f3f5f7!important;
+}
+body.mobile-page #mHero.m-hero .m-hero-slider{
+  position:relative!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+}
+body.mobile-page #mHero.m-hero .m-hero-image{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+}
+body.mobile-page #mHero.m-hero .m-hero-image img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:#f3f5f7!important;
+}
