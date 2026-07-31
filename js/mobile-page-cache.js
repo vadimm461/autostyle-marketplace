@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260731-home-layout-v24';
+  const VERSION = '20260731-home-layout-v25';
   const MAX_AGE = 1000 * 60 * 60 * 24 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);

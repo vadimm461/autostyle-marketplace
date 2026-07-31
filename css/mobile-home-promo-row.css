@@ -184,7 +184,7 @@ body.mobile-page #mHero{order:1!important;}
 body.mobile-page #mStablePromoMount{order:2!important;}
 body.mobile-page #mHomeDynamic{order:3!important;}
 
-/* Final mobile home layout: keep every banner fully visible and flat. */
+/* Final mobile home layout: promo photos fill their cards and stay flat. */
 body.mobile-page #mStablePromoMount:not([hidden]),
 body.mobile-page #mHomePromoMount:not([hidden]){
   margin-top:24px!important;
@@ -196,7 +196,7 @@ body.mobile-page .m-promo-card{
 }
 body.mobile-page #mStablePromoMount .m-promo-card,
 body.mobile-page #mHomePromoMount .m-promo-card{
-  background:#fff!important;
+  background:#10141b!important;
 }
 body.mobile-page #mStablePromoMount .m-promo-card img,
 body.mobile-page #mHomePromoMount .m-promo-card img,
@@ -205,9 +205,9 @@ body.mobile-page .m-promo-card img{
   height:100%!important;
   min-width:0!important;
   min-height:0!important;
-  object-fit:contain!important;
+  object-fit:cover!important;
   object-position:center center!important;
-  background:#fff!important;
+  background:#10141b!important;
 }
 body.mobile-page #mStablePromoMount .m-promo-card.m-promo-image-only::before,
 body.mobile-page #mStablePromoMount .m-promo-card.m-promo-image-only::after,
