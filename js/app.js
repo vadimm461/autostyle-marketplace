@@ -204,7 +204,7 @@ function renderImageSlides(items, className, fallbackText){
   const slides = (items || []).filter(x => x && x.image && x.enabled !== false).sort((a,b)=>Number(a.order??999)-Number(b.order??999));
   if (!slides.length) return `<div class="home-banner-placeholder">${fallbackText || 'Добавьте баннер в админке'}</div>`;
   return `<div class="image-banner-slider ${className || ''}">
-    ${slides.map((b,i)=>`<a class="image-banner-slide ${i===0?'active':''}" href="${b.link || '#'}" data-slide="${i}"><img loading="lazy" decoding="async" src="${b.image}" alt="${b.title || 'Баннер'}"></a>`).join('')}
+    ${slides.map((b,i)=>`<a class="image-banner-slide ${i===0?'active':''}" href="${b.link || '#'}" data-slide="${i}"><img loading="${i===0?'eager':'lazy'}" fetchpriority="${i===0?'high':'auto'}" decoding="async" src="${b.image}" alt="${b.title || 'Баннер'}"></a>`).join('')}
     ${slides.length > 1 ? `<div class="image-banner-dots">${slides.map((_,i)=>`<span class="${i===0?'active':''}" data-dot="${i}"></span>`).join('')}</div>` : ''}
   </div>`;
 }
@@ -328,11 +328,8 @@ function prepareHomePromoZone(){
     zone.className='home-promo-zone';
     zone.hidden=true;
     zone.setAttribute('aria-label','Промо и акции');
-    main.insertBefore(zone,heroGrid || main.firstElementChild);
+    main.insertBefore(zone,heroGrid?.nextElementSibling || null);
   }
-
-  vertical.classList.add('home-promo-vertical');
-  if(vertical.parentElement!==zone) zone.appendChild(vertical);
 
   let horizontal=zone.querySelector('.home-promo-horizontal');
   if(!horizontal){
@@ -341,6 +338,19 @@ function prepareHomePromoZone(){
     zone.appendChild(horizontal);
   }
   if(horizontalCards.parentElement!==horizontal) horizontal.appendChild(horizontalCards);
+
+  vertical.classList.add('home-promo-vertical');
+  if(vertical.parentElement!==zone) zone.appendChild(vertical);
+
+  // Стабильная последовательность: «Акции и подборки» идут перед
+  // «Спецпредложениями», независимо от предыдущего DOM/кэша.
+  zone.append(horizontal, vertical);
+  // The main hero must remain the first content block below the header.
+  // Keep the vertical and horizontal promo zone immediately after it.
+  if(heroGrid){
+    const afterHero=heroGrid.nextElementSibling;
+    if(zone!==afterHero) main.insertBefore(zone,afterHero || null);
+  }
   heroGrid?.classList.add('home-main-hero');
 }
 
