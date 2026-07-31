@@ -2374,11 +2374,11 @@ header.topbar{
   padding-left:0 !important;
 }
 
-/* Top promo zone: vertical and horizontal promotions are shown together below the header. */
+/* Home order: main hero, horizontal promos, then vertical special offers. */
 .home-promo-zone{
-  display:grid!important;
-  grid-template-columns:minmax(220px,280px) minmax(0,1fr);
-  gap:16px;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:18px;
   width:100%;
   max-width:1220px;
   margin:0 auto 18px;
@@ -2386,10 +2386,32 @@ header.topbar{
 }
 .home-promo-zone[hidden],
 .home-promo-zone [hidden]{display:none!important;}
-.home-promo-zone:not(.has-vertical){grid-template-columns:minmax(0,1fr);}
-.home-promo-zone:not(.has-horizontal){grid-template-columns:minmax(220px,280px);}
-.home-promo-zone .home-promo-vertical,
-.home-promo-zone .home-promo-horizontal{min-width:0;}
+.home-promo-zone .home-promo-horizontal,
+.home-promo-zone .home-promo-vertical{
+  min-width:0;
+  width:100%;
+}
+.home-promo-zone .home-promo-horizontal{order:1;}
+.home-promo-zone .home-promo-vertical{
+  order:2;
+  width:min(320px,100%);
+  align-self:flex-start;
+}
+.home-promo-zone.has-horizontal .home-promo-horizontal::before,
+.home-promo-zone.has-vertical .home-promo-vertical::before{
+  display:block;
+  margin:0 0 10px;
+  color:#101217;
+  font-size:clamp(24px,2.2vw,34px);
+  line-height:1.05;
+  font-weight:900;
+}
+.home-promo-zone.has-horizontal .home-promo-horizontal::before{content:'Акции и подборки';}
+.home-promo-zone.has-vertical .home-promo-vertical::before{content:'Спецпредложения';}
+.home-promo-zone .home-promo-horizontal #banners.home-mini-promos{
+  margin:0!important;
+  min-height:0!important;
+}
 .home-promo-zone #homePromoBanner{
   height:320px!important;
   min-height:320px!important;
@@ -2417,23 +2439,23 @@ header.topbar{
   object-position:center!important;
 }
 .home-promo-zone #banners.home-mini-promos{
-  height:320px!important;
-  min-height:320px!important;
+  height:auto!important;
+  min-height:0!important;
   margin:0!important;
 }
 .home-promo-zone #banners.home-mini-promos .home-mini-promo-card{
-  height:320px!important;
-  min-height:320px!important;
+  height:auto!important;
+  min-height:220px!important;
   aspect-ratio:auto!important;
 }
 .home-main-hero{
   grid-template-columns:minmax(0,1fr)!important;
-  max-width:1220px!important;
-  margin-top:0!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0 auto 18px!important;
 }
 @media(max-width:980px){
   .home-promo-zone{
-    grid-template-columns:minmax(0,1fr)!important;
     gap:12px;
   }
   .home-promo-zone #homePromoBanner,
@@ -2443,5 +2465,5 @@ header.topbar{
     min-height:220px!important;
   }
   .home-promo-zone #homePromoBanner{min-height:300px!important;}
-  .home-main-hero{margin-top:0!important;}
+  .home-main-hero{margin:0 auto 12px!important;}
 }
