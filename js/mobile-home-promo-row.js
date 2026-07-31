@@ -178,8 +178,8 @@ async function renderPromo(){
   if (!mount) return;
 
   const hero = document.getElementById('mHero');
-  if (hero && mount.parentElement === hero.parentElement && mount.nextElementSibling !== hero) {
-    hero.parentElement.insertBefore(mount, hero);
+  if (hero && mount.parentElement === hero.parentElement && hero.nextElementSibling !== mount) {
+    hero.parentElement.insertBefore(mount, hero.nextElementSibling);
   }
 
   const promos = await loadPromos();
@@ -196,7 +196,7 @@ async function renderPromo(){
   }
 
   mount.hidden = false;
-  mount.innerHTML = `${verticalMarkup ? `<section class="m-section m-promo-group m-promo-group-vertical"><div class="m-section-head"><h2>Спецпредложения</h2></div><div class="m-promo-row m-promo-row-vertical">${verticalMarkup}</div></section>` : ''}${horizontalMarkup ? `<section class="m-section m-promo-group m-promo-group-horizontal"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row m-promo-row-horizontal">${horizontalMarkup}</div></section>` : ''}`;
+  mount.innerHTML = `${horizontalMarkup ? `<section class="m-section m-promo-group m-promo-group-horizontal"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row m-promo-row-horizontal">${horizontalMarkup}</div></section>` : ''}${verticalMarkup ? `<section class="m-section m-promo-group m-promo-group-vertical"><div class="m-section-head"><h2>Спецпредложения</h2></div><div class="m-promo-row m-promo-row-vertical">${verticalMarkup}</div></section>` : ''}`;
   mount.querySelectorAll('.m-promo-row').forEach(startAutoplay);
 }
 
