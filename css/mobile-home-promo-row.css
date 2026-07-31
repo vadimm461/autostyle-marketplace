@@ -61,8 +61,14 @@
   pointer-events:none;
 }
 
-/* Mobile home: show both vertical and horizontal promo collections directly below the header. */
+/* Mobile home: show both vertical and horizontal promo collections after the main hero. */
 #mStablePromoMount[hidden]{display:none!important;}
+#mStablePromoMount:not([hidden]){
+  display:flex!important;
+  flex-direction:column!important;
+}
+#mStablePromoMount .m-promo-group-horizontal{order:1!important;}
+#mStablePromoMount .m-promo-group-vertical{order:2!important;}
 #mStablePromoMount .m-promo-group{margin:0 0 22px!important;}
 #mStablePromoMount .m-promo-group .m-section-head{margin:0 0 10px!important;}
 #mStablePromoMount .m-promo-group .m-section-head h2{font-size:22px!important;}
@@ -139,3 +145,41 @@
   background:linear-gradient(transparent,rgba(0,0,0,.72));
   pointer-events:none;
 }
+
+/* Mobile main hero: preserve the full 1600x700 banner inside the viewport. */
+#mHero.m-hero{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  padding:0!important;
+  aspect-ratio:1600 / 700!important;
+  overflow:hidden!important;
+}
+#mHero.m-hero .m-hero-slider{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:1600 / 700!important;
+}
+#mHero.m-hero .m-hero-image{
+  min-height:0!important;
+  height:100%!important;
+}
+#mHero.m-hero .m-hero-image img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  background:#f3f5f7!important;
+}
+
+/* Keep the visual order deterministic even while cached data is being restored. */
+body.mobile-page .m-content{
+  display:flex!important;
+  flex-direction:column!important;
+}
+body.mobile-page #mHero{order:1!important;}
+body.mobile-page #mStablePromoMount{order:2!important;}
+body.mobile-page #mHomeDynamic{order:3!important;}
