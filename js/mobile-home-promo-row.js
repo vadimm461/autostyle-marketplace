@@ -112,6 +112,23 @@ function cardMarkup(rawCard, index){
   </a>`;
 }
 
+function syncPromoCardRatio(card){
+  const image = card.querySelector('img');
+  if (!image) return;
+
+  const applyRatio = () => {
+    if (!image.naturalWidth || !image.naturalHeight) return;
+    card.style.setProperty(
+      'aspect-ratio',
+      `${image.naturalWidth} / ${image.naturalHeight}`,
+      'important'
+    );
+  };
+
+  if (image.complete) applyRatio();
+  else image.addEventListener('load', applyRatio, { once:true });
+}
+
 async function loadCollection(name){
   try {
     const snapshot = await getDocs(collection(db, name));
@@ -197,6 +214,7 @@ async function renderPromo(){
 
   mount.hidden = false;
   mount.innerHTML = `${horizontalMarkup ? `<section class="m-section m-promo-group m-promo-group-horizontal"><div class="m-section-head"><h2>Акции и подборки</h2></div><div class="m-promo-row m-promo-row-horizontal">${horizontalMarkup}</div></section>` : ''}${verticalMarkup ? `<section class="m-section m-promo-group m-promo-group-vertical"><div class="m-section-head"><h2>Спецпредложения</h2></div><div class="m-promo-row m-promo-row-vertical">${verticalMarkup}</div></section>` : ''}`;
+  mount.querySelectorAll('.m-promo-card').forEach(syncPromoCardRatio);
   mount.querySelectorAll('.m-promo-row').forEach(startAutoplay);
 }
 
