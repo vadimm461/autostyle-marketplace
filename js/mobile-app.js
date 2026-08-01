@@ -438,9 +438,28 @@ function setupShell(active='home'){
       }
     }, { passive:false });
   });
-  updateCounts();
+  setupMobileNavVisibility();
+updateCounts();
   // Показываем оболочку сразу: данные и Firebase продолжают загружаться без белого экрана.
   requestAnimationFrame(clearLoader);
+}
+function setupMobileNavVisibility(){
+  const nav = document.querySelector('.m-bottom-nav');
+  if(!nav || nav.dataset.visibilityReady === '1') return;
+  nav.dataset.visibilityReady = '1';
+  let lastY = Math.max(0, window.scrollY || 0);
+  let raf = 0;
+  const update = () => {
+    raf = 0;
+    const y = Math.max(0, window.scrollY || 0);
+    if(y > lastY + 8 && y > 140) nav.classList.add('m-bottom-nav-hidden');
+    else if(y < lastY - 8 || y < 80) nav.classList.remove('m-bottom-nav-hidden');
+    lastY = y;
+  };
+  window.addEventListener('scroll', () => {
+    if(!raf) raf = requestAnimationFrame(update);
+  }, { passive:true });
+  nav.addEventListener('pointerdown', () => nav.classList.remove('m-bottom-nav-hidden'), { passive:true });
 }
 function norm(s){return String(s||'').trim().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[\s_-]+/g,' ')}
 function blockedName(n){ const x=norm(n); return x==='тмц'||x==='я мусорка'||x==='ямусорка'||x.includes('мусорка'); }
