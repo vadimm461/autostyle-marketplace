@@ -312,6 +312,36 @@ body.mobile-page #mStablePromoMount .m-promo-row-vertical.m-promo-row-single .m-
   min-width:100%!important;
   max-width:none!important;
 }
+
+/* v28: horizontal promo window matches the first 600×220 card. */
+body.mobile-page #mStablePromoMount .m-promo-row-horizontal .m-promo-card{
+  flex:0 0 100%!important;
+  width:100%!important;
+  min-width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:600 / 220!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-row-horizontal .m-promo-card img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  background:transparent!important;
+}
+body.mobile-page #mStablePromoMount .m-promo-row-horizontal .m-promo-card::before,
+body.mobile-page #mStablePromoMount .m-promo-row-horizontal .m-promo-card::after{
+  display:none!important;
+  content:none!important;
+}
 .m-wheel-inline{
   position:relative!important;
   flex:0 0 40px!important;

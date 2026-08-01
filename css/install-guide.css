@@ -19,6 +19,14 @@
   gap: 18px;
 }
 
+.as-install-home-actions,
+.as-mobile-install-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .as-install-home-copy,
 .as-mobile-install-copy {
   display: flex;
@@ -58,12 +66,14 @@
 .as-install-home-button,
 .as-mobile-install-button,
 .as-install-primary,
-.as-install-secondary {
+.as-install-secondary,
+.as-install-home-dismiss,
+.as-mobile-install-dismiss {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 0 18px;
+  min-height: 50px;
+  padding: 0 20px;
   border: 0;
   border-radius: 13px;
   background: #2f9e0b;
@@ -76,12 +86,27 @@
   white-space: nowrap;
 }
 
+.as-install-home-dismiss,
+.as-mobile-install-dismiss {
+  border: 1px solid #d7dee6;
+  background: #fff;
+  color: #344054 !important;
+}
+
 .as-install-home-button:hover,
 .as-mobile-install-button:hover,
 .as-install-primary:hover,
 .as-install-secondary:hover {
   background: #257b09;
   box-shadow: 0 8px 20px rgba(47, 158, 11, .2);
+  transform: translateY(-1px);
+}
+
+.as-install-home-dismiss:hover,
+.as-mobile-install-dismiss:hover {
+  background: #f4f7f9;
+  border-color: #bfc9d4;
+  color: #10141b !important;
   transform: translateY(-1px);
 }
 
@@ -97,7 +122,17 @@
 
 .as-mobile-install-button {
   width: 100%;
+}
+
+.as-mobile-install-actions {
+  display: grid;
+  gap: 10px;
   margin-top: 14px;
+}
+
+.as-mobile-install-actions .as-mobile-install-button,
+.as-mobile-install-actions .as-mobile-install-dismiss {
+  width: 100%;
 }
 
 .as-install-body {
@@ -381,7 +416,15 @@
   }
 
   .as-install-home-button {
+    flex: 1 1 220px;
+  }
+
+  .as-install-home-actions {
     width: 100%;
+  }
+
+  .as-install-home-dismiss {
+    flex: 1 1 220px;
   }
 
   .as-install-topbar {

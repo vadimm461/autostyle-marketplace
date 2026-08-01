@@ -114,7 +114,10 @@ function cardMarkup(rawCard, index){
 
 function syncPromoCardRatio(card){
   const image = card.querySelector('img');
-  if (!image) return;
+  // Горизонтальные акции используют единое окно 600×220. Не задаём им
+  // inline-соотношение исходной картинки: оно оставляло пустую полосу,
+  // когда размер файла отличался от размера промо-окна.
+  if (!image || card.classList.contains('m-promo-horizontal')) return;
 
   const applyRatio = () => {
     if (!image.naturalWidth || !image.naturalHeight) return;
