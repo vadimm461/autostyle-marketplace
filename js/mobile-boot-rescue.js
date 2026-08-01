@@ -61,6 +61,8 @@
     touchStartX=event.touches[0].clientX;
     touchStartY=event.touches[0].clientY;
   },{passive:true,capture:true});
+  // Keep one-finger gestures native so Android can scroll the document.
+  // Only multi-touch is cancelled (pinch zoom remains disabled).
   document.addEventListener('touchmove',function(event){
     if(!event.touches) return;
     if(event.touches.length>1){
@@ -69,15 +71,9 @@
     }
     var touch=event.touches[0];
     var dx=touch.clientX-touchStartX;
-    var dy=touch.clientY-touchStartY;
-    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8){
+    if(Math.abs(dx)>8){
       resetHorizontalPosition();
     }
-    if(dy<=0||Math.abs(dy)<=Math.abs(dx)) return;
-    var scroller=scrollableParent(event.target);
-    if(scroller&&scroller.scrollTop>0) return;
-    var pageTop=(window.scrollY||document.documentElement.scrollTop||0)<=0;
-    if(pageTop) event.preventDefault();
   },{passive:false,capture:true});
 
   function reveal(){
