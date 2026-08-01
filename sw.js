@@ -143,11 +143,10 @@ async function networkFirstStatic(request) {
 
 function isMobileShellAsset(url) {
   return url.origin === self.location.origin && (
-    /\\/css\\/(?:mobile-market|install-guide)\\.css$/i.test(url.pathname) ||
-    /\\/js\\/(?:mobile-boot-rescue|mobile-page-cache|mobile-redirect)\\.js$/i.test(url.pathname)
+    /\/css\/(?:mobile-market|install-guide)\.css$/i.test(url.pathname) ||
+    /\/js\/(?:mobile-boot-rescue|mobile-page-cache|mobile-redirect)\.js$/i.test(url.pathname)
   );
 }
-
 async function cacheFirstStatic(request) {
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
@@ -216,7 +215,7 @@ self.addEventListener('fetch', event => {
   if (isFirebaseData(url)) return;
 
   if (request.mode === 'navigate') {
-    const shellPage = /(?:^|\\/)mobile\\.html$/i.test(url.pathname) || /(?:^|\\/)index\\.html$/i.test(url.pathname);
+    const shellPage = /(?:^|\/)mobile\.html$/i.test(url.pathname) || /(?:^|\/)index\.html$/i.test(url.pathname);
     event.respondWith(
       shellPage
         ? networkFirstNotification(request, PAGE_CACHE)
