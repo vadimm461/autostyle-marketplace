@@ -394,9 +394,20 @@
   background: #fff;
 }
 
-.as-install-link {
-  color: #257b09 !important;
+.as-install-link,
+.as-install-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: #2f9e0b;
+  color: #fff !important;
   font-weight: 800;
+  line-height: 1.1;
+  text-decoration: none !important;
+  box-shadow: 0 8px 20px rgba(47, 158, 11, .18);
 }
 
 .as-install-footer {
@@ -466,4 +477,29 @@
   .as-install-qr img {
     margin: 0 auto;
   }
+}
+
+
+/* v29: download control stays in the document flow and never covers the page. */
+.m-install-footer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 28px 0 24px;
+  padding: 0 14px;
+}
+
+.m-install-download-button {
+  width: 100%;
+  max-width: 520px;
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+
+.as-install-link:hover,
+.as-install-download-button:hover {
+  background: #257b09;
+  color: #fff !important;
+  transform: translateY(-1px);
 }
