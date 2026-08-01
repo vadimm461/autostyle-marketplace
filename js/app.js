@@ -106,11 +106,14 @@ function defaultBlocks(){
   ];
 }
 async function safeLoadCollections(names) {
-  const all = [];
-  for (const name of names) {
+  // Промо не должно блокировать главную по одному запросу за раз.
+  // На медленном мобильном соединении последовательная загрузка всех
+  // коллекций оставляла страницу пустой на десятки секунд.
+  const groups = await Promise.all(names.map(async name => {
     const rows = await safeLoadCollection(name);
-    rows.forEach(row => all.push({ ...row, _collection: name }));
-  }
+    return (rows || []).map(row => ({ ...row, _collection: name }));
+  }));
+  const all = groups.flat();
   const seen = new Set();
   return all.filter(card => {
     const key = String(card.key || card.slug || card.id || '').trim();
@@ -136,7 +139,11 @@ function productsForBlock(block){
   const key = normalizeKey(block.key);
   const blockProducts = allProducts;
   if (block.recent || key === 'recentlyviewed') {
-    const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    let ids = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+      ids = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {}
     const byId = new Map(blockProducts.map(p => [p.id, p]));
     return ids.map(id => byId.get(id)).filter(Boolean);
   }
@@ -540,11 +547,15 @@ async function renderHome(){
   const productsPromise=getProducts();
   const blocksPromise=safeLoadCollection(HOME_BLOCKS_COLLECTION);
   const bannersPromise=safeLoadCollection(COLLECTIONS.banners);
-  const verticalPromise=safeLoadCollections(PROMO_CARDS_COLLECTIONS);
-  const horizontalPromise=safeLoadCollections(HORIZONTAL_PROMO_CARDS_COLLECTIONS);
-  const sectionPromise=safeLoadCollections(SECTION_PROMO_CARDS_COLLECTIONS);
-  const [products,customBlocks,bannerRows,verticalRows,horizontalRows,sectionRows]=await Promise.all([
-    productsPromise,blocksPromise,bannersPromise,verticalPromise,horizontalPromise,sectionPromise
+  // Промо — необязательная часть первого экрана. Загружаем её отдельно,
+  // чтобы товары и главный баннер появились даже при задержке Firestore.
+  const promoPromise=Promise.all([
+    safeLoadCollections(PROMO_CARDS_COLLECTIONS),
+    safeLoadCollections(HORIZONTAL_PROMO_CARDS_COLLECTIONS),
+    safeLoadCollections(SECTION_PROMO_CARDS_COLLECTIONS)
+  ]);
+  const [products,customBlocks,bannerRows]=await Promise.all([
+    productsPromise,blocksPromise,bannersPromise
   ]);
   allProducts=products;
   allBlocks=mergeBlocks(customBlocks);
@@ -554,27 +565,43 @@ async function renderHome(){
     const normalizedBanners=banners.map(b=>({...b,image:b.image||b.imageUrl||b.photoUrl||''}));
     hero.innerHTML=renderImageSlides(normalizedBanners,'hero-image-slider','Загрузите главный баннер в админке');
   }
-  const verticalPromoCards=mergePromoCards(verticalRows);
-  const horizontalPromoCards=mergePromoCards(horizontalRows);
-  window.__autostyleSectionPromos=mergePromoCards(sectionRows);
   const sidePromo=document.getElementById('homePromoBanner');
-  const hasVerticalPromos=verticalPromoCards.some(card => card && card.image);
   if(sidePromo){
-    sidePromo.hidden=!hasVerticalPromos;
-    sidePromo.innerHTML=hasVerticalPromos ? renderImageSlides(verticalPromoCards,'promo-image-slider','') : '';
+    sidePromo.hidden=true;
+    sidePromo.innerHTML='';
   }
-  renderPromoCards(horizontalPromoCards);
   const promoZone=document.getElementById('homePromoZone');
-  const hasHorizontalPromos=horizontalPromoCards.length>0;
   if(promoZone){
-    promoZone.hidden=!(hasVerticalPromos || hasHorizontalPromos);
-    promoZone.classList.toggle('has-vertical',hasVerticalPromos);
-    promoZone.classList.toggle('has-horizontal',hasHorizontalPromos);
+    promoZone.hidden=true;
+    promoZone.classList.remove('has-vertical','has-horizontal');
   }
+  window.__autostyleSectionPromos=[];
+  renderPromoCards([]);
   initImageBannerSliders(document);
   renderSections();
   renderCatalogMenu();
   waitUserCartReady().then(()=>{cart=getCurrentUserCart();saveCart();renderSections();}).catch(()=>{});
+
+  // Промо дорисовываем после появления основного содержимого.
+  promoPromise.then(([verticalRows,horizontalRows,sectionRows])=>{
+    const verticalPromoCards=mergePromoCards(verticalRows);
+    const horizontalPromoCards=mergePromoCards(horizontalRows);
+    window.__autostyleSectionPromos=mergePromoCards(sectionRows);
+    const hasVerticalPromos=verticalPromoCards.some(card => card && card.image);
+    if(sidePromo){
+      sidePromo.hidden=!hasVerticalPromos;
+      sidePromo.innerHTML=hasVerticalPromos ? renderImageSlides(verticalPromoCards,'promo-image-slider','') : '';
+    }
+    renderPromoCards(horizontalPromoCards);
+    const hasHorizontalPromos=horizontalPromoCards.length>0;
+    if(promoZone){
+      promoZone.hidden=!(hasVerticalPromos || hasHorizontalPromos);
+      promoZone.classList.toggle('has-vertical',hasVerticalPromos);
+      promoZone.classList.toggle('has-horizontal',hasHorizontalPromos);
+    }
+    initImageBannerSliders(document);
+    renderSections();
+  }).catch(error=>console.warn('Не удалось загрузить промо главной',error));
 }
 function setupExpand(){
   document.addEventListener('click', e => {

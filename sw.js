@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // Ordinary pages and static assets may stay cached for 3 days.
 // Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260801-cache-v32-android-scroll-unlock';
+const VERSION = 'autostyle-20260801-cache-v33-home-header-fix';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
@@ -144,7 +144,7 @@ async function networkFirstStatic(request) {
 function isMobileShellAsset(url) {
   return url.origin === self.location.origin && (
     /\/css\/(?:mobile-market|install-guide)\.css$/i.test(url.pathname) ||
-    /\/js\/(?:mobile-boot-rescue|mobile-page-cache|mobile-redirect)\.js$/i.test(url.pathname)
+    /\/js\/(?:mobile-boot-rescue|mobile-page-cache|mobile-redirect|mobile-app|mobile-home-promo-row|mobile-performance|mobile-pull-refresh)\.js$/i.test(url.pathname)
   );
 }
 async function cacheFirstStatic(request) {

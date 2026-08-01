@@ -2082,3 +2082,14 @@ body.mobile-page .m-home-products,
 body.mobile-page [data-horizontal-scroll]{
   touch-action:pan-x!important;
 }
+
+/* v33: fixed header stays centered even when Android reports a wider layout viewport. */
+body.mobile-page .m-top{
+  left:0!important;
+  right:0!important;
+  width:100%!important;
+  max-width:520px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  transform:none!important;
+}

@@ -102,7 +102,11 @@ function productsForHomeBlock(block){
   const key = norm(block.key);
   const blockProducts = products;
   if (block.recent || key === 'recentlyviewed') {
-    const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    let ids = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+      ids = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {}
     const byId = new Map(blockProducts.map(p => [String(p.id), p]));
     return ids.map(id => byId.get(String(id))).filter(Boolean).slice(0, 20);
   }
@@ -547,12 +551,18 @@ async function renderHome() {
   setupShell('home');
   const cachedMediaPromise = loadMobileHomeMedia();
   const freshMediaPromise = loadMobileHomeMedia({ force: true });
-  await initData();
+  const snapshot = await initData();
+  // При таймауте загрузки initData возвращает безопасный снимок. Используем
+  // его сразу, чтобы главная не оставалась пустой до следующей навигации.
+  if (Array.isArray(snapshot?.products)) allProducts = products = snapshot.products;
+  if (Array.isArray(snapshot?.categories)) categories = snapshot.categories;
+  if (Array.isArray(snapshot?.homeBlocks) && snapshot.homeBlocks.length) homeBlocks = snapshot.homeBlocks;
+  const visibleHomeBlocks = homeBlocks.length ? homeBlocks : defaultHomeBlocks();
 
   const mCats = $('#mCats');
   if (mCats) mCats.innerHTML = parentsList().map(category => `<a class="m-cat" href="mobile-catalog.html?category=${encodeURIComponent(catName(category))}">${catName(category)}</a>`).join('');
 
-  const blocksHtml = homeBlocks
+  const blocksHtml = visibleHomeBlocks
     .map(block => ({ block, list: productsForHomeBlock(block) }))
     .filter(item => !(item.block.recent && !item.list.length))
     .map(item => renderMobileSection(item.block, item.list))
