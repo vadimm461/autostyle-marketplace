@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#10141b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AutoStyle">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="icon" type="image/png" href="assets/icon-192.png">
+  <link rel="stylesheet" href="css/install-guide.css">
+  <title>Установить AutoStyle</title>
+</head>
+<body class="as-install-body">
+  <header class="as-install-topbar">
+    <a class="as-install-brand" href="index.html" aria-label="AutoStyle — главная">
+      <img src="assets/autostyle-logo-header-clean@2x.png" alt="AutoStyle">
+    </a>
+    <a class="as-install-back" href="index.html">На сайт</a>
+  </header>
+
+  <main class="as-install-page">
+    <section class="as-install-hero">
+      <p class="as-install-kicker">AutoStyle на главном экране</p>
+      <h1>Открывайте магазин одним нажатием</h1>
+      <p>Добавьте AutoStyle на экран телефона. Это удобный ярлык в виде приложения — отдельная загрузка из App Store или Google Play не нужна.</p>
+      <div class="as-install-hero-actions">
+        <button id="asPrimaryInstall" class="as-install-primary" type="button">Установить приложение</button>
+        <a class="as-install-secondary" href="https://auto-style.md">Открыть auto-style.md</a>
+        <p id="asInstallStatus" class="as-install-status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="asInstallGuide" class="as-install-card" aria-label="Инструкция по установке">
+      <div class="as-install-tabs" role="tablist" aria-label="Выберите устройство">
+        <button class="as-install-tab" type="button" role="tab" aria-selected="false" data-install-tab="ios">iPhone</button>
+        <button class="as-install-tab" type="button" role="tab" aria-selected="false" data-install-tab="android">Android</button>
+        <button class="as-install-tab" type="button" role="tab" aria-selected="false" data-install-tab="qr">QR-код</button>
+      </div>
+
+      <section class="as-install-panel" role="tabpanel" data-install-panel="ios">
+        <h2>Установка на iPhone</h2>
+        <p>Используйте Safari — так появляется пункт добавления сайта на экран «Домой».</p>
+        <ol class="as-install-steps">
+          <li>Откройте <strong>auto-style.md</strong> в Safari.</li>
+          <li>Нажмите кнопку <strong>«Поделиться»</strong> внизу экрана.</li>
+          <li>Выберите <strong>«На экран “Домой”»</strong>. Если доступно, включите <strong>«Открыть как веб-приложение»</strong> и нажмите «Добавить».</li>
+        </ol>
+        <p class="as-install-note">Если сайт открыт в другом браузере, скопируйте адрес и откройте его именно в Safari.</p>
+        <div class="as-install-panel-action"><a href="https://auto-style.md">Открыть сайт</a></div>
+      </section>
+
+      <section class="as-install-panel" role="tabpanel" data-install-panel="android" hidden>
+        <h2>Установка на Android</h2>
+        <p>В Chrome AutoStyle можно установить как приложение или добавить ярлык на главный экран.</p>
+        <ol class="as-install-steps">
+          <li>Откройте <strong>auto-style.md</strong> в Chrome.</li>
+          <li>Нажмите меню <strong>⋮</strong> в правом верхнем углу.</li>
+          <li>Выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong> и подтвердите.</li>
+        </ol>
+        <p class="as-install-note">Если сверху появилась кнопка «Установить приложение», нажмите её — Android покажет системное подтверждение.</p>
+        <div class="as-install-panel-action"><a href="https://auto-style.md">Открыть сайт</a></div>
+      </section>
+
+      <section class="as-install-panel" role="tabpanel" data-install-panel="qr" hidden>
+        <h2>Откройте сайт на телефоне</h2>
+        <p>Наведите камеру телефона на QR-код. Он ведёт на официальный адрес AutoStyle:</p>
+        <div class="as-install-qr">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=https%3A%2F%2Fauto-style.md" width="220" height="220" alt="QR-код сайта auto-style.md" loading="lazy" referrerpolicy="no-referrer">
+          <div>
+            <p><strong>https://auto-style.md</strong></p>
+            <p>После перехода выберите инструкцию для iPhone или Android и добавьте магазин на главный экран.</p>
+            <div class="as-install-panel-action"><a href="https://auto-style.md">Открыть ссылку</a></div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <p class="as-install-footer">Установка не создаёт отдельную учётную запись и не требует скачивать APK-файл. Обновления сайта будут приходить автоматически.</p>
+  </main>
+
+  <script src="js/install-guide.js"></script>
+</body>
+</html>
