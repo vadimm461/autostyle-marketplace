@@ -34,6 +34,13 @@ function writeJson(k, value){
 }
 function safeString(value){ return value === undefined || value === null ? '' : String(value); }
 
+function announceCacheUpdate(name, rows, version='0'){
+  if (typeof window === 'undefined' || !Array.isArray(rows)) return;
+  window.dispatchEvent(new CustomEvent('autostyle-cache-updated', {
+    detail: { name, rows, version }
+  }));
+}
+
 async function getRemoteVersion(force=false){
   if (!force && versionMemo.value !== null && now() - versionMemo.checkedAt < VERSION_CHECK_TTL) return versionMemo.value;
   try{
@@ -183,6 +190,7 @@ export async function getCollectionCached(name, options={}){
     const saveVersion = safeString(remoteVersion || await getRemoteVersion(true) || '0');
     writeJson(cacheKey, { rows, savedAt: now(), version: saveVersion });
     try { localStorage.setItem(VERSION_KEY, saveVersion); } catch(e) {}
+    announceCacheUpdate(name, rows, saveVersion);
     return rows;
   }catch(e){
     console.warn('Collection load failed', name, e);
@@ -228,29 +236,37 @@ export async function clearFullSiteCache(options={}){
     Object.keys(localStorage).forEach(k => {
       if (
         k.startsWith('as_cache_') ||
-        k.startsWith('autostyle_') ||
-        k.startsWith('autos_') ||
-        k.includes('products') ||
-        k.includes('categories') ||
-        k.includes('banners') ||
-        k.includes('promo') ||
-        k.includes('homeBlock') ||
-        k.includes('cache')
+        k.startsWith('as_mobile_page_cache:') ||
+        k === 'autostyle_site_cache_version' ||
+        k.includes('products_cache') ||
+        k.includes('categories_cache') ||
+        k.includes('banners_cache') ||
+        k.includes('promo_cache') ||
+        k.includes('homeBlock_cache')
       ) localStorage.removeItem(k);
     });
     if (keepFullResetVersion) localStorage.setItem(FULL_CACHE_LOCAL_KEY, keepFullResetVersion);
   } catch(e) {}
-  try { sessionStorage.clear(); } catch(e) {}
+  try {
+    Object.keys(sessionStorage).forEach(k => {
+      if (k.startsWith('as_mobile_page_cache:') || k.startsWith('as_cache_')) {
+        sessionStorage.removeItem(k);
+      }
+    });
+  } catch(e) {}
   try {
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
     }
   } catch(e) {}
+  // Keep the active worker and the Firebase auth storage intact.  Deleting
+  // the registration here caused a full cache reset to look like a logout
+  // and prevented the site from becoming cached again until another reload.
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister().catch(()=>{})));
+      regs.forEach(reg => reg.active?.postMessage({ type:'CLEAR_AUTOSTYLE_CACHE' }));
     }
   } catch(e) {}
 }

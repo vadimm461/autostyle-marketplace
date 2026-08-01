@@ -1,4 +1,4 @@
-import { auth, db, storage, COLLECTIONS } from './firebase.js';
+import { auth, db, storage, COLLECTIONS, waitForAuthReady } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -20,10 +20,17 @@ let mobileFavoritesBooted = false;
 let lastFavoritesSignature = '';
 const page = document.body.dataset.page;
 const isNotificationDetailPage = () => page === 'notifications' && new URLSearchParams(location.search).has('id');
-const waitAuthUser = () => new Promise(resolve => {
-  if (auth.currentUser) return resolve(auth.currentUser);
-  const off = onAuthStateChanged(auth, user => { off(); resolve(user || null); });
-});
+const waitAuthUser = async () => {
+  try {
+    await waitForAuthReady();
+    return auth.currentUser || null;
+  } catch (_) {
+    return new Promise(resolve => {
+      if (auth.currentUser) return resolve(auth.currentUser);
+      const off = onAuthStateChanged(auth, user => { off(); resolve(user || null); });
+    });
+  }
+};
 
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const MAIN_BANNERS_COLLECTION = COLLECTIONS.banners || 'autostyle_banners';
@@ -102,7 +109,11 @@ function productsForHomeBlock(block){
   const key = norm(block.key);
   const blockProducts = products;
   if (block.recent || key === 'recentlyviewed') {
-    const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    let ids = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+      ids = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {}
     const byId = new Map(blockProducts.map(p => [String(p.id), p]));
     return ids.map(id => byId.get(String(id))).filter(Boolean).slice(0, 20);
   }
@@ -187,7 +198,11 @@ function setupMobileChrome(){
   const nav = document.querySelector('.m-bottom-nav');
   if (top) top.classList.remove('m-top-hidden', 'm-top-compact');
   if (nav) nav.classList.remove('m-nav-scrolled');
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js', { scope:'./', updateViaCache:'none' })
+      .then(reg => reg.update().catch(()=>{}))
+      .catch(()=>{});
+  }
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href]');
     if (!a) return;
@@ -210,6 +225,38 @@ const img = p => {
 };
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
+const relatedProductId = p => String(p?.id ?? p?.productId ?? p?.docId ?? p?.sku ?? p?.code ?? '').trim();
+const relatedParent = p => {
+  const explicit = p?.parentCategory || p?.parentGroup || p?.categoryParent || p?.parent || p?.parentId || '';
+  if (explicit) return explicit;
+  const fallback = norm(group(p));
+  return fallback && fallback !== 'без группы' ? fallback.split(' ')[0] : '';
+};
+const relatedBrand = p => p?.brand || p?.brandName || p?.manufacturer || p?.vendor || '';
+function mobileRelatedProducts(current, source){
+  const currentId = relatedProductId(current);
+  const currentGroup = norm(group(current));
+  const currentParent = norm(relatedParent(current));
+  const currentBrand = norm(relatedBrand(current));
+  const sameGroup = currentGroup && currentGroup !== 'без группы';
+  const sameParent = currentParent && currentParent !== 'без группы';
+  return (Array.isArray(source) ? source : [])
+    .filter(item => relatedProductId(item) && relatedProductId(item) !== currentId)
+    .map(item => {
+      const itemGroup = norm(group(item));
+      const itemParent = norm(relatedParent(item));
+      const itemBrand = norm(relatedBrand(item));
+      let rank = 0;
+      if (sameGroup && itemGroup === currentGroup) rank += 100;
+      if (sameParent && itemParent === currentParent) rank += 60;
+      if (currentBrand && itemBrand === currentBrand) rank += 25;
+      return { item, rank };
+    })
+    .filter(({ rank }) => rank > 0)
+    .sort((a, b) => b.rank - a.rank || title(a.item).localeCompare(title(b.item), 'ru'))
+    .map(({ item }) => item)
+    .slice(0, 12);
+}
 const price = p => Number(p.price || 0);
 const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0);
 const oldPrice = p => rawOldPrice(p) > price(p) ? rawOldPrice(p) : 0;
@@ -259,6 +306,26 @@ function card(p){
     <div class="m-price"><b>${money(price(p))}</b>${op?`<span class="m-old">${money(op)}</span>`:''}</div>
     <button class="m-cart${unavailable?' is-unavailable':''}" data-cart="${p.id}" type="button" ${unavailable?'disabled aria-disabled="true"':''}>В корзину</button>
   </article>`;
+}
+let currentMobileProduct = null;
+async function renderMobileRelated(current, source=[]){
+  const root = document.getElementById('mRelatedCarousel');
+  if (!root || !current) return;
+  let rows = Array.isArray(source) && source.length ? source : (allProducts.length ? allProducts : products);
+  if (!rows.length) {
+    try {
+      rows = await getProducts(MOBILE_CACHE_OPTIONS);
+      allProducts = rows || [];
+      products = allProducts;
+    } catch (error) {
+      console.warn('Не удалось загрузить похожие товары', error);
+      rows = [];
+    }
+  }
+  const related = mobileRelatedProducts(current, rows);
+  if (!root.isConnected) return;
+  root.innerHTML = related.length ? related.map(card).join('') : '<div class="m-empty">Похожих товаров пока нет</div>';
+  bind(root);
 }
 function bind(scope=document){
   scope.querySelectorAll('[data-cart]:not(:disabled)').forEach(b=>b.onclick=e=>{e.preventDefault(); addCart(b.dataset.cart,b);});
@@ -652,8 +719,14 @@ async function renderProduct(){
     clearLoader();
     return;
   }
+  currentMobileProduct = p;
   const im=img(p), d=discount(p), op=oldPrice(p);
-  let viewed=JSON.parse(localStorage.getItem('viewedProducts')||'[]').filter(x=>x!==p.id); viewed.unshift(p.id); localStorage.setItem('viewedProducts',JSON.stringify(viewed.slice(0,30)));
+  let viewed=[];
+  try {
+    const parsed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    viewed = Array.isArray(parsed) ? parsed : [];
+  } catch (_) {}
+  viewed = viewed.filter(x=>x!==p.id); viewed.unshift(p.id); localStorage.setItem('viewedProducts',JSON.stringify(viewed.slice(0,30)));
   $('#mProduct').innerHTML=`<a class="m-btn" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">← Вернуться в каталог</a>
     <div class="m-product-layout"><div class="m-photo-box"><div class="m-photo">${im?`<img loading="eager" decoding="async" src="${im}" alt="${escapeHtml(title(p))}">`:'<span>Фото</span>'}</div></div>
     <div class="m-info"><div class="m-breadcrumb"><a href="mobile.html">Главная</a> / <a href="mobile-catalog.html">Каталог</a> / <a href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></div><h1>${escapeHtml(title(p))}</h1><a class="m-tag" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a>${d?` <span class="m-tag" style="background:#ffecec;color:#e3342f">Скидка ${d}%</span>`:''}
@@ -661,8 +734,9 @@ async function renderProduct(){
     <div class="m-buy-actions"><button class="m-action cart${stock(p)<=0?' is-unavailable':''}" data-cart="${p.id}" ${stock(p)<=0?'disabled aria-disabled="true"':''}>В корзину</button><button class="m-action fav ${favs.includes(String(p.id))?'active':''}" data-fav="${p.id}">♡ ${favs.includes(String(p.id))?'В избранном':'В избранное'}</button></div></div></div></div>
     <section class="m-desc m-collapsed" id="mProductDesc"><div class="m-desc-head"><h2>Описание</h2><button class="m-desc-toggle" id="mDescToggle" type="button">Показать</button></div><p>${escapeHtml(p.description || 'Описание товара пока не добавлено.')}</p></section>
     <section class="m-specs"><h2>Характеристики</h2><div class="m-spec-row"><span>Название</span><b>${escapeHtml(title(p))}</b></div><div class="m-spec-row"><span>Группа</span><b><a href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">${escapeHtml(group(p))}</a></b></div><div class="m-spec-row"><span>Цена</span><b>${money(price(p))}</b></div></section>
-    <section class="m-related"><div class="m-section-head"><h2>Похожие товары</h2><a class="m-see" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">Все</a></div><div class="m-carousel">${products.filter(x=>x.id!==p.id&&group(x)===group(p)).slice(0,12).map(card).join('')||'<div class="m-empty">Похожих товаров пока нет</div>'}</div></section>`;
+    <section class="m-related"><div class="m-section-head"><h2>Похожие товары</h2><a class="m-see" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">Все</a></div><div class="m-carousel" id="mRelatedCarousel"><div class="m-empty">Подбираем товары…</div></div></section>`;
   bind($('#mProduct'));
+  renderMobileRelated(p).catch(error => console.warn('Не удалось отрисовать похожие товары', error));
   const desc = $('#mProductDesc'), descBtn = $('#mDescToggle');
   if (desc && descBtn) descBtn.onclick = () => { const closed = desc.classList.toggle('m-collapsed'); descBtn.textContent = closed ? 'Показать' : 'Скрыть'; };
   clearLoader();
@@ -1448,25 +1522,31 @@ function providerTitle(id){
 function userProviders(u){ return (u?.providerData || []).map(x => x.providerId).filter(Boolean).filter(id => id === 'password'); }
 async function saveAuthProfile(u, extra={}){
   if(!u) return;
-  const current = await getUserDoc(u.uid);
-  await setDoc(current.ref, {
-    uid:u.uid,
-    name: extra.name || current.data.name || u.displayName || '',
-    email: extra.email || current.data.email || u.email || '',
-    phone: extra.phone || current.data.phone || '',
-    carBrand: extra.carBrand || current.data.carBrand || '',
-    carYear: extra.carYear || current.data.carYear || '',
-    carModel: extra.carModel || current.data.carModel || '',
-    car: extra.car || current.data.car || current.data.carText || [extra.carBrand || current.data.carBrand, extra.carModel || current.data.carModel, extra.carYear || current.data.carYear].filter(Boolean).join(' '),
-    photoURL: extra.photoURL || current.data.photoURL || u.photoURL || '',
-    providers:userProviders(u),
-    emailVerified:Boolean(u.emailVerified),
-    phoneVerified:false,
-    lastLoginAt:new Date().toISOString(),
-    updatedAt:new Date().toISOString(),
-    createdAt:current.data.createdAt || new Date().toISOString(),
-    role:current.data.role || 'user'
-  }, { merge:true });
+  try {
+    const current = await getUserDoc(u.uid);
+    await setDoc(current.ref, {
+      uid:u.uid,
+      name: extra.name || current.data.name || u.displayName || '',
+      email: extra.email || current.data.email || u.email || '',
+      phone: extra.phone || current.data.phone || '',
+      carBrand: extra.carBrand || current.data.carBrand || '',
+      carYear: extra.carYear || current.data.carYear || '',
+      carModel: extra.carModel || current.data.carModel || '',
+      car: extra.car || current.data.car || current.data.carText || [extra.carBrand || current.data.carBrand, extra.carModel || current.data.carModel, extra.carYear || current.data.carYear].filter(Boolean).join(' '),
+      photoURL: extra.photoURL || current.data.photoURL || u.photoURL || '',
+      providers:userProviders(u),
+      emailVerified:Boolean(u.emailVerified),
+      phoneVerified:false,
+      lastLoginAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      createdAt:current.data.createdAt || new Date().toISOString(),
+      role:current.data.role || 'user'
+    }, { merge:true });
+  } catch (error) {
+    // A successful Firebase sign-in must not be turned into a failed login
+    // only because the optional profile sync is offline or denied.
+    console.warn('AutoStyle mobile profile sync skipped:', error);
+  }
 }
 async function registerByEmail(){
   const name=$('#pRegName')?.value.trim()||'';
@@ -1475,6 +1555,7 @@ async function registerByEmail(){
   const carModel=$('#pRegCarModel')?.value.trim()||'';
   const email=$('#pRegEmail')?.value.trim()||'';
   const pass=$('#pRegPass')?.value||'';
+  await waitForAuthReady();
   const res=await createUserWithEmailAndPassword(auth,email,pass);
   await updateProfile(res.user,{displayName:name});
   await sendEmailVerification(res.user);
@@ -1679,6 +1760,7 @@ async function renderProfile(){
         try{
           $('#pLogin').disabled=true;
           $('#pLogin').textContent='Входим...';
+          await waitForAuthReady();
           const res=await signInWithEmailAndPassword(auth,email,pass);
           await saveAuthProfile(res.user);
           location.reload();
@@ -1884,6 +1966,21 @@ async function refreshCurrentMobilePage(reason='refresh'){
 }
 
 window.autostyleMobileRefresh = refreshCurrentMobilePage;
+
+// The cache layer refreshes products in the background.  A product page can
+// therefore render its own document first and fill the related carousel as
+// soon as the catalogue snapshot arrives, without waiting for a full catalog
+// boot or showing a permanent empty state.
+window.addEventListener('autostyle-cache-updated', event => {
+  const detail = event.detail || {};
+  if (detail.name !== COLLECTIONS.products || !Array.isArray(detail.rows)) return;
+  allProducts = detail.rows;
+  products = allProducts;
+  if (page === 'product' && currentMobileProduct) {
+    renderMobileRelated(currentMobileProduct, detail.rows)
+      .catch(error => console.warn('Не удалось обновить похожие товары', error));
+  }
+});
 
 window.addEventListener('autostyle-cart-updated', () => {
   // На мобильной корзине не перерисовываем страницу от snapshot: это и давало моргание и сбивало +/- .

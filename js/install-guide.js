@@ -110,7 +110,9 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function () {});
+        navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+          .then(function (registration) { return registration.update().catch(function () {}); })
+          .catch(function () {});
       }, { once: true });
     }
   });

@@ -1,9 +1,11 @@
 (function(){
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(function(error){
-      console.warn('AutoStyle cache worker:',error);
-    });
+    navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'})
+      .then(function(registration){ return registration.update().catch(function(){}); })
+      .catch(function(error){
+        console.warn('AutoStyle cache worker:',error);
+      });
   },{once:true});
 })();
 

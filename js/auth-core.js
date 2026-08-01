@@ -1,4 +1,4 @@
-import { auth, db, COLLECTIONS } from './firebase.js';
+import { auth, db, COLLECTIONS, waitForAuthReady } from './firebase.js';
 import {
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail, signOut,
@@ -13,8 +13,16 @@ export function userProviders(user){ return (user?.providerData || []).map(p => 
 export async function ensureUserProfile(user, extra={}){
   if(!user) return;
   const ref = doc(db, USERS, user.uid);
-  const snap = await getDoc(ref);
-  const old = snap.exists() ? snap.data() : {};
+  let old = {};
+  try {
+    const snap = await getDoc(ref);
+    old = snap.exists() ? snap.data() : {};
+  } catch (error) {
+    // Authentication itself must not be reported as failed because the
+    // profile document is temporarily unavailable.
+    console.warn('AutoStyle profile read skipped:', error);
+    return old;
+  }
   const providers = userProviders(user);
   const data = {
     uid: user.uid,
@@ -33,7 +41,12 @@ export async function ensureUserProfile(user, extra={}){
     updatedAt: new Date().toISOString(),
     createdAt: old.createdAt || new Date().toISOString()
   };
-  await setDoc(ref, data, { merge:true });
+  try {
+    await setDoc(ref, data, { merge:true });
+  } catch (error) {
+    console.warn('AutoStyle profile sync skipped:', error);
+  }
+  return data;
 }
 
 export function getAuthErrorMessage(error, fallback='Ошибка авторизации'){
@@ -64,12 +77,14 @@ export async function resetPassword(email){
 }
 
 export async function loginEmail(email, pass){
+  await waitForAuthReady();
   const res = await signInWithEmailAndPassword(auth, email, pass);
   await ensureUserProfile(res.user);
   try { await trackEvent('login'); } catch(e) {}
   return res.user;
 }
 export async function registerEmail(name, email, pass, profile={}){
+  await waitForAuthReady();
   const res = await createUserWithEmailAndPassword(auth, email, pass);
   if(name) await updateProfile(res.user, { displayName:name });
   await ensureUserProfile(res.user, { name, email, ...profile });

@@ -1,18 +1,17 @@
 (function(){
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(function(error){
-      console.warn('AutoStyle cache worker:',error);
-    });
+    navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'})
+      .then(function(registration){ return registration.update().catch(function(){}); })
+      .catch(function(error){
+        console.warn('AutoStyle cache worker:',error);
+      });
   },{once:true});
 })();
 
 (function(){
   var KEY='as_mobile_boot_recovery';
   var started=Date.now();
-  var touchStartX=0;
-  var touchStartY=0;
-
   function preventGesture(event){
     event.preventDefault();
   }
@@ -42,43 +41,9 @@
   lockMobileViewport();
   resetHorizontalPosition();
 
-  function scrollableParent(target){
-    var node=target;
-    while(node&&node!==document.body&&node!==document.documentElement){
-      var style=window.getComputedStyle(node);
-      var overflowY=style.overflowY;
-      if((overflowY==='auto'||overflowY==='scroll')&&node.scrollHeight>node.clientHeight) return node;
-      node=node.parentElement;
-    }
-    return null;
-  }
-
   document.addEventListener('gesturestart',preventGesture,{passive:false});
   document.addEventListener('gesturechange',preventGesture,{passive:false});
   document.addEventListener('gestureend',preventGesture,{passive:false});
-  document.addEventListener('touchstart',function(event){
-    if(!event.touches||event.touches.length!==1) return;
-    touchStartX=event.touches[0].clientX;
-    touchStartY=event.touches[0].clientY;
-  },{passive:true,capture:true});
-  document.addEventListener('touchmove',function(event){
-    if(!event.touches) return;
-    if(event.touches.length>1){
-      event.preventDefault();
-      return;
-    }
-    var touch=event.touches[0];
-    var dx=touch.clientX-touchStartX;
-    var dy=touch.clientY-touchStartY;
-    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8){
-      resetHorizontalPosition();
-    }
-    if(dy<=0||Math.abs(dy)<=Math.abs(dx)) return;
-    var scroller=scrollableParent(event.target);
-    if(scroller&&scroller.scrollTop>0) return;
-    var pageTop=(window.scrollY||document.documentElement.scrollTop||0)<=0;
-    if(pageTop) event.preventDefault();
-  },{passive:false,capture:true});
 
   function reveal(){
     var loader=document.getElementById('mLoader');
@@ -106,11 +71,6 @@
     if(Date.now()-last<30000) return;
     sessionStorage.setItem(KEY,String(Date.now()));
 
-    if('caches' in window){
-      caches.keys().then(function(keys){
-        return Promise.all(keys.filter(function(k){return /autostyle|mobile|github/i.test(k);}).map(function(k){return caches.delete(k);}));
-      }).catch(function(){});
-    }
   },true);
 
   window.addEventListener('unhandledrejection',function(){

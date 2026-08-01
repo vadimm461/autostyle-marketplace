@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // Ordinary pages and static assets may stay cached for 3 days.
 // Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260801-cache-v29-no-install-card';
+const VERSION = 'autostyle-20260801-cache-v34-stability';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
@@ -128,36 +128,39 @@ async function cacheFirstImage(request) {
   }
 }
 
-async function cacheFirstStatic(request) {
+async function staleWhileRevalidateStatic(request, event) {
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
-  if (cached) return cached;
-
-  try {
-    const response = await fetch(request);
+  const refresh = fetch(request, { cache: 'no-store' }).then(async response => {
     if (response && (response.ok || response.type === 'opaque')) {
       await cache.put(request, response.clone()).catch(() => {});
     }
     return response;
-  } catch (_) {
-    return cached || Response.error();
+  });
+  if (cached) {
+    // Keep the first paint fast, then refresh the asset for the next visit.
+    event?.waitUntil(refresh.catch(() => {}));
+    return cached;
   }
+  try { return await refresh; } catch (_) { return Response.error(); }
 }
 
-async function cachePageOrNetwork(request) {
+async function cachePageOrNetwork(request, event) {
   const cached = await getCachedPage(request);
-  const savedAt = await readPageTimestamp(request);
-  const isFresh = !!cached && !!savedAt && Date.now() - savedAt <= PAGE_MAX_AGE;
-
-  if (isFresh) return cached;
-
-  try {
-    const response = await fetch(request, { cache: 'no-store' });
+  const refresh = fetch(request, { cache: 'no-store' }).then(async response => {
     if (response && response.ok) await putPage(request, response.clone());
     return response;
+  });
+  if (cached) {
+    // Serve the last good shell immediately and refresh it in the background.
+    // This prevents a slow network request from producing a white page while
+    // still allowing published HTML to reach the following navigation.
+    event?.waitUntil(refresh.catch(() => {}));
+    return cached;
+  }
+  try {
+    return await refresh;
   } catch (_) {
-    if (cached) return cached;
-
     const url = new URL(request.url);
     const fallbackName = url.pathname.toLowerCase().includes('mobile-')
       ? 'mobile.html'
@@ -201,7 +204,7 @@ self.addEventListener('fetch', event => {
         ? networkFirstNotification(request, PAGE_CACHE)
         : isProductPage(url)
           ? networkOnlyProduct(request)
-          : cachePageOrNetwork(request)
+        : cachePageOrNetwork(request, event)
     );
     return;
   }
@@ -220,7 +223,7 @@ self.addEventListener('fetch', event => {
   const isStaticAsset = url.origin === self.location.origin &&
     /(?:\.js|\.css|\.woff2?|\.webmanifest)$/i.test(url.pathname);
   if (isStaticAsset) {
-    event.respondWith(cacheFirstStatic(request));
+    event.respondWith(staleWhileRevalidateStatic(request, event));
   }
 });
 

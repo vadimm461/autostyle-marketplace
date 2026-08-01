@@ -1,6 +1,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { addDoc, setDoc, doc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -23,6 +27,31 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+
+// Keep the Firebase session on the device.  Relying only on the SDK default
+// made the app look logged out after a cache reset or an Android/iOS restart
+// when the browser temporarily fell back to session storage.
+export const authPersistenceReady = setPersistence(auth, browserLocalPersistence)
+  .catch(error => {
+    console.warn('AutoStyle auth persistence fallback:', error);
+    return null;
+  });
+
+// Firebase restores the persisted user asynchronously.  Consumers that must
+// make an access decision wait for this promise instead of treating the first
+// transient state as a real guest session.
+export const authStateReady = (async () => {
+  await authPersistenceReady;
+  if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+  return auth.currentUser || null;
+})().catch(error => {
+  console.warn('AutoStyle auth state restore:', error);
+  return auth.currentUser || null;
+});
+
+export function waitForAuthReady() {
+  return authStateReady;
+}
 
 export const db = getFirestore(app);
 

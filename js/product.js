@@ -22,6 +22,46 @@ const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? 0);
 const title = p => p.title || p.name || 'Без названия';
 const image = p => p.image || p.imageUrl || p.photo || '';
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
+const normalizeRelatedValue = value => String(value ?? '')
+  .trim()
+  .toLocaleLowerCase('ru-RU')
+  .replace(/ё/g, 'е')
+  .replace(/[\s_-]+/g, ' ');
+const productId = p => String(p?.id ?? p?.productId ?? p?.docId ?? p?.sku ?? p?.code ?? '').trim();
+const parentGroup = p => {
+  const explicit = p?.parentCategory || p?.parentGroup || p?.categoryParent || p?.parent || p?.parentId || '';
+  if (explicit) return explicit;
+  const fallback = normalizeRelatedValue(group(p));
+  return fallback && fallback !== 'без группы' ? fallback.split(' ')[0] : '';
+};
+const brand = p => p?.brand || p?.brandName || p?.manufacturer || p?.vendor || '';
+function relatedProducts(current, source){
+  const currentId = productId(current);
+  const currentGroup = normalizeRelatedValue(group(current));
+  const currentParent = normalizeRelatedValue(parentGroup(current));
+  const currentBrand = normalizeRelatedValue(brand(current));
+  const sameGroup = currentGroup && currentGroup !== 'без группы';
+  const sameParent = currentParent && currentParent !== 'без группы';
+  return (Array.isArray(source) ? source : [])
+    // Similar items are useful even when one of them is temporarily out of
+    // stock; filtering them here made the whole block look empty for groups
+    // whose inventory is maintained in a separate system.
+    .filter(item => productId(item) && productId(item) !== currentId)
+    .map(item => {
+      const itemGroup = normalizeRelatedValue(group(item));
+      const itemParent = normalizeRelatedValue(parentGroup(item));
+      const itemBrand = normalizeRelatedValue(brand(item));
+      let rank = 0;
+      if (sameGroup && itemGroup === currentGroup) rank += 100;
+      if (sameParent && itemParent === currentParent) rank += 60;
+      if (currentBrand && itemBrand === currentBrand) rank += 25;
+      return { item, rank };
+    })
+    .filter(({ rank }) => rank > 0)
+    .sort((a, b) => b.rank - a.rank || title(a.item).localeCompare(title(b.item), 'ru'))
+    .map(({ item }) => item)
+    .slice(0, 12);
+}
 const rawOldPrice = p => Number(p.oldPrice || p.priceOld || p.priceBefore || p.compareAtPrice || 0);
 const oldPrice = p => { const op = rawOldPrice(p), pr = Number(p.price || 0); return op > pr ? op : 0; };
 const productPrice = p => Number(p.price || 0);
@@ -111,17 +151,11 @@ function setupRelatedCarousel(){
 async function renderRelated(current){
   const box = document.getElementById('relatedProducts');
   if (!box) return;
+  box.innerHTML = '<section class="related-section"><div class="section-head related-head"><h2>Похожие товары</h2></div><div class="related-loading">Подбираем товары…</div></section>';
   try{
     const products = await getProducts();
-    const currentGroup = group(current).toLowerCase().trim();
-    const currentParent = (current.parentCategory || current.parentGroup || current.categoryParent || '').toLowerCase().trim();
-    let related = products.filter(p => p.id !== current.id && group(p).toLowerCase().trim() === currentGroup);
-    if (related.length < 4 && currentParent){
-      const extra = products.filter(p => p.id !== current.id && !related.some(x => x.id === p.id) && String(p.parentCategory || p.parentGroup || p.categoryParent || '').toLowerCase().trim() === currentParent);
-      related = [...related, ...extra];
-    }
+    const related = relatedProducts(current, products);
     if (!related.length){ box.innerHTML = ''; return; }
-    related = related.slice(0, 12);
     const canScroll = related.length > 4;
     box.innerHTML = `<section class="related-section"><div class="section-head related-head"><h2>Похожие товары</h2><a href="catalog.html?category=${encodeURIComponent(group(current))}">Смотреть все</a></div><div class="related-carousel-wrap">${canScroll ? '<button class="related-nav related-prev" type="button" aria-label="Назад">‹</button>' : ''}<div class="related-carousel">${related.map(relatedCard).join('')}</div>${canScroll ? '<button class="related-nav related-next" type="button" aria-label="Вперёд">›</button>' : ''}</div></section>`;
     setupRelatedActions();
@@ -134,7 +168,11 @@ function saveCart(){
   updateCartBadges(cart);
 }
 function saveViewed(id){
-  let v = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+  let v = [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
+    v = Array.isArray(parsed) ? parsed : [];
+  } catch (_) {}
   v = v.filter(x => x !== id);
   v.unshift(id);
   localStorage.setItem('viewedProducts', JSON.stringify(v.slice(0, 12)));
@@ -154,9 +192,6 @@ async function loadProduct(){
   const id = new URLSearchParams(location.search).get('id');
   if (!id) { box.innerHTML = '<div class="product-message">Товар не найден.</div>'; return; }
   try {
-    let productsCache = [];
-    try { productsCache = await getProducts({ force: true }); } catch(e) { productsCache = []; }
-
     // На странице товара берём сам товар напрямую из Firestore,
     // чтобы правки цены/скидки не зависали из старого кэша.
     let p = null;
@@ -166,7 +201,12 @@ async function loadProduct(){
     } catch(e) {
       console.warn('Не удалось загрузить товар напрямую, используем кэш', e);
     }
-    if (!p) p = productsCache.find(x => String(x.id) === String(id));
+    if (!p) {
+      try {
+        const productsCache = await getProducts();
+        p = productsCache.find(x => String(x.id) === String(id));
+      } catch (_) {}
+    }
     if (!p) { box.innerHTML = '<div class="product-message">Товар удалён или не найден.</div>'; return; }
     const s = stock(p), name = title(p), img = image(p), d = discount(p), op = oldPrice(p), inst = isInstallment(p);
     saveViewed(p.id);
