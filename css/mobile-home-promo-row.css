@@ -399,3 +399,21 @@ body.mobile-page .m-bottom-nav.m-bottom-nav-hidden{
   opacity:0!important;
   pointer-events:none!important;
 }
+
+
+/* v29: keep one home product in its normal two-card width. */
+body.mobile-page .m-home-products .m-card {
+  flex: 0 0 calc((100% - 12px) / 2) !important;
+  width: calc((100% - 12px) / 2) !important;
+  min-width: calc((100% - 12px) / 2) !important;
+  max-width: calc((100% - 12px) / 2) !important;
+}
+
+@media (max-width: 380px) {
+  body.mobile-page .m-home-products .m-card {
+    flex-basis: calc((100% - 9px) / 2) !important;
+    width: calc((100% - 9px) / 2) !important;
+    min-width: calc((100% - 9px) / 2) !important;
+    max-width: calc((100% - 9px) / 2) !important;
+  }
+}
