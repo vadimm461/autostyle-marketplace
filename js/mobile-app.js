@@ -428,7 +428,7 @@ function setupAdvancedMobileSearch(){
     a.className = 'm-search-result';
     a.href = productUrl(p);
 
-    const photo = document.createElement('span');
+    const photo = document.createElement('div');
     photo.className = 'm-search-thumb';
     const src = img(p);
     if (src) {
@@ -443,7 +443,7 @@ function setupAdvancedMobileSearch(){
       photo.textContent = 'Фото';
     }
 
-    const info = document.createElement('span');
+    const info = document.createElement('div');
     info.className = 'm-search-info';
 
     const name = document.createElement('b');
