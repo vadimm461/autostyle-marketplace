@@ -503,3 +503,92 @@
   color: #fff !important;
   transform: translateY(-1px);
 }
+
+/* v30: Android download control is a normal black footer, never an overlay. */
+body.mobile-page {
+  overflow-y: auto !important;
+}
+
+body.mobile-page .m-install-footer {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  box-sizing: border-box !important;
+  margin: 30px auto 0 !important;
+  padding: 24px 14px calc(22px + 82px + env(safe-area-inset-bottom, 0px)) !important;
+  background: #10141b !important;
+  border-radius: 26px 26px 0 0 !important;
+  overflow: visible !important;
+  pointer-events: auto !important;
+}
+
+body.mobile-page .m-install-download-button {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  min-height: 58px !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 17px !important;
+  background: #28e11a !important;
+  color: #061006 !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .28) !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+
+body.mobile-page .m-install-download-button:hover,
+body.mobile-page .m-install-download-button:focus-visible {
+  background: #35f126 !important;
+  color: #061006 !important;
+  transform: none !important;
+}
+
+body.mobile-page .m-install-download-icon {
+  display: grid !important;
+  place-items: center !important;
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  height: 38px !important;
+  padding: 3px !important;
+  box-sizing: border-box !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+}
+
+body.mobile-page .m-install-download-icon img {
+  display: block !important;
+  width: 32px !important;
+  height: 32px !important;
+  max-width: none !important;
+  object-fit: contain !important;
+  border-radius: 9px !important;
+}
+
+body.mobile-page .as-mobile-install-card,
+body.mobile-page .as-install-home-card {
+  display: none !important;
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  pointer-events: none !important;
+}
