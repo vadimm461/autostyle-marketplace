@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260801-android-scroll-fix-v31';
+  const VERSION = '20260801-android-scroll-fix-v32';
   const MAX_AGE = 1000 * 60 * 60 * 24 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
@@ -21,6 +21,11 @@
   const skip = new Set(['cart','product','mobile-product']);
   const contentSelector = '.m-content';
   const ACTIVE_CACHE_PREFIX = 'as_mobile_page_cache:' + VERSION + ':';
+  const LEGACY_LAYER_SELECTOR = '.as-mobile-install-card, .as-install-home-card, .pwa-install-banner, .pwa-install-card, .pwa-install-overlay, .install-banner, .install-overlay, [data-as-install-overlay], [data-install-overlay]';
+  function stripLegacyLayers(root=document){
+    try { root.querySelectorAll(LEGACY_LAYER_SELECTOR).forEach(node => node.remove()); } catch(e) {}
+  }
+  stripLegacyLayers(document);
 
   // Drop snapshots created by older layouts; they may contain the removed install overlay.
   [localStorage, sessionStorage].forEach(store => {
@@ -61,6 +66,7 @@
     }
   }
   function restore(){
+    stripLegacyLayers(document);
     if(!canCache()) return;
     const data = read();
     if(!data || !data.html || (now() - Number(data.t||0)) > MAX_AGE) return;
@@ -71,8 +77,9 @@
       node.classList.add('m-cache-restored');
       const template = document.createElement('template');
       template.innerHTML = data.html;
-      template.content.querySelectorAll('.as-mobile-install-card, .as-install-home-card').forEach(card => card.remove());
+      stripLegacyLayers(template.content);
       node.innerHTML = template.innerHTML;
+      stripLegacyLayers(document);
       document.documentElement.classList.add('as-mobile-cache-visible');
       const loader = document.getElementById('mLoader');
       if(loader) loader.remove();
