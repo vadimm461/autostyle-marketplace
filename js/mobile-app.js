@@ -13,6 +13,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 let products = [], allProducts = [], categories = [], homeBlocks = [], userNow = null;
 let dataPromise = null;
+let productDataPromise = null;
 const PAGE_SIZE = 24;
 let cart = [];
 let favs = getFavorites();
@@ -35,6 +36,14 @@ const waitAuthUser = async () => {
 const HOME_BLOCKS_COLLECTION = COLLECTIONS.homeBlocks || 'autostyle_home_blocks';
 const MAIN_BANNERS_COLLECTION = COLLECTIONS.banners || 'autostyle_banners';
 const whenIdle = fn => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1600 }) : setTimeout(fn, 60));
+const waitWithTimeout = (task, ms, fallback) => {
+  let timer = 0;
+  const work = typeof task === 'function' ? Promise.resolve().then(task) : Promise.resolve(task);
+  const timeout = new Promise(resolve => {
+    timer = setTimeout(() => resolve(fallback), ms);
+  });
+  return Promise.race([work.finally(() => clearTimeout(timer)), timeout]);
+};
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[ch]));
 const appUrl = url => {
   const raw = String(url || '').trim();
@@ -75,6 +84,25 @@ const notificationActionUrl = url => {
 };
 const MOBILE_CACHE_OPTIONS = { staleWhileRevalidate:true };
 const safeLoadCollection = async (name, options=MOBILE_CACHE_OPTIONS) => { try { return await getCollectionCached(name, options); } catch(e) { console.warn('Не удалось загрузить', name, e); return []; } };
+function loadProducts(options={}){
+  const force = options.force === true;
+  if (!force && productDataPromise) return productDataPromise;
+  const promise = getProducts(options).then(rows => {
+    const next = Array.isArray(rows) ? rows : [];
+    // Не заменяем рабочий снимок пустым ответом во время переподключения
+    // Firestore или кратковременной ошибки сети.
+    if (next.length || !allProducts.length) {
+      allProducts = next;
+      products = next;
+    }
+    return products;
+  }).catch(error => {
+    console.warn('Не удалось загрузить товары', error);
+    return products || [];
+  });
+  if (!force) productDataPromise = promise;
+  return promise;
+}
 const safeLoadCollections = async (names, options=MOBILE_CACHE_OPTIONS) => {
   const groups = await Promise.all(names.map(async name => {
     const rows = await safeLoadCollection(name, options);
@@ -442,12 +470,43 @@ function setupAdvancedMobileSearch(){
   }
 
   let timer = 0;
+  let searchRenderToken = 0;
   const render = async () => {
+    const renderToken = ++searchRenderToken;
     const q = input.value.trim();
     if (q.length < 2) { close(); return; }
-    await initData().catch(()=>{});
+
+    // Поиск использует только товары. Раньше он ждал общий initData(),
+    // который дополнительно загружал категории и блоки главной.
+    const productPromise = products.length ? Promise.resolve(products) : loadProducts(MOBILE_CACHE_OPTIONS);
+    const loaded = products.length
+      ? products
+      : await Promise.race([
+          productPromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 350))
+        ]);
+    if (renderToken !== searchRenderToken || input.value.trim() !== q) return;
+
+    if (!Array.isArray(loaded) || !loaded.length) {
+      box.replaceChildren();
+      const status = document.createElement('div');
+      status.className = 'm-search-loading';
+      status.textContent = 'Ищем товары…';
+      status.style.cssText = 'padding:18px 20px;color:#687386;text-align:center;font-weight:600';
+      box.appendChild(status);
+      document.querySelectorAll('.m-search-live').forEach(el => { if (el !== box) el.remove(); });
+      box.classList.add('active');
+      document.body.classList.add('m-search-open');
+      // Если первый запрос был медленным, перерисуем подсказки только после
+      // получения непустого снимка, не создавая цикл на пустом результате.
+      productPromise.then(rows => {
+        if (Array.isArray(rows) && rows.length && renderToken === searchRenderToken && input.value.trim() === q) render();
+      }).catch(() => {});
+      return;
+    }
+
     const nq = norm(q);
-    const result = products
+    const result = loaded
       .filter(p => norm(`${title(p)} ${group(p)} ${p.brand || ''} ${p.code || p.article || ''}`).includes(nq))
       .slice(0, 20);
 
@@ -483,6 +542,10 @@ function setupAdvancedMobileSearch(){
   window.addEventListener('scroll', () => {
     if (box.classList.contains('active')) close();
   }, { passive:true });
+  window.addEventListener('autostyle-cache-updated', event => {
+    if (event.detail?.name !== COLLECTIONS.products || input.value.trim().length < 2) return;
+    render();
+  });
 }
 
 
@@ -588,7 +651,7 @@ async function initData(options={}){
     const dynamicOptions = options.force ? { force: true } : MOBILE_CACHE_OPTIONS;
     const productOptions = options.productPage ? { force: true } : dynamicOptions;
     const loadPromise = Promise.all([
-      getProducts(productOptions),
+      loadProducts(productOptions),
       getCategories(dynamicOptions),
       safeLoadCollection(HOME_BLOCKS_COLLECTION, dynamicOptions)
     ]).then(([p,c,h])=>{
@@ -1634,7 +1697,11 @@ async function renderProfile(){
   mobileProfileAuthUnsub = onAuthStateChanged(auth, async u=>{
     if(!isCurrentRender()) return;
     if(u){
-      try{ await u.reload(); u = auth.currentUser || u; }catch(e){ console.warn('Не удалось обновить статус Email', e); }
+      // Обновление Firebase Auth не должно блокировать профиль. Берём
+      // сохранённого пользователя сразу, а актуальный статус почты
+      // обновляем с коротким пределом ожидания.
+      try{ await waitWithTimeout(() => u.reload(), 1200, null); }catch(e){ console.warn('Не удалось обновить статус Email', e); }
+      u = auth.currentUser || u;
     }
     if(!isCurrentRender()) return;
     userNow=u; const box=$('#mProfileBox');
@@ -1827,15 +1894,21 @@ async function renderProfile(){
       drawMReg();
       clearLoader(); return;
     }
-    try{ await u.reload(); }catch(e){ console.warn('Не удалось обновить статус подтверждения почты', e); }
-    const current=await getUserDoc(u.uid);
+    const fallbackCurrent = { ref: doc(db, usersCollection, u.uid), data:{} };
+    const current = await waitWithTimeout(() => getUserDoc(u.uid), 1600, fallbackCurrent)
+      .catch(() => fallbackCurrent);
     if(!isCurrentRender()) return;
     let d=current.data || {};
-    const cardSnap = await getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)).catch(()=>null);
+    const [cardSnap, myOrders] = await Promise.all([
+      waitWithTimeout(
+        () => getDoc(doc(db, COLLECTIONS.discountCards || 'autostyle_discount_cards', u.uid)),
+        1200,
+        null
+      ).catch(() => null),
+      waitWithTimeout(() => loadMobileOrders(u), 1200, []).catch(() => [])
+    ]);
     if(!isCurrentRender()) return;
     if(cardSnap && cardSnap.exists()) d = { ...d, discountCard:{ ...(d.discountCard||{}), ...cardSnap.data(), active: cardSnap.data().active !== false }, discountCardActive: cardSnap.data().active !== false, discountCardNumber: cardSnap.data().number || d.discountCardNumber };
-    const myOrders = await loadMobileOrders(u).catch(()=>[]);
-    if(!isCurrentRender()) return;
     const registeredCar = d.car || d.carText || [d.carBrand, d.carModel, d.carYear].filter(Boolean).join(' ');
     const emailConfirmed = u.emailVerified === true;
     if(d.emailVerified !== emailConfirmed){
