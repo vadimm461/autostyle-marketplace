@@ -617,9 +617,41 @@ function renderCatalogBatch(list, start=0){
   }
 }
 async function renderProduct(){
-  setupShell('catalog'); await initData({ productPage: true });
-  const id=new URLSearchParams(location.search).get('id'); const p=products.find(x=>String(x.id)===String(id));
-  if(!p){ $('#mProduct').innerHTML='<div class="m-empty">Товар не найден</div>'; clearLoader(); return; }
+  setupShell('catalog');
+  const params = new URLSearchParams(location.search);
+  const id = String(params.get('id') || params.get('productId') || params.get('product') || '').trim();
+  if (!id) {
+    $('#mProduct').innerHTML = '<div class="m-empty">Товар не найден</div>';
+    clearLoader();
+    return;
+  }
+
+  // Страница товара не должна ждать загрузку всего каталога из 2555+ позиций.
+  // Берём конкретный документ напрямую по его Firestore ID.
+  let p = null;
+  try {
+    const snap = await getDoc(doc(db, COLLECTIONS.products, id));
+    if (snap.exists()) p = { id: snap.id, ...snap.data() };
+  } catch (error) {
+    console.warn('Не удалось загрузить товар напрямую', error);
+  }
+
+  // Резерв: используем уже имеющийся кэш/список, если прямой запрос временно недоступен.
+  if (!p) {
+    try {
+      await initData();
+      const source = allProducts.length ? allProducts : products;
+      p = source.find(x => String(x.id) === id) || null;
+    } catch (error) {
+      console.warn('Не удалось найти товар в кэше каталога', error);
+    }
+  }
+
+  if (!p) {
+    $('#mProduct').innerHTML = '<div class="m-empty">Товар не найден</div>';
+    clearLoader();
+    return;
+  }
   const im=img(p), d=discount(p), op=oldPrice(p);
   let viewed=JSON.parse(localStorage.getItem('viewedProducts')||'[]').filter(x=>x!==p.id); viewed.unshift(p.id); localStorage.setItem('viewedProducts',JSON.stringify(viewed.slice(0,30)));
   $('#mProduct').innerHTML=`<a class="m-btn" href="mobile-catalog.html?category=${encodeURIComponent(group(p))}">← Вернуться в каталог</a>
