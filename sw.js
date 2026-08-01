@@ -240,3 +240,5 @@ self.addEventListener('message', event => {
     })());
   }
 });
+
+// v27 mobile home polish
