@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // Ordinary pages and static assets may stay cached for 3 days.
 // Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260801-cache-v31-android-scroll-fix';
+const VERSION = 'autostyle-20260801-cache-v32-android-scroll-unlock';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
@@ -128,6 +128,26 @@ async function cacheFirstImage(request) {
   }
 }
 
+async function networkFirstStatic(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response && (response.ok || response.type === 'opaque')) {
+      await cache.put(request, response.clone()).catch(() => {});
+    }
+    return response;
+  } catch (_) {
+    return (await cache.match(request)) || Response.error();
+  }
+}
+
+function isMobileShellAsset(url) {
+  return url.origin === self.location.origin && (
+    /\\/css\\/(?:mobile-market|install-guide)\\.css$/i.test(url.pathname) ||
+    /\\/js\\/(?:mobile-boot-rescue|mobile-page-cache|mobile-redirect)\\.js$/i.test(url.pathname)
+  );
+}
+
 async function cacheFirstStatic(request) {
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
@@ -196,8 +216,11 @@ self.addEventListener('fetch', event => {
   if (isFirebaseData(url)) return;
 
   if (request.mode === 'navigate') {
+    const shellPage = /(?:^|\\/)mobile\\.html$/i.test(url.pathname) || /(?:^|\\/)index\\.html$/i.test(url.pathname);
     event.respondWith(
-      isNotificationPage(url)
+      shellPage
+        ? networkFirstNotification(request, PAGE_CACHE)
+        : isNotificationPage(url)
         ? networkFirstNotification(request, PAGE_CACHE)
         : isProductPage(url)
           ? networkOnlyProduct(request)
@@ -220,7 +243,7 @@ self.addEventListener('fetch', event => {
   const isStaticAsset = url.origin === self.location.origin &&
     /(?:\.js|\.css|\.woff2?|\.webmanifest)$/i.test(url.pathname);
   if (isStaticAsset) {
-    event.respondWith(cacheFirstStatic(request));
+    event.respondWith(isMobileShellAsset(url) ? networkFirstStatic(request) : cacheFirstStatic(request));
   }
 });
 
