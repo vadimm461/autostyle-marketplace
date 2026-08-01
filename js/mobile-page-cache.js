@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260801-home-layout-v28';
+  const VERSION = '20260801-android-scroll-fix-v31';
   const MAX_AGE = 1000 * 60 * 60 * 24 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
@@ -20,6 +20,16 @@
   const scrollKey = keyBase + ':scroll';
   const skip = new Set(['cart','product','mobile-product']);
   const contentSelector = '.m-content';
+  const ACTIVE_CACHE_PREFIX = 'as_mobile_page_cache:' + VERSION + ':';
+
+  // Drop snapshots created by older layouts; they may contain the removed install overlay.
+  [localStorage, sessionStorage].forEach(store => {
+    try {
+      Object.keys(store)
+        .filter(key => key.startsWith('as_mobile_page_cache:') && !key.startsWith(ACTIVE_CACHE_PREFIX))
+        .forEach(key => store.removeItem(key));
+    } catch(e) {}
+  });
 
   // A notification detail is dynamic HTML and must never be restored from a
   // previous DOM snapshot. Old snapshots could contain the broken full-page
@@ -59,7 +69,10 @@
     const hasUsefulContent = node.textContent.trim().length > 20 && !node.querySelector('#mHero,#mHomeDynamic,#mCatalogGrid,#mCartList,#mProduct,#mProfileBox');
     if(!hasUsefulContent){
       node.classList.add('m-cache-restored');
-      node.innerHTML = data.html;
+      const template = document.createElement('template');
+      template.innerHTML = data.html;
+      template.content.querySelectorAll('.as-mobile-install-card, .as-install-home-card').forEach(card => card.remove());
+      node.innerHTML = template.innerHTML;
       document.documentElement.classList.add('as-mobile-cache-visible');
       const loader = document.getElementById('mLoader');
       if(loader) loader.remove();
