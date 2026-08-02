@@ -5,7 +5,7 @@
   .home-hero-grid.home-main-hero {
     display: grid !important;
     grid-template-columns: minmax(0, 4fr) minmax(0, 1fr) !important;
-    align-items: stretch !important;
+    align-items: start !important;
     gap: 18px !important;
     width: 100% !important;
     max-width: none !important;
@@ -16,13 +16,22 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  .home-hero-grid > #hero,
-  .home-hero-grid > #homePromoBanner {
+  .home-hero-grid > #hero {
     width: 100% !important;
     height: 420px !important;
     min-width: 0 !important;
     min-height: 420px !important;
     margin: 0 !important;
+  }
+
+  .home-hero-grid > #homePromoBanner {
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    align-self: start !important;
+    aspect-ratio: var(--promo-image-ratio, 6 / 7) !important;
   }
 
   .home-hero-grid > #homePromoBanner[hidden] {
@@ -45,6 +54,8 @@
 
   .home-hero-grid > #homePromoBanner .promo-image-slider,
   .home-hero-grid > #homePromoBanner .image-banner-slider {
+    position: absolute !important;
+    inset: 0 !important;
     width: 100% !important;
     height: 100% !important;
     min-height: 0 !important;
