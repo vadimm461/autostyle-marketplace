@@ -65,6 +65,21 @@
 (function(){
   var KEY='as_mobile_boot_recovery';
   var started=Date.now();
+
+  function restoreNativeVerticalScroll(){
+    if(document.getElementById('as-mobile-native-scroll-fix')) return;
+    var style=document.createElement('style');
+    style.id='as-mobile-native-scroll-fix';
+    style.textContent='\
+      html{height:auto!important;overflow-x:hidden!important;overflow-y:auto!important;touch-action:pan-x pan-y!important}\
+      body.mobile-page{height:auto!important;min-height:100dvh!important;max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-x pan-y!important;overscroll-behavior-y:auto!important}\
+      body.mobile-page .m-shell{height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important}\
+      body.mobile-page .m-content{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}\
+      body.mobile-page .m-top,body.mobile-page .m-bottom-nav{touch-action:manipulation!important}\
+    ';
+    (document.head||document.documentElement).appendChild(style);
+  }
+
   function preventGesture(event){
     event.preventDefault();
   }
@@ -92,6 +107,7 @@
   }
 
   lockMobileViewport();
+  restoreNativeVerticalScroll();
   resetHorizontalPosition();
 
   document.addEventListener('gesturestart',preventGesture,{passive:false});
