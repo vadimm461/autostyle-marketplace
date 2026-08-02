@@ -127,11 +127,16 @@ service cloud.firestore {
         || (
           isSignedIn()
           && (
-            resource.data.audience == "all"
-            || resource.data.audience == "group"
-            || resource.data.userId == request.auth.uid
-            || resource.data.uid == request.auth.uid
-            || resource.data.userEmail == request.auth.token.email
+            resource.data.get("audience", "") == "all"
+            || resource.data.get("target", "") == "all"
+            || resource.data.get("audience", "") == "group"
+            || resource.data.get("target", "") == "group"
+            || resource.data.get("userId", "") == request.auth.uid
+            || resource.data.get("uid", "") == request.auth.uid
+            || resource.data.get("targetUserId", "") == request.auth.uid
+            || resource.data.get("recipientId", "") == request.auth.uid
+            || resource.data.get("target", "") == request.auth.uid
+            || resource.data.get("userEmail", "") == request.auth.token.email
           )
         );
 

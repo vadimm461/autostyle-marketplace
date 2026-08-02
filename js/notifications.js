@@ -41,6 +41,45 @@ function notificationPageUrl(id = ''){
   return `${file}?${query.toString()}`;
 }
 
+function isMobileHeaderPage(){
+  return document.body?.classList.contains('mobile-page') ||
+    !!document.querySelector('.m-top .m-row') ||
+    /^mobile(?:-|\.html$)/i.test(location.pathname.split('/').pop() || '');
+}
+
+function ensureMobileHeaderButton(){
+  if (!isMobileHeaderPage()) return null;
+  const row = document.querySelector('.m-top .m-row');
+  if (!row) return null;
+
+  let button = row.querySelector('#asMobileHeaderNotifications');
+  if (!button) {
+    button = document.createElement('a');
+    button.id = 'asMobileHeaderNotifications';
+    button.className = 'as-mobile-header-notifications';
+    button.innerHTML = `
+      <span class="as-mobile-notify-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
+      </span>
+      <b class="as-mobile-notify-badge" data-as-header-notify-badge data-count="0"></b>`;
+    const spacer = row.querySelector('.m-head-spacer');
+    if (spacer) spacer.insertAdjacentElement('afterend', button);
+    else row.appendChild(button);
+  }
+
+  button.href = notificationPageUrl();
+  button.setAttribute('aria-label', 'Уведомления');
+  button.title = 'Уведомления';
+  if (!button.querySelector('[data-as-header-notify-badge]')) {
+    const badge = document.createElement('b');
+    badge.className = 'as-mobile-notify-badge';
+    badge.dataset.asHeaderNotifyBadge = '1';
+    badge.dataset.count = '0';
+    button.appendChild(badge);
+  }
+  return button;
+}
+
 function lockNotificationDetailUrl(id){
   const normalizedId = String(id || '').trim();
   if (!normalizedId) return;
@@ -223,7 +262,7 @@ function readList(){ return state.list.filter(n => isRead(n.id)); }
 
 function updateCount(){
   const count = state.unread || 0;
-  $$('#notificationCount').forEach(el => {
+  $$('#notificationCount, [data-as-header-notify-badge]').forEach(el => {
     el.dataset.count = String(count);
     el.textContent = count ? String(count) : '';
   });
@@ -422,6 +461,7 @@ function applyState(next){
 
 function start(user){
   currentUser = user || null;
+  ensureMobileHeaderButton();
   renderHeaderAccount(currentUser);
   initNotificationCatalogMenu();
   bindHeader();

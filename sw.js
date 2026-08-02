@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // Ordinary pages and static assets may stay cached for 3 days.
 // Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260801-cache-v36-search-titles';
+const VERSION = 'autostyle-20260802-cache-v37-notifications-header';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
@@ -61,8 +61,8 @@ function isNotificationPage(url) {
 
 function isNotificationAsset(url) {
   if (url.origin !== self.location.origin) return false;
-  return /\/js\/(?:notifications|mobile-app|notify-service|notification-route|notification-hard-fix)\.js$/i.test(url.pathname) ||
-    /\/css\/(?:mobile-market|final-request-clean-fix)\.css$/i.test(url.pathname);
+  return /\/js\/(?:notifications|mobile-app|notify-service|notification-route|notification-hard-fix|mobile-boot-rescue)\.js$/i.test(url.pathname) ||
+    /\/css\/(?:mobile-market|final-request-clean-fix|notifications)\.css$/i.test(url.pathname);
 }
 
 function metaRequest(request) {

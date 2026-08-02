@@ -1,0 +1,76 @@
+/* Mobile header notification entry. The same live count is written by
+   js/notifications.js; the boot fallback uses the same selectors. */
+body.mobile-page .m-top .m-row{
+  position:relative!important;
+  z-index:2!important;
+}
+
+body.mobile-page .as-mobile-header-notifications{
+  position:relative!important;
+  z-index:3!important;
+  flex:0 0 42px!important;
+  width:42px!important;
+  height:42px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  border:1px solid rgba(40,225,26,.42)!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.10)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 20px rgba(0,0,0,.16)!important;
+  text-decoration:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+
+body.mobile-page .as-mobile-header-notifications:active{
+  transform:scale(.94)!important;
+}
+
+body.mobile-page .as-mobile-notify-icon,
+body.mobile-page .as-mobile-notify-icon svg{
+  width:22px!important;
+  height:22px!important;
+  display:block!important;
+}
+
+body.mobile-page .as-mobile-notify-icon svg{
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  stroke-width:2!important;
+}
+
+body.mobile-page .as-mobile-notify-badge{
+  position:absolute!important;
+  top:-6px!important;
+  right:-6px!important;
+  min-width:19px!important;
+  height:19px!important;
+  padding:0 5px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:2px solid #10141b!important;
+  border-radius:999px!important;
+  background:#28e11a!important;
+  color:#061006!important;
+  font-size:10px!important;
+  line-height:15px!important;
+  font-weight:950!important;
+  box-shadow:0 6px 14px rgba(40,225,26,.28)!important;
+}
+
+body.mobile-page .as-mobile-notify-badge[data-count="0"]:empty{
+  display:none!important;
+}
+
+@media(max-width:380px){
+  body.mobile-page .as-mobile-header-notifications{
+    flex-basis:39px!important;
+    width:39px!important;
+    height:39px!important;
+    border-radius:14px!important;
+  }
+}

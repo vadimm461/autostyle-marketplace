@@ -163,7 +163,8 @@ export function notificationMs(n){
 }
 
 export function notificationText(n){
-  return n.text || stripHtml(n.html) || '';
+  const value = n?.text || n?.body || n?.message || n?.description || n?.html || '';
+  return stripHtml(value);
 }
 
 function cacheNotifications(list){
@@ -216,10 +217,18 @@ export function isNotificationAfterRegistration(n, user){
 export function isNotificationForUser(n, user, groupIds = []){
   if (!n || !user) return false;
   if (!isNotificationAfterRegistration(n, user)) return false;
-  const audience = n.audience || 'all';
-  if (audience === 'all') return true;
-  if (audience === 'user') return n.userId === user.uid || n.uid === user.uid || (n.userEmail && n.userEmail === user.email);
-  if (audience === 'group') return !!(n.groupId && groupIds.includes(n.groupId));
+  const uid = String(user.uid || '');
+  const email = String(user.email || '').trim().toLowerCase();
+  const userIds = [n.userId, n.uid, n.targetUserId, n.recipientId].filter(Boolean).map(String);
+  const groupId = String(n.groupId || n.targetGroupId || n.group || '').trim();
+  const rawTarget = typeof n.target === 'string' ? n.target.trim() : '';
+  if (userIds.includes(uid) || rawTarget === uid ||
+      (n.userEmail && String(n.userEmail).trim().toLowerCase() === email)) return true;
+
+  const audience = String(n.audience || n.target || 'all').trim().toLowerCase();
+  if (['all','everyone','broadcast','public'].includes(audience)) return true;
+  if (['group','groups'].includes(audience)) return !!(groupId && groupIds.map(String).includes(groupId));
+  if (['user','users','personal','private'].includes(audience)) return false;
   return false;
 }
 
@@ -286,36 +295,36 @@ export function watchNotifications(user, callback){
     emit();
   };
 
+  const listen = (constraints, label) => {
+    try {
+      addUnsubscribe(onSnapshot(
+        query(collection(db, NOTIFICATIONS_COLLECTION), ...constraints),
+        applySnapshot,
+        err => console.warn(`${label} notifications snapshot error`, err)
+      ));
+    } catch (e) { console.warn(`${label} notifications query error`, e); }
+  };
+
+  // Subscribe immediately. A slow or restricted profile/group lookup must
+  // never prevent global and direct notifications from appearing.
+  listen([where('audience','==','all'), limit(80)], 'global');
+  listen([where('target','==','all'), limit(80)], 'legacy global');
+  listen([where('userId','==', user.uid), limit(80)], 'user');
+  listen([where('uid','==', user.uid), limit(80)], 'legacy uid');
+  listen([where('targetUserId','==', user.uid), limit(80)], 'legacy user');
+  listen([where('recipientId','==', user.uid), limit(80)], 'legacy recipient');
+  listen([where('target','==', user.uid), limit(80)], 'legacy direct');
+  if (user.email) listen([where('userEmail','==', String(user.email).trim().toLowerCase()), limit(80)], 'legacy email');
+
   loadUserGroupIds(user).then(ids => {
     if (stopped) return;
     groupIds = ids;
     emit();
-
-    try{
-      addUnsubscribe(onSnapshot(
-        query(collection(db, NOTIFICATIONS_COLLECTION), where('audience','==','all'), limit(80)),
-        applySnapshot,
-        err => console.warn('global notifications snapshot error', err)
-      ));
-    }catch(e){ console.warn('global notifications query error', e); }
-
-    try{
-      addUnsubscribe(onSnapshot(
-        query(collection(db, NOTIFICATIONS_COLLECTION), where('userId','==', user.uid), limit(80)),
-        applySnapshot,
-        err => console.warn('user notifications snapshot error', err)
-      ));
-    }catch(e){ console.warn('user notifications query error', e); }
-
     groupIds.forEach(groupId => {
       if (stopped) return;
-      try{
-        addUnsubscribe(onSnapshot(
-          query(collection(db, NOTIFICATIONS_COLLECTION), where('audience','==','group'), where('groupId','==', groupId), limit(80)),
-          applySnapshot,
-          err => console.warn('group notifications snapshot error', err)
-        ));
-      }catch(e){ console.warn('group notifications query error', e); }
+      listen([where('audience','==','group'), where('groupId','==', groupId), limit(80)], 'group');
+      listen([where('target','==','group'), where('groupId','==', groupId), limit(80)], 'legacy group');
+      listen([where('targetGroupId','==', groupId), limit(80)], 'legacy target group');
     });
   });
 
@@ -369,6 +378,10 @@ export async function createNotification({ title, html, text, audience = 'all', 
     title: String(title || 'Уведомление').trim(),
     html: html || `<p>${esc(cleanText)}</p>`,
     text: cleanText,
+    // Keep the old field names in sync so legacy clients and records remain
+    // readable while the current client uses audience/text.
+    target: audience,
+    body: cleanText,
     audience,
     type,
     createdAt: serverTimestamp(),
