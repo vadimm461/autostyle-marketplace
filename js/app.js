@@ -209,10 +209,25 @@ function renderImageSlides(items, className, fallbackText){
   </div>`;
 }
 
+function syncPromoSliderRatio(slider, slide){
+  if (!slider.classList.contains('promo-image-slider')) return;
+  const banner = slider.closest('#homePromoBanner');
+  const currentSlide = slide || slider.querySelector('.image-banner-slide.active');
+  const image = currentSlide?.querySelector('img');
+  if (!banner || !image) return;
+  const applyRatio = () => {
+    if (!currentSlide.classList.contains('active') || !image.naturalWidth || !image.naturalHeight) return;
+    banner.style.setProperty('--promo-image-ratio', `${image.naturalWidth} / ${image.naturalHeight}`);
+  };
+  if (image.complete) applyRatio();
+  else image.addEventListener('load', applyRatio, { once: true });
+}
+
 function initImageBannerSliders(scope=document){
   scope.querySelectorAll('.image-banner-slider').forEach(slider => {
     const slides = Array.from(slider.querySelectorAll('.image-banner-slide'));
     const dots = Array.from(slider.querySelectorAll('[data-dot]'));
+    syncPromoSliderRatio(slider, slides[0]);
     if (slides.length <= 1 || slider.dataset.ready) return;
     slider.dataset.ready = '1';
     let index = 0;
@@ -220,6 +235,7 @@ function initImageBannerSliders(scope=document){
       index = (next + slides.length) % slides.length;
       slides.forEach((s,i)=>s.classList.toggle('active', i === index));
       dots.forEach((d,i)=>d.classList.toggle('active', i === index));
+      syncPromoSliderRatio(slider, slides[index]);
     };
     dots.forEach((dot,i)=>dot.onclick = e => { e.preventDefault(); show(i); });
     setInterval(()=>show(index + 1), 6000);
