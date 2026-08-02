@@ -629,10 +629,10 @@ function findParentForCategory(category){
 }
 function categoryChipsForSelection(selected){
   const pList = parentsList();
-  if(!selected) return { title:'Разделы', chips:pList.slice(0,18), parent:null };
+  if(!selected) return { title:'Разделы', chips:pList, parent:null };
   const selectedCat = findCategoryByName(selected);
   const parent = findParentForCategory(selectedCat) || pList.find(p => norm(catName(p)) === norm(selected)) || null;
-  if(!parent) return { title:'Разделы', chips:pList.slice(0,18), parent:null };
+  if(!parent) return { title:'Разделы', chips:pList, parent:null };
   const kids = childrenOfParent(parent).filter(c => norm(catName(c)) !== norm(catName(parent)));
   return { title:`Подразделы: ${catName(parent)}`, chips:kids.length ? kids : [parent], parent };
 }
