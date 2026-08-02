@@ -337,6 +337,28 @@ function prepareHomePromoZone(){
   const horizontalCards=document.getElementById('banners');
   if(!main || !vertical || !horizontalCards) return;
 
+  let sideStack=heroGrid?.querySelector('.home-side-stack');
+  if(heroGrid && !sideStack){
+    sideStack=document.createElement('div');
+    sideStack.className='home-side-stack';
+    sideStack.setAttribute('aria-label','Спецпредложение и колесо фортуны');
+    heroGrid.appendChild(sideStack);
+  }
+
+  let wheelBanner=document.getElementById('homeWheelBanner');
+  if(sideStack && !wheelBanner){
+    wheelBanner=document.createElement('a');
+    wheelBanner.id='homeWheelBanner';
+    wheelBanner.className='home-wheel-banner';
+    wheelBanner.href='profile.html#wheel';
+    wheelBanner.setAttribute('aria-label','Открыть колесо фортуны');
+    wheelBanner.innerHTML=`
+      <span class="home-wheel-icon" aria-hidden="true"><i></i><b>GO</b></span>
+      <span class="home-wheel-copy"><small>ИСПЫТАЙ УДАЧУ</small><strong>Колесо фортуны</strong></span>
+      <span class="home-wheel-arrow" aria-hidden="true">→</span>`;
+    sideStack.appendChild(wheelBanner);
+  }
+
   let zone=document.getElementById('homePromoZone');
   if(!zone){
     zone=document.createElement('section');
@@ -358,7 +380,8 @@ function prepareHomePromoZone(){
   // The source markup already defines the intended desktop 80/20 hero row.
   // Keep the vertical promotion beside the hero instead of moving it below.
   vertical.classList.add('home-promo-vertical');
-  if(heroGrid && vertical.parentElement!==heroGrid) heroGrid.appendChild(vertical);
+  if(sideStack && vertical.parentElement!==sideStack) sideStack.prepend(vertical);
+  if(sideStack && wheelBanner?.parentElement!==sideStack) sideStack.appendChild(wheelBanner);
 
   // Horizontal promotions stay in their own centered, extra-wide row.
   zone.append(horizontal);
