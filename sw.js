@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
-// Ordinary pages and static assets may stay cached for 3 days.
-// Product pages and Firebase/Auth data always go to the network.
-const VERSION = 'autostyle-20260802-cache-v38-android-scroll';
+// HTML navigations are network-first; the page cache is only a fast offline/slow-network fallback.
+// Static JS/CSS stay cached with background refresh, and images use a cache-first strategy.
+const VERSION = 'autostyle-20260802-cache-v40-network-first';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
@@ -11,6 +11,7 @@ const META_CACHE = VERSION + '-meta';
 const PAGE_MAX_AGE = 3 * 24 * 60 * 60 * 1000;
 const IMAGE_CACHE_LIMIT = 400;
 const PAGE_CACHE_LIMIT = 80;
+const NETWORK_FIRST_TIMEOUT = 1600;
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -61,8 +62,8 @@ function isNotificationPage(url) {
 
 function isNotificationAsset(url) {
   if (url.origin !== self.location.origin) return false;
-  return /\/js\/(?:notifications|mobile-app|notify-service|notification-route|notification-hard-fix|mobile-boot-rescue)\.js$/i.test(url.pathname) ||
-    /\/css\/(?:mobile-market|final-request-clean-fix|notifications)\.css$/i.test(url.pathname);
+  return /\/js\/(?:notifications|notify-service|notification-route|notification-hard-fix)\.js$/i.test(url.pathname) ||
+    /\/css\/(?:notifications|final-request-clean-fix)\.css$/i.test(url.pathname);
 }
 
 function metaRequest(request) {
@@ -145,29 +146,95 @@ async function staleWhileRevalidateStatic(request, event) {
   try { return await refresh; } catch (_) { return Response.error(); }
 }
 
+async function fetchPageFromNetwork(request, event) {
+  const response = await fetch(request, { cache: 'no-store' });
+  if (!response || !response.ok) {
+    throw new Error('network page request failed');
+  }
+  const write = putPage(request, response.clone());
+  if (event && typeof event.waitUntil === 'function') {
+    event.waitUntil(write.catch(() => {}));
+  }
+  return response;
+}
+
+async function offlinePageFallback(request) {
+  const url = new URL(request.url);
+  const fallbackName = url.pathname.toLowerCase().includes('mobile-')
+    ? 'mobile.html'
+    : 'index.html';
+  return (await caches.match(new URL(fallbackName, self.registration.scope).href)) ||
+    Response.error();
+}
+
 async function cachePageOrNetwork(request, event) {
   const cached = await getCachedPage(request);
+  const network = fetchPageFromNetwork(request, event);
+
+  // No cached copy exists: a new visitor waits for the current HTML.
+  if (!cached) {
+    try {
+      return await network;
+    } catch (_) {
+      return offlinePageFallback(request);
+    }
+  }
+
+  let timer = 0;
+  const result = await Promise.race([
+    network.then(response => ({ response }), error => ({ error })),
+    new Promise(resolve => {
+      timer = setTimeout(() => resolve({ timedOut: true }), NETWORK_FIRST_TIMEOUT);
+    })
+  ]);
+  clearTimeout(timer);
+
+  // Fresh HTML wins whenever the network answers promptly. If it is slow,
+  // show the last good page after 1.6 s while the request continues updating
+  // the cache for the next navigation.
+  if (result.response) return result.response;
+  if (result.timedOut && event && typeof event.waitUntil === 'function') {
+    event.waitUntil(network.catch(() => {}));
+  }
+  return cached;
+}
+
+async function networkFirstStaticWithTimeout(request, event) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(request);
   const refresh = fetch(request, { cache: 'no-store' }).then(async response => {
-    if (response && response.ok) await putPage(request, response.clone());
+    if (!response || (!response.ok && response.type !== 'opaque')) {
+      throw new Error('network static asset request failed');
+    }
+    const write = cache.put(request, response.clone());
+    if (event && typeof event.waitUntil === 'function') {
+      event.waitUntil(write.catch(() => {}));
+    }
     return response;
   });
-  if (cached) {
-    // Serve the last good shell immediately and refresh it in the background.
-    // This prevents a slow network request from producing a white page while
-    // still allowing published HTML to reach the following navigation.
-    event?.waitUntil(refresh.catch(() => {}));
-    return cached;
+
+  if (!cached) {
+    try {
+      return await refresh;
+    } catch (_) {
+      return Response.error();
+    }
   }
-  try {
-    return await refresh;
-  } catch (_) {
-    const url = new URL(request.url);
-    const fallbackName = url.pathname.toLowerCase().includes('mobile-')
-      ? 'mobile.html'
-      : 'index.html';
-    return (await caches.match(new URL(fallbackName, self.registration.scope).href)) ||
-      Response.error();
+
+  let timer = 0;
+  const result = await Promise.race([
+    refresh.then(response => ({ response }), error => ({ error })),
+    new Promise(resolve => {
+      timer = setTimeout(() => resolve({ timedOut: true }), NETWORK_FIRST_TIMEOUT);
+    })
+  ]);
+  clearTimeout(timer);
+
+  if (result.response) return result.response;
+  if (result.timedOut && event && typeof event.waitUntil === 'function') {
+    event.waitUntil(refresh.catch(() => {}));
   }
+  return cached;
 }
 
 async function networkFirstNotification(request, cacheName) {
@@ -211,6 +278,15 @@ self.addEventListener('fetch', event => {
 
   if (isNotificationAsset(url)) {
     event.respondWith(networkFirstNotification(request, STATIC_CACHE));
+    return;
+  }
+
+  // The page-cache script controls offline snapshots. Fetch this small runtime
+  // file from the network first so a new visitor never restores an old DOM
+  // snapshot just because the static cache still contains a previous copy.
+  if (url.origin === self.location.origin &&
+      /\/js\/mobile-page-cache\.js$/i.test(url.pathname)) {
+    event.respondWith(networkFirstStaticWithTimeout(request, event));
     return;
   }
 
