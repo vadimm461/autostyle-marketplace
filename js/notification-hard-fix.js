@@ -75,7 +75,7 @@
       if (node.matches(
         'header.topbar, .m-top, .m-bottom-nav, .m-bottom-inner, ' +
         '.as-notify-dropdown, .as-account-popup, .as-alert-backdrop.show, ' +
-        '#asFloatingWheel, #asHeaderNotifyDropdown'
+        '#asHeaderNotifyDropdown'
       )) return;
       const style = getComputedStyle(node);
       if (!['fixed', 'absolute'].includes(style.position) || style.display === 'none' || style.visibility === 'hidden') return;
