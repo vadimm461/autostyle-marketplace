@@ -281,9 +281,6 @@ body.mobile-page #mHomePromoMount .m-promo-card img{
 }
 
 /* v27: clean mobile home composition */
-body.mobile-page[data-page="home"] #asFloatingWheel{
-  display:none!important;
-}
 body.mobile-page[data-page="home"] .m-content{
   padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important;
 }
