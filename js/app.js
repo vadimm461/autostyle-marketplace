@@ -339,19 +339,18 @@ function prepareHomePromoZone(){
   }
   if(horizontalCards.parentElement!==horizontal) horizontal.appendChild(horizontalCards);
 
+  // The source markup already defines the intended desktop 80/20 hero row.
+  // Keep the vertical promotion beside the hero instead of moving it below.
   vertical.classList.add('home-promo-vertical');
-  if(vertical.parentElement!==zone) zone.appendChild(vertical);
+  if(heroGrid && vertical.parentElement!==heroGrid) heroGrid.appendChild(vertical);
 
-  // Стабильная последовательность: «Акции и подборки» идут перед
-  // «Спецпредложениями», независимо от предыдущего DOM/кэша.
-  zone.append(horizontal, vertical);
-  // The main hero must remain the first content block below the header.
-  // Keep the vertical and horizontal promo zone immediately after it.
+  // Horizontal promotions stay in their own centered, extra-wide row.
+  zone.append(horizontal);
   if(heroGrid){
     const afterHero=heroGrid.nextElementSibling;
     if(zone!==afterHero) main.insertBefore(zone,afterHero || null);
   }
-  heroGrid?.classList.add('home-main-hero');
+  heroGrid?.classList.remove('home-main-hero');
 }
 
 
@@ -563,12 +562,13 @@ async function renderHome(){
     sidePromo.hidden=!hasVerticalPromos;
     sidePromo.innerHTML=hasVerticalPromos ? renderImageSlides(verticalPromoCards,'promo-image-slider','') : '';
   }
+  document.querySelector('.home-hero-grid')?.classList.toggle('has-side-promo',hasVerticalPromos);
   renderPromoCards(horizontalPromoCards);
   const promoZone=document.getElementById('homePromoZone');
   const hasHorizontalPromos=horizontalPromoCards.length>0;
   if(promoZone){
-    promoZone.hidden=!(hasVerticalPromos || hasHorizontalPromos);
-    promoZone.classList.toggle('has-vertical',hasVerticalPromos);
+    promoZone.hidden=!hasHorizontalPromos;
+    promoZone.classList.remove('has-vertical');
     promoZone.classList.toggle('has-horizontal',hasHorizontalPromos);
   }
   initImageBannerSliders(document);
