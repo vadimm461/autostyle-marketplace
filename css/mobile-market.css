@@ -2183,3 +2183,8 @@ body.mobile-page .m-top,
 body.mobile-page .m-bottom-nav{
   touch-action:manipulation!important;
 }
+
+/* Keep the last category clear of the floating mobile navigation. */
+body.mobile-page[data-page="catalog"]{
+  padding-bottom:calc(160px + env(safe-area-inset-bottom, 0px)) !important;
+}
