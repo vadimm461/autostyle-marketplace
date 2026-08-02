@@ -9,7 +9,7 @@
     }, { once:true });
   }
 
-  const VERSION = '20260802-android-scroll-fix-v1';
+  const VERSION = '20260802-network-first-v40';
   const MAX_AGE = 1000 * 60 * 60 * 24 * 3;
   const page = document.body?.dataset?.page || location.pathname.split('/').pop().replace('.html','') || 'mobile';
   const profilePages = new Set(['profile','profile-data','orders','notifications','discount-card','feedback']);
@@ -20,6 +20,17 @@
   const scrollKey = keyBase + ':scroll';
   const skip = new Set(['cart','product','mobile-product']);
   const contentSelector = '.m-content';
+  const ACTIVE_CACHE_PREFIX = 'as_mobile_page_cache:' + VERSION + ':';
+
+  // Keep old snapshots only as an explicit offline fallback. Online pages must
+  // be rendered from the current HTML and current Firestore data.
+  [localStorage, sessionStorage].forEach(store => {
+    try {
+      Object.keys(store)
+        .filter(key => key.startsWith('as_mobile_page_cache:') && !key.startsWith(ACTIVE_CACHE_PREFIX))
+        .forEach(key => store.removeItem(key));
+    } catch(e) {}
+  });
 
   // A notification detail is dynamic HTML and must never be restored from a
   // previous DOM snapshot. Old snapshots could contain the broken full-page
@@ -51,7 +62,9 @@
     }
   }
   function restore(){
-    if(!canCache()) return;
+    // Do not replace a live page with a three-day-old DOM snapshot. The
+    // snapshot is useful only when the browser is actually offline.
+    if(navigator.onLine !== false || !canCache()) return;
     const data = read();
     if(!data || !data.html || (now() - Number(data.t||0)) > MAX_AGE) return;
     const node = document.querySelector(contentSelector);
