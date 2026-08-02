@@ -1,7 +1,7 @@
 // AutoStyle unified service worker.
 // HTML navigations are network-first; the page cache is only a fast offline/slow-network fallback.
 // Static JS/CSS stay cached with background refresh, and images use a cache-first strategy.
-const VERSION = 'autostyle-20260803-cache-v42-home-banners';
+const VERSION = 'autostyle-20260803-cache-v43-promo-image-ratio';
 const CACHE_PREFIX = 'autostyle-';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
