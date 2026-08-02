@@ -24,9 +24,24 @@
     margin: 0 !important;
   }
 
-  .home-hero-grid > #homePromoBanner {
+  .home-hero-grid > .home-side-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    height: 420px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
+
+  .home-hero-grid:not(.has-side-promo) > .home-side-stack {
+    display: none !important;
+  }
+
+  .home-hero-grid > .home-side-stack > #homePromoBanner {
     width: 100% !important;
     height: auto !important;
+    flex: 0 0 auto !important;
     min-width: 0 !important;
     min-height: 0 !important;
     margin: 0 !important;
@@ -34,11 +49,11 @@
     aspect-ratio: var(--promo-image-ratio, 6 / 7) !important;
   }
 
-  .home-hero-grid > #homePromoBanner[hidden] {
+  .home-hero-grid > .home-side-stack > #homePromoBanner[hidden] {
     display: none !important;
   }
 
-  .home-hero-grid > #homePromoBanner:not([hidden]) {
+  .home-hero-grid > .home-side-stack > #homePromoBanner:not([hidden]) {
     position: relative !important;
     display: block !important;
     padding: 0 !important;
@@ -47,13 +62,13 @@
     background: #fff !important;
   }
 
-  .home-hero-grid > #homePromoBanner::before {
+  .home-hero-grid > .home-side-stack > #homePromoBanner::before {
     content: none !important;
     display: none !important;
   }
 
-  .home-hero-grid > #homePromoBanner .promo-image-slider,
-  .home-hero-grid > #homePromoBanner .image-banner-slider {
+  .home-hero-grid > .home-side-stack > #homePromoBanner .promo-image-slider,
+  .home-hero-grid > .home-side-stack > #homePromoBanner .image-banner-slider {
     position: absolute !important;
     inset: 0 !important;
     width: 100% !important;
@@ -63,19 +78,135 @@
     background: #fff !important;
   }
 
-  .home-hero-grid > #homePromoBanner .image-banner-slide {
+  .home-hero-grid > .home-side-stack > #homePromoBanner .image-banner-slide {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     background: #fff !important;
   }
 
-  .home-hero-grid > #homePromoBanner .image-banner-slide img {
+  .home-hero-grid > .home-side-stack > #homePromoBanner .image-banner-slide img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
     object-position: center !important;
     background: #fff !important;
+  }
+
+  .home-wheel-banner {
+    position: relative !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-height: 58px !important;
+    padding: 8px 11px !important;
+    overflow: hidden !important;
+    color: #fff !important;
+    text-decoration: none !important;
+    border: 1px solid rgba(104, 255, 64, .38) !important;
+    border-radius: 20px !important;
+    background:
+      radial-gradient(circle at 18% 20%, rgba(77, 255, 50, .22), transparent 42%),
+      linear-gradient(120deg, #111820 0%, #080b0f 58%, #142617 100%) !important;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .16) !important;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease !important;
+  }
+
+  .home-wheel-banner:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(104, 255, 64, .75) !important;
+    box-shadow: 0 15px 30px rgba(18, 185, 38, .2) !important;
+  }
+
+  .home-wheel-icon {
+    position: relative !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 3px solid #fff !important;
+    border-radius: 50% !important;
+    background: conic-gradient(#2be31d 0 14%, #2563eb 14% 28%, #facc15 28% 42%, #ef4444 42% 56%, #8b5cf6 56% 70%, #14b8a6 70% 84%, #f97316 84% 100%) !important;
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .3) !important;
+  }
+
+  .home-wheel-icon::before {
+    content: "" !important;
+    width: 16px !important;
+    height: 16px !important;
+    border: 3px solid #fff !important;
+    border-radius: 50% !important;
+    background: #111820 !important;
+  }
+
+  .home-wheel-icon::after {
+    content: "" !important;
+    position: absolute !important;
+    top: -8px !important;
+    left: 50% !important;
+    border-left: 5px solid transparent !important;
+    border-right: 5px solid transparent !important;
+    border-top: 9px solid #fff !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .home-wheel-icon > i {
+    display: none !important;
+  }
+
+  .home-wheel-icon > b {
+    position: absolute !important;
+    right: -5px !important;
+    bottom: -4px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 3px !important;
+    color: #071007 !important;
+    font-size: 8px !important;
+    font-weight: 1000 !important;
+    line-height: 1 !important;
+    border: 2px solid #101820 !important;
+    border-radius: 999px !important;
+    background: #6cff3d !important;
+  }
+
+  .home-wheel-copy {
+    min-width: 0 !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .home-wheel-copy small {
+    color: #75ff4e !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: .08em !important;
+  }
+
+  .home-wheel-copy strong {
+    overflow: hidden !important;
+    color: #fff !important;
+    font-size: clamp(13px, 1vw, 16px) !important;
+    line-height: 1.08 !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .home-wheel-arrow {
+    flex: 0 0 auto !important;
+    color: #6cff3d !important;
+    font-size: 22px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
   }
 
   .home-promo-zone {
@@ -152,7 +283,9 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  .home-hero-grid > #homePromoBanner {
+  .home-hero-grid > .home-side-stack,
+  .home-hero-grid > #homePromoBanner,
+  .home-wheel-banner {
     display: none !important;
   }
 }
