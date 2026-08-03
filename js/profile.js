@@ -99,8 +99,7 @@ async function saveProfile(user){
     profileActivatedAt: firstProfileActivation ? new Date().toISOString() : (current.data.profileActivatedAt || ''),
     photoURL: user.photoURL || current.data.photoURL || '',
     updatedAt: new Date().toISOString(),
-    createdAt: current.data.createdAt || new Date().toISOString(),
-    role: current.data.role || 'user'
+    createdAt: current.data.createdAt || new Date().toISOString()
   }, { merge: true });
   try { await trackEvent(firstProfileActivation ? 'profile_completed' : 'profile_saved'); } catch(e) {}
   const shownName = name || 'пользователь';
