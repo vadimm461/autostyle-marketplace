@@ -12,6 +12,7 @@ import { getFavorites, subscribeFavorites, toggleFavorite, waitFavoritesReady } 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 let products = [], allProducts = [], categories = [], homeBlocks = [], userNow = null;
+let mobileProfilePhotoFile = null;
 let dataPromise = null;
 let productDataPromise = null;
 const PAGE_SIZE = 24;
@@ -1505,8 +1506,24 @@ function profileDataFromForm(u, old={}){
     city:$('#pCity')?.value.trim() || old.city || '',
     address:$('#pAddress')?.value.trim() || old.address || '',
     car:$('#pCar')?.value.trim() || old.car || old.carText || '',
-    photoURL:$('#pPhoto')?.value.trim() || old.photoURL || u.photoURL || ''
+    photoURL:old.photoURL || u.photoURL || ''
   };
+}
+function profilePhotoExtension(file){
+  const mime=String(file?.type||'').toLowerCase();
+  if(mime==='image/png') return 'png';
+  if(mime==='image/webp') return 'webp';
+  if(mime==='image/gif') return 'gif';
+  return 'jpg';
+}
+async function uploadMobileProfilePhoto(user,file){
+  if(!file) return '';
+  if(!String(file.type||'').startsWith('image/')) throw new Error('Выберите изображение JPG, PNG или WEBP.');
+  if(file.size > 5 * 1024 * 1024) throw new Error('Фото должно быть меньше 5 МБ.');
+  const ext=profilePhotoExtension(file);
+  const fileRef=ref(storage,'autostyle_users/'+user.uid+'/avatar.'+ext);
+  await uploadBytes(fileRef,file,{contentType:file.type,cacheControl:'public,max-age=31536000'});
+  return getDownloadURL(fileRef);
 }
 function renderDiscountCard(u, data={}){
   const card=data.discountCard || {}; const active=Boolean(card.active || data.discountCardActive || data.active === true);
@@ -1955,9 +1972,14 @@ async function renderProfile(){
           <label><span>Город</span><input id="pCity" class="m-input" value="${d.city||''}" placeholder="Город"></label>
           <label class="m-form-wide"><span>Адрес</span><input id="pAddress" class="m-input" value="${d.address||''}" placeholder="Адрес"></label>
           <label class="m-form-wide"><span>Автомобиль</span><input id="pCar" class="m-input" value="${registeredCar}" placeholder="Марка, модель, год"></label>
-          <label class="m-form-wide"><span>Фото профиля</span><input id="pPhoto" class="m-input" value="${d.photoURL||u.photoURL||''}" placeholder="Ссылка на фото"></label>
+          <label class="m-file-input m-form-wide" for="pPhotoFile" style="display:flex;align-items:center;justify-content:center;min-height:52px;cursor:pointer">
+            <input id="pPhotoFile" type="file" accept="image/*">
+            <span>📷 Выбрать фото профиля</span>
+          </label>
+          <small id="pPhotoStatus" class="m-profile-photo-status" style="display:block;grid-column:1/-1;margin-top:-4px;color:#667085;font-size:12px;font-weight:800">${d.photoURL||u.photoURL?'Текущее фото уже сохранено. Новое можно выбрать здесь.':'Фото ещё не добавлено.'}</small>
         </div>
         <button id="saveProfile" class="m-primary m-profile-save">Сохранить изменения</button>
+        <div id="pProfileMsg" class="m-profile-save-message" role="status" aria-live="polite" style="min-height:20px;margin-top:10px;color:#159b08;font-size:13px;font-weight:850;line-height:1.35"></div>
       </section>
       <section id="security" class="m-profile-pane m-profile-inner-pane">
         <div class="m-pane-title"><span><img src="assets/icons/settings.svg" alt=""></span><div><h2>Безопасность</h2><p>Почта и пароль.</p></div></div>
@@ -1991,22 +2013,85 @@ async function renderProfile(){
     }
     if(page === 'notifications') startMobileNotifications(u, $('#mMobileNotifications'));
     $$('.m-profile-pane .m-input').forEach(el=>el.style.marginTop='10px');
-    if($('#saveProfile')) $('#saveProfile').onclick=async()=>{
-      const data=profileDataFromForm(u,d);
-      await updateProfile(u,{displayName:data.name,photoURL:data.photoURL||null});
-      if($('#pPassEdit').value.trim()){
-        await updatePassword(u,$('#pPassEdit').value.trim());
-        try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); }
+    mobileProfilePhotoFile=null;
+    const photoInput=$('#pPhotoFile');
+    const photoStatus=$('#pPhotoStatus');
+    if(photoInput) photoInput.onchange=()=>{
+      const file=photoInput.files?.[0]||null;
+      mobileProfilePhotoFile=file;
+      if(!photoStatus) return;
+      if(!file){ photoStatus.textContent=d.photoURL||u.photoURL?'Текущее фото уже сохранено. Новое можно выбрать здесь.':'Фото ещё не добавлено.'; return; }
+      if(!String(file.type||'').startsWith('image/')){
+        mobileProfilePhotoFile=null;
+        photoStatus.textContent='Нужен файл изображения.';
+        return;
       }
-      await setDoc(current.ref,{
-        ...data,
-        emailVerified:emailConfirmed,
-        updatedAt:new Date().toISOString(),
-        createdAt:d.createdAt||new Date().toISOString(),
-        role:d.role||'user'
-      },{merge:true});
-      alert('Профиль сохранён');
-      location.reload();
+      if(file.size > 5 * 1024 * 1024){
+        mobileProfilePhotoFile=null;
+        photoStatus.textContent='Файл больше 5 МБ. Выберите изображение меньше.';
+        return;
+      }
+      photoStatus.textContent='Выбрано: '+file.name;
+    };
+    const showProfileMessage=(text,ok=false)=>{
+      const msg=$('#pProfileMsg');
+      if(!msg) return;
+      msg.textContent=text||'';
+      msg.style.color=ok?'#159b08':'#c1121f';
+      msg.classList.toggle('ok',ok);
+      msg.classList.toggle('error',!ok);
+    };
+    if($('#saveProfile')) $('#saveProfile').onclick=async()=>{
+      const button=$('#saveProfile');
+      const data=profileDataFromForm(u,d);
+      const newPassword=$('#pPassEdit')?.value.trim()||'';
+      let photoUploadError='';
+      button.disabled=true;
+      button.textContent='Сохраняем...';
+      showProfileMessage('Сохраняю данные...',true);
+      try{
+        if(mobileProfilePhotoFile){
+          showProfileMessage('Загружаю фото...',true);
+          try{ data.photoURL=await uploadMobileProfilePhoto(u,mobileProfilePhotoFile); }
+          catch(error){ photoUploadError=error?.message||String(error); }
+        }
+        const authPatch={};
+        if(data.name !== (u.displayName||'')) authPatch.displayName=data.name;
+        if(data.photoURL && data.photoURL !== (u.photoURL||'')) authPatch.photoURL=data.photoURL;
+        if(Object.keys(authPatch).length) await updateProfile(u,authPatch);
+        await setDoc(current.ref,{
+          ...data,
+          emailVerified:emailConfirmed,
+          updatedAt:new Date().toISOString(),
+          createdAt:d.createdAt||new Date().toISOString()
+        },{merge:true});
+        if(newPassword){
+          try{
+            await updatePassword(u,newPassword);
+            try{ await createPasswordChangedNotification(u); }catch(e){ console.warn('Не удалось создать уведомление о смене пароля', e); }
+            if($('#pPassEdit')) $('#pPassEdit').value='';
+          }catch(error){
+            photoUploadError=photoUploadError||'пароль не изменён: '+(error?.message||String(error));
+          }
+        }
+        d={...d,...data,emailVerified:emailConfirmed};
+        if(!photoUploadError){
+          mobileProfilePhotoFile=null;
+          if(photoInput) photoInput.value='';
+          if(photoStatus) photoStatus.textContent=data.photoURL?'Фото сохранено.':'Фото ещё не добавлено.';
+        }
+        document.querySelectorAll('.m-avatar').forEach(avatar=>{
+          if(data.photoURL) avatar.innerHTML='<img src="'+escapeHtml(data.photoURL)+'" alt="Фото профиля">';
+        });
+        showProfileMessage(photoUploadError?'Профиль сохранён, но '+photoUploadError:'Профиль сохранён.',!photoUploadError);
+        button.textContent='Сохранено';
+        setTimeout(()=>{button.disabled=false;button.textContent='Сохранить изменения';},1200);
+      }catch(error){
+        console.error('mobile profile save error',error);
+        showProfileMessage('Не удалось сохранить профиль: '+(error?.message||String(error)),false);
+        button.disabled=false;
+        button.textContent='Повторить сохранение';
+      }
     };
     if($('#mGetDiscount')) $('#mGetDiscount').onclick=async()=>activateDiscountCard(u,d);
     if($('#resendEmailVerify')) $('#resendEmailVerify').onclick=async()=>{ try{ await sendEmailVerification(u); alert('Письмо подтверждения отправлено.'); }catch(e){ alert('Не удалось отправить письмо: '+(e.message||e)); } };
