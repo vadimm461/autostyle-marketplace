@@ -347,3 +347,12 @@ body.mobile-page .m-bottom-nav.m-bottom-nav-hidden{
   opacity:0!important;
   pointer-events:none!important;
 }
+
+/* v29: do not reserve a fake 520px viewport for the next home block.
+   The generic mobile performance rule uses contain-intrinsic-size for
+   off-screen sections; on the homepage that becomes a visible blank gap
+   immediately below the first product carousel. */
+body.mobile-page[data-page="home"] .m-home-block{
+  content-visibility:visible!important;
+  contain-intrinsic-size:none!important;
+}
