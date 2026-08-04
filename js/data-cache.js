@@ -159,22 +159,29 @@ export async function getCollectionCached(name, options={}){
   const hasCachedRows = !!(cached && Array.isArray(cached.rows));
   const hasUsableCachedRows = hasCachedRows && cached.rows.length > 0;
 
-  // Свежий непустой кэш можно вернуть сразу.
-  if (!force && hasUsableCachedRows && age < MAX_CACHE_AGE) {
+  // Проверяем версию даже у свежего кэша. Раньше она проверялась только
+  // после ветки `age < MAX_CACHE_AGE`, поэтому изменение товара из админки
+  // оставалось невидимым на главной до истечения 15 минут.
+  let remoteVersion = null;
+  if (!force) remoteVersion = await withTimeout(getRemoteVersion(), 2500, null);
+
+  const cachedVersion = safeString(cached?.version || '');
+  const cacheVersionMatches = remoteVersion === null || cachedVersion === remoteVersion;
+
+  // Свежий непустой кэш можно вернуть только если админка не изменила
+  // общую версию данных.
+  if (!force && hasUsableCachedRows && age < MAX_CACHE_AGE && cacheVersionMatches) {
     return cached.rows;
   }
 
   // Просроченный непустой кэш разрешён только как временный снимок.
   // Пустой кэш никогда не возвращается вместо запроса к Firestore.
-  if (!force && staleWhileRevalidate && hasUsableCachedRows && age >= MAX_CACHE_AGE) {
+  if (!force && staleWhileRevalidate && hasUsableCachedRows && age >= MAX_CACHE_AGE && cacheVersionMatches) {
     getCollectionCached(name, { force:true }).catch(e => {
       console.warn('Mobile background cache refresh failed', name, e);
     });
     return cached.rows;
   }
-
-  let remoteVersion = null;
-  if (!force) remoteVersion = await withTimeout(getRemoteVersion(), 2500, null);
 
   try{
     const rows = await withTimeout(fetchCollection(name), 9000, null);

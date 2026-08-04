@@ -2,7 +2,7 @@ import { auth, db, storage, COLLECTIONS, waitForAuthReady } from './firebase.js'
 import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getProducts, getCategories, getCollectionCached } from './data-cache.js';
+import { getProducts, getCategories, getCollectionCached } from './data-cache.js?v=20260804-product-cache-refresh';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartItem, setUserCartQty, cartQtyCount, loadUserCart, saveUserCart, clearUserCart } from './user-cart-store.js';
 import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js?v=20260730-notification-detail-v19';

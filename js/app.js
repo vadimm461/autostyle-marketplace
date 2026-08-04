@@ -3,7 +3,7 @@ import { auth, db, COLLECTIONS } from './firebase.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { setDoc, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { loginEmail, registerEmail, ensureUserProfile } from './auth-core.js';
-import { getCollectionCached, getProducts } from './data-cache.js?v=20260728-performance-stage23';
+import { getCollectionCached, getProducts } from './data-cache.js?v=20260804-product-cache-refresh';
 import { addUserCartItem, getCurrentUserCart, waitUserCartReady, updateCartBadges } from './user-cart-store.js';
 import { setupDesktopLiveSearch } from './desktop-live-search.js?v=20260728-live-search';
 import { getFavorites, subscribeFavorites, toggleFavorite } from './user-favorites-store.js?v=20260729-profile-favorites';

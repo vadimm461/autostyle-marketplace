@@ -1,5 +1,5 @@
 import { auth, db, storage, COLLECTIONS } from './firebase.js';
-import { bumpCacheVersion, clearDataCache, bumpFullCacheResetVersion, clearFullSiteCache, startFullCacheResetWatcher } from './data-cache.js';
+import { bumpCacheVersion, clearDataCache, bumpFullCacheResetVersion, clearFullSiteCache, startFullCacheResetWatcher } from './data-cache.js?v=20260804-product-cache-refresh';
 import { createOrderStatusNotification } from './notify-service.js';
 
 import {
