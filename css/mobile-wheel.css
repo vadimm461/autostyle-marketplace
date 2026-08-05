@@ -373,6 +373,7 @@ body.mobile-wheel-page{
 .mw-empty small{max-width:240px;font-size:10px;line-height:1.35}
 .mw-prize-items{display:grid;gap:10px}
 .mw-prize-card{
+  position:relative;
   display:grid;
   grid-template-columns:62px minmax(0,1fr);
   gap:11px;
@@ -380,6 +381,7 @@ body.mobile-wheel-page{
   border-radius:18px;
   background:#f7f9fb;
   border:1px solid #edf0f4;
+  transition:border-color .2s ease,box-shadow .2s ease,opacity .2s ease,filter .2s ease;
 }
 .mw-prize-card>img{
   width:62px;
@@ -399,6 +401,18 @@ body.mobile-wheel-page{
   font-size:8px;
   font-weight:1000;
 }
+.mw-prize-card.is-active{
+  border-color:rgba(31,180,52,.34);
+  background:linear-gradient(145deg,#f5fff4 0%,#f7f9fb 72%);
+  box-shadow:0 8px 20px rgba(29,160,45,.1);
+}
+.mw-prize-card.is-active .mw-prize-state{
+  padding:5px 8px;
+  background:#dff9e1;
+  color:#087a1e;
+  font-size:10px;
+  box-shadow:0 3px 9px rgba(22,143,39,.12);
+}
 .mw-prize-card.is-expired .mw-prize-state{background:#f0f1f3;color:#777f8c}
 .mw-prize-card.is-redeemed .mw-prize-state{background:#e9efff;color:#365aaf}
 .mw-prize-content b{
@@ -413,6 +427,42 @@ body.mobile-wheel-page{
   color:#6d7685;
   font-size:9px;
 }
+.mw-prize-deadline{
+  line-height:1.25;
+}
+.mw-prize-deadline span,
+.mw-prize-deadline strong{
+  display:block;
+}
+.mw-prize-deadline span{
+  color:#6d7685;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.02em;
+}
+.mw-prize-deadline strong{
+  margin-top:2px;
+  color:#495464;
+  font-size:9px;
+  font-weight:900;
+}
+.mw-prize-card.is-active .mw-prize-deadline{
+  margin-top:8px;
+  padding:7px 9px;
+  border:1px solid rgba(28,169,48,.22);
+  border-radius:11px;
+  background:#fff;
+  box-shadow:0 4px 10px rgba(15,23,42,.045);
+}
+.mw-prize-card.is-active .mw-prize-deadline span{
+  color:#25823a;
+  font-size:9px;
+  font-weight:900;
+}
+.mw-prize-card.is-active .mw-prize-deadline strong{
+  color:#0d741f;
+  font-size:10px;
+}
 .mw-barcode{
   grid-column:1/-1;
   padding:8px;
@@ -422,6 +472,29 @@ body.mobile-wheel-page{
 }
 .mw-barcode svg{width:100%;height:55px}
 .mw-barcode b{font-size:10px;letter-spacing:.08em}
+.mw-barcode-disabled{
+  min-height:55px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:3px;
+  border:1px dashed #d4d9e0;
+  color:#8b939e;
+  background:#f4f5f7;
+}
+.mw-barcode-disabled span{
+  font-size:10px;
+  font-weight:1000;
+}
+.mw-barcode-disabled small{
+  color:#9aa1ab;
+  font-size:8px;
+}
+.mw-prize-card.is-unavailable{
+  pointer-events:none;
+  opacity:.62;
+  filter:blur(.55px) grayscale(.16);
+}
 .mw-prize-extra{display:none}
 .mw-prize-list.is-expanded .mw-prize-extra{display:grid}
 .mw-prizes-toggle{
