@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 31032)
-Total output lines: 2243
-
 import { auth, db, storage, COLLECTIONS, waitForAuthReady } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -1163,7 +1160,97 @@ function updateMobileCartSummary(){
     discountButton.disabled = installmentPayment;
     discountButton.classList.toggle('applied', mobileDiscountApplied && !installmentPayment);
     if(installmentPayment) discountButton.textContent = 'Скидочная карта недоступна в рассрочку';
-    else if(!mobileDisc…1032 tokens truncated…dataset.pick || '');
+    else if(!mobileDiscountCard.active) discountButton.textContent = 'Получить скидочную карту';
+    else if(mobileDiscountApplied) discountButton.textContent = mobileDiscountCard.percent > 0 ? `Скидка ${mobileDiscountCard.percent}% применена · убрать` : 'Скидочная карта применена · убрать';
+    else discountButton.textContent = 'Применить скидочную карту';
+  }
+  $$('#mCartCount').forEach(node => {
+    node.textContent = String(mobileCartRows.reduce((sum, row) => sum + (Number(row.item.qty || 1) || 1), 0));
+  });
+  renderMobileInstallments(total);
+}
+
+function renderMobileCartList(){
+  const root = $('#mCartList');
+  if(!root) return;
+  if(!mobileCartRows.length){
+    localStorage.removeItem(MOBILE_CART_SELECTED_KEY);
+    root.innerHTML = '<div class="m-empty"><b>Корзина пустая</b><br>Добавьте товары из каталога.<br><br><a class="m-primary" href="mobile-catalog.html">Перейти в каталог</a></div>';
+    updateMobileCartSummary();
+    return;
+  }
+  const selected = syncMobileSelection(mobileCartRows);
+  const allSelected = mobileCartRows.every(row => selected.has(mobileCartRowId(row)));
+  root.innerHTML = `<div class="m-cart-selectbar">
+      <label class="m-check"><input id="mSelectAllCart" type="checkbox" ${allSelected ? 'checked' : ''}><span></span><b id="mSelectAllLabel">${allSelected ? 'Снять все' : 'Выбрать все'}</b></label>
+      <small id="mCartSelectedCount">Выбрано: ${selected.size} из ${mobileCartRows.length}</small>
+    </div>
+    <div class="m-cart-panel">${mobileCartRows.map(mobileCartRowMarkup).join('')}</div>`;
+  updateMobileCartSummary();
+}
+
+async function reloadMobileCartAfterError(error){
+  console.error('mobile cart update error', error);
+  if(mobileCartReloadBusy) return;
+  mobileCartReloadBusy = true;
+  try {
+    alert('Не удалось сохранить изменение корзины. Данные обновлены из профиля.');
+    await loadUserCart(mobileCartUser);
+    mobileCartRows = buildMobileCartRows(getCurrentUserCart());
+    renderMobileCartList();
+  } finally {
+    mobileCartReloadBusy = false;
+  }
+}
+
+function queueMobileCartMutation(task){
+  mobileCartSaveQueue = mobileCartSaveQueue.then(task).catch(reloadMobileCartAfterError);
+  return mobileCartSaveQueue;
+}
+
+function changeMobileCartQty(id, delta){
+  const row = mobileCartRows.find(item => mobileCartRowId(item) === String(id));
+  if(!row) return;
+  const current = Math.max(1, Number(row.item.qty || 1) || 1);
+  const available = mobileCartStock(row.product);
+  if(delta > 0 && available !== null && current >= available){
+    alert(`Больше добавить нельзя. В наличии только ${available}.`);
+    return;
+  }
+  const next = Math.max(1, current + delta);
+  if(next === current) return;
+  row.item.qty = next;
+  updateMobileCartRowElement(row);
+  updateMobileCartSummary();
+  queueMobileCartMutation(() => setUserCartQty(id, next));
+}
+
+function removeMobileCartRow(id){
+  const index = mobileCartRows.findIndex(row => mobileCartRowId(row) === String(id));
+  if(index < 0) return;
+  mobileCartRows.splice(index, 1);
+  const selected = readMobileCartSelected() || new Set();
+  selected.delete(String(id));
+  if(mobileCartRows.length) writeMobileCartSelected(selected);
+  else localStorage.removeItem(MOBILE_CART_SELECTED_KEY);
+  renderMobileCartList();
+  queueMobileCartMutation(() => removeUserCartItem(id));
+}
+
+function bindMobileCartControls(){
+  const root = $('#mCartList');
+  if(root && root.dataset.cartControlsReady !== '1'){
+    root.dataset.cartControlsReady = '1';
+    root.addEventListener('change', event => {
+      const input = event.target;
+      if(input.id === 'mSelectAllCart'){
+        writeMobileCartSelected(new Set(input.checked ? mobileCartRows.map(mobileCartRowId) : []));
+        updateMobileCartSummary();
+        return;
+      }
+      if(input.classList?.contains('mCartPick')){
+        const selected = readMobileCartSelected() || new Set();
+        const id = String(input.dataset.pick || '');
         if(input.checked) selected.add(id);
         else selected.delete(id);
         writeMobileCartSelected(selected);
