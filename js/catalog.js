@@ -71,7 +71,15 @@ function clearCartAndFavorites(){
   window.dispatchEvent(new Event('autostyle-account-cleared'));
 }
 
-function money(v){return `${fmt.format(Number(v||0))} ₽`}function stock(p){return Number(p.stock??p.quantity??p.count??p.qty??0)}function title(p){return p.title||p.name||'Товар'}function image(p){return p.cardImage||p.thumbnailUrl||p.thumbnail||p.thumb||p.image||p.imageUrl||p.photo||''}function group(p){return p.group||p.category||p.categoryName||'Без группы'}function rawOldPrice(p){return Number(p.oldPrice||p.priceOld||p.compareAtPrice||0)}function oldPrice(p){const op=rawOldPrice(p),pr=Number(p.price||0);return op>pr?op:0}function discount(p){const manual=Number(p.discount||p.discountPercent||0),rawOp=rawOldPrice(p),op=oldPrice(p),pr=Number(p.price||0);if(manual>0)return manual;return op>pr&&pr>0?Math.round((op-pr)/op*100):0}function cartQtyCount(rows = cart){return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0)}function updateCart(){cart=getCurrentUserCart();updateCartBadges(cart)}
+function money(v){return `${fmt.format(Number(v||0))} ₽`}function stock(p){return Number(p.stock??p.quantity??p.count??p.qty??0)}
+function prioritizeInStock(rows){
+  const available=[],unavailable=[];
+  (Array.isArray(rows)?rows:[]).forEach(item=>{
+    (stock(item)>0?available:unavailable).push(item);
+  });
+  return available.concat(unavailable);
+}
+function title(p){return p.title||p.name||'Товар'}function image(p){return p.cardImage||p.thumbnailUrl||p.thumbnail||p.thumb||p.image||p.imageUrl||p.photo||''}function group(p){return p.group||p.category||p.categoryName||'Без группы'}function rawOldPrice(p){return Number(p.oldPrice||p.priceOld||p.compareAtPrice||0)}function oldPrice(p){const op=rawOldPrice(p),pr=Number(p.price||0);return op>pr?op:0}function discount(p){const manual=Number(p.discount||p.discountPercent||0),rawOp=rawOldPrice(p),op=oldPrice(p),pr=Number(p.price||0);if(manual>0)return manual;return op>pr&&pr>0?Math.round((op-pr)/op*100):0}function cartQtyCount(rows = cart){return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0)}function updateCart(){cart=getCurrentUserCart();updateCartBadges(cart)}
 function syncFavoriteButtons(){document.querySelectorAll('[data-fav]').forEach(button=>button.classList.toggle('active',favs.includes(String(button.dataset.fav||''))))}
 subscribeFavorites(ids=>{favs=ids;syncFavoriteButtons()})
 async function getCollection(n){return n===COLLECTIONS.products?await getProducts():n===COLLECTIONS.categories?await getCategories():[]}
@@ -305,6 +313,7 @@ function render(resetPage=false){
   if(sort?.value==='priceAsc')list.sort((a,b)=>Number(a.price||0)-Number(b.price||0));
   if(sort?.value==='priceDesc')list.sort((a,b)=>Number(b.price||0)-Number(a.price||0));
   if(sort?.value==='nameAsc')list.sort((a,b)=>title(a).localeCompare(title(b),'ru'));
+  list=prioritizeInStock(list);
   count&&(count.textContent=`${list.length} товаров`);
   const visible=list.slice(0,visibleCount);
   grid.innerHTML=visible.length?visible.map(card).join(''):'<div class="notice">Товары не найдены.</div>';
