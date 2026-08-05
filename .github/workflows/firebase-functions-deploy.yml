@@ -47,6 +47,10 @@ jobs:
         with:
           credentials_json: ${{ env.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Enable Secret Manager API
+        if: env.FIREBASE_SERVICE_ACCOUNT != ''
+        run: gcloud services enable secretmanager.googleapis.com --project="$PROJECT_ID"
+
       - name: Install function dependencies
         run: npm install --prefix functions --ignore-scripts
 
