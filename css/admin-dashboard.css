@@ -177,3 +177,4 @@
   .admin-tree-item{align-items:flex-start;flex-direction:column;gap:4px;}
   .admin-tree-item small{text-align:left;}
 }
+.admin-info-pages-grid{grid-column:1/-1;gap:18px!important;margin-top:6px}.admin-page-editor-card{padding:20px!important;border-radius:20px!important;background:#f8fafc!important;box-shadow:none!important}.admin-page-editor-card h3{margin:0 0 14px!important;font-size:20px!important}.admin-page-editor-card .field{margin-bottom:12px}.admin-page-editor-card textarea{min-height:150px!important}@media(max-width:760px){.admin-info-pages-grid{grid-template-columns:1fr!important}}
