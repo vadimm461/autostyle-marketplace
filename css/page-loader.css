@@ -1,15 +1,25 @@
-/* Lightweight first-paint cover used while Firebase renders real page data. */
+/* Lightweight content-area cover used while Firebase renders real page data. */
+:root {
+  --as-loader-top: 0px;
+  --as-loader-bottom: 0px;
+}
+
 body.as-loading {
-  overflow: hidden !important;
+  overflow-x: hidden !important;
 }
 
 .as-page-loader {
   position: fixed;
-  inset: 0;
-  z-index: 2147483000;
+  top: var(--as-loader-top, 0px);
+  right: 0;
+  bottom: var(--as-loader-bottom, 0px);
+  left: 0;
+  z-index: 10020;
   display: grid;
   place-items: center;
+  min-height: 180px;
   overflow: hidden;
+  padding: 24px 18px;
   background:
     radial-gradient(circle at 50% 44%, rgba(40, 225, 26, .045), transparent 24rem),
     #f3f5f7;
