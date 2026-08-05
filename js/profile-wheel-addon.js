@@ -423,11 +423,17 @@ async function renderPrizes(items){
   await loadJsBarcode().catch(()=>{});
   if(!items.length){list.innerHTML='<div class="profile-empty">Выигрышей пока нет.</div>';return}
   const cards=items.map((p,index)=>{
-    const exp=p.expiresAt?.toDate?.();const expired=exp&&exp<Date.now();const redeemed=p.status==='redeemed';
-    return `<article class="wheel-prize-card ${expired?'wheel-expired':''} ${index>=3?'wheel-prize-extra':''}">
+    const exp=p.expiresAt?.toDate?.();const expired=Boolean(exp&&exp.getTime()<=Date.now());const redeemed=p.status==='redeemed';
+    const unavailable=redeemed||expired;
+    const stateClass=redeemed?'is-redeemed':expired?'is-expired':'is-active';
+    const stateText=redeemed?'Получен':expired?'Срок истёк':'Можно забрать';
+    const barcodeMarkup=unavailable
+      ? `<div class="wheel-barcode wheel-barcode-disabled" aria-label="${redeemed?'Штрихкод уже использован':'Штрихкод недоступен'}"><span>${redeemed?'Штрихкод уже использован':'Штрихкод недоступен'}</span><small>${redeemed?'Подарок уже получен':'Срок получения истёк'}</small></div>`
+      : `<div class="wheel-barcode"><svg data-barcode="${esc(p.barcode)}"></svg><div><b>${esc(p.barcode)}</b></div></div>`;
+    return `<article class="wheel-prize-card ${stateClass} ${unavailable?'is-unavailable':''} ${index>=3?'wheel-prize-extra':''}" ${unavailable?'aria-disabled="true"':''}>
       <img src="${esc(p.productImage||'assets/as-logo-192.png')}" alt="">
-      <div><b>${esc(p.productName)}</b><div class="wheel-prize-meta">Статус: ${redeemed?'Получен':expired?'Срок истёк':'Можно забрать'}<br>Забрать до: ${exp?exp.toLocaleString('ru-RU'):'—'}</div></div>
-      <div class="wheel-barcode"><svg data-barcode="${esc(p.barcode)}"></svg><div><b>${esc(p.barcode)}</b></div></div>
+      <div class="wheel-prize-copy"><span class="wheel-prize-state">${stateText}</span><b>${esc(p.productName)}</b><div class="wheel-prize-deadline"><span>Забрать до</span><strong>${exp?exp.toLocaleString('ru-RU'):'—'}</strong></div></div>
+      ${barcodeMarkup}
     </article>`;
   }).join('');
   const hiddenCount=Math.max(0,items.length-3);
