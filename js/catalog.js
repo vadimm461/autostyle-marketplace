@@ -1,4 +1,6 @@
 
+let discountOnly = null;
+
 function currentParentForCatalog(){
   const selected = cat?.value || '';
   const parents = getParents(false);
@@ -79,7 +81,7 @@ function prioritizeInStock(rows){
   });
   return available.concat(unavailable);
 }
-function title(p){return p.title||p.name||'Товар'}function image(p){return p.cardImage||p.thumbnailUrl||p.thumbnail||p.thumb||p.image||p.imageUrl||p.photo||''}function group(p){return p.group||p.category||p.categoryName||'Без группы'}function rawOldPrice(p){return Number(p.oldPrice||p.priceOld||p.compareAtPrice||0)}function oldPrice(p){const op=rawOldPrice(p),pr=Number(p.price||0);return op>pr?op:0}function discount(p){const manual=Number(p.discount||p.discountPercent||0),rawOp=rawOldPrice(p),op=oldPrice(p),pr=Number(p.price||0);if(manual>0)return manual;return op>pr&&pr>0?Math.round((op-pr)/op*100):0}function cartQtyCount(rows = cart){return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0)}function updateCart(){cart=getCurrentUserCart();updateCartBadges(cart)}
+function title(p){return p.title||p.name||'Товар'}function image(p){return p.cardImage||p.thumbnailUrl||p.thumbnail||p.thumb||p.image||p.imageUrl||p.photo||''}function group(p){return p.group||p.category||p.categoryName||'Без группы'}function rawOldPrice(p){return Number(p.oldPrice||p.priceOld||p.priceBefore||p.compareAtPrice||0)}function oldPrice(p){const op=rawOldPrice(p),pr=Number(p.price||0);return op>pr?op:0}function discount(p){const manual=Number(p.discount||p.discountPercent||p.discount_percent||p.salePercent||0),rawOp=rawOldPrice(p),op=oldPrice(p),pr=Number(p.price||0);if(manual>0)return manual;return op>pr&&pr>0?Math.round((op-pr)/op*100):0}function cartQtyCount(rows = cart){return (Array.isArray(rows)?rows:[]).reduce((sum,item)=>sum+(item&&typeof item==='object'?Math.max(1,Number(item.qty??item.quantity??item.count??1)||1):1),0)}function updateCart(){cart=getCurrentUserCart();updateCartBadges(cart)}
 function syncFavoriteButtons(){document.querySelectorAll('[data-fav]').forEach(button=>button.classList.toggle('active',favs.includes(String(button.dataset.fav||''))))}
 subscribeFavorites(ids=>{favs=ids;syncFavoriteButtons()})
 async function getCollection(n){return n===COLLECTIONS.products?await getProducts():n===COLLECTIONS.categories?await getCategories():[]}
@@ -295,6 +297,10 @@ async function load(){
   cat&&(cat.innerHTML='<option value="">Все группы</option>'+[...opts.values()].map(x=>`<option value="${x}">${x}</option>`).join(''));
   await renderCatalogMenu();
   const params=new URLSearchParams(location.search);
+  discountOnly = $('#discountOnly');
+  discountOnly?.addEventListener('change',()=>render(true));
+  const forcedDiscount = params.get('discount') === '1' || params.get('discount') === 'true' || params.get('sale') === '1';
+  if(discountOnly) discountOnly.checked = forcedDiscount;
   if(params.get('category'))cat.value=params.get('category');
   if(params.get('search')){search.value=params.get('search');topSearch&&(topSearch.value=params.get('search'))}
   if(params.get('brand')){search.value=params.get('brand');topSearch&&(topSearch.value=params.get('brand'))}
@@ -309,7 +315,8 @@ function render(resetPage=false){
   if(loadMoreObserver){loadMoreObserver.disconnect();loadMoreObserver=null;}
   if(resetPage) visibleCount=CATALOG_PAGE_SIZE;
   const q=(search?.value||'').toLowerCase(),c=cat?.value||'',pf=Number($('#priceFrom')?.value||0),pt=Number($('#priceTo')?.value||999999999),params=new URLSearchParams(location.search),brandParam=(params.get('brand')||'').toLowerCase();
-  let list=items.filter(p=>{const brand=String(p.brand||p.brandName||p.manufacturer||p.vendor||'').toLowerCase();const text=`${title(p)} ${p.description||''} ${group(p)} ${p.code||''} ${brand}`.toLowerCase();const pr=Number(p.price||0);if(c&&!categoryNamesFor(c).includes(group(p)))return false;if(brandParam&&brand!==brandParam&&!text.includes(brandParam))return false;if(q&&!text.includes(q))return false;if(pr<pf||pr>pt)return false;return true});
+  const onlyDiscount = Boolean(discountOnly?.checked);
+  let list=items.filter(p=>{const brand=String(p.brand||p.brandName||p.manufacturer||p.vendor||'').toLowerCase();const text=`${title(p)} ${p.description||''} ${group(p)} ${p.code||''} ${brand}`.toLowerCase();const pr=Number(p.price||0);if(onlyDiscount&&discount(p)<=0)return false;if(c&&!categoryNamesFor(c).includes(group(p)))return false;if(brandParam&&brand!==brandParam&&!text.includes(brandParam))return false;if(q&&!text.includes(q))return false;if(pr<pf||pr>pt)return false;return true});
   if(sort?.value==='priceAsc')list.sort((a,b)=>Number(a.price||0)-Number(b.price||0));
   if(sort?.value==='priceDesc')list.sort((a,b)=>Number(b.price||0)-Number(a.price||0));
   if(sort?.value==='nameAsc')list.sort((a,b)=>title(a).localeCompare(title(b),'ru'));

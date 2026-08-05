@@ -126,7 +126,7 @@ function mergeHomeBlocks(custom){
   defaultHomeBlocks().forEach(b => byKey.set(b.key, b));
   (custom || []).forEach(b => {
     const key = b.key || b.slug || b.id;
-    if (!key) return;
+    if (!key || norm(key) === 'discounts') return;
     const base = byKey.get(key) || {};
     byKey.set(key, { ...base, id:b.id || base.id, key, title:b.title || b.name || base.title || key, order:Number(b.order ?? base.order ?? 999), enabled:b.enabled !== false, builtin:base.builtin === true });
   });
@@ -723,21 +723,34 @@ async function renderHome() {
 async function renderCatalog(){
   setupShell('catalog'); await initData();
   const params=new URLSearchParams(location.search), q=params.get('search')||'', selected=params.get('category')||'';
+  const discountFilter = params.get('discount') === '1' || params.get('discount') === 'true' || params.get('sale') === '1';
+  const discountQuery = discountFilter ? '&discount=1' : '';
   const pList=parentsList();
   const selectedCat = findCategoryByName(selected);
   const selectedParent = findParentForCategory(selectedCat) || pList.find(p => norm(catName(p)) === norm(selected)) || null;
   $('#mCategory').innerHTML='<option value="">Все категории</option>'+pList.map(p=>`<option value="${catName(p)}" ${(selectedParent && norm(catName(selectedParent))===norm(catName(p)))?'selected':''}>${catName(p)}</option>`).join('');
-  $('#mCategory').onchange=e=>{location.href=e.target.value?`mobile-catalog.html?category=${encodeURIComponent(e.target.value)}`:'mobile-catalog.html'};
+  $('#mCategory').onchange=e=>{location.href=e.target.value?`mobile-catalog.html?category=${encodeURIComponent(e.target.value)}${discountQuery}`:`mobile-catalog.html${discountFilter?'?discount=1':''}`};
   const chipData = categoryChipsForSelection(selected);
   const chipsTitle = document.querySelector('[data-m-catalog-chips-title]') || document.querySelector('.m-section-head h2');
   if (chipsTitle) chipsTitle.textContent = chipData.title;
-  $('#mCatChips').innerHTML=(chipData.chips || []).map(c=>`<a class="m-cat ${norm(selected)===norm(catName(c))?'active':''}" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}">${selectedParent && catId(c)!==catId(selectedParent) ? shortChild(c, selectedParent) : catName(c)}</a>`).join('');
+  $('#mCatChips').innerHTML=(chipData.chips || []).map(c=>`<a class="m-cat ${norm(selected)===norm(catName(c))?'active':''}" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}${discountQuery}">${selectedParent && catId(c)!==catId(selectedParent) ? shortChild(c, selectedParent) : catName(c)}</a>`).join('');
   $('#mFilterSearch').value=q;
-  $('#mFilterSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); location.href=`mobile-catalog.html?search=${encodeURIComponent(e.target.value.trim())}`; }});
+  const discountToggle = $('#mDiscountOnly');
+  if(discountToggle){
+    discountToggle.checked = discountFilter;
+    discountToggle.onchange = () => {
+      const next = new URL(location.href);
+      if(discountToggle.checked) next.searchParams.set('discount','1');
+      else next.searchParams.delete('discount');
+      location.href = next.href;
+    };
+  }
+  $('#mFilterSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); location.href=`mobile-catalog.html?search=${encodeURIComponent(e.target.value.trim())}${discountQuery}`; }});
   let list=products.filter(p=>productInCategory(p,selected));
   if(q) list=list.filter(p=>(title(p)+' '+group(p)).toLowerCase().includes(q.toLowerCase()));
+  if(discountFilter) list=list.filter(p=>discount(p)>0);
   list=prioritizeInStock(list);
-  $('#mCatalogTitle').textContent = selected ? selected : (q ? `Поиск: ${escapeHtml(q)}` : 'Каталог товаров');
+  $('#mCatalogTitle').textContent = discountFilter ? 'Товары со скидкой' : (selected ? selected : (q ? `Поиск: ${escapeHtml(q)}` : 'Каталог товаров'));
   renderCatalogBatch(list, 0);
   clearLoader();
 }

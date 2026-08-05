@@ -2188,3 +2188,25 @@ body.mobile-page .m-bottom-nav{
 body.mobile-page[data-page="catalog"]{
   padding-bottom:calc(160px + env(safe-area-inset-bottom, 0px)) !important;
 }
+
+.m-discount-filter{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+  padding:12px 13px;
+  border:1px solid #dfe7e2;
+  border-radius:15px;
+  background:#f7fcf6;
+  color:#18212f;
+  font-size:14px;
+  font-weight:950;
+  cursor:pointer;
+}
+.m-discount-filter input{
+  width:19px;
+  height:19px;
+  margin:0;
+  accent-color:var(--green);
+  cursor:pointer;
+}
