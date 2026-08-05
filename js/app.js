@@ -65,9 +65,6 @@ function clearCartAndFavorites(){
 
 let allProducts = [];
 let allBlocks = [];
-let homePriceFrom = 0;
-let homePriceTo = 0;
-let homeDiscountOnly = false;
 
 const money = v => `${Number(v || 0).toLocaleString('ru-RU')} ₽`;
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
@@ -135,21 +132,9 @@ function mergeBlocks(custom){
   });
   return [...byKey.values()].filter(b => b.enabled !== false).sort((a,b) => Number(a.order ?? 999) - Number(b.order ?? 999));
 }
-function homeFilteredProducts(){
-  const minPrice = Number(homePriceFrom || 0);
-  const maxPrice = Number(homePriceTo || 0);
-  return allProducts.filter(product => {
-    const price = Number(product.price || 0);
-    if (minPrice > 0 && price < minPrice) return false;
-    if (maxPrice > 0 && price > maxPrice) return false;
-    if (homeDiscountOnly && discount(product) <= 0) return false;
-    return true;
-  });
-}
-
 function productsForBlock(block){
   const key = normalizeKey(block.key);
-  const blockProducts = homeFilteredProducts();
+  const blockProducts = allProducts;
   if (block.recent || key === 'recentlyviewed') {
     const ids = JSON.parse(localStorage.getItem('viewedProducts') || '[]');
     const byId = new Map(blockProducts.map(p => [p.id, p]));
@@ -630,34 +615,6 @@ async function renderHome(){
   renderCatalogMenu();
   waitUserCartReady().then(()=>{cart=getCurrentUserCart();saveCart();renderSections();}).catch(()=>{});
 }
-function setupHomeFilters(){
-  const from = $('#homePriceFrom');
-  const to = $('#homePriceTo');
-  const discountButton = $('#homeDiscountOnly');
-  if (!from && !to && !discountButton) return;
-
-  const readPrice = value => {
-    const raw = String(value ?? '').trim();
-    if (!raw) return 0;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-  };
-  const refresh = () => {
-    homePriceFrom = readPrice(from?.value);
-    homePriceTo = readPrice(to?.value);
-    renderSections();
-  };
-
-  from?.addEventListener('input', refresh);
-  to?.addEventListener('input', refresh);
-  discountButton?.addEventListener('click', () => {
-    homeDiscountOnly = !homeDiscountOnly;
-    discountButton.classList.toggle('is-active', homeDiscountOnly);
-    discountButton.setAttribute('aria-pressed', String(homeDiscountOnly));
-    renderSections();
-  });
-}
-
 function setupExpand(){
   document.addEventListener('click', e => {
     const left=e.target.closest('[data-scroll-left]'), right=e.target.closest('[data-scroll-right]');
@@ -751,7 +708,6 @@ window.addEventListener('autostyle-cache-updated', e => {
 });
 
 prepareHomePromoZone();
-setupHomeFilters();
 authModal(); setupSearch(); setupExpand(); renderHome().finally(()=>window.AutoStyleLoader&&window.AutoStyleLoader.hide());
 
 function setupProductCardOpen(){
