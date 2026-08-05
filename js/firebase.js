@@ -40,9 +40,17 @@ export const authPersistenceReady = setPersistence(auth, browserLocalPersistence
 // Firebase restores the persisted user asynchronously.  Consumers that must
 // make an access decision wait for this promise instead of treating the first
 // transient state as a real guest session.
+function resolveAuthTask(task, ms=2600){
+  let timer = 0;
+  return Promise.race([
+    Promise.resolve(task),
+    new Promise(resolve => { timer = setTimeout(() => resolve(null), ms); })
+  ]).finally(() => clearTimeout(timer));
+}
+
 export const authStateReady = (async () => {
-  await authPersistenceReady;
-  if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+  await resolveAuthTask(authPersistenceReady);
+  if (typeof auth.authStateReady === 'function') await resolveAuthTask(auth.authStateReady());
   return auth.currentUser || null;
 })().catch(error => {
   console.warn('AutoStyle auth state restore:', error);
