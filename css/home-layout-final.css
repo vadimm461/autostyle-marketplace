@@ -289,3 +289,87 @@
     display: none !important;
   }
 }
+
+
+/* Desktop home filters: compact controls in the same visual language as price inputs. */
+.home-filter-controls{
+  display:none !important;
+}
+
+@media (min-width:981px){
+  .home-filter-controls{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:12px !important;
+    width:100% !important;
+    margin:0 0 20px !important;
+    padding:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  .home-price-controls{
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+  }
+
+  .home-filter-label{
+    color:#667085 !important;
+    font-size:14px !important;
+    font-weight:950 !important;
+    white-space:nowrap !important;
+  }
+
+  .home-filter-controls input,
+  .home-discount-filter{
+    height:42px !important;
+    box-sizing:border-box !important;
+    border:1px solid #dfe6ef !important;
+    border-radius:12px !important;
+    background:#fff !important;
+    color:#111827 !important;
+    font-size:14px !important;
+    font-weight:900 !important;
+    box-shadow:0 6px 16px rgba(16,24,40,.05) !important;
+    outline:none !important;
+  }
+
+  .home-filter-controls input{
+    width:92px !important;
+    padding:0 12px !important;
+  }
+
+  .home-filter-controls input::placeholder{
+    color:#98a2b3 !important;
+    opacity:1 !important;
+  }
+
+  .home-filter-controls input:focus{
+    border-color:#34e21f !important;
+    box-shadow:0 0 0 4px rgba(52,226,31,.12) !important;
+  }
+
+  .home-discount-filter{
+    padding:0 16px !important;
+    cursor:pointer !important;
+    white-space:nowrap !important;
+    transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease !important;
+  }
+
+  .home-discount-filter:hover,
+  .home-discount-filter.is-active,
+  .home-discount-filter[aria-pressed="true"]{
+    background:linear-gradient(180deg,#35e01c,#20c90b) !important;
+    border-color:#20c90b !important;
+    color:#06120a !important;
+    box-shadow:0 8px 20px rgba(32,201,11,.22) !important;
+  }
+}
+
+@media (min-width:981px) and (max-width:1120px){
+  .home-filter-controls{
+    justify-content:flex-start !important;
+    flex-wrap:wrap !important;
+  }
+}
