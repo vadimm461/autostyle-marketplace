@@ -2,8 +2,9 @@ import { db, COLLECTIONS } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 function renderText(container, value) {
-  if (!container || !String(value || '').trim()) return;
+  if (!container) return;
   container.replaceChildren();
+  if (!String(value || '').trim()) return;
   String(value).split(/\n+/).map(line => line.trim()).filter(Boolean).forEach(line => {
     const paragraph = document.createElement('p');
     paragraph.textContent = line;
