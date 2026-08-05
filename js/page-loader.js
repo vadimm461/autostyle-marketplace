@@ -4,6 +4,7 @@
   var loaderId = 'asPageLoader';
   var hideTimer = 0;
   var safetyTimer = 0;
+  var boundsFrame = 0;
   var dataPages = new Set([
     '',
     'index.html',
@@ -16,6 +17,34 @@
 
   function currentPage() {
     return String(window.location.pathname.split('/').pop() || '').toLowerCase();
+  }
+
+  function syncBounds() {
+    var root = document.documentElement;
+    var header = document.querySelector('header.topbar, .topbar');
+    var top = 0;
+
+    if (header) {
+      var headerRect = header.getBoundingClientRect();
+      top = Math.max(0, Math.round(headerRect.bottom));
+    }
+
+    var bottom = 0;
+    var bottomNav = document.querySelector('.app-bottom-nav');
+    if (bottomNav) {
+      var navRect = bottomNav.getBoundingClientRect();
+      if (navRect.top < window.innerHeight && navRect.bottom > 0) {
+        bottom = Math.max(0, Math.round(window.innerHeight - navRect.top));
+      }
+    }
+
+    root.style.setProperty('--as-loader-top', top + 'px');
+    root.style.setProperty('--as-loader-bottom', bottom + 'px');
+  }
+
+  function scheduleBoundsSync() {
+    window.cancelAnimationFrame(boundsFrame);
+    boundsFrame = window.requestAnimationFrame(syncBounds);
   }
 
   function create() {
@@ -38,6 +67,8 @@
 
     document.body.classList.add('as-loading');
     document.body.prepend(loader);
+    syncBounds();
+    scheduleBoundsSync();
     return loader;
   }
 
@@ -54,7 +85,6 @@
     var loader = document.getElementById(loaderId);
     if (!loader || loader.classList.contains('is-leaving')) return;
 
-    // Two frames let the finished page paint before the very short fade.
     window.requestAnimationFrame(function () {
       window.requestAnimationFrame(function () {
         loader.classList.add('is-leaving');
@@ -69,6 +99,7 @@
     if (!loader) return;
     loader.classList.remove('is-leaving');
     document.body.classList.add('as-loading');
+    scheduleBoundsSync();
     window.clearTimeout(safetyTimer);
     // Never let a Firebase/network failure leave the site blocked.
     safetyTimer = window.setTimeout(hide, 10000);
@@ -81,6 +112,9 @@
   };
 
   if (dataPages.has(currentPage())) show();
+
+  document.addEventListener('DOMContentLoaded', scheduleBoundsSync, { once: true });
+  window.addEventListener('resize', scheduleBoundsSync, { passive: true });
 
   // Back/forward cache already contains a rendered page, so no loader is needed.
   window.addEventListener('pageshow', function (event) {
