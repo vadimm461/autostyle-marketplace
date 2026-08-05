@@ -48,7 +48,6 @@
       <button data-section="analytics">Аналитика</button>
       <button data-section="productAnalytics">Товарная аналитика</button>
       <button data-section="users">Пользователи</button>
-      <button data-section="pages">Страницы</button>
       <button data-section="settings">Настройки</button>
       <a href="index.html" class="admin-link-btn">На сайт</a>
     </nav>
@@ -91,7 +90,6 @@
           <a href="#banners" class="admin-tree-item"><span>Баннеры</span><small>слайдеры и промо</small></a>
           <a href="#homeblocks" class="admin-tree-item"><span>Блоки главной</span><small>новинки, лидеры, подборки</small></a>
           <a href="#promocards" class="admin-tree-item"><span>Промо карточки</span><small>акции и спецпредложения</small></a>
-          <a href="#pages" class="admin-tree-item"><span>Страницы</span><small>информационные страницы</small></a>
         </div>
       </div>
 
@@ -586,43 +584,45 @@
       </div>
     </section>
 
-    <section id="pages" class="admin-section">
-      <div class="admin-card">
-        <h2>Страницы сайта</h2>
-
-        <form id="pageForm" class="grid2">
-          <label class="field">
-            Страница
-            <select id="pageKey">
-              <option value="contacts">Контакты</option>
-              <option value="about">Про нас</option>
-              <option value="addresses">Адреса</option>
-              <option value="installment">Рассрочка</option>
-              <option value="certificates">Подарочные сертификаты</option>
-            </select>
-          </label>
-
-          <label class="field">Заголовок<input id="pageTitle"></label>
-          <label class="field" style="grid-column:1/-1">Контент<textarea id="pageContent"></textarea></label>
-
-          <button class="primary">Сохранить страницу</button>
-          <span id="pageStatus" class="muted" aria-live="polite"></span>
-        </form>
-      </div>
-    </section>
-
     <section id="settings" class="admin-section">
       <div class="admin-card">
-        <h2>Настройки сайта</h2>
+        <h2>Настройки и страницы сайта</h2>
+        <p class="muted">Все основные настройки и тексты информационных страниц теперь находятся в одном разделе. Нажмите одну кнопку, чтобы сохранить изменения.</p>
 
         <form id="settingsForm" class="grid2">
           <label class="field">Название сайта<input id="siteName" placeholder="AutoStyle"></label>
           <label class="field">Валюта<input id="siteCurrency" placeholder="₽"></label>
-          <label class="field">Email<input id="siteEmail"></label>
-          <label class="field">Телефон<input id="sitePhone"></label>
-          <label class="field" style="grid-column:1/-1">Адрес<textarea id="siteAddress"></textarea></label>
 
-          <button class="primary">Сохранить настройки</button>
+          <div class="admin-editor-grid admin-info-pages-grid" style="grid-column:1/-1">
+            <div class="admin-card admin-page-editor-card">
+              <h3>Контакты</h3>
+              <label class="field">Заголовок<input id="pageContactsTitle" value="Контакты"></label>
+              <label class="field">Данные страницы<textarea id="pageContactsContent" rows="7" placeholder="Телефон, email, мессенджеры и другая контактная информация"></textarea></label>
+            </div>
+            <div class="admin-card admin-page-editor-card">
+              <h3>Про нас</h3>
+              <label class="field">Заголовок<input id="pageAboutTitle" value="Про нас"></label>
+              <label class="field">Данные страницы<textarea id="pageAboutContent" rows="7" placeholder="Описание компании и магазина"></textarea></label>
+            </div>
+            <div class="admin-card admin-page-editor-card">
+              <h3>Адреса</h3>
+              <label class="field">Заголовок<input id="pageAddressesTitle" value="Адреса"></label>
+              <label class="field">Данные страницы<textarea id="pageAddressesContent" rows="7" placeholder="Адрес магазина, график работы, ориентиры"></textarea></label>
+            </div>
+            <div class="admin-card admin-page-editor-card">
+              <h3>Рассрочка</h3>
+              <label class="field">Заголовок<input id="pageInstallmentTitle" value="Рассрочка"></label>
+              <label class="field">Данные страницы<textarea id="pageInstallmentContent" rows="7" placeholder="Условия рассрочки, банки, сроки и требования"></textarea></label>
+            </div>
+            <div class="admin-card admin-page-editor-card">
+              <h3>Подарочные сертификаты</h3>
+              <label class="field">Заголовок<input id="pageCertificatesTitle" value="Подарочные сертификаты"></label>
+              <label class="field">Данные страницы<textarea id="pageCertificatesContent" rows="7" placeholder="Номиналы, условия покупки и использования сертификатов"></textarea></label>
+            </div>
+          </div>
+
+          <button class="primary" type="submit">Сохранить настройки и страницы</button>
+          <span id="settingsStatus" class="muted" aria-live="polite"></span>
         </form>
       </div>
     </section>
@@ -786,7 +786,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script type="module" src="js/admin.js?v=20260805-admin-role-only"></script>
+<script type="module" src="js/admin.js?v=20260805-unified-settings"></script>
 <script type="module" src="js/admin-footer-editor.js"></script>
 <script src="js/admin-dashboard-home.js"></script>
 <script type="module" src="js/admin-notifications.js"></script>
