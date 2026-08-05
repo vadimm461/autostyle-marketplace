@@ -1,4 +1,4 @@
-/* AutoStyle desktop profile: flat, lightweight UI without decorative motion. */
+/* AutoStyle desktop profile: lightweight UI with a focused wheel accent. */
 @media (min-width:981px){
   .profile-page,
   .profile-page *,
@@ -30,30 +30,90 @@
     transform:none!important;
   }
 
-  .profile-home-card{
+  /* Home cards keep a fast, subtle hover highlight without lifting. */
+  .profile-page .profile-home-card{
     background:#fff!important;
+    transition:border-color .16s ease,box-shadow .16s ease!important;
   }
 
-  .profile-home-card:hover{
-    border-color:#d9e2eb!important;
+  .profile-page .profile-home-card:hover{
+    border-color:rgba(35,201,22,.30)!important;
+    box-shadow:
+      0 0 0 3px rgba(43,227,29,.055),
+      0 10px 24px rgba(15,23,42,.045)!important;
   }
 
-  .profile-home-card-discount:hover{
+  .profile-page .profile-home-card-discount:hover{
     border-color:rgba(230,0,18,.32)!important;
+    box-shadow:
+      0 0 0 3px rgba(230,0,18,.045),
+      0 10px 24px rgba(15,23,42,.04)!important;
   }
 
-  .profile-home-card-wheel::after{
-    display:none!important;
-  }
-
-  .profile-home-card-wheel,
-  .profile-home-card-wheel:hover{
+  /* Restore the bright Wheel of Fortune card while keeping it lightweight. */
+  .profile-page .profile-home-card-wheel,
+  .profile-page .profile-home-card-wheel:hover{
+    border-color:transparent!important;
+    color:#fff!important;
+    background:
+      radial-gradient(circle at 78% 18%,rgba(255,255,255,.34),transparent 23%),
+      radial-gradient(circle at 14% 86%,rgba(255,226,0,.42),transparent 29%),
+      linear-gradient(135deg,#ff4d00 0%,#ff006e 42%,#7a21ff 100%)!important;
     transform:none!important;
   }
 
-  .profile-wheel-icon{
+  .profile-page .profile-home-card-wheel{
+    box-shadow:0 16px 38px rgba(255,0,94,.16)!important;
+    transition:box-shadow .18s ease!important;
+  }
+
+  .profile-page .profile-home-card-wheel:hover{
+    box-shadow:0 20px 46px rgba(140,28,255,.21)!important;
+  }
+
+  .profile-page .profile-home-card-wheel::before{
+    box-shadow:0 0 0 25px rgba(255,255,255,.055)!important;
+  }
+
+  .profile-page .profile-home-card-wheel::after{
+    display:block!important;
+    transition:transform .7s ease!important;
+  }
+
+  .profile-page .profile-home-card-wheel:hover::after{
+    transform:translateX(120%)!important;
+  }
+
+  .profile-page .profile-home-card-wheel .profile-wheel-badge{
+    box-shadow:0 8px 18px rgba(70,20,0,.16)!important;
+  }
+
+  .profile-page .profile-wheel-icon{
+    box-shadow:
+      inset 0 0 0 10px rgba(255,255,255,.08),
+      0 14px 30px rgba(67,0,72,.18)!important;
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
+  }
+
+  .profile-page .profile-wheel-mini{
+    box-shadow:0 9px 21px rgba(67,0,72,.22)!important;
+  }
+
+  .profile-page .profile-wheel-mini::before{
+    box-shadow:0 0 0 6px rgba(86,15,120,.16)!important;
+  }
+
+  .profile-page .profile-wheel-mini::after{
+    filter:drop-shadow(0 3px 3px rgba(50,0,70,.18))!important;
+  }
+
+  .profile-page .profile-home-card-wheel b{
+    text-shadow:0 3px 16px rgba(67,0,72,.16)!important;
+  }
+
+  .profile-page .profile-home-card-wheel em{
+    box-shadow:0 10px 22px rgba(89,24,0,.19)!important;
   }
 
   .profile-page :focus-visible{
@@ -61,10 +121,48 @@
     outline-offset:2px!important;
   }
 
-  /* Keep the wheel's actual spin, but remove glow, pulse and pointer effects. */
-  .fortune-wheel{
+  /* Preserve the real spin and restore static wheel depth, without pulsing effects. */
+  .profile-page .wheel-profile-pane{
+    box-shadow:0 10px 28px rgba(15,23,42,.045)!important;
+  }
+
+  .profile-page .fortune-wheel{
     transition:transform 5.3s cubic-bezier(.12,.72,.08,1)!important;
     will-change:auto!important;
+    box-shadow:
+      0 18px 40px rgba(15,23,42,.14),
+      0 0 0 1px rgba(15,23,42,.07)!important;
+  }
+
+  .profile-page .fortune-wheel::after{
+    box-shadow:
+      0 8px 20px rgba(15,23,42,.20),
+      inset 0 0 0 1px rgba(255,255,255,.16)!important;
+  }
+
+  .profile-page .wheel-pointer{
+    filter:drop-shadow(0 5px 4px rgba(15,23,42,.18))!important;
+  }
+
+  .profile-page .wheel-prize-visual img,
+  .profile-page .wheel-empty-icon{
+    box-shadow:
+      0 7px 15px rgba(15,23,42,.14),
+      inset 0 0 0 1px #e7ebf0!important;
+  }
+
+  .profile-page .wheel-panel{
+    box-shadow:0 10px 26px rgba(15,23,42,.045)!important;
+  }
+
+  .profile-page .wheel-spin-btn{
+    box-shadow:0 9px 20px rgba(36,211,28,.18)!important;
+    transition:box-shadow .16s ease,filter .16s ease!important;
+  }
+
+  .profile-page .wheel-spin-btn:not(:disabled):hover{
+    filter:brightness(1.02)!important;
+    box-shadow:0 11px 23px rgba(36,211,28,.22)!important;
   }
 
   .fortune-wheel.is-spinning,
@@ -73,11 +171,9 @@
   .fortune-wheel.is-spinning .wheel-prize-visual img,
   .fortune-wheel.is-spinning .wheel-empty-icon{
     animation:none!important;
-    filter:none!important;
   }
 
-  .wheel-pointer,
-  .profile-wheel-mini::after{
-    filter:none!important;
+  .fortune-wheel.is-spinning{
+    filter:saturate(1.06)!important;
   }
 }
