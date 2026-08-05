@@ -53,6 +53,60 @@
   }
 }
 
+/* Discount filter belongs in the visible catalog toolbar, beside the price filter. */
+.catalog-top .catalog-top-discount-field{
+  display:flex !important;
+  align-items:center !important;
+  width:auto !important;
+  min-width:max-content !important;
+  margin:0 !important;
+  padding:9px 12px !important;
+  border:1px solid #e5eaf2 !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-shadow:0 8px 24px rgba(15,23,42,.06) !important;
+  color:#475467 !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+  cursor:pointer !important;
+}
+
+.catalog-top .catalog-top-discount-field .catalog-filter-check{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  min-height:38px !important;
+  white-space:nowrap !important;
+}
+
+.catalog-top .catalog-top-discount-field input[type="checkbox"]{
+  display:block !important;
+  width:19px !important;
+  height:19px !important;
+  margin:0 !important;
+  accent-color:#28e11a !important;
+  cursor:pointer !important;
+}
+
+.catalog-top .catalog-top-discount-field:has(input[type="checkbox"]:checked){
+  border-color:#28e11a !important;
+  background:#efffeb !important;
+  color:#0f8f08 !important;
+  box-shadow:0 8px 24px rgba(40,225,26,.14) !important;
+}
+
+@media (min-width:981px){
+  .catalog-top .catalog-top-discount-field{
+    order:1 !important;
+  }
+}
+
+@media (max-width:980px){
+  .catalog-top .catalog-top-discount-field{
+    width:100% !important;
+  }
+}
+
 /* Narrow notebooks: keep the filter usable instead of squeezing text */
 @media (min-width: 981px) and (max-width: 1180px){
   .catalog-page{

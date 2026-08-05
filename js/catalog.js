@@ -210,6 +210,17 @@ function setupCatalogTopControls(){
   top.appendChild(sortField);
 }
 
+function setupCatalogDiscountFilter(){
+  const top = document.querySelector('.catalog-top');
+  const field = document.querySelector('.catalog-discount-field');
+  if(!top || !field) return;
+
+  const price = top.querySelector('.catalog-top-price');
+  field.classList.add('catalog-top-discount-field');
+  if(field.parentElement === top) return;
+  top.insertBefore(field, price?.nextElementSibling || null);
+}
+
 function setupCatalogDragScroll(){
   function bindDragScroll(el, axis){
     if(!el || el.dataset.dragScrollReady === '1') return;
@@ -304,7 +315,7 @@ async function load(){
   if(params.get('category'))cat.value=params.get('category');
   if(params.get('search')){search.value=params.get('search');topSearch&&(topSearch.value=params.get('search'))}
   if(params.get('brand')){search.value=params.get('brand');topSearch&&(topSearch.value=params.get('brand'))}
-  renderCategoryFilter();renderTopCategoryBar();setupCatalogTopControls();setupCatalogDragScroll();updateCart();render();
+  renderCategoryFilter();renderTopCategoryBar();setupCatalogTopControls();setupCatalogDiscountFilter();setupCatalogDragScroll();updateCart();render();
 }
 function card(p){
   const d=discount(p),op=oldPrice(p),priceNum=Number(p.price||0),unavailable=stock(p)<=0;
