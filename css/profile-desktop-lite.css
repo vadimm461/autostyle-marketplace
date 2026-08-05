@@ -1,0 +1,83 @@
+/* AutoStyle desktop profile: flat, lightweight UI without decorative motion. */
+@media (min-width:981px){
+  .profile-page,
+  .profile-page *,
+  .profile-page *::before,
+  .profile-page *::after{
+    animation:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+    text-shadow:none!important;
+  }
+
+  .profile-page *{
+    transition:none!important;
+  }
+
+  .profile-sidebar,
+  .profile-card{
+    background:#fff!important;
+  }
+
+  .profile-tabs button:hover,
+  .avatar-upload:hover,
+  .profile-logout:hover,
+  .profile-edit-button:hover,
+  .profile-home-card:hover,
+  .wheel-spin-btn:not(:disabled):hover,
+  .wheel-spin-btn:not(:disabled):active{
+    transform:none!important;
+  }
+
+  .profile-home-card{
+    background:#fff!important;
+  }
+
+  .profile-home-card:hover{
+    border-color:#d9e2eb!important;
+  }
+
+  .profile-home-card-discount:hover{
+    border-color:rgba(230,0,18,.32)!important;
+  }
+
+  .profile-home-card-wheel::after{
+    display:none!important;
+  }
+
+  .profile-home-card-wheel,
+  .profile-home-card-wheel:hover{
+    transform:none!important;
+  }
+
+  .profile-wheel-icon{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+
+  .profile-page :focus-visible{
+    outline:2px solid #23c916!important;
+    outline-offset:2px!important;
+  }
+
+  /* Keep the wheel's actual spin, but remove glow, pulse and pointer effects. */
+  .fortune-wheel{
+    transition:transform 5.3s cubic-bezier(.12,.72,.08,1)!important;
+    will-change:auto!important;
+  }
+
+  .fortune-wheel.is-spinning,
+  .fortune-wheel.is-finished,
+  .wheel-stage.is-spinning .wheel-pointer,
+  .fortune-wheel.is-spinning .wheel-prize-visual img,
+  .fortune-wheel.is-spinning .wheel-empty-icon{
+    animation:none!important;
+    filter:none!important;
+  }
+
+  .wheel-pointer,
+  .profile-wheel-mini::after{
+    filter:none!important;
+  }
+}
