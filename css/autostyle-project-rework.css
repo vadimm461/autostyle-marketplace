@@ -131,3 +131,54 @@
 @media(max-width:560px){
   .topbar .catalog-btn,.topbar a.catalog-btn,.topbar button.catalog-btn{display:inline-flex !important;min-width:104px !important;max-width:104px !important;height:42px !important;font-size:14px !important}
 }
+
+/* Information pages: never flash the hard-coded fallback before Firestore responds. */
+[data-admin-page]{
+  position:relative;
+}
+[data-admin-page]:not([data-page-state]),
+[data-admin-page][data-page-state="loading"]{
+  min-height:142px;
+  overflow:hidden;
+}
+[data-admin-page]:not([data-page-state]) > *,
+[data-admin-page][data-page-state="loading"] > *{
+  visibility:hidden !important;
+}
+[data-admin-page]:not([data-page-state])::after,
+[data-admin-page][data-page-state="loading"]::after{
+  content:"";
+  position:absolute;
+  inset:24px;
+  pointer-events:none;
+  border-radius:10px;
+  background:
+    linear-gradient(90deg,#e7eaee,#f4f6f8,#e7eaee) 0 0/44% 24px no-repeat,
+    linear-gradient(90deg,#e7eaee,#f4f6f8,#e7eaee) 0 48px/92% 14px no-repeat,
+    linear-gradient(90deg,#e7eaee,#f4f6f8,#e7eaee) 0 76px/70% 14px no-repeat;
+  animation:as-page-content-pulse 1.15s ease-in-out infinite alternate;
+}
+@keyframes as-page-content-pulse{
+  from{opacity:.56}
+  to{opacity:1}
+}
+@media(max-width:720px){
+  [data-admin-page]:not([data-page-state]),
+  [data-admin-page][data-page-state="loading"]{
+    min-height:126px;
+  }
+  [data-admin-page]:not([data-page-state])::after,
+  [data-admin-page][data-page-state="loading"]::after{
+    inset:20px;
+    background:
+      linear-gradient(90deg,#e7eaee,#f4f6f8,#e7eaee) 0 0/52% 22px no-repeat,
+      linear-gradient(90deg,#e7eaee,#f4f6f8,#e7eaee) 0 44px/94% 13px no-repeat,
+      linear-gradient(90deg,#e7eaee,#f4f6f8,#e7eaee) 0 70px/74% 13px no-repeat;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  [data-admin-page]:not([data-page-state])::after,
+  [data-admin-page][data-page-state="loading"]::after{
+    animation:none;
+  }
+}
