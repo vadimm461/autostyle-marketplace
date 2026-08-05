@@ -25,12 +25,19 @@ const page = document.body.dataset.page;
 const isNotificationDetailPage = () => page === 'notifications' && new URLSearchParams(location.search).has('id');
 const waitAuthUser = async () => {
   try {
-    await waitForAuthReady();
-    return auth.currentUser || null;
+    // Auth restoration may wait forever when Safari has a stale Firebase
+    // session or the auth endpoint is temporarily unavailable.  A mobile
+    // page must still resolve to the current user/guest state instead of
+    // leaving the cart and profile half-rendered.
+    const restored = await waitWithTimeout(() => waitForAuthReady(), 2600, null);
+    return auth.currentUser || restored || null;
   } catch (_) {
     return new Promise(resolve => {
       if (auth.currentUser) return resolve(auth.currentUser);
-      const off = onAuthStateChanged(auth, user => { off(); resolve(user || null); });
+      let done = false;
+      const finish = user => { if(done) return; done = true; resolve(user || null); };
+      const off = onAuthStateChanged(auth, user => { off(); finish(user); });
+      setTimeout(() => { try{ off(); }catch(e){} finish(auth.currentUser || null); }, 2600);
     });
   }
 };
@@ -668,7 +675,13 @@ async function initData(options={}){
       products=allProducts;
       categories=c||[];
       homeBlocks=mergeHomeBlocks(h||[]);
-      return { products, categories, homeBlocks };
+      const result = { products, categories, homeBlocks };
+      // The short timeout below keeps the shell responsive, but the real
+      // Firestore request can finish later on a cold mobile connection.
+      // Notify the active page so it does not stay permanently empty after
+      // the timeout wins the race.
+      window.dispatchEvent(new CustomEvent('autostyle-mobile-data-ready', { detail: result }));
+      return result;
     });
 
     dataPromise = Promise.race([
@@ -682,6 +695,17 @@ async function initData(options={}){
   }
   return dataPromise;
 }
+
+let mobileDataRerenderBusy = false;
+window.addEventListener('autostyle-mobile-data-ready', () => {
+  if (mobileDataRerenderBusy || document.visibilityState === 'hidden') return;
+  if (!['home','catalog'].includes(page)) return;
+  mobileDataRerenderBusy = true;
+  Promise.resolve()
+    .then(() => page === 'catalog' ? renderCatalog() : renderHome())
+    .catch(error => console.warn('Не удалось обновить мобильные данные', error))
+    .finally(() => { mobileDataRerenderBusy = false; });
+});
 async function renderHome() {
   setupShell('home');
   const cachedMediaPromise = loadMobileHomeMedia();
@@ -734,7 +758,10 @@ async function renderCatalog(){
   const chipData = categoryChipsForSelection(selected);
   const chipsTitle = document.querySelector('[data-m-catalog-chips-title]') || document.querySelector('.m-section-head h2');
   if (chipsTitle) chipsTitle.textContent = chipData.title;
-  $('#mCatChips').innerHTML=(chipData.chips || []).map(c=>`<a class="m-cat ${norm(selected)===norm(catName(c))?'active':''}" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}${discountQuery}">${selectedParent && catId(c)!==catId(selectedParent) ? shortChild(c, selectedParent) : catName(c)}</a>`).join('');
+  const chips = chipData.chips || [];
+  $('#mCatChips').innerHTML=chips.length
+    ? chips.map(c=>`<a class="m-cat ${norm(selected)===norm(catName(c))?'active':''}" href="mobile-catalog.html?category=${encodeURIComponent(catName(c))}${discountQuery}">${selectedParent && catId(c)!==catId(selectedParent) ? shortChild(c, selectedParent) : catName(c)}</a>`).join('')
+    : '<div class="m-empty m-data-empty">Разделы пока не загрузились. Потяните страницу вниз, чтобы повторить.</div>';
   $('#mFilterSearch').value=q;
   const discountToggle = $('#mDiscountOnly');
   if(discountToggle){
@@ -1779,8 +1806,14 @@ async function renderProfile(){
   }
   setupShell('profile');
   const isCurrentRender = () => renderToken === mobileProfileRenderToken && !!document.getElementById('mProfileBox');
-  mobileProfileAuthUnsub = onAuthStateChanged(auth, async u=>{
+  let profileInitialUid = null;
+  let profileInitialRenderDone = false;
+  const renderProfileUser = async u => {
     if(!isCurrentRender()) return;
+    const uid = String(u?.uid || 'guest');
+    if(profileInitialRenderDone && profileInitialUid === uid) return;
+    profileInitialRenderDone = true;
+    profileInitialUid = uid;
     if(u){
       // Обновление Firebase Auth не должно блокировать профиль. Берём
       // сохранённого пользователя сразу, а актуальный статус почты
@@ -2166,7 +2199,24 @@ async function renderProfile(){
     if($('#mSendFeedback')) $('#mSendFeedback').onclick=async()=>{ try{ await sendMobileFeedback(u); }catch(e){ alert('Ошибка отправки: '+(e.message||e)); } };
     if($('#pLogout')) $('#pLogout').onclick=async()=>{await signOut(auth);location.href='mobile.html'};
     clearLoader();
-  });
+  };
+  try {
+    mobileProfileAuthUnsub = onAuthStateChanged(auth, renderProfileUser);
+  } catch(error) {
+    console.warn('Не удалось подписаться на Firebase Auth в мобильном профиле', error);
+  }
+  // onAuthStateChanged can be delayed indefinitely when an old Safari
+  // session cannot be restored. Always paint a guest/profile state within a
+  // bounded time, while still allowing a later Auth event to replace it.
+  waitWithTimeout(() => waitForAuthReady(), 2600, auth.currentUser || null)
+    .then(user => {
+      if(!profileInitialRenderDone && isCurrentRender()) return renderProfileUser(user || auth.currentUser || null);
+      return null;
+    })
+    .catch(error => {
+      console.warn('Не удалось дождаться Firebase Auth в мобильном профиле', error);
+      if(!profileInitialRenderDone && isCurrentRender()) renderProfileUser(auth.currentUser || null);
+    });
 }
 
 
