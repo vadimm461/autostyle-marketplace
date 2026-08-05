@@ -294,23 +294,35 @@ async function renderPrizes(items) {
 
   const cards = items.map((prize, index) => {
     const expiresAt = prize.expiresAt?.toDate?.();
-    const expired = expiresAt && expiresAt < new Date();
+    const expired = Boolean(expiresAt && expiresAt.getTime() <= Date.now());
     const redeemed = prize.status === 'redeemed';
+    const unavailable = redeemed || expired;
     const stateClass = redeemed ? 'is-redeemed' : expired ? 'is-expired' : 'is-active';
     const stateText = redeemed ? 'Получен' : expired ? 'Срок истёк' : 'Можно забрать';
+    const deadlineText = expiresAt ? expiresAt.toLocaleString('ru-RU') : '—';
+    const barcodeMarkup = unavailable
+      ? `
+          <div class="mw-barcode mw-barcode-disabled" aria-label="${redeemed ? 'Штрихкод уже использован' : 'Штрихкод недоступен'}">
+            <span>${redeemed ? 'Штрихкод уже использован' : 'Штрихкод недоступен'}</span>
+            <small>${redeemed ? 'Подарок уже получен' : 'Срок получения истёк'}</small>
+          </div>
+        `
+      : `
+          <div class="mw-barcode">
+            <svg data-barcode="${escapeHtml(prize.barcode)}"></svg>
+            <b>${escapeHtml(prize.barcode)}</b>
+          </div>
+        `;
 
     return `
-      <article class="mw-prize-card ${stateClass} ${index >= 3 ? 'mw-prize-extra' : ''}">
+      <article class="mw-prize-card ${stateClass} ${unavailable ? 'is-unavailable' : ''} ${index >= 3 ? 'mw-prize-extra' : ''}" ${unavailable ? 'aria-disabled="true"' : ''}>
         <img src="${escapeHtml(prize.productImage || 'assets/as-logo-192.png')}" alt="">
         <div class="mw-prize-content">
           <span class="mw-prize-state">${stateText}</span>
           <b>${escapeHtml(prize.productName || 'Приз AutoStyle')}</b>
-          <small>Забрать до: ${expiresAt ? expiresAt.toLocaleString('ru-RU') : '—'}</small>
+          <small class="mw-prize-deadline"><span>Забрать до</span><strong>${deadlineText}</strong></small>
         </div>
-        <div class="mw-barcode">
-          <svg data-barcode="${escapeHtml(prize.barcode)}"></svg>
-          <b>${escapeHtml(prize.barcode)}</b>
-        </div>
+        ${barcodeMarkup}
       </article>
     `;
   }).join('');
