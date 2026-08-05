@@ -225,6 +225,13 @@ function paymentTitle(value) {
   }[value] || value || 'Наличными';
 }
 
+function updateDesktopCheckoutNote(selectedRows = lastCartRows, unavailableCount = 0) {
+  const note = ensureDesktopOrderNote();
+  if (!note) return;
+  const rows = Array.isArray(selectedRows) ? selectedRows : [];
+  note.textContent = `${paymentTitle(getPaymentMethod())} · выбрано ${rows.length} товар${rows.length === 1 ? '' : 'ов'}${unavailableCount ? ` · недоступно: ${unavailableCount}` : ''}${discountCardApplied ? ` · скидка ${discountCardPercent}%` : ''}`;
+}
+
 function updatePaymentUI() {
   const method = getPaymentMethod();
   document.querySelectorAll('.payment-option').forEach(label => {
@@ -252,7 +259,11 @@ function updatePaymentUI() {
 
 }
 
-paymentInputs.forEach(input => input.addEventListener('change', () => { updatePaymentUI(); renderCartTotal(lastCartTotal); }));
+paymentInputs.forEach(input => input.addEventListener('change', () => {
+  updatePaymentUI();
+  renderCartTotal(lastCartTotal);
+  updateDesktopCheckoutNote();
+}));
 
 
 async function render({ persist = false } = {}) {
@@ -295,10 +306,7 @@ async function render({ persist = false } = {}) {
     const available = stock(product);
     return available !== null && (available <= 0 || (Number(item.qty) || 1) > available);
   }).length;
-  const note = ensureDesktopOrderNote();
-  if (note) {
-    note.textContent = `${paymentTitle(getPaymentMethod())} · выбрано ${selectedRows.length} товар${selectedRows.length === 1 ? '' : 'ов'}${unavailableCount ? ` · недоступно: ${unavailableCount}` : ''}${discountCardApplied ? ` · скидка ${discountCardPercent}%` : ''}`;
-  }
+  updateDesktopCheckoutNote(selectedRows, unavailableCount);
   if (checkoutBtn) {
     checkoutBtn.textContent = 'Оформить выбранное';
     checkoutBtn.disabled = hasStockProblems || !selectedRows.length;
