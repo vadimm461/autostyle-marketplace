@@ -216,7 +216,13 @@ function setupCatalogDiscountFilter(){
   if(!top || !field) return;
 
   const price = top.querySelector('.catalog-top-price');
+  const input = field.querySelector('#discountOnly');
+  const syncDiscountFilterState = () => {
+    field.classList.toggle('is-active', Boolean(input?.checked));
+  };
   field.classList.add('catalog-top-discount-field');
+  input?.addEventListener('change', syncDiscountFilterState);
+  syncDiscountFilterState();
   if(field.parentElement === top) return;
   top.insertBefore(field, price?.nextElementSibling || null);
 }
