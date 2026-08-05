@@ -1526,10 +1526,13 @@ async function uploadMobileProfilePhoto(user,file){
   return getDownloadURL(fileRef);
 }
 function renderDiscountCard(u, data={}){
-  const card=data.discountCard || {}; const active=Boolean(card.active || data.discountCardActive || data.active === true);
+  const card=data.discountCard || {};
+  const active=Boolean(card.active || data.discountCardActive || data.active === true);
   const complete=isProfileCompleteData({...data,email:data.email||u.email,name:data.name||u.displayName});
   const number=card.number || data.discountCardNumber || data.number || makeDiscountCardNumber(u.uid);
-  return `<section class="m-discount-card ${active?'active':'locked'}"><div class="m-discount-visual"><div class="m-discount-logo">AS <span>AUTOSTYLE</span></div><em>${data.name||u.displayName||u.email||'AutoStyle'}</em><div class="m-discount-barcode">${active?ean13Svg(number):'<div class="m-discount-lock">Заполните профиль</div>'}</div><small>${active?number:'Карта пока не активна'}</small></div><div class="m-discount-info"><h2>${active?'Скидочная карта активна':'Скидочная карта'}</h2><p>${active?'Карта уже активна. Предложение об активации больше не показывается.':'Заполните имя, телефон, город, адрес и автомобиль, затем получите карту.'}</p>${active?'':`<button id="mGetDiscount" class="m-primary" style="width:100%">${complete?'Получить скидочную карту':'Заполнить профиль'}</button>`}<a class="m-btn" style="width:100%;margin-top:10px" href="mobile-cart.html">Перейти в корзину</a></div></section>`;
+  const rawDiscount=card.discount ?? card.discountPercent ?? data.discountCardPercent ?? data.discount ?? data.discountPercent ?? 0;
+  const discountPercent=Math.max(0, Math.min(100, Math.round(Number(rawDiscount) || 0)));
+  return `<section class="m-discount-card ${active?'active':'locked'}"><div class="m-discount-visual"><div class="m-discount-logo">AS <span>AUTOSTYLE</span></div><em>${data.name||u.displayName||u.email||'AutoStyle'}</em><div class="m-discount-barcode">${active?ean13Svg(number):'<div class="m-discount-lock">Заполните профиль</div>'}</div><small>${active?number:'Карта пока не активна'}</small></div><div class="m-discount-info"><h2>${active?'Скидочная карта активна':'Скидочная карта'}</h2><p>${active?'Ваша скидка: '+discountPercent+'%':'Заполните имя, телефон, город, адрес и автомобиль, затем получите карту.'}</p>${active?'':`<button id="mGetDiscount" class="m-primary" style="width:100%">${complete?'Получить скидочную карту':'Заполнить профиль'}</button>`}<a class="m-btn" style="width:100%;margin-top:10px" href="mobile-cart.html">Перейти в корзину</a></div></section>`;
 }
 async function activateDiscountCard(u, currentData){
   const data=profileDataFromForm(u,currentData);
