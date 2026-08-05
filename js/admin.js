@@ -4,8 +4,7 @@ import { createOrderStatusNotification } from './notify-service.js';
 
 import {
   onAuthStateChanged,
-  signOut,
-  signInWithEmailAndPassword
+  signOut
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 import {
@@ -470,57 +469,38 @@ let adminAuthReady = false;
 let adminAuthChecked = false;
 const ADMIN_USERS_COLLECTION = COLLECTIONS.users || 'autostyle_users';
 
-function setAdminLoginMessage(text = '') {
-  const box = document.getElementById('adminLoginError');
-  if (box) box.textContent = text;
-}
-
 function setAdminLocked(locked) {
   document.body.classList.toggle('admin-locked', !!locked);
 }
 
 async function isCurrentUserAdmin(user) {
   if (!user) return false;
-  const snap = await getDoc(doc(db, ADMIN_USERS_COLLECTION, user.uid));
-  return snap.exists() && snap.data().role === 'admin';
+  try {
+    const snap = await getDoc(doc(db, ADMIN_USERS_COLLECTION, user.uid));
+    return snap.exists() && snap.data().role === 'admin';
+  } catch (error) {
+    console.error('admin role check error', error);
+    return false;
+  }
 }
 
 async function allowAdmin(user) {
   const ok = await isCurrentUserAdmin(user);
   if (!ok) {
     adminAuthReady = false;
+    adminAuthChecked = true;
     setAdminLocked(true);
-    setAdminLoginMessage('Этот аккаунт не является администратором. Войдите под отдельным админ-логином.');
-    try { await signOut(auth); } catch(e) {}
+    location.replace('index.html');
     return false;
   }
 
   setAdminLocked(false);
-  setAdminLoginMessage('');
   adminAuthReady = true;
   adminAuthChecked = true;
   const startSection = normalizeAdminSectionId(location.hash.replace('#', '') || 'dashboard');
   openSection(startSection);
   updateAdminBadges();
   return true;
-}
-
-const adminLoginForm = document.getElementById('adminLoginForm');
-if (adminLoginForm) {
-  adminLoginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('adminLoginEmail')?.value.trim();
-    const pass = document.getElementById('adminLoginPassword')?.value || '';
-    try {
-      setAdminLoginMessage('Проверяем доступ...');
-      const res = await signInWithEmailAndPassword(auth, email, pass);
-      await allowAdmin(res.user);
-    } catch (err) {
-      console.error('admin login error', err);
-      setAdminLocked(true);
-      setAdminLoginMessage('Неверный логин/пароль или нет прав администратора.');
-    }
-  });
 }
 
 function normalizeAdminSectionId(id) {
@@ -645,7 +625,8 @@ onAuthStateChanged(auth, async user => {
 
   if (!user) {
     adminAuthReady = false;
-    setAdminLoginMessage('');
+    adminAuthChecked = true;
+    location.replace('index.html');
     return;
   }
 
