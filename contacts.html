@@ -34,8 +34,8 @@
 <main class="container page-simple">
   <h1>Контакты</h1>
   <section class="info-grid">
-    <div class="info-card"><h2>Связь</h2><p>Телефон: +7 (___) ___-__-__</p><p>Email: info@autostyle.ru</p></div>
-    <div class="info-card" id="addresses"><h2>Адреса</h2><p>Адрес магазина можно указать в админке или заменить в этом файле.</p></div>
+    <div class="info-card" data-admin-page="contacts"><h2 data-page-title>Контакты</h2><div data-page-content><p>Телефон: +7 (___) ___-__-__</p><p>Email: info@autostyle.ru</p></div></div>
+    <div class="info-card" id="addresses" data-admin-page="addresses"><h2 data-page-title>Адреса</h2><div data-page-content><p>Адрес магазина можно указать в админке.</p></div></div>
   </section>
 </main>
 
@@ -48,6 +48,7 @@
   <div class="footer-copy"><span>© 2026 Все права защищены</span><span>Dev by <a href="https://www.instagram.com/d.vadim.v/" target="_blank" rel="noopener">d.vadim.v</a></span></div>
 </footer>
 <script type="module" src="js/page-common.js"></script>
+<script type="module" src="js/page-content.js?v=20260805-pages-editor"></script>
 <script type="module" src="js/footer-content.js"></script>  <script type="module" src="js/notifications.js"></script>
 <script src="js/autostyle-project-rework.js?v=20260608-rework2" defer></script>
 <script src="js/final-request-clean-fix.js?v=20260608-final-request" defer></script>
