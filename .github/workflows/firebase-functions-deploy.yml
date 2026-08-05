@@ -1,0 +1,61 @@
+name: Deploy Firebase Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "firebase.json"
+      - ".firebaserc"
+      - "firestore.rules"
+      - "functions/**"
+      - ".github/workflows/firebase-functions-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy payment functions
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: auto-style-4dbb7
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AUTO_STYLE_4DBB7 }}
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check deployment credentials
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ] && [ -z "$FIREBASE_TOKEN" ]; then
+            echo "::error::Add FIREBASE_SERVICE_ACCOUNT_AUTO_STYLE_4DBB7 or FIREBASE_TOKEN to the repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Authenticate with Google Cloud
+        id: google-auth
+        if: env.FIREBASE_SERVICE_ACCOUNT != ''
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ env.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Install function dependencies
+        run: npm install --prefix functions --ignore-scripts
+
+      - name: Deploy with service account
+        if: env.FIREBASE_SERVICE_ACCOUNT != ''
+        run: npx --yes firebase-tools@latest deploy --only functions --project "$PROJECT_ID" --non-interactive
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
+
+      - name: Deploy with Firebase token
+        if: env.FIREBASE_SERVICE_ACCOUNT == '' && env.FIREBASE_TOKEN != ''
+        run: npx --yes firebase-tools@latest deploy --only functions --project "$PROJECT_ID" --token "$FIREBASE_TOKEN" --non-interactive
