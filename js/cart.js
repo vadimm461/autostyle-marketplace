@@ -5,6 +5,7 @@ import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gs
 import { getProducts } from './data-cache.js';
 import { getCurrentUserCart, saveUserCart, clearUserCart, waitUserCartReady, updateCartBadges, normalizeUserCart, loadUserCart } from './user-cart-store.js';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
+import { startApbCardPayment, submitApbPayment } from './apb-payment.js';
 
 const cartList = document.querySelector('#cartList');
 const totalBox = document.querySelector('#cartTotal');
@@ -629,6 +630,23 @@ async function createOrderFromCart() {
     const installment = paymentMethod === 'installment' ? getSelectedInstallment() : null;
     if (paymentMethod === 'installment' && !installment?.bank) {
       alert('Выберите банк для рассрочки.');
+      return;
+    }
+
+    if (paymentMethod === 'card') {
+      if (checkoutBtn) checkoutBtn.textContent = 'Переходим к оплате...';
+      const payment = await startApbCardPayment({
+        items,
+        discountCardApplied,
+        source: 'desktop-cart'
+      });
+      const orderedIds = new Set(items.map(item => String(item.productId)));
+      cart = getCurrentUserCart().filter(item => !orderedIds.has(String(item.id || item.productId)));
+      await saveUserCart(cart);
+      writeCartSelected(new Set(cart.map(item => String(item.id || item.productId))));
+      await render();
+      try { await trackEvent('card_payment_started'); } catch (e) {}
+      submitApbPayment(payment);
       return;
     }
 
