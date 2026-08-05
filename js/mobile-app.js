@@ -254,6 +254,13 @@ const img = p => {
 };
 const group = p => p.group || p.category || p.categoryName || 'Без группы';
 const stock = p => Number(p.stock ?? p.quantity ?? p.count ?? p.qty ?? 0);
+function prioritizeInStock(rows){
+  const available=[],unavailable=[];
+  (Array.isArray(rows)?rows:[]).forEach(item=>{
+    (stock(item)>0?available:unavailable).push(item);
+  });
+  return available.concat(unavailable);
+}
 const relatedProductId = p => String(p?.id ?? p?.productId ?? p?.docId ?? p?.sku ?? p?.code ?? '').trim();
 const relatedParent = p => {
   const explicit = p?.parentCategory || p?.parentGroup || p?.categoryParent || p?.parent || p?.parentId || '';
@@ -729,6 +736,7 @@ async function renderCatalog(){
   $('#mFilterSearch').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); location.href=`mobile-catalog.html?search=${encodeURIComponent(e.target.value.trim())}`; }});
   let list=products.filter(p=>productInCategory(p,selected));
   if(q) list=list.filter(p=>(title(p)+' '+group(p)).toLowerCase().includes(q.toLowerCase()));
+  list=prioritizeInStock(list);
   $('#mCatalogTitle').textContent = selected ? selected : (q ? `Поиск: ${escapeHtml(q)}` : 'Каталог товаров');
   renderCatalogBatch(list, 0);
   clearLoader();
