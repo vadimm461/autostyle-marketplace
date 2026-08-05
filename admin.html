@@ -136,9 +136,9 @@
           <label class="field field-wide">Название<input id="pTitle" required></label>
           <label class="field field-wide">Группа<input id="pGroup" placeholder="Например: Автохимия / Свет / Аксессуары"></label>
 
-          <label class="field field-four">Цена<input id="pPrice" type="number" required></label>
-          <label class="field field-four">Скидка, %<input id="pDiscount" type="number" placeholder="Например: 15"></label>
-          <label class="field field-four">Старая цена<input id="pOldPrice" type="number" placeholder="Например: 5990"></label>
+          <label class="field field-four">Цена<input id="pPrice" type="number" min="0" step="1" required></label>
+          <label class="field field-four">Скидка, %<input id="pDiscount" type="number" min="0" max="100" step="1" placeholder="Например: 15"></label>
+          <label class="field field-four">Цена до скидки (авто)<input id="pOldPrice" type="number" min="0" step="1" placeholder="Рассчитается автоматически" readonly></label>
           <label class="field field-four">Наличие, шт.<input id="pStock" type="number" placeholder="Например: 15"></label>
 
           <label class="field">
@@ -786,7 +786,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script type="module" src="js/admin.js?v=20260805-unified-settings"></script>
+<script type="module" src="js/admin.js?v=20260805-auto-discount-price"></script>
 <script type="module" src="js/admin-footer-editor.js"></script>
 <script src="js/admin-dashboard-home.js"></script>
 <script type="module" src="js/admin-notifications.js"></script>

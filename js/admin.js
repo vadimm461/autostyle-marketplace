@@ -1254,6 +1254,54 @@ function inlineProductChecked(form, name) {
   return el ? el.checked : false;
 }
 
+function normalizeDiscountPercent(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function calculateProductPrice(priceValue, oldPriceValue, discountValue) {
+  const currentPrice = Math.max(0, Number(priceValue) || 0);
+  const savedOldPrice = Math.max(0, Number(oldPriceValue) || 0);
+  const discount = normalizeDiscountPercent(discountValue);
+  const basePrice = Math.round(savedOldPrice > currentPrice ? savedOldPrice : currentPrice);
+
+  if (discount > 0 && basePrice > 0) {
+    return {
+      price: Math.max(0, Math.round(basePrice * (1 - discount / 100))),
+      oldPrice: basePrice,
+      discount
+    };
+  }
+
+  return {
+    price: Math.round(savedOldPrice > currentPrice ? savedOldPrice : currentPrice),
+    oldPrice: 0,
+    discount: 0
+  };
+}
+
+function bindAutomaticProductDiscount(form, selectors) {
+  const priceInput = form?.querySelector(selectors.price);
+  const discountInput = form?.querySelector(selectors.discount);
+  const oldPriceInput = form?.querySelector(selectors.oldPrice);
+  if (!priceInput || !discountInput || !oldPriceInput) return;
+
+  const apply = () => {
+    const result = calculateProductPrice(priceInput.value, oldPriceInput.value, discountInput.value);
+    priceInput.value = result.price || '';
+    oldPriceInput.value = result.oldPrice || '';
+    discountInput.value = result.discount || '';
+  };
+
+  discountInput.addEventListener('input', apply);
+  priceInput.addEventListener('change', () => {
+    if (!normalizeDiscountPercent(discountInput.value)) {
+      oldPriceInput.value = '';
+      return;
+    }
+    apply();
+  });
+}
+
 function openInlineProductEditor(item, row) {
   if (!row) return;
 
@@ -1286,9 +1334,9 @@ function openInlineProductEditor(item, row) {
         <label class="field field-wide">Название<input name="title" required value="${String(item.title || '').replace(/"/g, '&quot;')}"></label>
         <label class="field field-wide">Группа<input name="group" value="${String(item.group || item.category || '').replace(/"/g, '&quot;')}"></label>
 
-        <label class="field field-four">Цена<input name="price" type="number" required value="${Number(item.price || 0)}"></label>
-        <label class="field field-four">Скидка, %<input name="discount" type="number" value="${discount}"></label>
-        <label class="field field-four">Старая цена<input name="oldPrice" type="number" value="${oldPrice}"></label>
+        <label class="field field-four">Цена<input name="price" type="number" min="0" step="1" required value="${Number(item.price || 0)}"></label>
+        <label class="field field-four">Скидка, %<input name="discount" type="number" min="0" max="100" step="1" value="${discount}"></label>
+        <label class="field field-four">Цена до скидки (авто)<input name="oldPrice" type="number" min="0" step="1" value="${oldPrice}" readonly></label>
         <label class="field field-four">Наличие, шт.<input name="stock" type="number" value="${item.stock ?? item.quantity ?? item.count ?? ''}"></label>
 
         <label class="field">Категория<select name="category"><option value="">Выберите категорию</option>${categoryOptions}</select></label>
@@ -1321,6 +1369,12 @@ function openInlineProductEditor(item, row) {
   if (tagSelect) tagSelect.value = currentTag;
   if (homeSelect) homeSelect.value = currentHomeSection;
 
+  bindAutomaticProductDiscount(form, {
+    price: '[name="price"]',
+    discount: '[name="discount"]',
+    oldPrice: '[name="oldPrice"]'
+  });
+
   slot.querySelector('.inline-editor-close').onclick = () => closeInlineProductEditor(row);
   slot.querySelector('[data-cancel-inline]').onclick = () => closeInlineProductEditor(row);
 
@@ -1346,15 +1400,18 @@ async function saveInlineProductEditor(productId, form) {
     );
     if (uploaded) imageUrl = uploaded;
 
-    const oldPriceRaw = inlineProductField(form, 'oldPrice');
-    const discountRaw = inlineProductField(form, 'discount');
-    const oldPriceValue = oldPriceRaw === '' ? 0 : Number(oldPriceRaw || 0);
-    const discountValue = discountRaw === '' ? 0 : Number(discountRaw || 0);
+    const priceResult = calculateProductPrice(
+      inlineProductField(form, 'price'),
+      inlineProductField(form, 'oldPrice'),
+      inlineProductField(form, 'discount')
+    );
+    const oldPriceValue = priceResult.oldPrice;
+    const discountValue = priceResult.discount;
 
     const data = {
       title: inlineProductField(form, 'title'),
       group: inlineProductField(form, 'group'),
-      price: Number(inlineProductField(form, 'price') || 0),
+      price: priceResult.price,
       stock: Number(inlineProductField(form, 'stock') || 0),
       oldPrice: oldPriceValue ? oldPriceValue : deleteField(),
       priceOld: oldPriceValue ? oldPriceValue : deleteField(),
@@ -1389,6 +1446,12 @@ async function saveInlineProductEditor(productId, form) {
 }
 
 if ($('#productForm')) {
+  bindAutomaticProductDiscount($('#productForm'), {
+    price: '#pPrice',
+    discount: '#pDiscount',
+    oldPrice: '#pOldPrice'
+  });
+
   $('#productForm').onsubmit = async e => {
     e.preventDefault();
 
@@ -1397,15 +1460,18 @@ if ($('#productForm')) {
       const uploaded = await uploadImage('#pFile', 'products', '#pImage', '#pUploadStatus');
       if (uploaded) imageUrl = uploaded;
 
-      const oldPriceRaw = val('#pOldPrice').trim();
-      const discountRaw = val('#pDiscount').trim();
-      const oldPriceValue = oldPriceRaw === '' ? 0 : Number(oldPriceRaw || 0);
-      const discountValue = discountRaw === '' ? 0 : Number(discountRaw || 0);
+      const priceResult = calculateProductPrice(
+        val('#pPrice'),
+        val('#pOldPrice'),
+        val('#pDiscount')
+      );
+      const oldPriceValue = priceResult.oldPrice;
+      const discountValue = priceResult.discount;
 
       const data = {
         title: val('#pTitle'),
         group: val('#pGroup'),
-        price: Number(val('#pPrice') || 0),
+        price: priceResult.price,
         stock: Number(val('#pStock') || 0),
         oldPrice: oldPriceValue ? oldPriceValue : deleteField(),
         priceOld: oldPriceValue ? oldPriceValue : deleteField(),
