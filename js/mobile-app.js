@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 31032)
+Total output lines: 2243
+
 import { auth, db, storage, COLLECTIONS, waitForAuthReady } from './firebase.js';
 import { trackEvent } from './site-analytics.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, updatePassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -8,6 +11,7 @@ import { addUserCartItem, waitUserCartReady, getCurrentUserCart, removeUserCartI
 import { createPasswordChangedNotification, watchNotifications, markNotificationRead, markNotificationsRead, notificationText, sanitizeNotificationHtml, fmt } from './notify-service.js?v=20260730-notification-detail-v19';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
 import { getFavorites, subscribeFavorites, toggleFavorite, waitFavoritesReady } from './user-favorites-store.js?v=20260729-profile-favorites';
+import { startApbCardPayment, submitApbPayment } from './apb-payment.js';
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -1159,97 +1163,7 @@ function updateMobileCartSummary(){
     discountButton.disabled = installmentPayment;
     discountButton.classList.toggle('applied', mobileDiscountApplied && !installmentPayment);
     if(installmentPayment) discountButton.textContent = 'Скидочная карта недоступна в рассрочку';
-    else if(!mobileDiscountCard.active) discountButton.textContent = 'Получить скидочную карту';
-    else if(mobileDiscountApplied) discountButton.textContent = mobileDiscountCard.percent > 0 ? `Скидка ${mobileDiscountCard.percent}% применена · убрать` : 'Скидочная карта применена · убрать';
-    else discountButton.textContent = 'Применить скидочную карту';
-  }
-  $$('#mCartCount').forEach(node => {
-    node.textContent = String(mobileCartRows.reduce((sum, row) => sum + (Number(row.item.qty || 1) || 1), 0));
-  });
-  renderMobileInstallments(total);
-}
-
-function renderMobileCartList(){
-  const root = $('#mCartList');
-  if(!root) return;
-  if(!mobileCartRows.length){
-    localStorage.removeItem(MOBILE_CART_SELECTED_KEY);
-    root.innerHTML = '<div class="m-empty"><b>Корзина пустая</b><br>Добавьте товары из каталога.<br><br><a class="m-primary" href="mobile-catalog.html">Перейти в каталог</a></div>';
-    updateMobileCartSummary();
-    return;
-  }
-  const selected = syncMobileSelection(mobileCartRows);
-  const allSelected = mobileCartRows.every(row => selected.has(mobileCartRowId(row)));
-  root.innerHTML = `<div class="m-cart-selectbar">
-      <label class="m-check"><input id="mSelectAllCart" type="checkbox" ${allSelected ? 'checked' : ''}><span></span><b id="mSelectAllLabel">${allSelected ? 'Снять все' : 'Выбрать все'}</b></label>
-      <small id="mCartSelectedCount">Выбрано: ${selected.size} из ${mobileCartRows.length}</small>
-    </div>
-    <div class="m-cart-panel">${mobileCartRows.map(mobileCartRowMarkup).join('')}</div>`;
-  updateMobileCartSummary();
-}
-
-async function reloadMobileCartAfterError(error){
-  console.error('mobile cart update error', error);
-  if(mobileCartReloadBusy) return;
-  mobileCartReloadBusy = true;
-  try {
-    alert('Не удалось сохранить изменение корзины. Данные обновлены из профиля.');
-    await loadUserCart(mobileCartUser);
-    mobileCartRows = buildMobileCartRows(getCurrentUserCart());
-    renderMobileCartList();
-  } finally {
-    mobileCartReloadBusy = false;
-  }
-}
-
-function queueMobileCartMutation(task){
-  mobileCartSaveQueue = mobileCartSaveQueue.then(task).catch(reloadMobileCartAfterError);
-  return mobileCartSaveQueue;
-}
-
-function changeMobileCartQty(id, delta){
-  const row = mobileCartRows.find(item => mobileCartRowId(item) === String(id));
-  if(!row) return;
-  const current = Math.max(1, Number(row.item.qty || 1) || 1);
-  const available = mobileCartStock(row.product);
-  if(delta > 0 && available !== null && current >= available){
-    alert(`Больше добавить нельзя. В наличии только ${available}.`);
-    return;
-  }
-  const next = Math.max(1, current + delta);
-  if(next === current) return;
-  row.item.qty = next;
-  updateMobileCartRowElement(row);
-  updateMobileCartSummary();
-  queueMobileCartMutation(() => setUserCartQty(id, next));
-}
-
-function removeMobileCartRow(id){
-  const index = mobileCartRows.findIndex(row => mobileCartRowId(row) === String(id));
-  if(index < 0) return;
-  mobileCartRows.splice(index, 1);
-  const selected = readMobileCartSelected() || new Set();
-  selected.delete(String(id));
-  if(mobileCartRows.length) writeMobileCartSelected(selected);
-  else localStorage.removeItem(MOBILE_CART_SELECTED_KEY);
-  renderMobileCartList();
-  queueMobileCartMutation(() => removeUserCartItem(id));
-}
-
-function bindMobileCartControls(){
-  const root = $('#mCartList');
-  if(root && root.dataset.cartControlsReady !== '1'){
-    root.dataset.cartControlsReady = '1';
-    root.addEventListener('change', event => {
-      const input = event.target;
-      if(input.id === 'mSelectAllCart'){
-        writeMobileCartSelected(new Set(input.checked ? mobileCartRows.map(mobileCartRowId) : []));
-        updateMobileCartSummary();
-        return;
-      }
-      if(input.classList?.contains('mCartPick')){
-        const selected = readMobileCartSelected() || new Set();
-        const id = String(input.dataset.pick || '');
+    else if(!mobileDisc…1032 tokens truncated…dataset.pick || '');
         if(input.checked) selected.add(id);
         else selected.delete(id);
         writeMobileCartSelected(selected);
@@ -1431,6 +1345,25 @@ async function createMobileOrder(){
       return;
     }
 
+    if(paymentMethod === 'card'){
+      if(button) button.textContent = 'Переходим к оплате...';
+      const payment = await startApbCardPayment({
+        items,
+        discountCardApplied,
+        source: 'mobile-cart'
+      });
+      const orderedIds = new Set(items.map(item => String(item.productId)));
+      const remainingCart = getCurrentUserCart().filter(item => !orderedIds.has(mobileCartItemId(item)));
+      await saveUserCart(remainingCart, user);
+      mobileCartRows = buildMobileCartRows(remainingCart);
+      if(remainingCart.length) writeMobileCartSelected(new Set(remainingCart.map(mobileCartItemId)));
+      else localStorage.removeItem(MOBILE_CART_SELECTED_KEY);
+      mobileDiscountApplied = false;
+      try { await trackEvent('card_payment_started'); } catch(error) {}
+      submitApbPayment(payment);
+      return;
+    }
+
     const orderNumber = `AS-${Date.now().toString().slice(-8)}`;
     await addDoc(collection(db, COLLECTIONS.orders || 'autostyle_orders'), {
       orderNumber,
@@ -1585,6 +1518,16 @@ function renderInfoShell(active='more'){ setupShell(active); clearLoader(); }
 function orderStatusText(order={}){
   return order.statusText || ({new:'Новый',pending:'В обработке',processing:'В работе',done:'Выполнен',cancelled:'Отменён'})[order.status] || order.status || 'В обработке';
 }
+function orderPaymentStatusText(order={}){
+  if(order.paymentMethod !== 'card' && order.paymentProvider !== 'agroprombank') return '';
+  return order.paymentStatusTitle || ({
+    pending:'Ожидает оплаты',
+    paid:'Оплата получена',
+    failed:'Ошибка платежа',
+    cancelled:'Платёж отменён',
+    expired:'Срок оплаты истёк'
+  })[order.paymentStatus] || 'Статус оплаты уточняется';
+}
 function formatDate(value){
   try{
     const d = value?.toDate ? value.toDate() : new Date(value || Date.now());
@@ -1608,7 +1551,7 @@ async function loadMobileOrders(user){
 }
 function renderOrdersList(orders=[]){
   if(!orders.length) return '<div class="m-empty">Заказов пока нет.</div>';
-  return orders.map(o=>{ const items = Array.isArray(o.items) ? o.items : []; return `<article class="m-order-card"><div><b>Заказ ${escapeHtml(o.orderNumber || o.number || o.id || '')}</b><small>${formatDate(o.createdAt || o.createdAtText)}</small>${items.length?`<em>${items.slice(0,3).map(i=>escapeHtml(i.title||i.name||'Товар')).join(', ')}${items.length>3?'…':''}</em>`:''}</div><span>${escapeHtml(orderStatusText(o))}</span><strong>${money(o.total || o.totalPrice || o.sum || 0)}</strong></article>`; }).join('');
+  return orders.map(o=>{ const items = Array.isArray(o.items) ? o.items : []; const paymentStatus = orderPaymentStatusText(o); return `<article class="m-order-card"><div><b>Заказ ${escapeHtml(o.orderNumber || o.number || o.id || '')}</b><small>${formatDate(o.createdAt || o.createdAtText)}</small>${items.length?`<em>${items.slice(0,3).map(i=>escapeHtml(i.title||i.name||'Товар')).join(', ')}${items.length>3?'…':''}</em>`:''}</div><span>${escapeHtml(orderStatusText(o))}${paymentStatus ? `<small>${escapeHtml(paymentStatus)}</small>` : ''}</span><strong>${money(o.total || o.totalPrice || o.sum || 0)}</strong></article>`; }).join('');
 }
 async function sendMobileFeedback(user){
   if(!user){ alert('Войдите в аккаунт'); return; }

@@ -298,6 +298,16 @@ function orderPaymentTitle(order) {
   if (/installment|credit|рассроч/i.test(method) || bank || months || pay) {
     return `Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${fmtPrice(pay)}/мес.` : ''}`;
   }
+  if (/^card$|банков.*карт/i.test(method) || order.paymentProvider === 'agroprombank') {
+    const paymentStatus = order.paymentStatusTitle || ({
+      pending: 'Ожидает оплаты',
+      paid: 'Оплата получена',
+      failed: 'Ошибка платежа',
+      cancelled: 'Платёж отменён',
+      expired: 'Срок оплаты истёк'
+    })[order.paymentStatus] || '';
+    return `Банковская карта${paymentStatus ? ` — ${paymentStatus}` : ''}`;
+  }
   if (order.paymentMethodTitle) return normalizeBankName(order.paymentMethodTitle) || 'Наличными';
   return PAYMENT_TITLES[method] || normalizeBankName(method) || 'Наличными';
 }

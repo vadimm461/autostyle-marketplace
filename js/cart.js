@@ -5,6 +5,7 @@ import { addDoc, collection, doc, getDoc, serverTimestamp } from 'https://www.gs
 import { getProducts } from './data-cache.js';
 import { getCurrentUserCart, saveUserCart, clearUserCart, waitUserCartReady, updateCartBadges, normalizeUserCart, loadUserCart } from './user-cart-store.js';
 import { getProfileVerification, profileVerificationMessage } from './auth-core.js';
+import { startApbCardPayment, submitApbPayment } from './apb-payment.js';
 
 const cartList = document.querySelector('#cartList');
 const totalBox = document.querySelector('#cartTotal');
@@ -224,6 +225,13 @@ function paymentTitle(value) {
   }[value] || value || 'Наличными';
 }
 
+function updateDesktopCheckoutNote(selectedRows = lastCartRows, unavailableCount = 0) {
+  const note = ensureDesktopOrderNote();
+  if (!note) return;
+  const rows = Array.isArray(selectedRows) ? selectedRows : [];
+  note.textContent = `${paymentTitle(getPaymentMethod())} · выбрано ${rows.length} товар${rows.length === 1 ? '' : 'ов'}${unavailableCount ? ` · недоступно: ${unavailableCount}` : ''}${discountCardApplied ? ` · скидка ${discountCardPercent}%` : ''}`;
+}
+
 function updatePaymentUI() {
   const method = getPaymentMethod();
   document.querySelectorAll('.payment-option').forEach(label => {
@@ -251,7 +259,11 @@ function updatePaymentUI() {
 
 }
 
-paymentInputs.forEach(input => input.addEventListener('change', () => { updatePaymentUI(); renderCartTotal(lastCartTotal); }));
+paymentInputs.forEach(input => input.addEventListener('change', () => {
+  updatePaymentUI();
+  renderCartTotal(lastCartTotal);
+  updateDesktopCheckoutNote();
+}));
 
 
 async function render({ persist = false } = {}) {
@@ -294,10 +306,7 @@ async function render({ persist = false } = {}) {
     const available = stock(product);
     return available !== null && (available <= 0 || (Number(item.qty) || 1) > available);
   }).length;
-  const note = ensureDesktopOrderNote();
-  if (note) {
-    note.textContent = `${paymentTitle(getPaymentMethod())} · выбрано ${selectedRows.length} товар${selectedRows.length === 1 ? '' : 'ов'}${unavailableCount ? ` · недоступно: ${unavailableCount}` : ''}${discountCardApplied ? ` · скидка ${discountCardPercent}%` : ''}`;
-  }
+  updateDesktopCheckoutNote(selectedRows, unavailableCount);
   if (checkoutBtn) {
     checkoutBtn.textContent = 'Оформить выбранное';
     checkoutBtn.disabled = hasStockProblems || !selectedRows.length;
@@ -629,6 +638,23 @@ async function createOrderFromCart() {
     const installment = paymentMethod === 'installment' ? getSelectedInstallment() : null;
     if (paymentMethod === 'installment' && !installment?.bank) {
       alert('Выберите банк для рассрочки.');
+      return;
+    }
+
+    if (paymentMethod === 'card') {
+      if (checkoutBtn) checkoutBtn.textContent = 'Переходим к оплате...';
+      const payment = await startApbCardPayment({
+        items,
+        discountCardApplied,
+        source: 'desktop-cart'
+      });
+      const orderedIds = new Set(items.map(item => String(item.productId)));
+      cart = getCurrentUserCart().filter(item => !orderedIds.has(String(item.id || item.productId)));
+      await saveUserCart(cart);
+      writeCartSelected(new Set(cart.map(item => String(item.id || item.productId))));
+      await render();
+      try { await trackEvent('card_payment_started'); } catch (e) {}
+      submitApbPayment(payment);
       return;
     }
 

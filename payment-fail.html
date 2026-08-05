@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Оплата не завершена — AutoStyle</title>
+  <link rel="stylesheet" href="css/payment-pages.css">
+</head>
+<body>
+  <main class="as-payment-page">
+    <section class="as-payment-card" aria-live="polite">
+      <div class="as-payment-mark fail" aria-hidden="true">!</div>
+      <h1>Оплата не завершена</h1>
+      <p>Банк не подтвердил списание. Заказ не считается оплаченным. Проверьте данные карты и оформите заказ повторно.</p>
+      <div class="as-payment-meta" id="paymentMeta" hidden></div>
+      <div class="as-payment-actions">
+        <a class="as-payment-primary" id="cartLink" href="cart.html">Вернуться в корзину</a>
+        <a class="as-payment-secondary" href="index.html">На главную</a>
+      </div>
+    </section>
+  </main>
+  <script>
+    const query = new URLSearchParams(location.search);
+    const invoice = query.get('invoiceid');
+    const order = query.get('order');
+    const meta = document.getElementById('paymentMeta');
+    const cartLink = document.getElementById('cartLink');
+    if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) cartLink.href = 'mobile-cart.html';
+    if (invoice || order) {
+      meta.hidden = false;
+      meta.textContent = order ? `Номер заказа: ${order}` : `Номер платежа: ${invoice}`;
+    }
+  </script>
+</body>
+</html>

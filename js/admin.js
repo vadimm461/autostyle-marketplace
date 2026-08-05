@@ -815,7 +815,18 @@ function paymentSummary(order) {
     const pay = order.installmentMonthlyPayment || inst.monthlyPayment || '';
     return `🏦 Рассрочка${bank ? ` — ${bank}` : ''}${months ? `, ${months} мес.` : ''}${pay ? ` · ${formatMoney(pay)}/мес.` : ''}`;
   }
-  return method === 'card' ? '💳 Банковская карта' : '💵 Наличные';
+  if (method === 'card') {
+    const status = order.paymentStatus || 'pending';
+    const title = ({
+      pending: 'ожидает оплаты',
+      paid: 'оплачено',
+      failed: 'ошибка',
+      cancelled: 'отменено',
+      expired: 'истёк срок'
+    })[status] || status;
+    return `💳 Банковская карта · ${title}`;
+  }
+  return '💵 Наличные';
 }
 
 function esc(value) {
