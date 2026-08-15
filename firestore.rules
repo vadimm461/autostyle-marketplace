@@ -1,12 +1,10 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSignedIn() {
       return request.auth != null;
     }
-
 
     function isProfileVerified() {
       return isSignedIn() && (
@@ -26,10 +24,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.email in [
-          "vadimm461@gmail.com",
-          "vadim462@gmail.com"
-        ]
+        request.auth.token.email in ["vadimm461@gmail.com", "vadimm462@gmail.com"]
         || (
           exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
           && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin"
@@ -46,7 +41,9 @@ service cloud.firestore {
         );
     }
 
-    /* Товары и контент */
+    /* ═══════════════════════════════════════════════
+       ТОВАРЫ И КОНТЕНТ — чтение всем, запись админам
+       ═══════════════════════════════════════════════ */
     match /autostyle_products/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
@@ -58,23 +55,34 @@ service cloud.firestore {
     match /autostyle_home_blocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_home_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_horizontal_promo_cards/{document=**} {
-  allow read: if true;
-  allow write: if isAdmin();
-}
+    match /autostyle_horizontal_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
-    /* Пользователи */
+    /* ═══════════════════════════════════════════════
+       ПОЛЬЗОВАТЕЛИ — закрыли дверь для самоповышения
+       ═══════════════════════════════════════════════ */
     match /autostyle_users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      
+      // При создании профиля роль может быть только 'user' или отсутствовать
+      allow create: if isSignedIn() 
+        && request.auth.uid == userId
+        && (request.resource.data.role == "user" || !("role" in request.resource.data));
+      
+      // При обновлении роль нельзя менять (только админ может)
       allow update: if isSignedIn() && (
         isAdmin()
-        || (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+        || (
+          request.auth.uid == userId 
+          && request.resource.data.role == resource.data.role
+        )
       );
+      
       allow delete: if isAdmin();
     }
 
-    /* Заказы */
+    /* ═══════════════════════════════════════════════
+       ЗАКАЗЫ — только верифицированные, только свои
+       ═══════════════════════════════════════════════ */
     match /autostyle_orders/{orderId} {
       allow create: if isProfileVerified();
       allow read: if isAdmin() || (
@@ -86,58 +94,55 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    /* Скидочные карты */
+    /* ═══════════════════════════════════════════════
+       СКИДОЧНЫЕ КАРТЫ — только админ создаёт/меняет
+       ═══════════════════════════════════════════════ */
     match /autostyle_discount_cards/{cardId} {
-      allow create: if isSignedIn();
+      // Только админ может создавать/изменять карты.
+      // Если пользователь активирует карту в профиле — делайте это через Cloud Function.
+      allow create, update, delete: if isAdmin();
       allow read: if isSignedIn() && (
         isAdmin()
         || resource.data.userId == request.auth.uid
         || resource.data.uid == request.auth.uid
       );
-      allow update: if isSignedIn() && (
-        isAdmin()
-        || resource.data.userId == request.auth.uid
-        || resource.data.uid == request.auth.uid
-      );
-      allow delete: if isAdmin();
     }
 
     match /autostyle_discountCards/{cardId} {
-      allow create: if isSignedIn();
+      allow create, update, delete: if isAdmin();
       allow read: if isSignedIn() && (
         isAdmin()
         || resource.data.userId == request.auth.uid
         || resource.data.uid == request.auth.uid
       );
-      allow update: if isSignedIn() && (
-        isAdmin()
-        || resource.data.userId == request.auth.uid
-        || resource.data.uid == request.auth.uid
-      );
-      allow delete: if isAdmin();
     }
 
-    /* Группы пользователей */
+    /* ═══════════════════════════════════════════════
+       ГРУППЫ ПОЛЬЗОВАТЕЛЕЙ
+       ═══════════════════════════════════════════════ */
     match /autostyle_user_groups/{groupId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
     }
 
-    /* Уведомления */
+    /* ═══════════════════════════════════════════════
+       УВЕДОМЛЕНИЯ — убрали групповые из общего доступа
+       ═══════════════════════════════════════════════ */
     match /autostyle_notifications/{notificationId} {
-      // Гости уведомления не читают. Общие видны только после входа.
+      // Чтение: только админ, личные, или общие (all). 
+      // Групповые (group) убраны — их лучше дублировать в персональные через Cloud Function.
       allow read: if isAdmin()
         || (
           isSignedIn()
           && (
             resource.data.audience == "all"
-            || resource.data.audience == "group"
             || resource.data.userId == request.auth.uid
             || resource.data.uid == request.auth.uid
             || resource.data.userEmail == request.auth.token.email
           )
         );
 
+      // Создание только админом или системой колеса (через CF)
       allow create: if isAdmin()
         || (
           isSignedIn()
@@ -147,6 +152,7 @@ service cloud.firestore {
           && request.resource.data.createdBy == "wheel-system"
           && (request.resource.data.type == "wheel_win" || request.resource.data.type == "wheel_ready")
         );
+      
       allow update, delete: if isAdmin();
     }
 
@@ -155,8 +161,9 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-
-    /* Предложения и жалобы */
+    /* ═══════════════════════════════════════════════
+       ОБРАТНАЯ СВЯЗЬ
+       ═══════════════════════════════════════════════ */
     match /autostyle_feedback/{feedbackId} {
       allow create: if isSignedIn();
       allow read: if isSignedIn() && (
@@ -168,58 +175,38 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-
-
-    /* Полная аналитика сайта */
+    /* ═══════════════════════════════════════════════
+       АНАЛИТИКА — ЗАКРЫТА. Переводите на Cloud Function.
+       ═══════════════════════════════════════════════ */
     match /autostyle_page_views/{document=**} {
-      allow create: if true;
-      allow read: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow create: if false;  // Клиент больше не пишет сюда
+      allow read, update, delete: if isAdmin();
     }
 
     match /autostyle_events/{document=**} {
-      allow create: if true;
-      allow read: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow create: if false;  // Клиент больше не пишет сюда
+      allow read, update, delete: if isAdmin();
     }
 
     match /autostyle_online_sessions/{sessionId} {
-      allow create, update: if true;
+      allow create, update: if false;  // Клиент больше не пишет сюда
       allow read, delete: if isAdmin();
     }
 
+    /* ═══════════════════════════════════════════════
+       ТОВАРНАЯ АНАЛИТИКА
+       ═══════════════════════════════════════════════ */
+    match /autostyle_product_snapshots/{document=**} { allow read, write: if isAdmin(); }
+    match /autostyle_product_changes/{document=**} { allow read, write: if isAdmin(); }
+    match /autostyle_lost_products/{document=**} { allow read, write: if isAdmin(); }
+    match /autostyle_purchase_recommendations/{document=**} { allow read, write: if isAdmin(); }
+    match /autostyle_product_sync_runs/{document=**} { allow read, write: if isAdmin(); }
+    match /autostyle_inventory_history/{document=**} { allow read, write: if isAdmin(); }
+    match /autostyle_top_products/{document=**} { allow read, write: if isAdmin(); }
 
-    /* Товарная аналитика и снимки товаров */
-    match /autostyle_product_snapshots/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /autostyle_product_changes/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /autostyle_lost_products/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /autostyle_purchase_recommendations/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /autostyle_product_sync_runs/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /autostyle_inventory_history/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /autostyle_top_products/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-
-    /* Колесо фортуны */
+    /* ═══════════════════════════════════════════════
+       КОЛЕСО ФОРТУНЫ — призы только через Cloud Function
+       ═══════════════════════════════════════════════ */
     match /autostyle_wheel_config/{configId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
@@ -232,15 +219,15 @@ service cloud.firestore {
     }
 
     match /autostyle_wheel_prizes/{prizeId} {
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.status == "active";
-      allow read: if isAdmin()
-        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      // Призы создаются только админом или Cloud Function (через Admin SDK)
+      allow create: if false;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update, delete: if isAdmin();
     }
 
-    /* Старые коллекции */
+    /* ═══════════════════════════════════════════════
+       СТАРЫЕ КОЛЛЕКЦИИ
+       ═══════════════════════════════════════════════ */
     match /site/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
     match /products/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
     match /categories/{document=**} { allow read: if true; allow write: if isAdmin() || hasPermission("legacyAdmin"); }
@@ -256,3 +243,4 @@ service cloud.firestore {
     match /salary/{document=**} { allow read, write: if isAdmin() || hasPermission("staffSalary") || hasPermission("legacyAdmin"); }
   }
 }
+
