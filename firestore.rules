@@ -25,9 +25,16 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin";
+      return isSignedIn() && (
+        request.auth.token.email in [
+          "vadimm461@gmail.com",
+          "vadim462@gmail.com"
+        ]
+        || (
+          exists(/databases/$(database)/documents/autostyle_users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/autostyle_users/$(request.auth.uid)).data.role == "admin"
+        )
+      );
     }
 
     function hasPermission(permission) {
@@ -50,8 +57,11 @@ service cloud.firestore {
     match /autostyle_promoCards/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_home_blocks/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /autostyle_horizontal_promo_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /autostyle_home_cards/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /autostyle_horizontal_promo_cards/{document=**} {
+  allow read: if true;
+  allow write: if isAdmin();
+}
 
     /* Пользователи */
     match /autostyle_users/{userId} {
@@ -120,20 +130,23 @@ service cloud.firestore {
         || (
           isSignedIn()
           && (
-            resource.data.get("audience", "") == "all"
-            || resource.data.get("target", "") == "all"
-            || resource.data.get("audience", "") == "group"
-            || resource.data.get("target", "") == "group"
-            || resource.data.get("userId", "") == request.auth.uid
-            || resource.data.get("uid", "") == request.auth.uid
-            || resource.data.get("targetUserId", "") == request.auth.uid
-            || resource.data.get("recipientId", "") == request.auth.uid
-            || resource.data.get("target", "") == request.auth.uid
-            || resource.data.get("userEmail", "") == request.auth.token.email
+            resource.data.audience == "all"
+            || resource.data.audience == "group"
+            || resource.data.userId == request.auth.uid
+            || resource.data.uid == request.auth.uid
+            || resource.data.userEmail == request.auth.token.email
           )
         );
 
-      allow create: if isAdmin();
+      allow create: if isAdmin()
+        || (
+          isSignedIn()
+          && request.resource.data.audience == "user"
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.createdBy == "wheel-system"
+          && (request.resource.data.type == "wheel_win" || request.resource.data.type == "wheel_ready")
+        );
       allow update, delete: if isAdmin();
     }
 
